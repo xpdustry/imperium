@@ -1,0 +1,14 @@
+{
+  "name": "foundation",
+  "displayName": "Foundation",
+  "author": "Xpdustry",
+  "hidden": true,
+  "java": true,
+  "main": "com.xpdustry.foundation.mindustry.FoundationPlugin",
+  "repo": "Xpdustry/Foundation",
+  "dependencies": [
+    "distributor-core",
+    "xpdustry-javelin",
+    "kotlin-runtime"
+  ]
+}
