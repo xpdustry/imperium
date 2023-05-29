@@ -9,7 +9,8 @@ signing {
 }
 
 indra {
-    lgpl3OnlyLicense()
+    gpl3OnlyLicense()
+    publishReleasesTo("xpdustry", "https://maven.xpdustry.fr/private")
 
     github("Xpdustry", "Foundation") {
         ci(true)
@@ -41,18 +42,4 @@ indra {
             }
         }
     }
-}
-
-publishing {
-    repositories {
-        maven("https://maven.xpdustry.fr/releases") {
-            name = "xpdustry"
-            credentials(PasswordCredentials::class)
-        }
-    }
-}
-
-// Tricks to work around Kyori checks
-tasks.requireClean {
-    enabled = false
 }
