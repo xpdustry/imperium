@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:JvmName("FoundationServerBootstrap")
-package com.xpdustry.foundation.server
+@file:JvmName("FoundationDiscordBootstrap")
+package com.xpdustry.foundation.discord
 
-public fun main() {
+fun main() {
     println("Hello, World!")
 }

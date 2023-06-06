@@ -1,5 +1,7 @@
 plugins {
     `kotlin-dsl`
+    // RANT: The fact the version catalog isn't accessible here annoys me a lot
+    id("com.diffplug.spotless") version "6.19.0"
 }
 
 repositories {
@@ -12,10 +14,9 @@ dependencies {
     implementation(libs.toxopid)
     implementation(libs.spotless)
     implementation(libs.shadow)
-    implementation(libs.errorprone.gradle)
     implementation(libs.kotlin.gradle)
-    // https://github.com/KyoriPowered/adventure/blob/b271c100a463a5bdc850753d571bf555ef855b85/build-logic/build.gradle.kts#L17
-    compileOnly(files(libs::class.java.protectionDomain.codeSource.location))
+    // https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
+    implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))
 }
 
 kotlin {

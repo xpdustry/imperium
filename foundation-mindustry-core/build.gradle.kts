@@ -3,7 +3,7 @@ import fr.xpdustry.toxopid.dsl.mindustryDependencies
 import fr.xpdustry.toxopid.task.GithubArtifactDownload
 
 plugins {
-    id("foundation.kotlin-conventions")
+    id("foundation.base-conventions")
     id("foundation.publishing-conventions")
     id("fr.xpdustry.toxopid")
     id("com.github.johnrengelman.shadow")
@@ -27,15 +27,12 @@ repositories {
 
 dependencies {
     api(projects.foundationCommon)
-    api(projects.foundationMindustryLibrary)
     mindustryDependencies()
     compileOnly(libs.distributor.api)
-    compileOnly(libs.javelin.mindustry)
-    compileOnly(kotlin("stdlib"))
 }
 
 tasks.shadowJar {
-    archiveFileName.set("FoundationMindustry.jar")
+    archiveFileName.set("FoundationMindustryCore.jar")
     archiveClassifier.set("plugin")
 
     doFirst {
@@ -70,13 +67,6 @@ val downloadKotlinRuntime = tasks.register<GithubArtifactDownload>("downloadKotl
     version.set(libs.versions.kotlin.map { "v2.0.0-k.$it" })
 }
 
-val downloadJavelin = tasks.register<GithubArtifactDownload>("downloadJavelin") {
-    user.set("Xpdustry")
-    repo.set("Javelin")
-    name.set("Javelin.jar")
-    version.set(libs.versions.javelin.map { "v$it" })
-}
-
 val downloadDistributor = tasks.register<GithubArtifactDownload>("downloadDistributor") {
     user.set("Xpdustry")
     repo.set("Distributor")
@@ -89,5 +79,5 @@ tasks.runMindustryClient {
 }
 
 tasks.runMindustryServer {
-    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadJavelin, downloadDistributor)
+    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributor)
 }

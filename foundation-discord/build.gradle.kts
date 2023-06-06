@@ -1,5 +1,5 @@
 plugins {
-    id("foundation.kotlin-conventions")
+    id("foundation.base-conventions")
     id("foundation.publishing-conventions")
     id("com.github.johnrengelman.shadow")
 }
@@ -13,7 +13,7 @@ tasks.shadowJar {
     archiveFileName.set("FoundationServer.jar")
     manifest {
         attributes(
-            "Main-Class" to "com.xpdustry.foundation.server.FoundationServerBootstrap",
+            "Main-Class" to "com.xpdustry.foundation.discord.FoundationDiscordBootstrap",
             "Implementation-Title" to "FoundationServer",
             "Implementation-Version" to project.version,
             "Implementation-Vendor" to "Xpdustry",

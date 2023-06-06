@@ -15,10 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.text;
+package com.xpdustry.foundation.mindustry.core
 
-public final class Test {
-    public int something() {
-        return 1;
+import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+
+class FoundationPlugin : AbstractMindustryPlugin() {
+    override fun onInit() {
+        logger.info("Foundation plugin loaded!")
     }
 }

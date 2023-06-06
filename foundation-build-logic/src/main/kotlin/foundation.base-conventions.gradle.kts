@@ -5,16 +5,12 @@ plugins {
     id("net.kyori.indra.licenser.spotless")
 }
 
-// expose version catalog
-val libs = extensions.getByType(org.gradle.accessors.dm.LibrariesForLibs::class)
-
 repositories {
     mavenCentral()
 }
 
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
-    explicitApi()
     coreLibrariesVersion = libs.versions.kotlin.get()
     target {
         compilations.configureEach {
@@ -27,6 +23,8 @@ kotlin {
 
 dependencies {
     compileOnlyApi(kotlin("stdlib"))
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
 }
 
 indraSpotlessLicenser {

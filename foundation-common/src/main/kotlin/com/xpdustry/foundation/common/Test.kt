@@ -17,8 +17,8 @@
  */
 package com.xpdustry.foundation.common
 
-public class Test {
-    public fun something(): Int {
+class Test {
+    fun something(): Int {
         return 1
     }
 }
