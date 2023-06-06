@@ -36,14 +36,14 @@ jobs:
 
       - name: Set up Artifacts Upload
         run: |
-          echo "PLUGIN_ARTIFACT_PATH=$(./gradlew :foundation-mindustry-plugin:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "MINDUSTRY_CORE_ARTIFACT_PATH=$(./gradlew :foundation-mindustry-core:getArtifactPath -q)" >> $GITHUB_ENV
           echo "SERVER_ARTIFACT_PATH=$(./gradlew :foundation-server:getArtifactPath -q)" >> $GITHUB_ENV
 
-      - name: Upload Plugin Artifact to Actions
+      - name: Upload Mindustry Core Artifact to Actions
         uses: actions/upload-artifact@v3
         with:
           name: "${{ github.event.repository.name }}"
-          path: "${{ env.PLUGIN_ARTIFACT_PATH }}"
+          path: "${{ env.MINDUSTRY_CORE_ARTIFACT_PATH }}"
 
       - name: Upload Server Artifact to Actions
         uses: actions/upload-artifact@v3

@@ -29,7 +29,7 @@ jobs:
       - name: Set up Artifacts Upload
         id: setup
         run: |
-          echo "PLUGIN_ARTIFACT_PATH=$(./gradlew :foundation-mindustry-plugin:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "MINDUSTRY_CORE_ARTIFACT_PATH=$(./gradlew :foundation-mindustry-core:getArtifactPath -q)" >> $GITHUB_ENV
           echo "SERVER_ARTIFACT_PATH=$(./gradlew :foundation-server:getArtifactPath -q)" >> $GITHUB_ENV
           echo "version=$(./gradlew printVersion -q)" >> $GITHUB_OUTPUT
 
@@ -39,7 +39,7 @@ jobs:
           name: "Build v${{ steps.setup.outputs.version }}"
           tag_name: "v${{ steps.setup.outputs.version }}"
           files: |
-            ${{ env.PLUGIN_ARTIFACT_PATH }}
+            ${{ env.MINDUSTRY_CORE_ARTIFACT_PATH }}
             ${{ env.SERVER_ARTIFACT_PATH }}
 
       - name: Increment Version
