@@ -10,6 +10,13 @@ mindustry = "144"
 # libraries
 distributor = "3.0.0"
 junit = "5.9.0"
+mongodb = "4.9.0"
+guice = "7.0.0"
+guava = "32.0.0-jre"
+hoplite = "2.7.4"
+kryo = "5.5.0"
+reactor-core = "3.5.6"
+reactor-kotlin = "1.2.2"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -23,6 +30,15 @@ klint = "0.49.1"
 distributor-api = { module = "fr.xpdustry:distributor-api", version.ref = "distributor" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+mongodb-driver-reactive = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
+reactor-core = { module = "io.projectreactor:reactor-core", version.ref = "reactor-core" }
+reactor-test = { module = "io.projectreactor:reactor-test", version.ref = "reactor-core" }
+reactor-kotlin = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions", version.ref = "reactor-kotlin" }
+hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
+hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
+kryo = { module = "com.esotericsoftware:kryo", version.ref = "kryo" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }

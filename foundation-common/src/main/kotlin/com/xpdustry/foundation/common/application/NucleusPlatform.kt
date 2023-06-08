@@ -15,9 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:JvmName("FoundationDiscordBootstrap")
-package com.xpdustry.foundation.discord
+package com.xpdustry.foundation.common.application
 
-fun main() {
-    println("Hello, World!")
+enum class NucleusPlatform {
+    MINDUSTRY,
+    DISCORD
 }

@@ -42,3 +42,7 @@ spotless {
         applyCommon()
     }
 }
+
+tasks.test {
+    useJUnitPlatform()
+}

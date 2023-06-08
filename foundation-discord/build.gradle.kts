@@ -13,7 +13,7 @@ tasks.shadowJar {
     archiveFileName.set("FoundationServer.jar")
     manifest {
         attributes(
-            "Main-Class" to "com.xpdustry.foundation.discord.FoundationDiscordBootstrap",
+            "Main-Class" to "com.xpdustry.foundation.discord.FoundationDiscordKt",
             "Implementation-Title" to "FoundationServer",
             "Implementation-Version" to project.version,
             "Implementation-Vendor" to "Xpdustry",
