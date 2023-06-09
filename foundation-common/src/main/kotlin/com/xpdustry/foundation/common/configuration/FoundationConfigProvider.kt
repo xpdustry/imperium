@@ -15,15 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.application
+package com.xpdustry.foundation.common.configuration
 
-interface NucleusApplication {
+import com.google.inject.Provider
+import com.sksamuel.hoplite.ConfigLoaderBuilder
+import com.sksamuel.hoplite.addPathSource
+import com.sksamuel.hoplite.yaml.YamlParser
+import com.xpdustry.foundation.common.application.FoundationMetadata
+import jakarta.inject.Inject
 
-    fun register(listener: FoundationListener)
-    fun init()
-    fun exit(cause: Cause)
-    enum class Cause {
-        SHUTDOWN,
-        RESTART
+class FoundationConfigProvider @Inject constructor(metadata: FoundationMetadata) : Provider<FoundationConfig> {
+
+    private val loader = ConfigLoaderBuilder.default()
+        .addFileExtensionMapping("yaml", YamlParser())
+        .addPathSource(metadata.directory.resolve("config.yaml"))
+        .build()
+
+    override fun get(): FoundationConfig {
+        return loader.loadConfigOrThrow()
     }
 }

@@ -18,17 +18,13 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
-import com.xpdustry.foundation.common.database.mongo.MongoEntityManager.Companion.ID_FIELD
 import java.net.InetAddress
 import java.time.Duration
-import org.bson.codecs.pojo.annotations.BsonCreator
-import org.bson.codecs.pojo.annotations.BsonId
-import org.bson.codecs.pojo.annotations.BsonProperty
 
 typealias MindustryUUID = String
 
 class User(
-    @get:BsonId @get:BsonProperty(ID_FIELD) override val identifier: MindustryUUID,
+    override val id: MindustryUUID,
     var names: Set<String> = emptySet(),
     var addresses: Set<InetAddress> = emptySet(),
     var lastName: String? = null,
@@ -37,7 +33,4 @@ class User(
     var timesKicked: Int = 0,
     var gamesPlayed: Int = 0,
     var playTime: Duration = Duration.ZERO,
-) : Entity<MindustryUUID> {
-    @BsonCreator
-    constructor(@BsonProperty(ID_FIELD) identifier: String) : this(identifier, names = emptySet())
-}
+) : Entity<MindustryUUID>

@@ -15,24 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.configuration
+package com.xpdustry.foundation.common.application
 
-import com.google.inject.Provider
-import com.sksamuel.hoplite.ConfigLoaderBuilder
-import com.sksamuel.hoplite.addPathSource
-import com.sksamuel.hoplite.yaml.YamlParser
-import com.xpdustry.foundation.common.annotation.FoundationDir
-import jakarta.inject.Inject
-import java.nio.file.Path
-
-class FoundationConfigurationProvider @Inject constructor(@FoundationDir directory: Path) : Provider<FoundationConfig> {
-
-    private val loader = ConfigLoaderBuilder.default()
-        .addFileExtensionMapping("yaml", YamlParser())
-        .addPathSource(directory.resolve("config.yaml"))
-        .build()
-
-    override fun get(): FoundationConfig {
-        return loader.loadConfigOrThrow()
-    }
+enum class FoundationPlatform {
+    MINDUSTRY,
+    DISCORD
 }

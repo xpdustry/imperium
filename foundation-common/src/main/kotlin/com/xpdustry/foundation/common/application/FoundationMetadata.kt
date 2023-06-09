@@ -17,29 +17,7 @@
  */
 package com.xpdustry.foundation.common.application
 
-import java.util.function.Consumer
+import com.xpdustry.foundation.common.version.FoundationVersion
+import java.nio.file.Path
 
-abstract class AbstractNucleusApplication : NucleusApplication {
-    private val listeners: MutableList<FoundationListener> = ArrayList()
-
-    override fun init() {
-        listeners.forEach(Consumer { obj: FoundationListener -> obj.onFoundationInit() })
-    }
-
-    override fun exit(cause: NucleusApplication.Cause) {
-        listeners.forEach(Consumer { obj: FoundationListener -> obj.onFoundationExit() })
-        listeners.clear()
-    }
-
-    override fun register(listener: FoundationListener) {
-        synchronized(listeners) {
-            if (listeners.contains(listener)) {
-                return
-            }
-            listeners.add(listener)
-            onRegister(listener)
-        }
-    }
-
-    protected fun onRegister(listener: FoundationListener?) {}
-}
+data class FoundationMetadata(val version: FoundationVersion, val platform: FoundationPlatform, val directory: Path)

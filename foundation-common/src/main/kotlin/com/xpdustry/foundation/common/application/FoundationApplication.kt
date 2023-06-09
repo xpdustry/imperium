@@ -17,7 +17,12 @@
  */
 package com.xpdustry.foundation.common.application
 
-enum class NucleusPlatform {
-    MINDUSTRY,
-    DISCORD
+import com.xpdustry.foundation.common.misc.ExitCode
+
+interface FoundationApplication {
+    fun init()
+    fun exit(code: ExitCode)
+    fun <T : Any> getInstance(type: Class<T>): T
 }
+
+inline fun <reified T : Any> FoundationApplication.getInstance(): T = getInstance(T::class.java)

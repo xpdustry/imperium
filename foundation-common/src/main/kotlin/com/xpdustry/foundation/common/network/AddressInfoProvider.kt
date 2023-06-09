@@ -23,4 +23,3 @@ import reactor.core.publisher.Mono
 interface AddressInfoProvider {
     fun getInfo(address: InetAddress): Mono<AddressInfo>
 }
-

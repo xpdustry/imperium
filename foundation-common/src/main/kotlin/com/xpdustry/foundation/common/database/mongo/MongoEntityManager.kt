@@ -51,20 +51,23 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(privat
                 MongoClientSettings.getDefaultCodecRegistry(),
                 PojoCodecProvider.builder()
                     .register(type.java)
-                    .conventions(Conventions.DEFAULT_CONVENTIONS + listOf(SnakeCaseConvention))
+                    .conventions(
+                        Conventions.DEFAULT_CONVENTIONS
+                                + listOf(SnakeCaseConvention, Conventions.SET_PRIVATE_FIELDS_CONVENTION)
+                    )
                     .build(),
-                CodecRegistries.fromCodecs(codecs.toList()),
+                CodecRegistries.fromCodecs(codecs),
             )
         )
     }
 
     override fun save(entity: E): Mono<Void> =
-        Mono.from(collection.replaceOne(Filters.eq(ID_FIELD, entity.identifier), entity, ReplaceOptions().upsert(true)))
+        Mono.from(collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)))
             .then()
 
     override fun saveAll(entities: Iterable<E>): Mono<Void> =
         Flux.fromIterable(entities)
-            .map { ReplaceOneModel(Filters.eq(ID_FIELD, it.identifier), it, ReplaceOptions().upsert(true)) }
+            .map { ReplaceOneModel(Filters.eq(ID_FIELD, it.id), it, ReplaceOptions().upsert(true)) }
             .collectList()
             .flatMap { Mono.from(collection.bulkWrite(it)) }
             .then()
@@ -75,7 +78,7 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(privat
     override fun findAll(): Flux<E> = Flux.from(collection.find())
 
     override fun exists(entity: E): Mono<Boolean> =
-        Mono.from(collection.countDocuments(Filters.eq(ID_FIELD, entity.identifier))).map { it > 0 }
+        Mono.from(collection.countDocuments(Filters.eq(ID_FIELD, entity.id))).map { it > 0 }
 
     override fun count(): Mono<Long> = Mono.from(collection.countDocuments())
 
@@ -86,7 +89,7 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(privat
 
     override fun deleteAll(entities: Iterable<E>): Mono<Void> =
         Flux.fromIterable(entities)
-            .map(Entity<I>::identifier)
+            .map(Entity<I>::id)
             .collectList()
             .flatMap { Mono.from(collection.deleteMany(Filters.`in`(ID_FIELD, it))) }
             .then()

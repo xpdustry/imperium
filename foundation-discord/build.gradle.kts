@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     api(projects.foundationCommon)
+    api(libs.discord4j.core)
     runtimeOnly(kotlin("stdlib"))
 }
 

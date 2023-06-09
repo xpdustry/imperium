@@ -30,6 +30,7 @@ import java.util.Locale
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
 
+// So clean!
 class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator, FoundationListener {
 
     private val translator: com.deepl.api.Translator?
@@ -48,7 +49,7 @@ class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator
             .build()
     }
 
-    fun onNucleusInit() {
+    override fun onFoundationInit() {
         sourceLanguages = fetchLanguages(LanguageType.Source).block()!!
         targetLanguages = fetchLanguages(LanguageType.Target).block()!!
     }

@@ -17,6 +17,23 @@
  */
 package com.xpdustry.foundation.discord
 
+import discord4j.core.DiscordClient
+import discord4j.core.GatewayDiscordClient
+import discord4j.core.event.domain.message.MessageCreateEvent
+
+
 fun main() {
     println("Hello, World!")
+
+    val token: String = "args[0]"
+    val client: DiscordClient = DiscordClient.create(token)
+    val gateway: GatewayDiscordClient = client.login().block()!!
+
+    gateway.on(MessageCreateEvent::class.java)
+        .filter { it.message.content.startsWith("!") }
+        .flatMap { it.message.channel }
+        .flatMap { it.createMessage("Pong!") }
+        .subscribe()
+
+    gateway.onDisconnect().block()
 }

@@ -15,19 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.annotation
+package com.xpdustry.foundation.common.misc
 
-import jakarta.inject.Qualifier
-
-
-@Target(
-    AnnotationTarget.FUNCTION,
-    AnnotationTarget.PROPERTY_GETTER,
-    AnnotationTarget.PROPERTY_SETTER,
-    AnnotationTarget.VALUE_PARAMETER
-)
-@Retention(
-    AnnotationRetention.RUNTIME
-)
-@Qualifier
-annotation class FoundationDir
+enum class ExitCode(code: Int) {
+    EXIT(0),
+    RESTART(1),
+}

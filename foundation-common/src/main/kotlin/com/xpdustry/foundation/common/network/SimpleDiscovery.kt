@@ -36,6 +36,7 @@ import reactor.core.publisher.Mono
 
 private val logger = LoggerFactory.getLogger(SimpleDiscovery::class.java)
 
+// TODO Test this discovery system since it uses monos and stuff
 class SimpleDiscovery @Inject constructor(
     private val messenger: Messenger,
     private val infoProvider: Provider<ServerInfo>
@@ -78,7 +79,7 @@ class SimpleDiscovery @Inject constructor(
     }
 
     private fun sendDiscovery(type: DiscoveryMessage.Type): Mono<Void> {
-        logger.trace("Sending {} discovery message", type.name.lowercase(Locale.ROOT));
+        logger.trace("Sending {} discovery message", type.name.lowercase(Locale.ROOT))
         return messenger.publish(DiscoveryMessage(infoProvider.get(), type))
     }
 

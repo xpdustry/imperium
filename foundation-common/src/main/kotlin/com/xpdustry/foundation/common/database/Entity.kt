@@ -18,5 +18,5 @@
 package com.xpdustry.foundation.common.database
 
 interface Entity<I> {
-    val identifier: I
+    val id: I
 }

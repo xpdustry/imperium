@@ -24,7 +24,7 @@ import java.time.Instant
 import org.bson.types.ObjectId
 
 class Punishment(
-    override val identifier: ObjectId,
+    override val id: ObjectId,
     var targets: List<InetAddress> = emptyList(),
     var kind: Kind = Kind.KICK,
     var reason: String = "Unknown",
@@ -39,7 +39,7 @@ class Punishment(
         get() = !expired
 
     val timestamp: Instant
-        get() = identifier.date.toInstant()
+        get() = id.date.toInstant()
 
     val expiration: Instant
         get() = timestamp.plus(duration)

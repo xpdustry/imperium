@@ -22,6 +22,7 @@ caffeine = "3.1.5"
 deepl = "0.2.1"
 slf4j = "2.0.5"
 log4j-to-slf4j = "2.14.1"
+discord4j = "3.2.4"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -50,6 +51,7 @@ deepl = { module = "com.deepl.api:deepl-java", version.ref = "deepl" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 log4j-to-slf4j = { module = "org.apache.logging.log4j:log4j-to-slf4j", version.ref = "log4j-to-slf4j" }
+discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "discord4j" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
