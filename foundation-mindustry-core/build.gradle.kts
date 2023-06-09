@@ -42,6 +42,11 @@ tasks.shadowJar {
     archiveClassifier.set("plugin")
 
     doFirst {
+        RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.foundation.shadow")
+        relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith("com.xpdustry.foundation.common") }
+    }
+
+    doFirst {
         val temp = temporaryDir.resolve("plugin.json")
         temp.writeText(metadata.toJson(true))
         from(temp)
@@ -53,9 +58,6 @@ tasks.shadowJar {
 
     minimize()
     mergeServiceFiles()
-
-    RelocationUtil.configureRelocation(this, "com.xpdustry.foundation.shadow")
-    relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith("com.xpdustry.foundation.common") }
 }
 
 tasks.register("getArtifactPath") {
