@@ -15,16 +15,28 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo
+package com.xpdustry.foundation.common.network
 
-import com.xpdustry.foundation.common.database.Database
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.model.UserManager
-import com.xpdustry.foundation.common.inject.KotlinModule
+import com.xpdustry.foundation.common.version.MindustryVersion
 
-val MongoModule = KotlinModule {
-    bind(Database::class) toSingleton MongoDatabase::class
-    bind(MongoProvider::class) toSingleton MongoProvider::class
-    bind(UserManager::class) toSingleton MongoUserManager::class
-    bind(PunishmentManager::class) toSingleton MongoPunishmentManager::class
+data class MindustryServerInfo(
+    val name: String,
+    val host: String,
+    val port: Int,
+    val mapName: String,
+    val description: String,
+    val wave: Int,
+    val playerCount: Int,
+    val playerLimit: Int,
+    val gameVersion: MindustryVersion,
+    val gameMode: GameMode,
+    val gameModeName: String?
+) {
+    enum class GameMode {
+        SURVIVAL,
+        SANDBOX,
+        ATTACK,
+        PVP,
+        EDITOR
+    }
 }

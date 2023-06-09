@@ -18,11 +18,10 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
-import org.bson.types.ObjectId
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import org.bson.types.ObjectId
 
 class Punishment(
     override val identifier: ObjectId,

@@ -19,11 +19,11 @@ package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.mongo.MongoEntityManager.Companion.ID_FIELD
+import java.net.InetAddress
+import java.time.Duration
 import org.bson.codecs.pojo.annotations.BsonCreator
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.codecs.pojo.annotations.BsonProperty
-import java.net.InetAddress
-import java.time.Duration
 
 typealias MindustryUUID = String
 
@@ -40,8 +40,4 @@ class User(
 ) : Entity<MindustryUUID> {
     @BsonCreator
     constructor(@BsonProperty(ID_FIELD) identifier: String) : this(identifier, names = emptySet())
-
-    override fun toString(): String {
-        return "User(identifier='$identifier', names=$names, addresses=$addresses, lastName=$lastName, lastAddress=$lastAddress, timesJoined=$timesJoined, timesKicked=$timesKicked, gamesPlayed=$gamesPlayed, playTime=$playTime)"
-    }
 }

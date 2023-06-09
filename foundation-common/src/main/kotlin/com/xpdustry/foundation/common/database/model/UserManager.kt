@@ -18,9 +18,8 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.EntityManager
-import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.function.UnaryOperator
+import reactor.core.publisher.Mono
 
 interface UserManager : EntityManager<String, User> {
     fun findByIdOrCreate(id: String): Mono<User> =

@@ -15,20 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.inject
+package com.xpdustry.foundation.common.translator
 
-import com.google.inject.AbstractModule
-import com.google.inject.Singleton
-import com.google.inject.binder.AnnotatedBindingBuilder
-import kotlin.reflect.KClass
+import java.util.Locale
+import reactor.core.publisher.Mono
 
-
-class KotlinModule(private val block: KotlinModule.() -> Unit) : AbstractModule() {
-    override fun configure() {
-        block()
-    }
-
-    fun <T : Any> bind(clazz: KClass<T>): AnnotatedBindingBuilder<T> = bind(clazz.java)
-
-    infix fun <T : Any, I : T> AnnotatedBindingBuilder<T>.toSingleton(clazz: KClass<I>) = to(clazz.java).`in`(Singleton::class.java)
+interface Translator {
+    fun translate(text: String, source: Locale, target: Locale): Mono<String>
+    fun isSupportedLanguage(locale: Locale): Boolean
 }

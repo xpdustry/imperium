@@ -15,12 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database
+package com.xpdustry.foundation.common.translator
 
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.model.UserManager
+import java.io.Serial
+import java.util.Locale
 
-interface Database {
-    val users: UserManager
-    val punishments: PunishmentManager
+class UnsupportedLocaleException(locale: Locale) : Exception("Locale $locale is not supported by this translator.") {
+    companion object {
+        @Serial
+        private val serialVersionUID = 3484311015642336305L
+    }
 }

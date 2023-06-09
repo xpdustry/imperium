@@ -21,17 +21,17 @@ import com.sksamuel.hoplite.Masked
 
 open class FoundationConfig(
     val network: NetworkConfig = NetworkConfig(),
-    val translation: TranslationConfig = TranslationConfig(),
+    val translator: TranslatorConfig = TranslatorConfig(),
     val mongo: MongoConfig = MongoConfig(),
     val mindustry: MindustryConfig = MindustryConfig(),
     val discord: DiscordConfig = DiscordConfig(),
 )
 
 data class NetworkConfig(
-    val vpnApiIoToken: Masked? = null,
+    val ipHub: Masked? = null,
 )
 
-data class TranslationConfig(
+data class TranslatorConfig(
     val deepl: Masked? = null,
 )
 

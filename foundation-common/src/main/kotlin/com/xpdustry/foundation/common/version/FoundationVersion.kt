@@ -15,22 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database
+package com.xpdustry.foundation.common.version
 
-import java.util.function.UnaryOperator
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+data class FoundationVersion(val year: Int, val month: Int, val build: Int) : Comparable<FoundationVersion> {
+    init {
+        require(year >= 0) { "Year must be positive" }
+        require(month in 1..12) { "Month must be between 1 and 12" }
+        require(build >= 0) { "Build must be positive" }
+    }
 
-interface EntityManager<I, E : Entity<I>> {
-    fun save(entity: E): Mono<Void>
-    fun saveAll(entities: Iterable<E>): Mono<Void>
-    fun findById(id: I): Mono<E>
-    fun findAll(): Flux<E>
-    fun exists(entity: E): Mono<Boolean>
-    fun count(): Mono<Long>
-    fun deleteById(id: I): Mono<Void>
-    fun deleteAll(): Mono<Void>
-    fun deleteAll(entities: Iterable<E>): Mono<Void>
-    fun updateIfPresent(id: I, updater: UnaryOperator<E>): Mono<Void> =
-        findById(id).map(updater).flatMap { entity: E -> save(entity) }
+    override fun compareTo(other: FoundationVersion): Int = Comparator.comparing(FoundationVersion::year)
+        .thenComparing(FoundationVersion::month)
+        .thenComparing(FoundationVersion::build)
+        .compare(this, other)
+
+    override fun toString(): String =
+        "v$year.$month.$build"
 }

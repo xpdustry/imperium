@@ -25,8 +25,8 @@ import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.application.FoundationListener
-import com.xpdustry.foundation.common.database.mongo.MongoProvider
 import com.xpdustry.foundation.common.database.mongo.MongoEntityManager.Companion.ID_FIELD
+import com.xpdustry.foundation.common.database.mongo.MongoProvider
 import java.util.UUID
 import kotlin.reflect.KClass
 import org.bson.Document

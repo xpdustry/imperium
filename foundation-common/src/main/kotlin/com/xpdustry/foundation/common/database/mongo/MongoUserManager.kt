@@ -17,9 +17,16 @@
  */
 package com.xpdustry.foundation.common.database.mongo
 
-import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.database.model.User
 import com.xpdustry.foundation.common.database.model.UserManager
+import com.xpdustry.foundation.common.database.mongo.codec.DurationCodec
+import com.xpdustry.foundation.common.database.mongo.codec.InetAddressCodec
+import jakarta.inject.Inject
+import java.time.temporal.ChronoUnit
 
-class MongoUserManager(collection: MongoCollection<User>) :
-    MongoEntityManager<User, String>(collection.withCodecRegistry(pojoCodecRegistry<User>())), UserManager
+class MongoUserManager @Inject constructor(mongo: MongoProvider) : MongoEntityManager<User, String>(mongo),
+    UserManager {
+    override val name = "users"
+    override val type = User::class
+    override val codecs = listOf(DurationCodec(ChronoUnit.SECONDS), InetAddressCodec)
+}

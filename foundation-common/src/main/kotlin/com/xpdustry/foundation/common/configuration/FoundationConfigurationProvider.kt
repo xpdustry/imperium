@@ -25,8 +25,7 @@ import com.xpdustry.foundation.common.annotation.FoundationDir
 import jakarta.inject.Inject
 import java.nio.file.Path
 
-class FoundationConfigurationProvider @Inject constructor(@FoundationDir directory: Path)
-    : Provider<FoundationConfig> {
+class FoundationConfigurationProvider @Inject constructor(@FoundationDir directory: Path) : Provider<FoundationConfig> {
 
     private val loader = ConfigLoaderBuilder.default()
         .addFileExtensionMapping("yaml", YamlParser())

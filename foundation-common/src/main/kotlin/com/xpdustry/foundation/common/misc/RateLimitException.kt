@@ -15,22 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database
+package com.xpdustry.foundation.common.misc
 
-import java.util.function.UnaryOperator
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import java.io.Serial
 
-interface EntityManager<I, E : Entity<I>> {
-    fun save(entity: E): Mono<Void>
-    fun saveAll(entities: Iterable<E>): Mono<Void>
-    fun findById(id: I): Mono<E>
-    fun findAll(): Flux<E>
-    fun exists(entity: E): Mono<Boolean>
-    fun count(): Mono<Long>
-    fun deleteById(id: I): Mono<Void>
-    fun deleteAll(): Mono<Void>
-    fun deleteAll(entities: Iterable<E>): Mono<Void>
-    fun updateIfPresent(id: I, updater: UnaryOperator<E>): Mono<Void> =
-        findById(id).map(updater).flatMap { entity: E -> save(entity) }
+class RateLimitException(message: String? = null) : Exception(message) {
+    companion object {
+        @Serial
+        private val serialVersionUID = 2686031992828669321L
+    }
 }

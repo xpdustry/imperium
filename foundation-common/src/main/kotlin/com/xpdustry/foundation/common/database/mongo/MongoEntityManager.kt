@@ -17,19 +17,50 @@
  */
 package com.xpdustry.foundation.common.database.mongo
 
+import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.ReplaceOneModel
 import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.reactivestreams.client.MongoCollection
+import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.EntityManager
+import kotlin.reflect.KClass
+import org.bson.codecs.Codec
+import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.pojo.ClassModelBuilder
+import org.bson.codecs.pojo.Convention
+import org.bson.codecs.pojo.Conventions
+import org.bson.codecs.pojo.PojoCodecProvider
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
-abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(protected val collection: MongoCollection<E>) : EntityManager<I, E> {
+abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(private val mongo: MongoProvider) :
+    EntityManager<I, E>, FoundationListener {
+
+    protected lateinit var collection: MongoCollection<E>
+        private set
+
+    protected abstract val name: String
+    protected abstract val type: KClass<E>
+    protected open val codecs: List<Codec<*>> = emptyList()
+
+    override fun onFoundationInit() {
+        collection = mongo.database.getCollection(name, type.java).withCodecRegistry(
+            CodecRegistries.fromProviders(
+                MongoClientSettings.getDefaultCodecRegistry(),
+                PojoCodecProvider.builder()
+                    .register(type.java)
+                    .conventions(Conventions.DEFAULT_CONVENTIONS + listOf(SnakeCaseConvention))
+                    .build(),
+                CodecRegistries.fromCodecs(codecs.toList()),
+            )
+        )
+    }
 
     override fun save(entity: E): Mono<Void> =
-        Mono.from(collection.replaceOne(Filters.eq(ID_FIELD, entity.identifier), entity, ReplaceOptions().upsert(true))).then()
+        Mono.from(collection.replaceOne(Filters.eq(ID_FIELD, entity.identifier), entity, ReplaceOptions().upsert(true)))
+            .then()
 
     override fun saveAll(entities: Iterable<E>): Mono<Void> =
         Flux.fromIterable(entities)
@@ -62,5 +93,21 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(protec
 
     companion object {
         const val ID_FIELD = "_id"
+    }
+
+    private object SnakeCaseConvention : Convention {
+        override fun apply(classModelBuilder: ClassModelBuilder<*>) {
+            classModelBuilder.propertyModelBuilders.forEach {
+                it.readName(it.readName.camelToSnakeCase())
+                it.writeName(it.writeName.camelToSnakeCase())
+            }
+        }
+
+        // https://www.baeldung.com/kotlin/convert-camel-case-snake-case
+        private fun String.camelToSnakeCase(): String {
+            return this.fold(StringBuilder()) { acc, c ->
+                acc.append(if (acc.isNotEmpty() && c.isUpperCase()) "_${c.lowercase()}" else c.lowercase())
+            }.toString()
+        }
     }
 }
