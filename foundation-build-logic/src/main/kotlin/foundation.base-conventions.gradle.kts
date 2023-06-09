@@ -23,6 +23,7 @@ kotlin {
 
 dependencies {
     compileOnlyApi(kotlin("stdlib"))
+    compileOnlyApi(kotlin("reflect"))
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
 }

@@ -28,7 +28,7 @@ discord4j = "3.2.4"
 toxopid = "3.2.0"
 indra = "3.1.1"
 spotless = "6.19.0"
-shadow = "7.1.2"
+shadow = "8.1.1"
 klint = "0.49.1"
 
 [libraries]
@@ -58,5 +58,5 @@ toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
 indra-common = { module = "net.kyori:indra-common", version.ref = "indra" }
 indra-licenser-spotless = { module = "net.kyori:indra-licenser-spotless", version.ref = "indra" }
 spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
-shadow = { module = "gradle.plugin.com.github.johnrengelman:shadow", version.ref = "shadow" }
+shadow = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 kotlin-gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

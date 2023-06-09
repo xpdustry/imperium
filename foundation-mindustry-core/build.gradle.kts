@@ -1,3 +1,5 @@
+import com.github.jengelman.gradle.plugins.shadow.internal.RelocationUtil
+import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
 import fr.xpdustry.toxopid.dsl.anukenJitpack
 import fr.xpdustry.toxopid.dsl.mindustryDependencies
 import fr.xpdustry.toxopid.task.GithubArtifactDownload
@@ -26,7 +28,11 @@ repositories {
 }
 
 dependencies {
-    api(projects.foundationCommon)
+    api(projects.foundationCommon) {
+        exclude("org.jetbrains.kotlin", "kotlin-stdlib")
+        exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
+        exclude("org.jetbrains.kotlin", "kotlin-reflect")
+    }
     mindustryDependencies()
     compileOnly(libs.distributor.api)
 }
@@ -45,11 +51,11 @@ tasks.shadowJar {
         into("META-INF")
     }
 
-    fun relocatePackage(source: String, target: String = source.split(".").last()) =
-        relocate(source, "com.xpdustry.foundation.shadow.$target")
-
     minimize()
     mergeServiceFiles()
+
+    RelocationUtil.configureRelocation(this, "com.xpdustry.foundation.shadow")
+    relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith("com.xpdustry.foundation.common") }
 }
 
 tasks.register("getArtifactPath") {

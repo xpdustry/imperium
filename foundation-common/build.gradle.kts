@@ -13,6 +13,8 @@ dependencies {
     api(libs.kryo)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
-    api(libs.deepl)
+    api(libs.deepl) {
+        exclude("org.apache.commons", "commons-math3")
+    }
     api(libs.slf4j.api)
 }
