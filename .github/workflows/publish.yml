@@ -30,7 +30,7 @@ jobs:
         id: setup
         run: |
           echo "MINDUSTRY_CORE_ARTIFACT_PATH=$(./gradlew :foundation-mindustry-core:getArtifactPath -q)" >> $GITHUB_ENV
-          echo "SERVER_ARTIFACT_PATH=$(./gradlew :foundation-server:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "DISCORD_ARTIFACT_PATH=$(./gradlew :foundation-discord:getArtifactPath -q)" >> $GITHUB_ENV
           echo "version=$(./gradlew printVersion -q)" >> $GITHUB_OUTPUT
 
       - name: Upload Artifacts to Release
@@ -40,7 +40,7 @@ jobs:
           tag_name: "v${{ steps.setup.outputs.version }}"
           files: |
             ${{ env.MINDUSTRY_CORE_ARTIFACT_PATH }}
-            ${{ env.SERVER_ARTIFACT_PATH }}
+            ${{ env.DISCORD_ARTIFACT_PATH }}
 
       - name: Increment Version
         run: ./gradlew incrementVersionFile

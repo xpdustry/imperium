@@ -37,7 +37,7 @@ jobs:
       - name: Set up Artifacts Upload
         run: |
           echo "MINDUSTRY_CORE_ARTIFACT_PATH=$(./gradlew :foundation-mindustry-core:getArtifactPath -q)" >> $GITHUB_ENV
-          echo "SERVER_ARTIFACT_PATH=$(./gradlew :foundation-server:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "DISCORD_ARTIFACT_PATH=$(./gradlew :foundation-discord:getArtifactPath -q)" >> $GITHUB_ENV
 
       - name: Upload Mindustry Core Artifact to Actions
         uses: actions/upload-artifact@v3
@@ -45,8 +45,8 @@ jobs:
           name: "${{ github.event.repository.name }}"
           path: "${{ env.MINDUSTRY_CORE_ARTIFACT_PATH }}"
 
-      - name: Upload Server Artifact to Actions
+      - name: Upload Discord Artifact to Actions
         uses: actions/upload-artifact@v3
         with:
           name: "${{ github.event.repository.name }}"
-          path: "${{ env.SERVER_ARTIFACT_PATH }}"
+          path: "${{ env.DISCORD_ARTIFACT_PATH }}"
