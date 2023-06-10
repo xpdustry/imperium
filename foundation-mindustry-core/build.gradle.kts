@@ -32,6 +32,7 @@ dependencies {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib")
         exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
         exclude("org.jetbrains.kotlin", "kotlin-reflect")
+        exclude("org.slf4j")
     }
     mindustryDependencies()
     compileOnly(libs.distributor.api)
@@ -42,8 +43,12 @@ tasks.shadowJar {
     archiveClassifier.set("plugin")
 
     doFirst {
+        @Suppress("SpellCheckingInspection")
+        fun removeRelocator(pattern: String) =
+            relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith(pattern) }
+
         RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.foundation.shadow")
-        relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith("com.xpdustry.foundation.common") }
+        removeRelocator("com.xpdustry.foundation.common")
     }
 
     doFirst {
