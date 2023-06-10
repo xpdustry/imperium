@@ -17,4 +17,5 @@ dependencies {
         exclude("org.apache.commons", "commons-math3")
     }
     api(libs.slf4j.api)
+    api(libs.password4j)
 }
