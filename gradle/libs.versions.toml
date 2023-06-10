@@ -18,10 +18,8 @@ hoplite = "2.7.4"
 kryo = "5.5.0"
 reactor-core = "3.5.6"
 reactor-kotlin = "1.2.2"
-caffeine = "3.1.5"
 deepl = "0.2.1"
 slf4j = "2.0.5"
-log4j-to-slf4j = "2.14.1"
 discord4j = "3.2.4"
 password4j = "1.7.1"
 
@@ -47,11 +45,9 @@ reactor-kotlin = { module = "io.projectreactor.kotlin:reactor-kotlin-extensions"
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 kryo = { module = "com.esotericsoftware:kryo", version.ref = "kryo" }
-caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 deepl = { module = "com.deepl.api:deepl-java", version.ref = "deepl" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-log4j-to-slf4j = { module = "org.apache.logging.log4j:log4j-to-slf4j", version.ref = "log4j-to-slf4j" }
 discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "discord4j" }
 password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 

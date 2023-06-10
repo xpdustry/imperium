@@ -8,6 +8,7 @@ dependencies {
     api(projects.foundationCommon)
     api(libs.discord4j.core)
     runtimeOnly(kotlin("stdlib"))
+    runtimeOnly(libs.slf4j.simple)
 }
 
 tasks.shadowJar {
@@ -35,9 +36,9 @@ tasks.register("getArtifactPath") {
     doLast { println(tasks.shadowJar.get().archiveFile.get().toString()) }
 }
 
-tasks.register<JavaExec>("runNucleusDiscord") {
+tasks.register<JavaExec>("runFoundationDiscord") {
     workingDir = temporaryDir
     dependsOn(tasks.shadowJar)
     classpath(tasks.shadowJar)
-    description = "Starts a local Foundation server"
+    description = "Starts a local Foundation discord bot"
 }
