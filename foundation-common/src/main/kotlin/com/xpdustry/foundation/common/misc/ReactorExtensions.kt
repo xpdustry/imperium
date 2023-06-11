@@ -15,20 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo
+package com.xpdustry.foundation.common.misc
 
-import com.mongodb.client.model.Filters
-import com.xpdustry.foundation.common.database.model.Punishment
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import jakarta.inject.Inject
-import org.bson.types.ObjectId
+import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
-import com.xpdustry.foundation.common.misc.toValueFlux
-import java.net.InetAddress
+import reactor.core.publisher.Mono
 
-class MongoPunishmentManager @Inject constructor(mongo: MongoProvider) :
-    MongoEntityManager<Punishment, ObjectId>(mongo, "punishments", Punishment::class), PunishmentManager {
+fun <T> T?.toValueMono(): Mono<T> = Mono.justOrEmpty(this)
 
-    override fun findAllByTarget(target: InetAddress): Flux<Punishment> =
-        collection.find(Filters.`in`("targets", target.hostAddress)).toValueFlux()
-}
+fun <T : Any> Publisher<T>.toValueMono(): Mono<T> = Mono.from(this)
+
+fun <R : Any, T : Throwable> T.toErrorMono(): Mono<R> = Mono.error(this)
+
+fun <T> Mono<T>.switchIfEmpty(block: () -> Mono<T>): Mono<T> = this.switchIfEmpty(Mono.defer(block))
+
+fun <T : Any> T?.toValueFlux(): Flux<T> = if (this == null) Flux.empty() else Flux.just(this)
+
+fun <T : Any> Publisher<T>.toValueFlux(): Flux<T> = Flux.from(this)
+
+fun <T : Any> Iterable<T>.toValueFlux(): Flux<T> = Flux.fromIterable(this)
+
+fun <R : Any, T : Throwable> T.toErrorFlux(): Flux<R> = Flux.error(this)

@@ -26,8 +26,8 @@ import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.EntityManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toFlux
-import reactor.kotlin.core.publisher.toMono
+import com.xpdustry.foundation.common.misc.toValueFlux
+import com.xpdustry.foundation.common.misc.toValueMono
 import kotlin.reflect.KClass
 
 const val ID_FIELD = "_id"
@@ -46,32 +46,32 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
     }
 
     override fun save(entity: E): Mono<Void> =
-        collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)).toMono().then()
+        collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)).toValueMono().then()
 
     override fun saveAll(entities: Iterable<E>): Mono<Void> =
-        entities.toFlux()
+        entities.toValueFlux()
             .map { ReplaceOneModel(Filters.eq(ID_FIELD, it.id), it, ReplaceOptions().upsert(true)) }
             .collectList()
-            .flatMap { collection.bulkWrite(it).toMono().then() }
+            .flatMap { collection.bulkWrite(it).toValueMono().then() }
 
     override fun findById(id: I): Mono<E> =
-        collection.find(Filters.eq(ID_FIELD, id)).first().toMono()
+        collection.find(Filters.eq(ID_FIELD, id)).first().toValueMono()
 
-    override fun findAll(): Flux<E> = collection.find().toFlux()
+    override fun findAll(): Flux<E> = collection.find().toValueFlux()
 
     override fun exists(entity: E): Mono<Boolean> =
-        collection.countDocuments(Filters.eq(ID_FIELD, entity.id)).toMono().map { it > 0 }
+        collection.countDocuments(Filters.eq(ID_FIELD, entity.id)).toValueMono().map { it > 0 }
 
-    override fun count(): Mono<Long> = collection.countDocuments().toMono()
+    override fun count(): Mono<Long> = collection.countDocuments().toValueMono()
 
     override fun deleteById(id: I): Mono<Void> =
-        collection.deleteOne(Filters.eq(ID_FIELD, id)).toMono().then()
+        collection.deleteOne(Filters.eq(ID_FIELD, id)).toValueMono().then()
 
-    override fun deleteAll(): Mono<Void> = collection.deleteMany(Filters.empty()).toMono().then()
+    override fun deleteAll(): Mono<Void> = collection.deleteMany(Filters.empty()).toValueMono().then()
 
     override fun deleteAll(entities: Iterable<E>): Mono<Void> =
-        entities.toFlux()
+        entities.toValueFlux()
             .map(Entity<I>::id)
             .collectList()
-            .flatMap { collection.deleteMany(Filters.`in`(ID_FIELD, it)).toMono().then() }
+            .flatMap { collection.deleteMany(Filters.`in`(ID_FIELD, it)).toValueMono().then() }
 }

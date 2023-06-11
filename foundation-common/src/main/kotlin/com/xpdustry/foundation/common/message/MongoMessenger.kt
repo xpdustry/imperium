@@ -24,6 +24,8 @@ import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.mongo.ID_FIELD
 import com.xpdustry.foundation.common.database.mongo.MongoProvider
+import com.xpdustry.foundation.common.misc.toErrorMono
+import com.xpdustry.foundation.common.misc.toValueMono
 import org.bson.BsonBinaryReader
 import org.bson.BsonBinaryWriter
 import org.bson.ByteBufNIO
@@ -35,8 +37,7 @@ import org.bson.io.ByteBufferBsonInput
 import org.bson.types.Binary
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toFlux
-import reactor.kotlin.core.publisher.toMono
+import com.xpdustry.foundation.common.misc.toValueFlux
 import java.nio.ByteBuffer
 import java.util.UUID
 import kotlin.reflect.KClass
@@ -51,7 +52,7 @@ class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Mes
         collection = mongo.database.getCollection("messenger")
     }
 
-    override fun publish(message: Message): Mono<Void> = message.toMono()
+    override fun publish(message: Message): Mono<Void> = message.toValueMono()
         .flatMap(this::write)
         .map {
             Document()
@@ -59,17 +60,16 @@ class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Mes
                 .append("message", it)
                 .append("origin", uuid)
         }
-        .flatMap { collection.insertOne(it).toMono() }
-        .then()
+        .flatMap { collection.insertOne(it).toValueMono().then() }
 
     private fun write(message: Message): Mono<ByteArray> {
         val output = BasicOutputBuffer(MAX_MESSAGE_SIZE)
-        return BsonBinaryWriter(output).use {
+        BsonBinaryWriter(output).use {
             collection.codecRegistry.get(message.javaClass).encode(it, message, ENCODER_CTX)
             if (output.position > MAX_MESSAGE_SIZE) {
-                return IllegalArgumentException("Message is too large").toMono()
+                return@write IllegalArgumentException("Message is too large").toErrorMono()
             }
-            output.toByteArray().toMono()
+            return@write output.toByteArray().toValueMono()
         }
     }
 
@@ -83,9 +83,9 @@ class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Mes
                 ),
             ),
         ),
-    ).toFlux()
+    ).toValueFlux()
         .map { it.fullDocument!! }
-        .flatMap { collection.deleteOne(Filters.eq(ID_FIELD, it["_id"])).toMono().thenReturn(it) }
+        .flatMap { collection.deleteOne(Filters.eq(ID_FIELD, it["_id"])).toValueMono().thenReturn(it) }
         .flatMap { read(it["message"]!! as Binary, type) }
         .cast(type.java)
 
@@ -97,7 +97,7 @@ class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Mes
         val input = ByteBufferBsonInput(buffer)
         return BsonBinaryReader(input).use {
             collection.codecRegistry.get(type.java).decode(it, DECODER_CTX)
-        }.toMono()
+        }.toValueMono()
     }
 
     companion object {

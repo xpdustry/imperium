@@ -22,9 +22,10 @@ import com.google.gson.JsonObject
 import com.xpdustry.foundation.common.configuration.FoundationConfig
 import com.xpdustry.foundation.common.misc.Country
 import com.xpdustry.foundation.common.misc.RateLimitException
+import com.xpdustry.foundation.common.misc.toErrorMono
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import reactor.kotlin.core.publisher.toMono
+import com.xpdustry.foundation.common.misc.toValueMono
 import java.net.InetAddress
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -39,11 +40,11 @@ class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
 
     override fun getInfo(address: InetAddress): Mono<AddressInfo> {
         if (token == null) {
-            return RateLimitException("IpHub token is blank.").toMono()
+            return RateLimitException("IpHub token is blank.").toErrorMono()
         }
 
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
-            return AddressInfo(true, null).toMono()
+            return AddressInfo(true, null).toValueMono()
         }
 
         return Mono.fromSupplier {
@@ -63,11 +64,11 @@ class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
             .subscribeOn(Schedulers.boundedElastic())
             .flatMap {
                 if (it.statusCode() == 429) {
-                    return@flatMap RateLimitException().toMono()
+                    return@flatMap RateLimitException().toErrorMono()
                 }
 
                 if (it.statusCode() != 200) {
-                    return@flatMap IllegalStateException("Unexpected status code: " + it.statusCode()).toMono()
+                    return@flatMap IllegalStateException("Unexpected status code: " + it.statusCode()).toErrorMono()
                 }
 
                 // https://iphub.info/api
@@ -75,7 +76,7 @@ class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
                 // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
                 // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
                 val json = gson.fromJson(it.body(), JsonObject::class.java)
-                return@flatMap AddressInfo(json["block"].asInt != 1, Country[json["countryCode"].asString]).toMono()
+                return@flatMap AddressInfo(json["block"].asInt != 1, Country[json["countryCode"].asString]).toValueMono()
             }
     }
 }

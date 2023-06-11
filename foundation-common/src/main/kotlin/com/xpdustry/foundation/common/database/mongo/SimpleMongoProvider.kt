@@ -36,7 +36,7 @@ import com.xpdustry.foundation.common.database.mongo.convention.UnsafeInstanciat
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
-import reactor.kotlin.core.publisher.toFlux
+import com.xpdustry.foundation.common.misc.toValueFlux
 
 class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) :
     MongoProvider,
@@ -97,7 +97,7 @@ class SimpleMongoProvider @Inject constructor(private val config: FoundationConf
         )
 
         // Check if client is correctly authenticated
-        client.listDatabaseNames().toFlux()
+        client.listDatabaseNames().toValueFlux()
             .onErrorMap { IllegalStateException("MongoDB authentication failed", it) }
             .collectList()
             .block()
