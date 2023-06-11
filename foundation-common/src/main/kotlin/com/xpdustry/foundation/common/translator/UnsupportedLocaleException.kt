@@ -17,12 +17,6 @@
  */
 package com.xpdustry.foundation.common.translator
 
-import java.io.Serial
 import java.util.Locale
 
-class UnsupportedLocaleException(locale: Locale) : Exception("Locale $locale is not supported by this translator.") {
-    companion object {
-        @Serial
-        private val serialVersionUID = 3484311015642336305L
-    }
-}
+class UnsupportedLocaleException(locale: Locale) : Exception("Locale $locale is not supported by this translator.")

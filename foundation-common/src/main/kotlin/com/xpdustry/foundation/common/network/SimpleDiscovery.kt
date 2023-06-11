@@ -36,7 +36,7 @@ import kotlin.random.Random
 
 private val logger = LoggerFactory.getLogger(SimpleDiscovery::class.java)
 
-// TODO Test this discovery system since it uses monos and stuff
+// TODO: Test this discovery system since it uses monos and stuff
 class SimpleDiscovery @Inject constructor(
     private val messenger: Messenger,
     private val infoProvider: Provider<ServerInfo>,
@@ -73,6 +73,7 @@ class SimpleDiscovery @Inject constructor(
             heartbeatTask?.dispose()
         }
         heartbeatTask = sendDiscovery(DiscoveryMessage.Type.DISCOVER)
+            .onErrorResume { Mono.empty() }
             .delayElement(Duration.ofSeconds(30))
             .then(Mono.fromRunnable<Void>(this::heartbeat))
             .subscribe()

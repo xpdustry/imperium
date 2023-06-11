@@ -19,7 +19,9 @@ package com.xpdustry.foundation.common.hash
 
 import reactor.core.publisher.Mono
 
-// NOTE: Wrapping hash in monos since computing can take a few seconds
+// NOTE:
+//  1. Wrapping hash in monos since computing can take a few seconds
+//  2. This class is not designed to work with hash functions that generate a salt themselves such as bcrypt
 interface HashFunction<P : HashParams> {
     fun create(password: CharArray, params: P, saltLength: Int): Mono<Hash>
     fun create(password: CharArray, params: P, salt: ByteArray): Mono<Hash>
@@ -28,13 +30,13 @@ interface HashFunction<P : HashParams> {
 object GenericHashFunction : HashFunction<HashParams> {
     override fun create(password: CharArray, params: HashParams, saltLength: Int): Mono<Hash> = when (params) {
         is Argon2Params -> Argon2HashFunction.create(password, params, saltLength)
-        is PBKDF2Params -> PBKDF2Hasher.create(password, params, saltLength)
+        is PBKDF2Params -> PBKDF2HashFunction.create(password, params, saltLength)
         else -> throw IllegalArgumentException("Unsupported params: $params")
     }
 
     override fun create(password: CharArray, params: HashParams, salt: ByteArray): Mono<Hash> = when (params) {
         is Argon2Params -> Argon2HashFunction.create(password, params, salt)
-        is PBKDF2Params -> PBKDF2Hasher.create(password, params, salt)
+        is PBKDF2Params -> PBKDF2HashFunction.create(password, params, salt)
         else -> throw IllegalArgumentException("Unsupported params: $params")
     }
 }

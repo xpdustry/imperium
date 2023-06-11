@@ -17,11 +17,4 @@
  */
 package com.xpdustry.foundation.common.misc
 
-import java.io.Serial
-
-class RateLimitException(message: String? = null) : Exception(message) {
-    companion object {
-        @Serial
-        private val serialVersionUID = 2686031992828669321L
-    }
-}
+class RateLimitException(message: String? = null) : Exception(message)

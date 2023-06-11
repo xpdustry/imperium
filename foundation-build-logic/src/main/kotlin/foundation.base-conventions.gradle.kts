@@ -34,7 +34,7 @@ indraSpotlessLicenser {
 
 spotless {
     kotlin {
-        // For some reasons, enabling the linter keeps the license header from being applied
+        // TODO: For some reasons, enabling the linter keeps the license header from being applied
         // ktlint(libs.versions.klint.get())
         applyCommon()
     }

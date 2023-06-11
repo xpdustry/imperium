@@ -58,7 +58,7 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int) : 
     }
 }
 
-object PBKDF2Hasher : HashFunction<PBKDF2Params> {
+object PBKDF2HashFunction : HashFunction<PBKDF2Params> {
 
     override fun create(password: CharArray, params: PBKDF2Params, saltLength: Int): Mono<Hash> {
         return create0(Password.hash(SecureString(password)).addRandomSalt(saltLength), params)
