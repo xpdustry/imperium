@@ -15,11 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo
+package com.xpdustry.foundation.common.database.mongo.convention
 
-import com.xpdustry.foundation.common.database.model.User
-import com.xpdustry.foundation.common.database.model.UserManager
-import jakarta.inject.Inject
+import org.bson.codecs.pojo.ClassModelBuilder
+import org.bson.codecs.pojo.Convention
 
-class MongoUserManager @Inject constructor(mongo: MongoProvider) :
-    MongoEntityManager<User, String>(mongo, "users", User::class), UserManager
+object SnakeCaseConvention : Convention {
+    override fun apply(classModelBuilder: ClassModelBuilder<*>) {
+        classModelBuilder.propertyModelBuilders.forEach {
+            it.readName(it.readName.camelToSnakeCase())
+            it.writeName(it.writeName.camelToSnakeCase())
+        }
+    }
+
+    // https://www.baeldung.com/kotlin/convert-camel-case-snake-case
+    private fun String.camelToSnakeCase(): String {
+        return this.fold(StringBuilder()) { acc, c ->
+            acc.append(if (acc.isNotEmpty() && c.isUpperCase()) "_${c.lowercase()}" else c.lowercase())
+        }.toString()
+    }
+}

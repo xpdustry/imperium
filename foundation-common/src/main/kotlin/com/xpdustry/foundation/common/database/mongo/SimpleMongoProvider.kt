@@ -29,10 +29,16 @@ import com.mongodb.reactivestreams.client.MongoClients
 import com.mongodb.reactivestreams.client.MongoDatabase
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.configuration.FoundationConfig
+import com.xpdustry.foundation.common.database.mongo.codec.DurationCodec
+import com.xpdustry.foundation.common.database.mongo.codec.InetAddressCodec
+import com.xpdustry.foundation.common.database.mongo.convention.SnakeCaseConvention
+import com.xpdustry.foundation.common.database.mongo.convention.UnsafeInstanciationConvention
+import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.pojo.Conventions
+import org.bson.codecs.pojo.PojoCodecProvider
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 
-internal class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) : MongoProvider,
+class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) : MongoProvider,
     FoundationListener {
 
     override lateinit var database: MongoDatabase
@@ -44,13 +50,18 @@ internal class SimpleMongoProvider @Inject constructor(private val config: Found
             .applyToClusterSettings {
                 it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
             }
-            .credential(
-                MongoCredential.createCredential(
-                    config.mongo.username,
-                    config.mongo.authDatabase,
-                    config.mongo.password.value.toCharArray(),
-                ),
-            )
+            .also {
+                if (config.mongo.username.isBlank()) {
+                    return@also
+                }
+                it.credential(
+                    MongoCredential.createCredential(
+                        config.mongo.username,
+                        config.mongo.authDatabase,
+                        config.mongo.password.value.toCharArray()
+                    ),
+                )
+            }
             .serverApi(
                 ServerApi.builder()
                     .version(ServerApiVersion.V1)
@@ -61,13 +72,32 @@ internal class SimpleMongoProvider @Inject constructor(private val config: Found
             .applyToSslSettings {
                 it.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
             }
+            .codecRegistry(
+                CodecRegistries.fromProviders(
+                    MongoClientSettings.getDefaultCodecRegistry(),
+                    PojoCodecProvider.builder()
+                        .automatic(true)
+                        .conventions(
+                            Conventions.DEFAULT_CONVENTIONS + listOf(
+                                SnakeCaseConvention,
+                                Conventions.SET_PRIVATE_FIELDS_CONVENTION,
+                                UnsafeInstanciationConvention
+                            )
+                        )
+                        .build(),
+                    CodecRegistries.fromCodecs(
+                        DurationCodec,
+                        InetAddressCodec
+                    ),
+                )
+            )
             .build())
 
         // Check if client is correctly authenticated
         Flux.from(client.listDatabaseNames())
-            .filter { it == config.mongo.database }
-            .switchIfEmpty(Mono.error(IllegalStateException("MongoDB authentication failed")))
-            .blockFirst()
+            .onErrorMap { IllegalStateException("MongoDB authentication failed", it) }
+            .collectList()
+            .block()
 
         database = client.getDatabase(config.mongo.database)
     }

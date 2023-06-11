@@ -20,19 +20,13 @@ package com.xpdustry.foundation.common.database.mongo
 import com.mongodb.client.model.Filters
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.mongo.codec.InetAddressCodec
 import jakarta.inject.Inject
 import java.net.InetAddress
-import org.bson.codecs.Codec
 import org.bson.types.ObjectId
 import reactor.core.publisher.Flux
 
 class MongoPunishmentManager @Inject constructor(mongo: MongoProvider) :
-    MongoEntityManager<Punishment, ObjectId>(mongo), PunishmentManager {
-
-    override val name = "punishments"
-    override val type = Punishment::class
-    override val codecs: List<Codec<*>> = listOf(InetAddressCodec)
+    MongoEntityManager<Punishment, ObjectId>(mongo, "punishments", Punishment::class), PunishmentManager {
 
     override fun findAllByTarget(target: InetAddress): Flux<Punishment> =
         Flux.from(collection.find(Filters.`in`("targets", target.hostAddress)))

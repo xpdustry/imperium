@@ -23,5 +23,5 @@ import reactor.core.publisher.Mono
 
 interface Messenger {
     fun publish(message: Message): Mono<Void>
-    fun <M : Message> subscribe(message: KClass<M>): Flux<M>
+    fun <M : Message> subscribe(type: KClass<M>): Flux<M>
 }
