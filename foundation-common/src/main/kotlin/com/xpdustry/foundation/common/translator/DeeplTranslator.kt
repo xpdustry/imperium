@@ -17,11 +17,14 @@
  */
 package com.xpdustry.foundation.common.translator
 
+import com.deepl.api.Formality
 import com.deepl.api.LanguageType
+import com.deepl.api.TextTranslationOptions
 import com.deepl.api.TranslatorOptions
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.configuration.FoundationConfig
 import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.misc.switchIfEmpty
@@ -33,7 +36,7 @@ import java.time.Duration
 import java.util.Locale
 
 // So clean!
-class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator, FoundationListener {
+class DeeplTranslator @Inject constructor(config: FoundationConfig, metadata: FoundationMetadata) : Translator, FoundationListener {
 
     private val translator: com.deepl.api.Translator?
     private val cache: Cache<TranslatorKey, String>
@@ -42,7 +45,12 @@ class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator
 
     init {
         translator = config.translator.deepl?.let {
-            com.deepl.api.Translator(it.value, TranslatorOptions().setTimeout(Duration.ofSeconds(3L)))
+            com.deepl.api.Translator(
+                it.value,
+                TranslatorOptions()
+                    .setTimeout(Duration.ofSeconds(3L))
+                    .setAppInfo("Foundation", metadata.version.toString()),
+            )
         }
 
         cache = CacheBuilder.newBuilder()
@@ -80,7 +88,14 @@ class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator
             fetchRateLimited()
                 .filter { limited -> limited.not() }
                 .switchIfEmpty { RateLimitException().toErrorMono() }
-                .map { translator!!.translateText(key.text, key.source.language, key.target.toLanguageTag()).text }
+                .map {
+                    translator!!.translateText(
+                        key.text,
+                        key.source.language,
+                        key.target.toLanguageTag(),
+                        DEFAULT_OPTIONS,
+                    ).text
+                }
                 .doOnNext { cache.put(key, it) }
         }
     }
@@ -113,4 +128,8 @@ class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator
     }
 
     data class TranslatorKey(val text: String, val source: Locale, val target: Locale)
+
+    companion object {
+        private val DEFAULT_OPTIONS = TextTranslationOptions().setFormality(Formality.PreferLess)
+    }
 }
