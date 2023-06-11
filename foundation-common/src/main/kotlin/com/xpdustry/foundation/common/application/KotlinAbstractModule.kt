@@ -41,9 +41,12 @@ abstract class KotlinAbstractModule : AbstractModule() {
         `in`(Singleton::class.java)
 
     protected fun bindProvisionListener(matcher: Matcher<in Binding<*>>, listener: KotlinProvisionListener) =
-        bindListener(matcher, object : ProvisionListener {
-            override fun <T> onProvision(invocation: ProvisionListener.ProvisionInvocation<T>) {
-                listener(invocation)
-            }
-        })
+        bindListener(
+            matcher,
+            object : ProvisionListener {
+                override fun <T> onProvision(invocation: ProvisionListener.ProvisionInvocation<T>) {
+                    listener(invocation)
+                }
+            },
+        )
 }

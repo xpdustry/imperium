@@ -24,16 +24,18 @@ import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.EntityManager
-import kotlin.reflect.KClass
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
+import kotlin.reflect.KClass
 
 const val ID_FIELD = "_id"
 
 abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
     private val mongo: MongoProvider,
     private val name: String,
-    private val type: KClass<E>
+    private val type: KClass<E>,
 ) : EntityManager<I, E>, FoundationListener {
 
     protected lateinit var collection: MongoCollection<E>
@@ -44,35 +46,32 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
     }
 
     override fun save(entity: E): Mono<Void> =
-        Mono.from(collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)))
-            .then()
+        collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)).toMono().then()
 
     override fun saveAll(entities: Iterable<E>): Mono<Void> =
-        Flux.fromIterable(entities)
+        entities.toFlux()
             .map { ReplaceOneModel(Filters.eq(ID_FIELD, it.id), it, ReplaceOptions().upsert(true)) }
             .collectList()
-            .flatMap { Mono.from(collection.bulkWrite(it)) }
-            .then()
+            .flatMap { collection.bulkWrite(it).toMono().then() }
 
     override fun findById(id: I): Mono<E> =
-        Mono.from(collection.find(Filters.eq(ID_FIELD, id)).first())
+        collection.find(Filters.eq(ID_FIELD, id)).first().toMono()
 
-    override fun findAll(): Flux<E> = Flux.from(collection.find())
+    override fun findAll(): Flux<E> = collection.find().toFlux()
 
     override fun exists(entity: E): Mono<Boolean> =
-        Mono.from(collection.countDocuments(Filters.eq(ID_FIELD, entity.id))).map { it > 0 }
+        collection.countDocuments(Filters.eq(ID_FIELD, entity.id)).toMono().map { it > 0 }
 
-    override fun count(): Mono<Long> = Mono.from(collection.countDocuments())
+    override fun count(): Mono<Long> = collection.countDocuments().toMono()
 
     override fun deleteById(id: I): Mono<Void> =
-        Mono.from(collection.deleteOne(Filters.eq(ID_FIELD, id))).then()
+        collection.deleteOne(Filters.eq(ID_FIELD, id)).toMono().then()
 
-    override fun deleteAll(): Mono<Void> = Mono.from(collection.deleteMany(Filters.empty())).then()
+    override fun deleteAll(): Mono<Void> = collection.deleteMany(Filters.empty()).toMono().then()
 
     override fun deleteAll(entities: Iterable<E>): Mono<Void> =
-        Flux.fromIterable(entities)
+        entities.toFlux()
             .map(Entity<I>::id)
             .collectList()
-            .flatMap { Mono.from(collection.deleteMany(Filters.`in`(ID_FIELD, it))) }
-            .then()
+            .flatMap { collection.deleteMany(Filters.`in`(ID_FIELD, it)).toMono().then() }
 }

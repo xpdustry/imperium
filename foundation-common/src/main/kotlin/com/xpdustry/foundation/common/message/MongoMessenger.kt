@@ -24,10 +24,6 @@ import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.mongo.ID_FIELD
 import com.xpdustry.foundation.common.database.mongo.MongoProvider
-import java.nio.ByteBuffer
-import java.util.UUID
-import kotlin.reflect.KClass
-import kotlin.reflect.jvm.jvmName
 import org.bson.BsonBinaryReader
 import org.bson.BsonBinaryWriter
 import org.bson.ByteBufNIO
@@ -39,7 +35,12 @@ import org.bson.io.ByteBufferBsonInput
 import org.bson.types.Binary
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
+import java.nio.ByteBuffer
+import java.util.UUID
+import kotlin.reflect.KClass
+import kotlin.reflect.jvm.jvmName
 
 class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Messenger, FoundationListener {
 
@@ -50,7 +51,7 @@ class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Mes
         collection = mongo.database.getCollection("messenger")
     }
 
-    override fun publish(message: Message): Mono<Void> = Mono.just(message)
+    override fun publish(message: Message): Mono<Void> = message.toMono()
         .flatMap(this::write)
         .map {
             Document()
@@ -66,27 +67,25 @@ class MongoMessenger @Inject constructor(private val mongo: MongoProvider) : Mes
         return BsonBinaryWriter(output).use {
             collection.codecRegistry.get(message.javaClass).encode(it, message, ENCODER_CTX)
             if (output.position > MAX_MESSAGE_SIZE) {
-                return Mono.error(IllegalArgumentException("Message is too large"))
+                return IllegalArgumentException("Message is too large").toMono()
             }
             output.toByteArray().toMono()
         }
     }
 
-    override fun <M : Message> subscribe(type: KClass<M>): Flux<M> = Flux.from(
-        collection.watch(
-            listOf(
-                Aggregates.match(
-                    Filters.and(
-                        Filters.eq("operationType", "insert"),
-                        Filters.eq("fullDocument.class", type.jvmName),
-                        Filters.ne("fullDocument.origin", uuid),
-                    )
-                )
-            )
-        )
-    )
+    override fun <M : Message> subscribe(type: KClass<M>): Flux<M> = collection.watch(
+        listOf(
+            Aggregates.match(
+                Filters.and(
+                    Filters.eq("operationType", "insert"),
+                    Filters.eq("fullDocument.class", type.jvmName),
+                    Filters.ne("fullDocument.origin", uuid),
+                ),
+            ),
+        ),
+    ).toFlux()
         .map { it.fullDocument!! }
-        .flatMap { Mono.from(collection.deleteOne(Filters.eq(ID_FIELD, it["_id"]))).then(Mono.just(it)) }
+        .flatMap { collection.deleteOne(Filters.eq(ID_FIELD, it["_id"])).toMono().thenReturn(it) }
         .flatMap { read(it["message"]!! as Binary, type) }
         .cast(type.java)
 

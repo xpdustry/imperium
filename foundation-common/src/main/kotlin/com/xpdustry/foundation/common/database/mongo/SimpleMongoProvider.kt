@@ -36,65 +36,68 @@ import com.xpdustry.foundation.common.database.mongo.convention.UnsafeInstanciat
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
-import reactor.core.publisher.Flux
+import reactor.kotlin.core.publisher.toFlux
 
-class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) : MongoProvider,
+class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) :
+    MongoProvider,
     FoundationListener {
 
     override lateinit var database: MongoDatabase
     private lateinit var client: MongoClient
 
     override fun onFoundationInit() {
-        client = MongoClients.create(MongoClientSettings.builder()
-            .applicationName("Foundation")
-            .applyToClusterSettings {
-                it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
-            }
-            .also {
-                if (config.mongo.username.isBlank()) {
-                    return@also
+        client = MongoClients.create(
+            MongoClientSettings.builder()
+                .applicationName("Foundation")
+                .applyToClusterSettings {
+                    it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
                 }
-                it.credential(
-                    MongoCredential.createCredential(
-                        config.mongo.username,
-                        config.mongo.authDatabase,
-                        config.mongo.password.value.toCharArray()
-                    ),
-                )
-            }
-            .serverApi(
-                ServerApi.builder()
-                    .version(ServerApiVersion.V1)
-                    .strict(true)
-                    .deprecationErrors(true)
-                    .build(),
-            )
-            .applyToSslSettings {
-                it.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
-            }
-            .codecRegistry(
-                CodecRegistries.fromProviders(
-                    MongoClientSettings.getDefaultCodecRegistry(),
-                    PojoCodecProvider.builder()
-                        .automatic(true)
-                        .conventions(
-                            Conventions.DEFAULT_CONVENTIONS + listOf(
-                                SnakeCaseConvention,
-                                Conventions.SET_PRIVATE_FIELDS_CONVENTION,
-                                UnsafeInstanciationConvention
-                            )
-                        )
+                .also {
+                    if (config.mongo.username.isBlank()) {
+                        return@also
+                    }
+                    it.credential(
+                        MongoCredential.createCredential(
+                            config.mongo.username,
+                            config.mongo.authDatabase,
+                            config.mongo.password.value.toCharArray(),
+                        ),
+                    )
+                }
+                .serverApi(
+                    ServerApi.builder()
+                        .version(ServerApiVersion.V1)
+                        .strict(true)
+                        .deprecationErrors(true)
                         .build(),
-                    CodecRegistries.fromCodecs(
-                        DurationCodec,
-                        InetAddressCodec
+                )
+                .applyToSslSettings {
+                    it.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
+                }
+                .codecRegistry(
+                    CodecRegistries.fromProviders(
+                        MongoClientSettings.getDefaultCodecRegistry(),
+                        PojoCodecProvider.builder()
+                            .automatic(true)
+                            .conventions(
+                                Conventions.DEFAULT_CONVENTIONS + listOf(
+                                    SnakeCaseConvention,
+                                    Conventions.SET_PRIVATE_FIELDS_CONVENTION,
+                                    UnsafeInstanciationConvention,
+                                ),
+                            )
+                            .build(),
+                        CodecRegistries.fromCodecs(
+                            DurationCodec,
+                            InetAddressCodec,
+                        ),
                     ),
                 )
-            )
-            .build())
+                .build(),
+        )
 
         // Check if client is correctly authenticated
-        Flux.from(client.listDatabaseNames())
+        client.listDatabaseNames().toFlux()
             .onErrorMap { IllegalStateException("MongoDB authentication failed", it) }
             .collectList()
             .block()

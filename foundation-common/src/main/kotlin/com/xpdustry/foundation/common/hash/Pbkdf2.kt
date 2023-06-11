@@ -22,9 +22,9 @@ import com.password4j.PBKDF2Function
 import com.password4j.Password
 import com.password4j.SecureString
 import com.password4j.types.Hmac
-import java.util.Locale
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import java.util.Locale
 
 data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int) : HashParams {
     init {
@@ -52,7 +52,7 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int) : 
             return PBKDF2Params(
                 Hmac.valueOf(params["h"]!!.uppercase(Locale.ROOT)),
                 params["i"]!!.toInt(),
-                params["l"]!!.toInt()
+                params["l"]!!.toInt(),
             )
         }
     }
@@ -74,8 +74,8 @@ object PBKDF2Hasher : HashFunction<PBKDF2Params> {
                 PBKDF2Function.getInstance(
                     params.hmac.toP4J(),
                     params.iterations,
-                    params.length
-                )
+                    params.length,
+                ),
             )
         }
             .map { Hash(it.bytes, it.saltBytes) }

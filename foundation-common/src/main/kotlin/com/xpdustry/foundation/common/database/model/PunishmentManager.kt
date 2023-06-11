@@ -18,9 +18,9 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.EntityManager
-import java.net.InetAddress
 import org.bson.types.ObjectId
 import reactor.core.publisher.Flux
+import java.net.InetAddress
 
 interface PunishmentManager : EntityManager<ObjectId, Punishment> {
     fun findAllByTarget(target: InetAddress): Flux<Punishment>

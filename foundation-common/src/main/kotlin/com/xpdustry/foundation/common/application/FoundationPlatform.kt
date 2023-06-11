@@ -19,5 +19,5 @@ package com.xpdustry.foundation.common.application
 
 enum class FoundationPlatform {
     MINDUSTRY,
-    DISCORD
+    DISCORD,
 }

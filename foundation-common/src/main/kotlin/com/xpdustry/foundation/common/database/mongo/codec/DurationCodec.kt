@@ -17,12 +17,12 @@
  */
 package com.xpdustry.foundation.common.database.mongo.codec
 
-import java.time.Duration
 import org.bson.BsonReader
 import org.bson.BsonWriter
 import org.bson.codecs.Codec
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
+import java.time.Duration
 
 object DurationCodec : Codec<Duration> {
     override fun getEncoderClass(): Class<Duration> = Duration::class.java

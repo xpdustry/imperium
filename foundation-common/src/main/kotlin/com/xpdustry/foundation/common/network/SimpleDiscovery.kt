@@ -26,20 +26,20 @@ import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.message.Messenger
 import jakarta.inject.Inject
 import jakarta.inject.Provider
+import org.slf4j.LoggerFactory
+import reactor.core.Disposable
+import reactor.core.publisher.Mono
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.random.Random
-import org.slf4j.LoggerFactory
-import reactor.core.Disposable
-import reactor.core.publisher.Mono
 
 private val logger = LoggerFactory.getLogger(SimpleDiscovery::class.java)
 
 // TODO Test this discovery system since it uses monos and stuff
 class SimpleDiscovery @Inject constructor(
     private val messenger: Messenger,
-    private val infoProvider: Provider<ServerInfo>
+    private val infoProvider: Provider<ServerInfo>,
 ) : Discovery, FoundationListener {
 
     private val _servers: Cache<String, ServerInfo> = CacheBuilder.newBuilder()

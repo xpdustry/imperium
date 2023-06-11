@@ -17,9 +17,9 @@
  */
 package com.xpdustry.foundation.common.message
 
-import kotlin.reflect.KClass
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import kotlin.reflect.KClass
 
 interface Messenger {
     fun publish(message: Message): Mono<Void>

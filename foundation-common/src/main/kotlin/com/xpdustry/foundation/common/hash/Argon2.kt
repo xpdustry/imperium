@@ -22,9 +22,9 @@ import com.password4j.HashBuilder
 import com.password4j.Password
 import com.password4j.SecureString
 import com.password4j.types.Argon2
-import java.util.Locale
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import java.util.Locale
 
 data class Argon2Params(
     val memory: Int,
@@ -32,7 +32,7 @@ data class Argon2Params(
     val length: Int,
     val parallelism: Int,
     val type: Type,
-    val version: Version
+    val version: Version,
 ) : HashParams {
     init {
         require(memory > 0) { "memory must be positive" }
@@ -44,7 +44,7 @@ data class Argon2Params(
     override fun toString(): String {
         return "argon2/m=$memory,i=$iterations,p=$parallelism,l=$length,t=${type.name.lowercase(Locale.ROOT)},v=${
             version.name.lowercase(
-                Locale.ROOT
+                Locale.ROOT,
             )
         }"
     }
@@ -72,7 +72,7 @@ data class Argon2Params(
                 params["l"]!!.toInt(),
                 params["p"]!!.toInt(),
                 Type.valueOf(params["t"]!!.uppercase(Locale.ROOT)),
-                Version.valueOf(params["v"]!!.uppercase(Locale.ROOT))
+                Version.valueOf(params["v"]!!.uppercase(Locale.ROOT)),
             )
         }
     }
@@ -97,8 +97,8 @@ object Argon2HashFunction : HashFunction<Argon2Params> {
                     params.parallelism,
                     params.length,
                     params.type.toP4J(),
-                    params.version.toP4J()
-                )
+                    params.version.toP4J(),
+                ),
             )
         }
             .map { Hash(it.bytes, it.saltBytes) }

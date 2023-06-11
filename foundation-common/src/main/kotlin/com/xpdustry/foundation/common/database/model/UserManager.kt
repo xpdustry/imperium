@@ -18,8 +18,8 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.EntityManager
-import java.util.function.UnaryOperator
 import reactor.core.publisher.Mono
+import java.util.function.UnaryOperator
 
 interface UserManager : EntityManager<String, User> {
     fun findByIdOrCreate(id: String): Mono<User> =

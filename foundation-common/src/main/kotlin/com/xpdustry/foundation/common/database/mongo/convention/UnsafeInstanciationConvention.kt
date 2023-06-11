@@ -17,13 +17,13 @@
  */
 package com.xpdustry.foundation.common.database.mongo.convention
 
-import java.lang.reflect.Method
 import org.bson.codecs.pojo.ClassModelBuilder
 import org.bson.codecs.pojo.Convention
 import org.bson.codecs.pojo.InstanceCreator
 import org.bson.codecs.pojo.InstanceCreatorFactory
 import org.bson.codecs.pojo.PropertyModel
 import sun.misc.Unsafe
+import java.lang.reflect.Method
 
 // NOTE: Extremely unsafe, but it works.
 // TODO: Maybe use the faster alternative sun.reflect.ReflectionFactory

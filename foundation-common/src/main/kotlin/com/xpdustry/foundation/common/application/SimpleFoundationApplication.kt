@@ -24,9 +24,9 @@ import com.google.inject.Stage
 import com.google.inject.matcher.Matchers
 import com.google.inject.util.Modules
 import com.xpdustry.foundation.common.misc.ExitCode
-import kotlin.reflect.KClass
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
+import kotlin.reflect.KClass
 
 val logger: Logger = LoggerFactory.getLogger("Foundation")
 
@@ -35,7 +35,7 @@ open class SimpleFoundationApplication(common: Module, implementation: Module) :
     private val listeners = arrayListOf<FoundationListener>()
     private val injector: Injector = Guice.createInjector(
         Stage.PRODUCTION,
-        FoundationAwareModule(Modules.override(common).with(implementation))
+        FoundationAwareModule(Modules.override(common).with(implementation)),
     )
 
     fun register(listener: FoundationListener) = synchronized(listeners) {

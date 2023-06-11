@@ -19,6 +19,7 @@ package com.xpdustry.foundation.common.hash
 
 import reactor.core.publisher.Mono
 
+// NOTE: Wrapping hash in monos since computing can take a few seconds
 interface HashFunction<P : HashParams> {
     fun create(password: CharArray, params: P, saltLength: Int): Mono<Hash>
     fun create(password: CharArray, params: P, salt: ByteArray): Mono<Hash>

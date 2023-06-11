@@ -17,8 +17,8 @@
  */
 package com.xpdustry.foundation.common.network
 
-import java.net.InetAddress
 import reactor.core.publisher.Mono
+import java.net.InetAddress
 
 interface AddressInfoProvider {
     fun getInfo(address: InetAddress): Mono<AddressInfo>

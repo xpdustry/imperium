@@ -17,8 +17,8 @@
  */
 package com.xpdustry.foundation.common.translator
 
-import java.util.Locale
 import reactor.core.publisher.Mono
+import java.util.Locale
 
 interface Translator {
     fun translate(text: String, source: Locale, target: Locale): Mono<String>

@@ -25,10 +25,11 @@ import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.configuration.FoundationConfig
 import com.xpdustry.foundation.common.misc.RateLimitException
 import jakarta.inject.Inject
-import java.time.Duration
-import java.util.Locale
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import reactor.kotlin.core.publisher.toMono
+import java.time.Duration
+import java.util.Locale
 
 // So clean!
 class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator, FoundationListener {
@@ -56,31 +57,32 @@ class DeeplTranslator @Inject constructor(config: FoundationConfig) : Translator
 
     override fun translate(text: String, source: Locale, target: Locale): Mono<String> {
         if (source.language == "router" || target.language == "router") {
-            return Mono.just("router")
+            return "router".toMono()
         }
 
         if (text.isBlank()) {
-            return Mono.just(text)
+            return text.toMono()
         }
 
         val sourceLocale = findClosestLanguage(LanguageType.Source, source)
-            ?: return Mono.error(UnsupportedLocaleException(source))
+            ?: return UnsupportedLocaleException(source).toMono()
         val targetLocale = findClosestLanguage(LanguageType.Target, target)
-            ?: return Mono.error(UnsupportedLocaleException(target))
+            ?: return UnsupportedLocaleException(target).toMono()
 
         if (sourceLocale.language == targetLocale.language) {
-            return Mono.just(text)
+            return text.toMono()
         }
 
         val key = TranslatorKey(text, sourceLocale, targetLocale)
 
-        return Mono.justOrEmpty<String>(cache.getIfPresent(key)).switchIfEmpty {
-            fetchRateLimited()
-                .filter { !it }
-                .switchIfEmpty { Mono.error(RateLimitException()) }
-                .map { translator!!.translateText(key.text, key.source.language, key.target.toLanguageTag()).text }
-                .doOnNext { cache.put(key, it) }
-        }
+        return cache.getIfPresent(key).toMono()
+            .switchIfEmpty {
+                fetchRateLimited()
+                    .filter { !it }
+                    .switchIfEmpty { RateLimitException().toMono() }
+                    .map { translator!!.translateText(key.text, key.source.language, key.target.toLanguageTag()).text }
+                    .doOnNext { cache.put(key, it) }
+            }
     }
 
     override fun isSupportedLanguage(locale: Locale): Boolean {

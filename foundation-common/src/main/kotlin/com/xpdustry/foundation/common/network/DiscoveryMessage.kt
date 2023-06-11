@@ -22,6 +22,6 @@ import com.xpdustry.foundation.common.message.Message
 data class DiscoveryMessage(val info: ServerInfo, val type: Type) : Message {
     enum class Type {
         DISCOVER,
-        UN_DISCOVER
+        UN_DISCOVER,
     }
 }

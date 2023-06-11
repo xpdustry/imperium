@@ -22,13 +22,14 @@ import com.google.gson.JsonObject
 import com.xpdustry.foundation.common.configuration.FoundationConfig
 import com.xpdustry.foundation.common.misc.Country
 import com.xpdustry.foundation.common.misc.RateLimitException
+import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.toMono
 import java.net.InetAddress
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 
 class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
 
@@ -38,11 +39,11 @@ class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
 
     override fun getInfo(address: InetAddress): Mono<AddressInfo> {
         if (token == null) {
-            return Mono.error(RateLimitException("IpHub token is blank."))
+            return RateLimitException("IpHub token is blank.").toMono()
         }
 
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
-            return Mono.just(AddressInfo(true, null))
+            return AddressInfo(true, null).toMono()
         }
 
         return Mono.fromSupplier {
@@ -51,22 +52,22 @@ class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
                     .uri(
                         URIBuilder("https://v2.api.iphub.info/ip/${address.hostAddress}")
                             .addParameter("key", token)
-                            .build()
+                            .build(),
                     )
                     .timeout(Duration.ofSeconds(3L))
                     .GET()
                     .build(),
-                HttpResponse.BodyHandlers.ofString()
+                HttpResponse.BodyHandlers.ofString(),
             )
         }
             .subscribeOn(Schedulers.boundedElastic())
             .flatMap {
                 if (it.statusCode() == 429) {
-                    return@flatMap Mono.error(RateLimitException())
+                    return@flatMap RateLimitException().toMono()
                 }
 
                 if (it.statusCode() != 200) {
-                    return@flatMap Mono.error(IllegalStateException("Unexpected status code: " + it.statusCode()))
+                    return@flatMap IllegalStateException("Unexpected status code: " + it.statusCode()).toMono()
                 }
 
                 // https://iphub.info/api
@@ -74,9 +75,7 @@ class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
                 // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
                 // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
                 val json = gson.fromJson(it.body(), JsonObject::class.java)
-                return@flatMap Mono.just(
-                    AddressInfo(json["block"].asInt != 1, Country[json["countryCode"].asString])
-                )
+                return@flatMap AddressInfo(json["block"].asInt != 1, Country[json["countryCode"].asString]).toMono()
             }
     }
 }

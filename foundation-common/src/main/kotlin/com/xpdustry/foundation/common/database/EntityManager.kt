@@ -17,9 +17,9 @@
  */
 package com.xpdustry.foundation.common.database
 
-import java.util.function.UnaryOperator
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.function.UnaryOperator
 
 interface EntityManager<I, E : Entity<I>> {
     fun save(entity: E): Mono<Void>

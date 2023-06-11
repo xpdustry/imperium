@@ -30,13 +30,13 @@ data class MindustryServerInfo(
     val playerLimit: Int,
     val gameVersion: MindustryVersion,
     val gameMode: GameMode,
-    val gameModeName: String?
+    val gameModeName: String?,
 ) {
     enum class GameMode {
         SURVIVAL,
         SANDBOX,
         ATTACK,
         PVP,
-        EDITOR
+        EDITOR,
     }
 }

@@ -31,6 +31,6 @@ data class MindustryVersion(val major: Int, val build: Int, val patch: Int, val 
         OFFICIAL,
         ALPHA,
         BLEEDING_EDGE,
-        CUSTOM
+        CUSTOM,
     }
 }
