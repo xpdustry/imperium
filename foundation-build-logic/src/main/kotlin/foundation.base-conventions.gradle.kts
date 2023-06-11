@@ -2,7 +2,6 @@ plugins {
     kotlin("jvm")
     `java-library`
     id("com.diffplug.spotless")
-    id("net.kyori.indra.licenser.spotless")
 }
 
 repositories {
@@ -28,22 +27,25 @@ dependencies {
     testRuntimeOnly(libs.junit.engine)
 }
 
-indraSpotlessLicenser {
-    licenseHeaderFile(rootProject.file("LICENSE_HEADER.md"))
-}
-
 spotless {
     kotlin {
-        // TODO: For some reasons, enabling the linter keeps the license header from being applied
-        // ktlint(libs.versions.klint.get())
-        applyCommon()
+        ktlint(libs.versions.ktlint.get())
+        licenseHeader(toLongComment(rootProject.file("LICENSE_HEADER.md").readText()))
+        indentWithSpaces(4)
+        trimTrailingWhitespace()
+        endWithNewline()
     }
     kotlinGradle {
-        ktlint(libs.versions.klint.get())
-        applyCommon()
+        ktlint(libs.versions.ktlint.get())
     }
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+fun toLongComment(text: String) = buildString {
+    appendLine("/*")
+    text.lines().forEach { appendLine(" * ${it.trim()}") }
+    appendLine(" */")
 }

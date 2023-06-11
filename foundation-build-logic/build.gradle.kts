@@ -1,7 +1,5 @@
 plugins {
     `kotlin-dsl`
-    // RANT: The fact the version catalog isn't accessible here annoys me a lot
-    id("com.diffplug.spotless") version "6.19.0"
 }
 
 repositories {

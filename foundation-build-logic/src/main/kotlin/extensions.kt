@@ -1,17 +1,10 @@
-import com.diffplug.gradle.spotless.FormatExtension
+import java.net.URI
+import java.time.Clock
+import java.time.LocalDateTime
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.kotlin.dsl.the
-import java.net.URI
-import java.time.Clock
-import java.time.LocalDateTime
-
-fun FormatExtension.applyCommon() {
-    indentWithSpaces(4)
-    trimTrailingWhitespace()
-    endWithNewline()
-}
 
 fun RepositoryHandler.xpdustryReleases() {
     maven {

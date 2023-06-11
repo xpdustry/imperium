@@ -33,10 +33,10 @@ import com.xpdustry.foundation.common.database.mongo.codec.DurationCodec
 import com.xpdustry.foundation.common.database.mongo.codec.InetAddressCodec
 import com.xpdustry.foundation.common.database.mongo.convention.SnakeCaseConvention
 import com.xpdustry.foundation.common.database.mongo.convention.UnsafeInstanciationConvention
+import com.xpdustry.foundation.common.misc.toValueFlux
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
-import com.xpdustry.foundation.common.misc.toValueFlux
 
 class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) :
     MongoProvider,

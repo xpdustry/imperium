@@ -22,6 +22,7 @@ import com.xpdustry.foundation.common.misc.ExitCode
 interface FoundationApplication {
     fun init()
     fun exit(code: ExitCode)
+
     // TODO: Exposing the dependency injector is a bad idea, change this in the future.
     fun <T : Any> getInstance(type: Class<T>): T
 }

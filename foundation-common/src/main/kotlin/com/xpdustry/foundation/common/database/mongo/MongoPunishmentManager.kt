@@ -20,10 +20,10 @@ package com.xpdustry.foundation.common.database.mongo
 import com.mongodb.client.model.Filters
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
+import com.xpdustry.foundation.common.misc.toValueFlux
 import jakarta.inject.Inject
 import org.bson.types.ObjectId
 import reactor.core.publisher.Flux
-import com.xpdustry.foundation.common.misc.toValueFlux
 import java.net.InetAddress
 
 class MongoPunishmentManager @Inject constructor(mongo: MongoProvider) :
