@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.application
+package com.xpdustry.foundation.common.database
 
-import com.xpdustry.foundation.common.misc.ExitStatus
+import com.xpdustry.foundation.common.database.model.PunishmentManager
+import com.xpdustry.foundation.common.database.model.UserManager
 
-interface FoundationApplication {
-    fun init()
-    fun exit(status: ExitStatus)
+interface Database {
+    val users: UserManager
+    val punishments: PunishmentManager
 }

@@ -23,7 +23,7 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-class Punishment(
+data class Punishment(
     override val id: ObjectId,
     var targets: List<InetAddress> = emptyList(),
     var kind: Kind = Kind.KICK,

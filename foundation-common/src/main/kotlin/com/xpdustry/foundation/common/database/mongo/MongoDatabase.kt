@@ -26,9 +26,13 @@ import com.mongodb.ServerApiVersion
 import com.mongodb.connection.SslSettings
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
-import com.mongodb.reactivestreams.client.MongoDatabase
 import com.xpdustry.foundation.common.application.FoundationListener
-import com.xpdustry.foundation.common.configuration.FoundationConfig
+import com.xpdustry.foundation.common.config.FoundationConfig
+import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.database.model.Punishment
+import com.xpdustry.foundation.common.database.model.PunishmentManager
+import com.xpdustry.foundation.common.database.model.User
+import com.xpdustry.foundation.common.database.model.UserManager
 import com.xpdustry.foundation.common.database.mongo.codec.DurationCodec
 import com.xpdustry.foundation.common.database.mongo.codec.InetAddressCodec
 import com.xpdustry.foundation.common.database.mongo.convention.SnakeCaseConvention
@@ -37,13 +41,13 @@ import com.xpdustry.foundation.common.misc.toValueFlux
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
+import java.time.Duration
 
-class SimpleMongoProvider @Inject constructor(private val config: FoundationConfig) :
-    MongoProvider,
-    FoundationListener {
+class MongoDatabase @Inject constructor(private val config: FoundationConfig) : Database, FoundationListener {
 
-    override lateinit var database: MongoDatabase
     private lateinit var client: MongoClient
+    override lateinit var users: UserManager
+    override lateinit var punishments: PunishmentManager
 
     override fun onFoundationInit() {
         client = MongoClients.create(
@@ -78,7 +82,8 @@ class SimpleMongoProvider @Inject constructor(private val config: FoundationConf
                     CodecRegistries.fromProviders(
                         MongoClientSettings.getDefaultCodecRegistry(),
                         PojoCodecProvider.builder()
-                            .automatic(true)
+                            .register(User::class.java)
+                            .register(Punishment::class.java)
                             .conventions(
                                 Conventions.DEFAULT_CONVENTIONS + listOf(
                                     SnakeCaseConvention,
@@ -88,8 +93,8 @@ class SimpleMongoProvider @Inject constructor(private val config: FoundationConf
                             )
                             .build(),
                         CodecRegistries.fromCodecs(
-                            DurationCodec,
-                            InetAddressCodec,
+                            DurationCodec(),
+                            InetAddressCodec(),
                         ),
                     ),
                 )
@@ -100,9 +105,11 @@ class SimpleMongoProvider @Inject constructor(private val config: FoundationConf
         client.listDatabaseNames().toValueFlux()
             .onErrorMap { IllegalStateException("MongoDB authentication failed", it) }
             .collectList()
-            .block()
+            .block(Duration.ofSeconds(5L))
 
-        database = client.getDatabase(config.mongo.database)
+        val database = client.getDatabase(config.mongo.database)
+        users = MongoUserManager(database.getCollection("users", User::class.java))
+        punishments = MongoPunishmentManager(database.getCollection("punishments", Punishment::class.java))
     }
 
     override fun onFoundationExit() {

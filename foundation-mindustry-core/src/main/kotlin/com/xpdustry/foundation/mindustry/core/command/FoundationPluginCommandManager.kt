@@ -15,9 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.misc
+package com.xpdustry.foundation.mindustry.core.command
 
-enum class ExitCode(code: Int) {
-    EXIT(0),
-    RESTART(1),
+import fr.xpdustry.distributor.api.command.ArcCommandManager
+import fr.xpdustry.distributor.api.command.sender.CommandSender
+import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import java.util.function.Function
+
+class FoundationPluginCommandManager(plugin: MindustryPlugin) : ArcCommandManager<CommandSender>(plugin, Function.identity(), Function.identity(), false) {
+    init {
+        setSetting(ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
+    }
 }

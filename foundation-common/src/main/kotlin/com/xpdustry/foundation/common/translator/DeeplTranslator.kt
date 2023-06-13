@@ -25,7 +25,7 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.FoundationMetadata
-import com.xpdustry.foundation.common.configuration.FoundationConfig
+import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.misc.switchIfEmpty
 import com.xpdustry.foundation.common.misc.toErrorMono

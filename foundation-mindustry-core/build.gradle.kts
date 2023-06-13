@@ -3,6 +3,7 @@ import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
 import fr.xpdustry.toxopid.dsl.anukenJitpack
 import fr.xpdustry.toxopid.dsl.mindustryDependencies
 import fr.xpdustry.toxopid.task.GithubArtifactDownload
+import fr.xpdustry.toxopid.task.MindustryExec
 
 plugins {
     id("foundation.base-conventions")
@@ -92,5 +93,15 @@ tasks.runMindustryClient {
 }
 
 tasks.runMindustryServer {
+    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributor)
+}
+
+// Second server for testing discovery
+tasks.register<MindustryExec>("runMindustryServer2") {
+    group = fr.xpdustry.toxopid.Toxopid.TASK_GROUP_NAME
+    classpath(tasks.downloadMindustryServer)
+    mainClass.set("mindustry.server.ServerLauncher")
+    modsPath.set("./config/mods")
+    standardInput = System.`in`
     mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributor)
 }

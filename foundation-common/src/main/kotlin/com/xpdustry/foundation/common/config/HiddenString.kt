@@ -15,23 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.configuration
+package com.xpdustry.foundation.common.config
 
-import com.google.inject.Provider
-import com.sksamuel.hoplite.ConfigLoaderBuilder
-import com.sksamuel.hoplite.addPathSource
-import com.sksamuel.hoplite.yaml.YamlParser
-import com.xpdustry.foundation.common.application.FoundationMetadata
-import jakarta.inject.Inject
-
-class FoundationConfigProvider @Inject constructor(metadata: FoundationMetadata) : Provider<FoundationConfig> {
-
-    private val loader = ConfigLoaderBuilder.default()
-        .addFileExtensionMapping("yaml", YamlParser())
-        .addPathSource(metadata.directory.resolve("config.yaml"))
-        .build()
-
-    override fun get(): FoundationConfig {
-        return loader.loadConfigOrThrow()
-    }
+// TODO:
+//  Hoplite already provides "Secret",
+//  but for some godforsaken reason,
+//  it uses the un-relocated name for type resolution
+//  thus crashing the server...
+data class HiddenString(val value: String) {
+    override fun toString() = "*****"
 }

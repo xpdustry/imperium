@@ -24,7 +24,7 @@ import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
 import java.time.Duration
 
-object DurationCodec : Codec<Duration> {
+class DurationCodec : Codec<Duration> {
     override fun getEncoderClass(): Class<Duration> = Duration::class.java
 
     override fun encode(writer: BsonWriter, value: Duration, encoderContext: EncoderContext) {

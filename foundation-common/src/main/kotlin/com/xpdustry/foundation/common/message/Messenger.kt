@@ -23,5 +23,5 @@ import kotlin.reflect.KClass
 
 interface Messenger {
     fun publish(message: Message): Mono<Void>
-    fun <M : Message> subscribe(type: KClass<M>): Flux<M>
+    fun <M : Message> on(type: KClass<M>): Flux<M>
 }

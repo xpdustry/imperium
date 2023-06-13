@@ -2,20 +2,24 @@ version: "3.8"
 
 # Docker compose file for local testing
 services:
+  # Mongo is nice :)
   mongo:
     image: mongo:6
     ports:
       - "27017:27017"
-    healthcheck:
-      # https://blog.devgenius.io/how-to-deploy-a-mongodb-replicaset-using-docker-compose-a538100db471
-      test: test $$(echo "rs.initiate().ok || rs.status().ok" | mongosh --quiet) -eq 1
-      interval: 10s
-      start_period: 30s
-    command: --replSet rs0
 
+  # Simple frontend for the mongo database available at http://localhost:8081
   mongo-express:
     image: mongo-express:latest
     ports:
       - "8081:8081"
-    environment:
-      ME_CONFIG_MONGODB_URL: mongodb://mongo:27017/
+    depends_on:
+      - mongo
+
+  # The RabbitMQ instance for inter-server communication
+  # This image comes with an admin frontend available at http://localhost:15672, login with guest/guest
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"

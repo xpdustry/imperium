@@ -23,7 +23,7 @@ import java.time.Duration
 
 typealias MindustryUUID = String
 
-class User(
+data class User(
     override val id: MindustryUUID,
     var names: Set<String> = emptySet(),
     var addresses: Set<InetAddress> = emptySet(),

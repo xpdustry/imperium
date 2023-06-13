@@ -23,14 +23,16 @@ import com.google.inject.Module
 import com.google.inject.Stage
 import com.google.inject.matcher.Matchers
 import com.google.inject.util.Modules
-import com.xpdustry.foundation.common.misc.ExitCode
+import com.xpdustry.foundation.common.misc.ExitStatus
+import com.xpdustry.foundation.common.misc.logger
 import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-val logger: Logger = LoggerFactory.getLogger("Foundation")
-
-open class SimpleFoundationApplication(common: Module, implementation: Module) : FoundationApplication {
+open class SimpleFoundationApplication(
+    common: Module,
+    implementation: Module,
+    private val logger: Logger = logger(SimpleFoundationApplication::class),
+) : FoundationApplication {
 
     private val listeners = arrayListOf<FoundationListener>()
     private val injector: Injector = Guice.createInjector(
@@ -45,29 +47,32 @@ open class SimpleFoundationApplication(common: Module, implementation: Module) :
         onListenerRegistration(listener)
     }
 
-    fun register(listener: KClass<out FoundationListener>) = register(getInstance(listener.java))
+    fun register(listener: KClass<out FoundationListener>) =
+        register(injector.getInstance(listener.java))
 
-    protected fun onListenerRegistration(listener: FoundationListener) {
-        logger.info("Registered listener: {}", listener)
+    fun <T : Any> instance(clazz: KClass<*>): Any =
+        injector.getInstance(clazz.java)
+
+    protected open fun onListenerRegistration(listener: FoundationListener) {
+        logger.debug("Registered listener: {}", listener::class.simpleName)
         listeners.add(listener)
     }
 
     override fun init() {
         listeners.forEach(FoundationListener::onFoundationInit)
+        logger.info("Foundation has successfully init.")
     }
 
-    override fun exit(code: ExitCode) {
-        listeners.forEach(FoundationListener::onFoundationExit)
+    override fun exit(status: ExitStatus) {
+        listeners.reversed().forEach(FoundationListener::onFoundationExit)
         listeners.clear()
+        logger.info("Foundation has successfully exit with status: {}", status)
     }
-
-    override fun <T : Any> getInstance(type: Class<T>): T =
-        injector.getInstance(type)
 
     inner class FoundationAwareModule(private val module: Module) : KotlinAbstractModule() {
         override fun configure() {
             install(module)
-            bind(FoundationApplication::class.java).toInstance(this@SimpleFoundationApplication)
+            bind(FoundationApplication::class).instance(this@SimpleFoundationApplication)
             bindProvisionListener(Matchers.any()) {
                 val provision = it.provision()
                 if (provision is FoundationListener) {

@@ -17,9 +17,10 @@
  */
 package com.xpdustry.foundation.common.database.mongo
 
+import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.database.model.User
 import com.xpdustry.foundation.common.database.model.UserManager
 import jakarta.inject.Inject
 
-class MongoUserManager @Inject constructor(mongo: MongoProvider) :
-    MongoEntityManager<User, String>(mongo, "users", User::class), UserManager
+class MongoUserManager @Inject constructor(collection: MongoCollection<User>) :
+    MongoEntityManager<User, String>(collection), UserManager

@@ -42,9 +42,9 @@ private class UnsafeInstanceCreatorFactory<T : Any>(private val type: Class<T>) 
 
     init {
         val unsafeClass = Class.forName("sun.misc.Unsafe")
-        val f = unsafeClass.getDeclaredField("theUnsafe")
-        f.isAccessible = true
-        unsafe = f[null] as Unsafe
+        val theUnsafe = unsafeClass.getDeclaredField("theUnsafe")
+        theUnsafe.isAccessible = true
+        unsafe = theUnsafe.get(null) as Unsafe
         allocateInstance = unsafeClass.getMethod("allocateInstance", Class::class.java)
     }
 

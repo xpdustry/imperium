@@ -25,7 +25,7 @@ import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
 import java.net.InetAddress
 
-object InetAddressCodec : Codec<InetAddress> {
+class InetAddressCodec : Codec<InetAddress> {
     override fun getEncoderClass(): Class<InetAddress> = InetAddress::class.java
 
     override fun encode(writer: BsonWriter, value: InetAddress, encoderContext: EncoderContext) =

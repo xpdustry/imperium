@@ -18,10 +18,11 @@
 package com.xpdustry.foundation.common.network
 
 import com.xpdustry.foundation.common.version.MindustryVersion
+import java.net.InetAddress
 
 data class MindustryServerInfo(
     val name: String,
-    val host: String,
+    val host: InetAddress,
     val port: Int,
     val mapName: String,
     val description: String,

@@ -29,6 +29,7 @@ import jakarta.inject.Provider
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
+import reactor.core.publisher.SignalType
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.TimeUnit
@@ -50,21 +51,22 @@ class SimpleDiscovery @Inject constructor(
     private var heartbeatTask: Disposable? = null
 
     override fun onFoundationInit() {
-        messenger.subscribe(DiscoveryMessage::class).doOnNext {
+        logger.debug("Starting discovery as {}", infoProvider.get().metadata.identifier)
+
+        messenger.on(DiscoveryMessage::class).subscribe {
             if (it.type === DiscoveryMessage.Type.DISCOVER) {
-                logger.trace("Received discovery message from {}", it.info.name)
-                this._servers.put(it.info.name, it.info)
+                logger.trace("Received discovery message from {}", it.info.metadata.identifier)
+                this._servers.put(it.info.metadata.identifier, it.info)
             } else if (it.type === DiscoveryMessage.Type.UN_DISCOVER) {
-                this._servers.invalidate(it.info.name)
-                logger.debug("Undiscovered server {}", it.info.name)
+                this._servers.invalidate(it.info.metadata.identifier)
+                logger.debug("Undiscovered server {}", it.info.metadata.identifier)
             } else {
                 logger.warn("Received unknown discovery message type {}", it.type)
             }
         }
-            .subscribe()
 
-        Mono.delay(Duration.ofSeconds(Random.Default.nextLong(5)))
-            .then(Mono.fromRunnable<Void>(this::heartbeat))
+        Mono.delay(Duration.ofSeconds(Random.nextLong(5)))
+            .doFinally { this.heartbeat() }
             .subscribe()
     }
 
@@ -73,9 +75,9 @@ class SimpleDiscovery @Inject constructor(
             heartbeatTask?.dispose()
         }
         heartbeatTask = sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-            .onErrorResume { Mono.empty() }
-            .delayElement(Duration.ofSeconds(30))
-            .then(Mono.fromRunnable<Void>(this::heartbeat))
+            .onErrorComplete()
+            .delaySubscription(Duration.ofSeconds(5L))
+            .doFinally { if (it == SignalType.ON_COMPLETE) heartbeat() }
             .subscribe()
     }
 
@@ -86,11 +88,11 @@ class SimpleDiscovery @Inject constructor(
 
     override fun onFoundationExit() {
         heartbeatTask?.dispose()
-        sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER).subscribe()
+        sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER).block()
     }
 
-    override val servers: Map<String, ServerInfo>
-        get() = this._servers.asMap()
+    override val servers: List<ServerInfo>
+        get() = this._servers.asMap().values.toList()
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {
         override fun onRemoval(notification: RemovalNotification<String, ServerInfo>) {

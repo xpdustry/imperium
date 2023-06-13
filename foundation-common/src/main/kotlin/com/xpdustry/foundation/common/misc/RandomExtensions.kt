@@ -17,30 +17,26 @@
  */
 package com.xpdustry.foundation.common.misc
 
-import org.reactivestreams.Publisher
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import java.awt.Color
+import java.util.Locale
+import kotlin.reflect.KClass
 
-fun <T> T?.toValueMono(): Mono<T> =
-    Mono.justOrEmpty(this)
+// TODO: Cleanup this file ?
 
-fun <T : Any> Publisher<T>.toValueMono(): Mono<T> =
-    Mono.from(this)
+fun String.capitalize(locale: Locale = Locale.ROOT, all: Boolean = false): String {
+    if (all) {
+        return split(" ").joinToString(" ") { it.capitalize(locale) }
+    }
+    return if (isBlank()) "" else this[0].uppercase(locale) + this.substring(1)
+}
 
-fun <R : Any, T : Throwable> T.toErrorMono(): Mono<R> =
-    Mono.error(this)
+fun Color.toHexString(): String =
+    if (this.alpha == 255) String.format("#%02x%02x%02x", red, green, blue) else String.format("#%02x%02x%02x%02x", alpha, red, green, blue)
 
-fun <T> Mono<T>.switchIfEmpty(block: () -> Mono<T>): Mono<T> =
-    switchIfEmpty(Mono.defer(block))
+fun logger(name: String): Logger =
+    LoggerFactory.getLogger(name)
 
-fun <T : Any> T?.toValueFlux(): Flux<T> =
-    if (this == null) Flux.empty() else Flux.just(this)
-
-fun <T : Any> Publisher<T>.toValueFlux(): Flux<T> =
-    Flux.from(this)
-
-fun <T : Any> Iterable<T>.toValueFlux(): Flux<T> =
-    Flux.fromIterable(this)
-
-fun <R : Any, T : Throwable> T.toErrorFlux(): Flux<R> =
-    Flux.error(this)
+fun logger(klass: KClass<*>): Logger =
+    LoggerFactory.getLogger(klass.java)

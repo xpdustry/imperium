@@ -15,41 +15,53 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.configuration
+package com.xpdustry.foundation.common.config
 
-import com.sksamuel.hoplite.Masked
+import java.awt.Color
+import java.net.InetAddress
 
-open class FoundationConfig(
+data class FoundationConfig(
     val network: NetworkConfig = NetworkConfig(),
     val translator: TranslatorConfig = TranslatorConfig(),
     val mongo: MongoConfig = MongoConfig(),
+    val messenger: MessengerConfig = MessengerConfig(),
     val mindustry: MindustryConfig = MindustryConfig(),
     val discord: DiscordConfig = DiscordConfig(),
 )
 
 data class NetworkConfig(
-    val ipHub: Masked? = null,
+    val ipHub: HiddenString? = null,
 )
 
 data class TranslatorConfig(
-    val deepl: Masked? = null,
+    val deepl: HiddenString? = null,
 )
 
 data class MongoConfig(
     val host: String = "localhost",
     val port: Int = 27017,
     val username: String = "",
-    val password: Masked = Masked(""),
+    val password: HiddenString = HiddenString(""),
     val ssl: Boolean = false,
     val database: String = "foundation",
     val authDatabase: String = "admin",
 )
 
+data class MessengerConfig(
+    val host: String = "localhost",
+    val port: Int = 5672,
+    val username: String = "guest",
+    val password: HiddenString = HiddenString("guest"),
+    val ssl: Boolean = false,
+)
+
 data class MindustryConfig(
     val serverName: String = "unknown",
-    val quotes: List<String> = listOf("Bonjour"),
+    val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
     val hub: Boolean = false,
     val history: HistoryConfig = HistoryConfig(),
+    val color: Color = Color.WHITE,
+    val host: InetAddress = InetAddress.getLocalHost(),
 )
 
 data class HistoryConfig(
@@ -58,5 +70,5 @@ data class HistoryConfig(
 )
 
 data class DiscordConfig(
-    val token: Masked? = null,
+    val token: HiddenString? = null,
 )

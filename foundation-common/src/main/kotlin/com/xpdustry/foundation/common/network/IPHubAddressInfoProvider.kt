@@ -19,7 +19,8 @@ package com.xpdustry.foundation.common.network
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.xpdustry.foundation.common.configuration.FoundationConfig
+import com.google.inject.Inject
+import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.misc.Country
 import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.misc.toErrorMono
@@ -32,7 +33,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-class IPHubAddressInfoProvider(config: FoundationConfig) : AddressInfoProvider {
+class IPHubAddressInfoProvider @Inject constructor(config: FoundationConfig) : AddressInfoProvider {
 
     private val token: String? = config.network.ipHub?.value
     private val gson = Gson()

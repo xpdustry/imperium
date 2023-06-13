@@ -30,5 +30,13 @@ data class FoundationVersion(val year: Int, val month: Int, val build: Int) : Co
         .compare(this, other)
 
     override fun toString(): String =
-        "v$year.$month.$build"
+        "$year.$month.$build"
+
+    companion object {
+        fun parse(version: String): FoundationVersion {
+            val split = (if (version.startsWith("v")) version.substring(1) else version).split(".")
+            require(split.size == 3) { "Version must be in format 'year.month.build'" }
+            return FoundationVersion(split[0].toInt(), split[1].toInt(), split[2].toInt())
+        }
+    }
 }

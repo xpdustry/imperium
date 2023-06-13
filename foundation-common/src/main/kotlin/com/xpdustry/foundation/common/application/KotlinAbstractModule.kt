@@ -19,8 +19,10 @@ package com.xpdustry.foundation.common.application
 
 import com.google.inject.AbstractModule
 import com.google.inject.Binding
+import com.google.inject.Provider
 import com.google.inject.Singleton
 import com.google.inject.binder.AnnotatedBindingBuilder
+import com.google.inject.binder.LinkedBindingBuilder
 import com.google.inject.binder.ScopedBindingBuilder
 import com.google.inject.matcher.Matcher
 import com.google.inject.spi.ProvisionListener
@@ -29,16 +31,26 @@ import kotlin.reflect.KClass
 typealias KotlinProvisionListener = (ProvisionListener.ProvisionInvocation<*>) -> Unit
 
 abstract class KotlinAbstractModule : AbstractModule() {
+
     abstract override fun configure()
 
     protected fun <T : Any> bind(clazz: KClass<T>): AnnotatedBindingBuilder<T> =
         bind(clazz.java)
 
-    protected fun <T : Any, I : T> AnnotatedBindingBuilder<T>.toClass(clazz: KClass<I>): ScopedBindingBuilder =
+    protected fun <T : Any, I : T> LinkedBindingBuilder<T>.implementation(clazz: KClass<I>): ScopedBindingBuilder =
         to(clazz.java)
+
+    protected fun <T : Any> LinkedBindingBuilder<T>.provider(clazz: KClass<out Provider<out T>>): ScopedBindingBuilder =
+        toProvider(clazz.java)
+
+    protected fun <T : Any> LinkedBindingBuilder<T>.instance(instance: T): Unit =
+        toInstance(instance)
 
     protected fun ScopedBindingBuilder.singleton(): Unit =
         `in`(Singleton::class.java)
+
+    protected fun <T : Any> AnnotatedBindingBuilder<T>.annotated(clazz: KClass<out Annotation>): LinkedBindingBuilder<T> =
+        annotatedWith(clazz.java)
 
     protected fun bindProvisionListener(matcher: Matcher<in Binding<*>>, listener: KotlinProvisionListener) =
         bindListener(

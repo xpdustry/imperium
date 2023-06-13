@@ -19,5 +19,5 @@ package com.xpdustry.foundation.common.network
 
 interface Discovery {
     fun heartbeat()
-    val servers: Map<String, ServerInfo>
+    val servers: List<ServerInfo>
 }

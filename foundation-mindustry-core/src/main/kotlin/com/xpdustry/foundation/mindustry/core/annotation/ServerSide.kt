@@ -15,11 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.application
+package com.xpdustry.foundation.mindustry.core.annotation
 
-import com.xpdustry.foundation.common.misc.ExitStatus
+import jakarta.inject.Qualifier
 
-interface FoundationApplication {
-    fun init()
-    fun exit(status: ExitStatus)
-}
+@Target(
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.PROPERTY_GETTER,
+    AnnotationTarget.PROPERTY_SETTER,
+    AnnotationTarget.VALUE_PARAMETER,
+)
+@Retention(
+    AnnotationRetention.RUNTIME,
+)
+@Qualifier
+annotation class ServerSide

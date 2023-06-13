@@ -18,6 +18,11 @@
 package com.xpdustry.foundation.common.application
 
 import com.xpdustry.foundation.common.version.FoundationVersion
-import java.nio.file.Path
+import java.util.UUID
 
-data class FoundationMetadata(val version: FoundationVersion, val platform: FoundationPlatform, val directory: Path)
+data class FoundationMetadata(
+    val name: String,
+    val platform: FoundationPlatform,
+    val version: FoundationVersion,
+    val identifier: String = "$name-${UUID.randomUUID()}",
+)

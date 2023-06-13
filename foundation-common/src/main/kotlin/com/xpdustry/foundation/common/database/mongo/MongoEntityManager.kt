@@ -21,29 +21,18 @@ import com.mongodb.client.model.Filters
 import com.mongodb.client.model.ReplaceOneModel
 import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.EntityManager
 import com.xpdustry.foundation.common.misc.toValueFlux
 import com.xpdustry.foundation.common.misc.toValueMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import kotlin.reflect.KClass
 
 const val ID_FIELD = "_id"
 
 abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
-    private val mongo: MongoProvider,
-    private val name: String,
-    private val type: KClass<E>,
-) : EntityManager<I, E>, FoundationListener {
-
-    protected lateinit var collection: MongoCollection<E>
-        private set
-
-    override fun onFoundationInit() {
-        collection = mongo.database.getCollection(name, type.java)
-    }
+    protected val collection: MongoCollection<E>,
+) : EntityManager<I, E> {
 
     override fun save(entity: E): Mono<Void> =
         collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)).toValueMono().then()

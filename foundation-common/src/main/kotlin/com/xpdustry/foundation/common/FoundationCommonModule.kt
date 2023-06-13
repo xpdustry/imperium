@@ -18,13 +18,12 @@
 package com.xpdustry.foundation.common
 
 import com.xpdustry.foundation.common.application.KotlinAbstractModule
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.model.UserManager
-import com.xpdustry.foundation.common.database.mongo.MongoProvider
-import com.xpdustry.foundation.common.database.mongo.MongoPunishmentManager
-import com.xpdustry.foundation.common.database.mongo.MongoUserManager
+import com.xpdustry.foundation.common.config.FoundationConfig
+import com.xpdustry.foundation.common.config.FoundationConfigProvider
+import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.database.mongo.MongoDatabase
 import com.xpdustry.foundation.common.message.Messenger
-import com.xpdustry.foundation.common.message.MongoMessenger
+import com.xpdustry.foundation.common.message.RabbitmqMessenger
 import com.xpdustry.foundation.common.network.AddressInfoProvider
 import com.xpdustry.foundation.common.network.Discovery
 import com.xpdustry.foundation.common.network.IPHubAddressInfoProvider
@@ -32,21 +31,35 @@ import com.xpdustry.foundation.common.network.SimpleDiscovery
 import com.xpdustry.foundation.common.translator.DeeplTranslator
 import com.xpdustry.foundation.common.translator.Translator
 
-object FoundationCommonModule : KotlinAbstractModule() {
+class FoundationCommonModule : KotlinAbstractModule() {
     override fun configure() {
-        // Mongo
-        bind(MongoProvider::class).toClass(MongoProvider::class).singleton()
-        bind(UserManager::class).toClass(MongoUserManager::class).singleton()
-        bind(PunishmentManager::class).toClass(MongoPunishmentManager::class).singleton()
+        // Database
+        bind(Database::class)
+            .implementation(MongoDatabase::class)
+            .singleton()
 
         // Translation
-        bind(Translator::class).toClass(DeeplTranslator::class).singleton()
+        bind(Translator::class)
+            .implementation(DeeplTranslator::class)
+            .singleton()
 
         // Networking
-        bind(Discovery::class).toClass(SimpleDiscovery::class).singleton()
-        bind(AddressInfoProvider::class).toClass(IPHubAddressInfoProvider::class).singleton()
+        bind(Discovery::class)
+            .implementation(SimpleDiscovery::class)
+            .singleton()
+
+        bind(AddressInfoProvider::class)
+            .implementation(IPHubAddressInfoProvider::class)
+            .singleton()
 
         // Messaging
-        bind(Messenger::class).toClass(MongoMessenger::class).singleton()
+        bind(Messenger::class)
+            .implementation(RabbitmqMessenger::class)
+            .singleton()
+
+        // Config
+        bind(FoundationConfig::class)
+            .provider(FoundationConfigProvider::class)
+            .singleton()
     }
 }

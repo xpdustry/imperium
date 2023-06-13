@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo
+package com.xpdustry.foundation.common.misc
 
-import com.mongodb.reactivestreams.client.MongoDatabase
-
-interface MongoProvider {
-    val database: MongoDatabase
+enum class ExitStatus {
+    EXIT,
+    RESTART,
 }

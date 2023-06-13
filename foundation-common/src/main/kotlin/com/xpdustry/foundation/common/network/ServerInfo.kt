@@ -17,12 +17,9 @@
  */
 package com.xpdustry.foundation.common.network
 
-import com.xpdustry.foundation.common.application.FoundationPlatform
-import com.xpdustry.foundation.common.version.FoundationVersion
+import com.xpdustry.foundation.common.application.FoundationMetadata
 
 data class ServerInfo(
-    val name: String,
+    val metadata: FoundationMetadata,
     val mindustry: MindustryServerInfo?,
-    val version: FoundationVersion,
-    val platform: FoundationPlatform,
 )
