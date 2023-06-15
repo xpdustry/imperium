@@ -76,6 +76,7 @@ class SimpleDiscovery @Inject constructor(
         }
         heartbeatTask = sendDiscovery(DiscoveryMessage.Type.DISCOVER)
             .onErrorComplete()
+            // TODO: Make delay configurable
             .delaySubscription(Duration.ofSeconds(5L))
             .doFinally { if (it == SignalType.ON_COMPLETE) heartbeat() }
             .subscribe()

@@ -17,11 +17,10 @@
  */
 package com.xpdustry.foundation.common.misc
 
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
+import com.google.common.net.InetAddresses
 import java.awt.Color
+import java.net.InetAddress
 import java.util.Locale
-import kotlin.reflect.KClass
 
 // TODO: Cleanup this file ?
 
@@ -35,8 +34,5 @@ fun String.capitalize(locale: Locale = Locale.ROOT, all: Boolean = false): Strin
 fun Color.toHexString(): String =
     if (this.alpha == 255) String.format("#%02x%02x%02x", red, green, blue) else String.format("#%02x%02x%02x%02x", alpha, red, green, blue)
 
-fun logger(name: String): Logger =
-    LoggerFactory.getLogger(name)
-
-fun logger(klass: KClass<*>): Logger =
-    LoggerFactory.getLogger(klass.java)
+fun String.toInetAddress(): InetAddress =
+    InetAddresses.forString(this)

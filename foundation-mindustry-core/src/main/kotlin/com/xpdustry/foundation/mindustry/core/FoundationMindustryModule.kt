@@ -29,6 +29,8 @@ import com.xpdustry.foundation.common.version.FoundationVersion
 import com.xpdustry.foundation.mindustry.core.annotation.ClientSide
 import com.xpdustry.foundation.mindustry.core.annotation.ServerSide
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
+import com.xpdustry.foundation.mindustry.core.security.verif.SimpleVerificationService
+import com.xpdustry.foundation.mindustry.core.security.verif.VerificationService
 import java.nio.file.Path
 
 class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAbstractModule() {
@@ -51,8 +53,11 @@ class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAb
 
     @Provides @Singleton
     fun provideMetadata(config: FoundationConfig): FoundationMetadata = FoundationMetadata(
-        config.mindustry.serverName.replace(" ", "-"),
+        config.mindustry.serverName.lowercase().replace(" ", "-"),
         FoundationPlatform.MINDUSTRY,
         FoundationVersion.parse(plugin.descriptor.version),
     )
+
+    @Provides @Singleton
+    fun provideVerificationService(): VerificationService = SimpleVerificationService()
 }

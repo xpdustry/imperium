@@ -21,13 +21,11 @@ import com.google.inject.Provider
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.foundation.common.annotation.FoundationDir
-import com.xpdustry.foundation.common.misc.logger
+import com.xpdustry.foundation.common.misc.LoggerDelegate
 import jakarta.inject.Inject
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.notExists
-
-private val logger = logger(FoundationConfigProvider::class)
 
 class FoundationConfigProvider @Inject constructor(@FoundationDir directory: Path) : Provider<FoundationConfig> {
 
@@ -52,5 +50,9 @@ class FoundationConfigProvider @Inject constructor(@FoundationDir directory: Pat
             return FoundationConfig()
         }
         return loader.loadConfigOrThrow()
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
     }
 }

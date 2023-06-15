@@ -24,15 +24,10 @@ import com.google.inject.Stage
 import com.google.inject.matcher.Matchers
 import com.google.inject.util.Modules
 import com.xpdustry.foundation.common.misc.ExitStatus
-import com.xpdustry.foundation.common.misc.logger
-import org.slf4j.Logger
+import com.xpdustry.foundation.common.misc.LoggerDelegate
 import kotlin.reflect.KClass
 
-open class SimpleFoundationApplication(
-    common: Module,
-    implementation: Module,
-    private val logger: Logger = logger(SimpleFoundationApplication::class),
-) : FoundationApplication {
+open class SimpleFoundationApplication(common: Module, implementation: Module) : FoundationApplication {
 
     private val listeners = arrayListOf<FoundationListener>()
     private val injector: Injector = Guice.createInjector(
@@ -80,5 +75,9 @@ open class SimpleFoundationApplication(
                 }
             }
         }
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
     }
 }

@@ -27,6 +27,7 @@ import com.mongodb.connection.SslSettings
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.database.model.Punishment
@@ -43,7 +44,7 @@ import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
 import java.time.Duration
 
-class MongoDatabase @Inject constructor(private val config: FoundationConfig) : Database, FoundationListener {
+class MongoDatabase @Inject constructor(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Database, FoundationListener {
 
     private lateinit var client: MongoClient
     override lateinit var users: UserManager
@@ -52,7 +53,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig) : 
     override fun onFoundationInit() {
         client = MongoClients.create(
             MongoClientSettings.builder()
-                .applicationName("Foundation")
+                .applicationName("foundation-${metadata.name}")
                 .applyToClusterSettings {
                     it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
                 }

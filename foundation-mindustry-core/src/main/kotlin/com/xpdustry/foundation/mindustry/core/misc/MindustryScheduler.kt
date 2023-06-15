@@ -15,14 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.mindustry.core.misc
 
-import com.xpdustry.foundation.common.database.EntityManager
-import org.bson.types.ObjectId
-import reactor.core.publisher.Flux
-import java.net.InetAddress
+import arc.Core
+import reactor.core.scheduler.Scheduler
+import reactor.core.scheduler.Schedulers
 
-interface PunishmentManager : EntityManager<ObjectId, Punishment> {
-    fun findAllByTargetIp(target: InetAddress): Flux<Punishment>
-    fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment>
-}
+object MindustryScheduler : Scheduler by Schedulers.fromExecutor(Core.app::post)

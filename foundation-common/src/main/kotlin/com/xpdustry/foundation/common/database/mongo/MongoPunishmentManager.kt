@@ -19,6 +19,7 @@ package com.xpdustry.foundation.common.database.mongo
 
 import com.mongodb.client.model.Filters
 import com.mongodb.reactivestreams.client.MongoCollection
+import com.xpdustry.foundation.common.database.model.MindustryUUID
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
 import com.xpdustry.foundation.common.misc.toValueFlux
@@ -30,6 +31,9 @@ import java.net.InetAddress
 class MongoPunishmentManager @Inject constructor(collection: MongoCollection<Punishment>) :
     MongoEntityManager<Punishment, ObjectId>(collection), PunishmentManager {
 
-    override fun findAllByTarget(target: InetAddress): Flux<Punishment> =
-        collection.find(Filters.`in`("targets", target.hostAddress)).toValueFlux()
+    override fun findAllByTargetIp(target: InetAddress): Flux<Punishment> =
+        collection.find(Filters.eq("target_ip", target.hostAddress)).toValueFlux()
+
+    override fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment> =
+        collection.find(Filters.eq("target_uuid", target)).toValueFlux()
 }

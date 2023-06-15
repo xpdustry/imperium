@@ -25,34 +25,19 @@ import java.time.Instant
 
 data class Punishment(
     override val id: ObjectId,
-    var targets: List<InetAddress> = emptyList(),
-    var kind: Kind = Kind.KICK,
+    var targetIp: InetAddress,
+    var targetUuid: MindustryUUID,
     var reason: String = "Unknown",
-    var duration: Duration = Duration.ZERO,
+    var duration: Duration? = Duration.ofDays(1L),
     var pardonned: Boolean = false,
 ) : Entity<ObjectId> {
-
-    val expired: Boolean
-        get() = pardonned || timestamp.plus(duration).isBefore(Instant.now())
-
-    val active: Boolean
-        get() = !expired
 
     val timestamp: Instant
         get() = id.date.toInstant()
 
-    val expiration: Instant
-        get() = timestamp.plus(duration)
+    val expired: Boolean
+        get() = duration != null && (pardonned || timestamp.plus(duration).isBefore(Instant.now()))
 
     val remaining: Duration
-        get() =
-            if (expiration.isBefore(Instant.now())) {
-                Duration.ZERO
-            } else Duration.between(Instant.now(), expiration)
-
-    enum class Kind {
-        MUTE,
-        KICK,
-        BAN,
-    }
+        get() = if (duration == null) Duration.ZERO else duration!!.minus(Duration.between(Instant.now(), timestamp))
 }

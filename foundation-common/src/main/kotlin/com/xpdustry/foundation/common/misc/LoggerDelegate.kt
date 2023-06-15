@@ -15,14 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.common.misc
 
-import com.xpdustry.foundation.common.database.EntityManager
-import org.bson.types.ObjectId
-import reactor.core.publisher.Flux
-import java.net.InetAddress
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import kotlin.properties.ReadOnlyProperty
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.companionObject
 
-interface PunishmentManager : EntityManager<ObjectId, Punishment> {
-    fun findAllByTargetIp(target: InetAddress): Flux<Punishment>
-    fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment>
+class LoggerDelegate<in R : Any> : ReadOnlyProperty<R, Logger> {
+    override fun getValue(thisRef: R, property: KProperty<*>): Logger =
+        LoggerFactory.getLogger(getClassForLogging(thisRef.javaClass))
+}
+
+private fun <T : Any> getClassForLogging(javaClass: Class<T>): Class<*> {
+    return javaClass.enclosingClass?.takeIf { it.kotlin.companionObject?.java == javaClass } ?: javaClass
 }

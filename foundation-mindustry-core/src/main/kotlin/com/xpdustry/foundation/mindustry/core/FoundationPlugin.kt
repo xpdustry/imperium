@@ -28,6 +28,8 @@ import com.xpdustry.foundation.common.application.SimpleFoundationApplication
 import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.core.listener.ConventionListener
+import com.xpdustry.foundation.mindustry.core.security.verif.DdosVerification
+import com.xpdustry.foundation.mindustry.core.security.verif.PunishmentVerification
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -64,6 +66,8 @@ class FoundationPlugin : AbstractMindustryPlugin() {
         )
 
         application.register(ConventionListener::class)
+        application.register(PunishmentVerification::class)
+        application.register(DdosVerification::class)
 
         application.init()
     }
@@ -77,8 +81,7 @@ private class PluginFoundationApplication(
     common: Module,
     implementation: Module,
     private val plugin: MindustryPlugin,
-) : SimpleFoundationApplication(common, implementation, plugin.logger) {
-
+) : SimpleFoundationApplication(common, implementation) {
     override fun exit(status: ExitStatus) {
         super.exit(status)
         when (status) {

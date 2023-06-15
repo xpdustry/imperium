@@ -35,6 +35,7 @@ dependencies {
         exclude("org.jetbrains.kotlin", "kotlin-reflect")
         exclude("org.slf4j")
     }
+    implementation(libs.jsoup)
     mindustryDependencies()
     compileOnly(libs.distributor.api)
 }
