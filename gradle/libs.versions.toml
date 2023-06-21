@@ -35,6 +35,7 @@ gradle-versions = "0.47.0"
 [libraries]
 # libraries
 distributor-api = { module = "fr.xpdustry:distributor-api", version.ref = "distributor" }
+distributor-kotlin = { module = "fr.xpdustry:distributor-kotlin", version.ref = "distributor" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 mongodb-driver-reactive = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }

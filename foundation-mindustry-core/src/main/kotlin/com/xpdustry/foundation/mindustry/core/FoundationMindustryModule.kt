@@ -19,6 +19,7 @@ package com.xpdustry.foundation.mindustry.core
 
 import com.google.inject.Provides
 import com.google.inject.Singleton
+import com.google.inject.name.Named
 import com.xpdustry.foundation.common.annotation.FoundationDir
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.application.FoundationPlatform
@@ -26,11 +27,13 @@ import com.xpdustry.foundation.common.application.KotlinAbstractModule
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.network.ServerInfo
 import com.xpdustry.foundation.common.version.FoundationVersion
-import com.xpdustry.foundation.mindustry.core.annotation.ClientSide
-import com.xpdustry.foundation.mindustry.core.annotation.ServerSide
+import com.xpdustry.foundation.mindustry.core.chat.ChatMessagePipeline
+import com.xpdustry.foundation.mindustry.core.chat.SimpleChatMessagePipeline
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
-import com.xpdustry.foundation.mindustry.core.security.verif.SimpleVerificationService
-import com.xpdustry.foundation.mindustry.core.security.verif.VerificationService
+import com.xpdustry.foundation.mindustry.core.placeholder.PlaceholderPipeline
+import com.xpdustry.foundation.mindustry.core.placeholder.SimplePlaceholderManager
+import com.xpdustry.foundation.mindustry.core.verification.SimpleVerificationPipeline
+import com.xpdustry.foundation.mindustry.core.verification.VerificationPipeline
 import java.nio.file.Path
 
 class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAbstractModule() {
@@ -38,14 +41,6 @@ class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAb
         bind(ServerInfo::class)
             .provider(MindustryServerInfoProvider::class)
             .singleton()
-
-        bind(FoundationPluginCommandManager::class)
-            .annotated(ClientSide::class)
-            .instance(plugin.clientCommandManager)
-
-        bind(FoundationPluginCommandManager::class)
-            .annotated(ServerSide::class)
-            .instance(plugin.serverCommandManager)
     }
 
     @Provides @Singleton @FoundationDir
@@ -58,6 +53,20 @@ class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAb
         FoundationVersion.parse(plugin.descriptor.version),
     )
 
+    @Provides
+    @Named("client")
+    fun provideClientCommandManager(): FoundationPluginCommandManager = plugin.clientCommandManager
+
+    @Provides
+    @Named("server")
+    fun provideServerCommandManager(): FoundationPluginCommandManager = plugin.serverCommandManager
+
     @Provides @Singleton
-    fun provideVerificationService(): VerificationService = SimpleVerificationService()
+    fun provideVerificationPipeline(): VerificationPipeline = SimpleVerificationPipeline()
+
+    @Provides @Singleton
+    fun provideChatPipeline(): ChatMessagePipeline = SimpleChatMessagePipeline()
+
+    @Provides @Singleton
+    fun providePlaceholderService(): PlaceholderPipeline = SimplePlaceholderManager()
 }

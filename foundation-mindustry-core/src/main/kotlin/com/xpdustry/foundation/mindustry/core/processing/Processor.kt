@@ -15,10 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.mindustry.core.security.verif
+package com.xpdustry.foundation.mindustry.core.processing
 
-import fr.xpdustry.distributor.api.util.Priority
+import reactor.core.publisher.Mono
 
-interface VerificationService {
-    fun register(name: String, priority: Priority = Priority.NORMAL, verification: Verification)
+fun interface Processor<I : Any, O : Any> {
+    fun process(input: I): Mono<O>
 }

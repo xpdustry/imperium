@@ -38,6 +38,7 @@ dependencies {
     implementation(libs.jsoup)
     mindustryDependencies()
     compileOnly(libs.distributor.api)
+    compileOnly(libs.distributor.kotlin)
 }
 
 tasks.shadowJar {
@@ -82,10 +83,17 @@ val downloadKotlinRuntime = tasks.register<GithubArtifactDownload>("downloadKotl
     version.set(libs.versions.kotlin.map { "v2.0.0-k.$it" })
 }
 
-val downloadDistributor = tasks.register<GithubArtifactDownload>("downloadDistributor") {
+val downloadDistributorCore = tasks.register<GithubArtifactDownload>("downloadDistributor") {
     user.set("Xpdustry")
     repo.set("Distributor")
     name.set("DistributorCore.jar")
+    version.set(libs.versions.distributor.map { "v$it" })
+}
+
+val downloadDistributorKotlin = tasks.register<GithubArtifactDownload>("downloadDistributorKotlin") {
+    user.set("Xpdustry")
+    repo.set("Distributor")
+    name.set("DistributorKotlin.jar")
     version.set(libs.versions.distributor.map { "v$it" })
 }
 
@@ -94,7 +102,7 @@ tasks.runMindustryClient {
 }
 
 tasks.runMindustryServer {
-    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributor)
+    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributorCore, downloadDistributorKotlin)
 }
 
 // Second server for testing discovery
@@ -104,5 +112,5 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     mainClass.set("mindustry.server.ServerLauncher")
     modsPath.set("./config/mods")
     standardInput = System.`in`
-    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributor)
+    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributorCore, downloadDistributorKotlin)
 }

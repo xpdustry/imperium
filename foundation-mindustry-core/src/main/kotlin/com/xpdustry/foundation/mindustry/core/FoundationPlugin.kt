@@ -26,10 +26,10 @@ import com.xpdustry.foundation.common.FoundationCommonModule
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.SimpleFoundationApplication
 import com.xpdustry.foundation.common.misc.ExitStatus
+import com.xpdustry.foundation.mindustry.core.chat.ChatMessageService
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.core.listener.ConventionListener
-import com.xpdustry.foundation.mindustry.core.security.verif.DdosVerification
-import com.xpdustry.foundation.mindustry.core.security.verif.PunishmentVerification
+import com.xpdustry.foundation.mindustry.core.verification.VerificationService
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -66,8 +66,8 @@ class FoundationPlugin : AbstractMindustryPlugin() {
         )
 
         application.register(ConventionListener::class)
-        application.register(PunishmentVerification::class)
-        application.register(DdosVerification::class)
+        application.register(VerificationService::class)
+        application.register(ChatMessageService::class)
 
         application.init()
     }

@@ -8,6 +8,7 @@
   "repo": "Xpdustry/Foundation",
   "dependencies": [
     "distributor-core",
+    "distributor-kotlin",
     "kotlin-runtime"
   ]
 }
