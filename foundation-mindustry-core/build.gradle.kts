@@ -101,6 +101,14 @@ tasks.runMindustryClient {
     mods.setFrom()
 }
 
+tasks.register<MindustryExec>("runMindustryClient2") {
+    group = fr.xpdustry.toxopid.Toxopid.TASK_GROUP_NAME
+    classpath(tasks.downloadMindustryClient)
+    mainClass.convention("mindustry.desktop.DesktopLauncher")
+    modsPath.convention("./mods")
+    standardInput = System.`in`
+}
+
 tasks.runMindustryServer {
     mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadDistributorCore, downloadDistributorKotlin)
 }

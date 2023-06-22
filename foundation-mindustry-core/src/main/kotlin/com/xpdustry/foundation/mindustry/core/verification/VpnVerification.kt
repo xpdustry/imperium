@@ -30,7 +30,7 @@ class VpnVerification(private val provider: AddressInfoProvider) : Processor<Pla
     override fun process(input: Player): Mono<VerificationResult> =
         provider.getInfo(InetAddresses.forString(input.con().address))
             .map {
-                if (it.safe) VerificationResult.Failure("VPN detected") else VerificationResult.Success
+                if (it.safe) VerificationResult.Success else VerificationResult.Failure("VPN detected")
             }
             .onErrorResume(RateLimitException::class.java) {
                 VerificationResult.Success.toValueMono()

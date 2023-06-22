@@ -35,7 +35,7 @@ class TranslationProcessor(private val translator: Translator) : Processor<ChatM
 
         return translator.translate(sourceMessage, sourceLocale, targetLocale).timeout(Duration.ofSeconds(3L))
             .map { result ->
-                if (sourceMessage == result) result else "${input.message} [lightgray]$result"
+                if (sourceMessage == result) result else "${input.message} [lightgray]($result)"
             }
             .onErrorResume(RateLimitException::class.java) {
                 Mono.just(input.message)

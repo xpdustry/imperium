@@ -74,6 +74,7 @@ class MindustryServerInfoProvider @Inject constructor(
         getVersionType(),
     )
 
+    // Yes, this is a mess
     private fun getVersionType(): MindustryVersion.Type {
         if (Version.build == -1) {
             return MindustryVersion.Type.CUSTOM

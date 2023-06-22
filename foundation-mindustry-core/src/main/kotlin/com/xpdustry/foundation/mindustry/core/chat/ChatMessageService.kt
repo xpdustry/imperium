@@ -33,14 +33,12 @@ import fr.xpdustry.distributor.api.command.argument.PlayerArgument
 import fr.xpdustry.distributor.api.util.Priority
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
-import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.SendChatMessageCallPacket
 import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
-import reactor.core.publisher.Mono
 
 class ChatMessageService @Inject constructor(
     private val pipeline: ChatMessagePipeline,
@@ -50,10 +48,10 @@ class ChatMessageService @Inject constructor(
 ) : FoundationListener {
     override fun onFoundationInit() {
         pipeline.register("translator", Priority.LOW, TranslationProcessor(translator))
-        pipeline.register("fuck", Priority.HIGH) { Mono.just(it.message.replace(Regex("fuck"), "****")) }
 
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
+            if (con.player == null || packet.message == null) return@handleServer
             interceptChatMessage(con.player, packet.message, pipeline)
         }
 
@@ -104,60 +102,62 @@ class ChatMessageService @Inject constructor(
     }
 }
 
-private fun interceptChatMessage(player: Player, message: String, pipeline: ChatMessagePipeline) {
+private fun interceptChatMessage(sender: Player, message: String, pipeline: ChatMessagePipeline) {
     // do not receive chat messages from clients that are too young or not registered
-    if (Time.timeSinceMillis(player.con.connectTime) < 500 || !player.con.hasConnected || !player.isAdded) return
+    if (Time.timeSinceMillis(sender.con.connectTime) < 500 || !sender.con.hasConnected || !sender.isAdded) return
 
     // detect and kick for foul play
-    if (!player.con.chatRate.allow(2000, Administration.Config.chatSpamLimit.num())) {
-        player.con.kick(KickReason.kick)
-        Vars.netServer.admins.blacklistDos(player.con.address)
+    if (!sender.con.chatRate.allow(2000, Administration.Config.chatSpamLimit.num())) {
+        sender.con.kick(KickReason.kick)
+        Vars.netServer.admins.blacklistDos(sender.con.address)
         return
     }
 
     if (message.length > Vars.maxTextLength) {
-        throw ValidateException(player, "Player has sent a message above the text limit.")
+        throw ValidateException(sender, "Player has sent a message above the text limit.")
     }
 
-    var normalized: String? = message.replace("\n", "")
+    val escaped = message.replace("\n", "")
 
-    Events.fire(PlayerChatEvent(player, normalized))
+    Events.fire(PlayerChatEvent(sender, escaped))
 
     // log commands before they are handled
-    if (normalized!!.startsWith(Vars.netServer.clientCommands.getPrefix())) {
+    if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
         // log with brackets
-        Log.info("<&fi@: @&fr>", "&lk" + player.plainName(), "&lw$normalized")
+        Log.info("<&fi@: @&fr>", "&lk" + sender.plainName(), "&lw$escaped")
     }
 
     // check if it's a command
-    val response = Vars.netServer.clientCommands.handleMessage(normalized, player)
+    val response = Vars.netServer.clientCommands.handleMessage(escaped, sender)
 
-    if (response.type == ResponseType.noCommand) { // no command to handle
-        normalized = Vars.netServer.admins.filterMessage(player, normalized)
-        // suppress chat message if it's filtered out
-        if (normalized == null) {
-            return
-        }
-
-        // BEGIN FOUNDATION
-        Groups.player.each { target ->
-            pipeline.build(ChatMessageContext(player, target, normalized)).publishOn(MindustryScheduler).subscribe { result ->
-                if (target == player) {
-                    // server console logging
-                    Log.info("&fi@: @", "&lc" + player.plainName(), "&lw$result")
-                }
-                // invoke event for all clients but also locally
-                // this is required so other clients get the correct name even if they don't know who's sending it yet
-                Call.sendMessage(Vars.netServer.chatFormatter.format(player, result), result, player)
-            }
-        }
-    } else {
+    if (response.type != ResponseType.noCommand) {
         // a command was sent, now get the output
         if (response.type != ResponseType.valid) {
-            val text = Vars.netServer.invalidHandler.handle(player, response)
+            val text = Vars.netServer.invalidHandler.handle(sender, response)
             if (text != null) {
-                player.sendMessage(text)
+                sender.sendMessage(text)
             }
         }
+        return
+    }
+
+    val filtered = Vars.netServer.admins.filterMessage(sender, escaped)
+        ?: return
+
+    Groups.player.each { target ->
+        pipeline
+            .build(ChatMessageContext(sender, target, filtered))
+            .publishOn(MindustryScheduler).subscribe { result ->
+                if (target == sender) {
+                    // server console logging
+                    if (result != escaped) {
+                        Log.info("&fi@: @ (original: @)", "&lc" + sender.plainName(), "&lw$result", "&lw$escaped")
+                    } else {
+                        Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw$result")
+                    }
+                }
+
+                target.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
+            }
     }
 }

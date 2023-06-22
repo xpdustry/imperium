@@ -18,12 +18,10 @@
 package com.xpdustry.foundation.mindustry.core.chat
 
 import com.xpdustry.foundation.common.misc.LoggerDelegate
-import com.xpdustry.foundation.common.misc.toValueFlux
 import com.xpdustry.foundation.mindustry.core.processing.AbstractProcessorPipeline
 import com.xpdustry.foundation.mindustry.core.processing.ProcessorPipeline
 import mindustry.gen.Player
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 
 data class ChatMessageContext(
     val player: Player,
@@ -35,26 +33,23 @@ interface ChatMessagePipeline : ProcessorPipeline<ChatMessageContext, String>
 
 class SimpleChatMessagePipeline : ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>() {
 
-    // TODO: The reduce function is blocking, we need to figure out how to make it async
     override fun build(context: ChatMessageContext): Mono<String> =
-        processors.toValueFlux()
-            .publishOn(Schedulers.boundedElastic())
-            .reduce(context) { ctx, processor ->
-                if (ctx.message.isEmpty()) {
-                    return@reduce ctx
-                }
-                return@reduce processor.process(ctx)
-                    .onErrorResume { error ->
-                        logger.error("Error while processing chat message for player ${ctx.player.name()}", error)
-                        Mono.empty()
-                    }
-                    .switchIfEmpty(Mono.just(""))
-                    .map { ctx.copy(message = it) }
-                    .block()!!
+        build0(context, 0)
+
+    private fun build0(context: ChatMessageContext, index: Int): Mono<String> {
+        if (index >= processors.size) {
+            return Mono.just(context.message)
+        }
+        return processors[index]
+            .process(context)
+            .onErrorResume { error ->
+                logger.error("Error while processing chat message for player ${context.player.name()}", error)
+                Mono.empty()
             }
             .flatMap {
-                if (it.message.isEmpty()) Mono.empty() else Mono.just(it.message)
+                if (it.isEmpty()) Mono.empty() else build0(context.copy(message = it), index.inc())
             }
+    }
 
     companion object {
         private val logger by LoggerDelegate()
