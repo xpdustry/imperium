@@ -28,6 +28,7 @@ import com.xpdustry.foundation.common.application.SimpleFoundationApplication
 import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.mindustry.core.chat.ChatMessageService
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
+import com.xpdustry.foundation.mindustry.core.history.HistoryCommand
 import com.xpdustry.foundation.mindustry.core.listener.ConventionListener
 import com.xpdustry.foundation.mindustry.core.translator.TranslatorService
 import com.xpdustry.foundation.mindustry.core.verification.VerificationService
@@ -66,10 +67,14 @@ class FoundationPlugin : AbstractMindustryPlugin() {
             this,
         )
 
+        // Services
         application.register(ConventionListener::class)
         application.register(VerificationService::class)
         application.register(ChatMessageService::class)
         application.register(TranslatorService::class)
+
+        // Commands
+        application.register(HistoryCommand::class)
 
         application.init()
     }

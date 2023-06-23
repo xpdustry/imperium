@@ -30,6 +30,8 @@ import com.xpdustry.foundation.common.version.FoundationVersion
 import com.xpdustry.foundation.mindustry.core.chat.ChatMessagePipeline
 import com.xpdustry.foundation.mindustry.core.chat.SimpleChatMessagePipeline
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
+import com.xpdustry.foundation.mindustry.core.history.BlockHistory
+import com.xpdustry.foundation.mindustry.core.history.SimpleBlockHistory
 import com.xpdustry.foundation.mindustry.core.placeholder.PlaceholderPipeline
 import com.xpdustry.foundation.mindustry.core.placeholder.SimplePlaceholderManager
 import com.xpdustry.foundation.mindustry.core.verification.SimpleVerificationPipeline
@@ -40,6 +42,10 @@ class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAb
     override fun configure() {
         bind(ServerInfo::class)
             .provider(MindustryServerInfoProvider::class)
+            .singleton()
+
+        bind(BlockHistory::class)
+            .implementation(SimpleBlockHistory::class)
             .singleton()
     }
 
