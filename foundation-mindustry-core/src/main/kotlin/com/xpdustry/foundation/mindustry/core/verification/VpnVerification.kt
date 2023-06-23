@@ -19,22 +19,20 @@ package com.xpdustry.foundation.mindustry.core.verification
 
 import com.google.common.net.InetAddresses
 import com.xpdustry.foundation.common.misc.LoggerDelegate
-import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.misc.toValueMono
-import com.xpdustry.foundation.common.network.AddressInfoProvider
+import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.mindustry.core.processing.Processor
 import mindustry.gen.Player
 import reactor.core.publisher.Mono
 
-class VpnVerification(private val provider: AddressInfoProvider) : Processor<Player, VerificationResult> {
+class VpnVerification(private val provider: VpnAddressDetector) : Processor<Player, VerificationResult> {
     override fun process(input: Player): Mono<VerificationResult> =
-        provider.getInfo(InetAddresses.forString(input.con().address))
-            .map {
-                if (it.safe) VerificationResult.Success else VerificationResult.Failure("VPN detected")
+        // TODO: Improve error message
+        provider.isVpnAddress(InetAddresses.forString(input.con().address))
+            .map { vpn ->
+                if (vpn) VerificationResult.Success else VerificationResult.Failure("VPN detected")
             }
-            .onErrorResume(RateLimitException::class.java) {
-                VerificationResult.Success.toValueMono()
-            }
+            .switchIfEmpty(VerificationResult.Success.toValueMono())
             .onErrorResume {
                 logger.error("Failed to verify the vpn usage for player {} ({})", input.name(), input.uuid(), it)
                 VerificationResult.Success.toValueMono()

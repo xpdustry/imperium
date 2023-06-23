@@ -19,9 +19,7 @@ package com.xpdustry.foundation.mindustry.core.chat
 
 import arc.util.Strings
 import com.xpdustry.foundation.common.misc.LoggerDelegate
-import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.translator.Translator
-import com.xpdustry.foundation.common.translator.UnsupportedLocaleException
 import com.xpdustry.foundation.mindustry.core.processing.Processor
 import fr.xpdustry.distributor.api.util.Players
 import reactor.core.publisher.Mono
@@ -29,23 +27,27 @@ import java.time.Duration
 
 class TranslationProcessor(private val translator: Translator) : Processor<ChatMessageContext, String> {
     override fun process(input: ChatMessageContext): Mono<String> {
-        val sourceLocale = Players.getLocale(input.player)
-        val targetLocale = Players.getLocale(input.target)
-        val sourceMessage = Strings.stripColors(input.message)
+        val sourceLocale = Players.getLocale(input.sender)
+        if (translator.isSupportedLanguage(sourceLocale).not()) {
+            logger.debug("Warning: The locale {} is not supported by the chat translator", sourceLocale)
+            return Mono.just(input.message)
+        }
 
-        return translator.translate(sourceMessage, sourceLocale, targetLocale).timeout(Duration.ofSeconds(3L))
-            .map { result ->
-                if (sourceMessage == result) result else "${input.message} [lightgray]($result)"
+        val targetLocale = Players.getLocale(input.target)
+        if (translator.isSupportedLanguage(targetLocale).not()) {
+            logger.debug("Warning: The locale {} is not supported by the chat translator", targetLocale)
+            return Mono.just(input.message)
+        }
+
+        val rawMessage = Strings.stripColors(input.message)
+        return translator.translate(rawMessage, sourceLocale, targetLocale)
+            .timeout(Duration.ofSeconds(3L))
+            .map { translated ->
+                if (rawMessage == translated) rawMessage else "${input.message} [lightgray]($translated)"
             }
-            .onErrorResume(RateLimitException::class.java) {
-                Mono.just(input.message)
-            }
-            .onErrorResume(UnsupportedLocaleException::class.java) {
-                logger.debug("Warning: unsupported locale {} or {}", sourceLocale, targetLocale)
-                Mono.just(input.message)
-            }
+            .switchIfEmpty(Mono.just(input.message))
             .onErrorResume { error ->
-                logger.trace("Failed to translate the message '{}' from {} to {}", sourceMessage, sourceLocale, targetLocale, error)
+                logger.error("Failed to translate the message '{}' from {} to {}", rawMessage, sourceLocale, targetLocale, error)
                 Mono.just(input.message)
             }
     }

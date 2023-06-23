@@ -21,8 +21,6 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.inject.Inject
 import com.xpdustry.foundation.common.config.FoundationConfig
-import com.xpdustry.foundation.common.misc.Country
-import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.misc.toErrorMono
 import com.xpdustry.foundation.common.misc.toValueMono
 import reactor.core.publisher.Mono
@@ -33,19 +31,19 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-class IPHubAddressInfoProvider @Inject constructor(config: FoundationConfig) : AddressInfoProvider {
+class IpHubVpnAddressDetector @Inject constructor(config: FoundationConfig) : VpnAddressDetector {
 
     private val token: String? = config.network.ipHub?.value
     private val gson = Gson()
     private val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3L)).build()
 
-    override fun getInfo(address: InetAddress): Mono<AddressInfo> {
+    override fun isVpnAddress(address: InetAddress): Mono<Boolean> {
         if (token == null) {
-            return RateLimitException("IpHub token is blank.").toErrorMono()
+            return Mono.empty()
         }
 
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
-            return AddressInfo(true, null).toValueMono()
+            return false.toValueMono()
         }
 
         return Mono.fromSupplier {
@@ -65,7 +63,7 @@ class IPHubAddressInfoProvider @Inject constructor(config: FoundationConfig) : A
             .subscribeOn(Schedulers.boundedElastic())
             .flatMap {
                 if (it.statusCode() == 429) {
-                    return@flatMap RateLimitException().toErrorMono()
+                    return@flatMap Mono.empty()
                 }
 
                 if (it.statusCode() != 200) {
@@ -77,7 +75,7 @@ class IPHubAddressInfoProvider @Inject constructor(config: FoundationConfig) : A
                 // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
                 // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
                 val json = gson.fromJson(it.body(), JsonObject::class.java)
-                return@flatMap AddressInfo(json["block"].asInt != 1, Country[json["countryCode"].asString]).toValueMono()
+                return@flatMap (json["block"].asInt != 1).toValueMono()
             }
     }
 }

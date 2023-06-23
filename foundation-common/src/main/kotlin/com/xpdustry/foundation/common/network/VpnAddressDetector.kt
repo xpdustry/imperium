@@ -20,6 +20,6 @@ package com.xpdustry.foundation.common.network
 import reactor.core.publisher.Mono
 import java.net.InetAddress
 
-interface AddressInfoProvider {
-    fun getInfo(address: InetAddress): Mono<AddressInfo>
+interface VpnAddressDetector {
+    fun isVpnAddress(address: InetAddress): Mono<Boolean>
 }

@@ -24,10 +24,10 @@ import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.database.mongo.MongoDatabase
 import com.xpdustry.foundation.common.message.Messenger
 import com.xpdustry.foundation.common.message.RabbitmqMessenger
-import com.xpdustry.foundation.common.network.AddressInfoProvider
 import com.xpdustry.foundation.common.network.Discovery
-import com.xpdustry.foundation.common.network.IPHubAddressInfoProvider
+import com.xpdustry.foundation.common.network.IpHubVpnAddressDetector
 import com.xpdustry.foundation.common.network.SimpleDiscovery
+import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.common.translator.DeeplTranslator
 import com.xpdustry.foundation.common.translator.Translator
 
@@ -48,8 +48,8 @@ class FoundationCommonModule : KotlinAbstractModule() {
             .implementation(SimpleDiscovery::class)
             .singleton()
 
-        bind(AddressInfoProvider::class)
-            .implementation(IPHubAddressInfoProvider::class)
+        bind(VpnAddressDetector::class)
+            .implementation(IpHubVpnAddressDetector::class)
             .singleton()
 
         // Messaging

@@ -24,7 +24,7 @@ import mindustry.gen.Player
 import reactor.core.publisher.Mono
 
 data class ChatMessageContext(
-    val player: Player,
+    val sender: Player,
     val target: Player,
     val message: String,
 )
@@ -43,7 +43,7 @@ class SimpleChatMessagePipeline : ChatMessagePipeline, AbstractProcessorPipeline
         return processors[index]
             .process(context)
             .onErrorResume { error ->
-                logger.error("Error while processing chat message for player ${context.player.name()}", error)
+                logger.error("Error while processing chat message for player ${context.sender.name()}", error)
                 Mono.empty()
             }
             .flatMap {

@@ -26,7 +26,6 @@ import com.google.common.cache.CacheBuilder
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
-import com.xpdustry.foundation.common.misc.RateLimitException
 import com.xpdustry.foundation.common.misc.switchIfEmpty
 import com.xpdustry.foundation.common.misc.toErrorMono
 import com.xpdustry.foundation.common.misc.toValueMono
@@ -37,7 +36,6 @@ import java.util.Locale
 
 // So clean!
 class DeeplTranslator @Inject constructor(config: FoundationConfig, metadata: FoundationMetadata) : Translator, FoundationListener {
-
     private val translator: com.deepl.api.Translator?
     private val cache: Cache<TranslatorKey, String>
     private lateinit var sourceLanguages: List<Locale>
@@ -87,7 +85,6 @@ class DeeplTranslator @Inject constructor(config: FoundationConfig, metadata: Fo
         return cache.getIfPresent(key).toValueMono().switchIfEmpty {
             fetchRateLimited()
                 .filter { limited -> limited.not() }
-                .switchIfEmpty { RateLimitException().toErrorMono() }
                 .map {
                     translator!!.translateText(
                         key.text,

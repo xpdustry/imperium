@@ -20,7 +20,7 @@ package com.xpdustry.foundation.mindustry.core.verification
 import com.google.inject.Inject
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.Database
-import com.xpdustry.foundation.common.network.AddressInfoProvider
+import com.xpdustry.foundation.common.network.VpnAddressDetector
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import mindustry.game.EventType
@@ -29,7 +29,7 @@ import mindustry.game.Team
 class VerificationService @Inject constructor(
     private val pipeline: VerificationPipeline,
     private val database: Database,
-    private val provider: AddressInfoProvider,
+    private val provider: VpnAddressDetector,
 ) : FoundationListener {
     override fun onFoundationInit() {
         pipeline.register("ddos", Priority.HIGH, DdosVerification())
