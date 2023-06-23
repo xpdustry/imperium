@@ -17,20 +17,17 @@
  */
 package com.xpdustry.foundation.mindustry.core.verification
 
-import com.google.common.net.InetAddresses
 import com.xpdustry.foundation.common.database.Database
-import com.xpdustry.foundation.common.misc.switchIfEmpty
 import com.xpdustry.foundation.common.misc.toValueMono
 import com.xpdustry.foundation.mindustry.core.processing.Processor
-import mindustry.gen.Player
 import reactor.core.publisher.Mono
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
-class PunishmentVerification(private val database: Database) : Processor<Player, VerificationResult> {
-    override fun process(input: Player): Mono<VerificationResult> =
+class PunishmentVerification(private val database: Database) : Processor<VerificationContext, VerificationResult> {
+    override fun process(context: VerificationContext): Mono<VerificationResult> =
         database.punishments
-            .findAllByTargetIp(InetAddresses.forString(input.ip()))
+            .findAllByTargetIp(context.address)
             .filter { it.expired.not() }
             .sort { a, b ->
                 val aDuration = a.duration ?: ChronoUnit.FOREVER.duration
@@ -49,7 +46,7 @@ class PunishmentVerification(private val database: Database) : Processor<Player,
                     """.trimIndent(),
                 )
             }
-            .switchIfEmpty { VerificationResult.Success.toValueMono() }
+            .switchIfEmpty(VerificationResult.Success.toValueMono())
 }
 
 private fun formatDuration(duration: Duration?): String = when {

@@ -1,6 +1,5 @@
 import com.github.jengelman.gradle.plugins.shadow.internal.RelocationUtil
 import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
-import fr.xpdustry.toxopid.dsl.anukenJitpack
 import fr.xpdustry.toxopid.dsl.mindustryDependencies
 import fr.xpdustry.toxopid.task.GithubArtifactDownload
 import fr.xpdustry.toxopid.task.MindustryExec
@@ -24,7 +23,8 @@ toxopid {
 }
 
 repositories {
-    anukenJitpack()
+    // anukenJitpack() Jitpack is terribly unreliable, so we use our own mirror
+    xpdustryAnuken()
     xpdustryReleases()
 }
 

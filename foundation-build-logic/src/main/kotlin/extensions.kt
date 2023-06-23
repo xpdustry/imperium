@@ -14,6 +14,14 @@ fun RepositoryHandler.xpdustryReleases() {
     }
 }
 
+fun RepositoryHandler.xpdustryAnuken() {
+    maven {
+        url = URI.create("https://maven.xpdustry.fr/anuken")
+        name = "xpdustry-anuken"
+        mavenContent { releasesOnly() }
+    }
+}
+
 val Project.libs: LibrariesForLibs
     get() = the()
 

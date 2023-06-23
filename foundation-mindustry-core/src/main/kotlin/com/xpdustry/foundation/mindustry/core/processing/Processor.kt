@@ -20,5 +20,5 @@ package com.xpdustry.foundation.mindustry.core.processing
 import reactor.core.publisher.Mono
 
 fun interface Processor<I : Any, O : Any> {
-    fun process(input: I): Mono<O>
+    fun process(context: I): Mono<O>
 }

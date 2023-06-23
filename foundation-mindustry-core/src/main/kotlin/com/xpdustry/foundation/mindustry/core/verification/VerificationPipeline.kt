@@ -22,22 +22,30 @@ import com.xpdustry.foundation.common.misc.toValueFlux
 import com.xpdustry.foundation.common.misc.toValueMono
 import com.xpdustry.foundation.mindustry.core.processing.AbstractProcessorPipeline
 import com.xpdustry.foundation.mindustry.core.processing.ProcessorPipeline
-import mindustry.gen.Player
 import reactor.core.publisher.Mono
+import java.net.InetAddress
+import java.time.Duration
+
+data class VerificationContext(
+    val name: String,
+    val uuid: String,
+    val usid: String,
+    val address: InetAddress,
+)
 
 sealed interface VerificationResult {
     object Success : VerificationResult
-    data class Failure(val reason: String) : VerificationResult
+    data class Failure(val reason: String, val time: Duration = Duration.ZERO) : VerificationResult
 }
 
-interface VerificationPipeline : ProcessorPipeline<Player, VerificationResult>
+interface VerificationPipeline : ProcessorPipeline<VerificationContext, VerificationResult>
 
-class SimpleVerificationPipeline : VerificationPipeline, AbstractProcessorPipeline<Player, VerificationResult>() {
-    override fun build(context: Player): Mono<VerificationResult> =
+class SimpleVerificationPipeline : VerificationPipeline, AbstractProcessorPipeline<VerificationContext, VerificationResult>() {
+    override fun build(context: VerificationContext): Mono<VerificationResult> =
         processors.toValueFlux()
             .flatMapSequential {
                 it.process(context).onErrorResume { error ->
-                    logger.error("Error while verifying player ${context.name()}", error)
+                    logger.error("Error while verifying player ${context.name}", error)
                     VerificationResult.Success.toValueMono()
                 }
             }

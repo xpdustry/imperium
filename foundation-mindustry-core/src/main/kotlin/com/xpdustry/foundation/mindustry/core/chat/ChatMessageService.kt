@@ -26,11 +26,9 @@ import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.google.inject.Inject
 import com.google.inject.name.Named
 import com.xpdustry.foundation.common.application.FoundationListener
-import com.xpdustry.foundation.common.translator.Translator
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.core.misc.MindustryScheduler
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
-import fr.xpdustry.distributor.api.util.Priority
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
 import mindustry.gen.Groups
@@ -42,13 +40,10 @@ import mindustry.net.ValidateException
 
 class ChatMessageService @Inject constructor(
     private val pipeline: ChatMessagePipeline,
-    private val translator: Translator,
     @Named("client")
     private val clientCommandManager: FoundationPluginCommandManager,
 ) : FoundationListener {
     override fun onFoundationInit() {
-        pipeline.register("translator", Priority.LOW, TranslationProcessor(translator))
-
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
             if (con.player == null || packet.message == null) return@handleServer
@@ -147,7 +142,8 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
     Groups.player.each { target ->
         pipeline
             .build(ChatMessageContext(sender, target, filtered))
-            .publishOn(MindustryScheduler).subscribe { result ->
+            .publishOn(MindustryScheduler)
+            .subscribe { result ->
                 if (target == sender) {
                     // server console logging
                     if (result != escaped) {

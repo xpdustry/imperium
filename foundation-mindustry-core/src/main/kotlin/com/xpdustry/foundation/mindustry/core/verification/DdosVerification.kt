@@ -25,7 +25,6 @@ import com.xpdustry.foundation.common.misc.LoggerDelegate
 import com.xpdustry.foundation.common.misc.toErrorMono
 import com.xpdustry.foundation.common.misc.toValueMono
 import com.xpdustry.foundation.mindustry.core.processing.Processor
-import mindustry.gen.Player
 import org.jsoup.Jsoup
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -49,7 +48,7 @@ private val PROVIDERS = listOf(
     OracleCloudAddressProvider(),
 )
 
-class DdosVerification : Processor<Player, VerificationResult> {
+class DdosVerification : Processor<VerificationContext, VerificationResult> {
 
     private val addresses = Mono.fromRunnable<Void> {
         logger.info("Fetching addresses from {} cloud providers", PROVIDERS.size)
@@ -72,8 +71,8 @@ class DdosVerification : Processor<Player, VerificationResult> {
         .collect(Collectors.toUnmodifiableSet())
         .cache(Duration.ofDays(1L))
 
-    override fun process(input: Player): Mono<VerificationResult> = addresses.map {
-        if (it.contains(InetAddresses.forString(input.con().address))) {
+    override fun process(context: VerificationContext): Mono<VerificationResult> = addresses.map {
+        if (it.contains(context.address)) {
             VerificationResult.Failure("You address has been marked by our anti-VPN system. Please disable it.")
         } else {
             VerificationResult.Success

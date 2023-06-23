@@ -17,24 +17,22 @@
  */
 package com.xpdustry.foundation.mindustry.core.verification
 
-import com.google.common.net.InetAddresses
 import com.xpdustry.foundation.common.misc.LoggerDelegate
 import com.xpdustry.foundation.common.misc.toValueMono
 import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.mindustry.core.processing.Processor
-import mindustry.gen.Player
 import reactor.core.publisher.Mono
 
-class VpnVerification(private val provider: VpnAddressDetector) : Processor<Player, VerificationResult> {
-    override fun process(input: Player): Mono<VerificationResult> =
+class VpnVerification(private val provider: VpnAddressDetector) : Processor<VerificationContext, VerificationResult> {
+    override fun process(context: VerificationContext): Mono<VerificationResult> =
         // TODO: Improve error message
-        provider.isVpnAddress(InetAddresses.forString(input.con().address))
+        provider.isVpnAddress(context.address)
             .map { vpn ->
                 if (vpn) VerificationResult.Success else VerificationResult.Failure("VPN detected")
             }
             .switchIfEmpty(VerificationResult.Success.toValueMono())
             .onErrorResume {
-                logger.error("Failed to verify the vpn usage for player {} ({})", input.name(), input.uuid(), it)
+                logger.error("Failed to verify the vpn usage for player {} ({})", context.name, context.uuid, it)
                 VerificationResult.Success.toValueMono()
             }
 

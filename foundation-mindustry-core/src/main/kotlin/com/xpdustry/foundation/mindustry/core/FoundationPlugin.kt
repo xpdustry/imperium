@@ -29,6 +29,7 @@ import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.mindustry.core.chat.ChatMessageService
 import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.core.listener.ConventionListener
+import com.xpdustry.foundation.mindustry.core.translator.TranslatorService
 import com.xpdustry.foundation.mindustry.core.verification.VerificationService
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
@@ -68,6 +69,7 @@ class FoundationPlugin : AbstractMindustryPlugin() {
         application.register(ConventionListener::class)
         application.register(VerificationService::class)
         application.register(ChatMessageService::class)
+        application.register(TranslatorService::class)
 
         application.init()
     }
