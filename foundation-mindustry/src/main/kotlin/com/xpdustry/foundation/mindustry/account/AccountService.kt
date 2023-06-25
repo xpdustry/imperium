@@ -15,18 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.mindustry.core.account
+package com.xpdustry.foundation.mindustry.account
 
-import com.google.inject.Inject
 import com.xpdustry.foundation.common.application.FoundationListener
-import com.xpdustry.foundation.common.database.Database
-import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
-import jakarta.inject.Named
 
-class AccountCommand @Inject constructor(
-    private val database: Database,
-    @param:Named("client") private val clientCommandManager: FoundationPluginCommandManager,
-) : FoundationListener {
+class AccountService : FoundationListener {
     override fun onFoundationInit() {
+        super.onFoundationInit()
     }
 }
