@@ -36,10 +36,10 @@ interface MenuInterface : TransformerInterface<MenuPane> {
     }
 }
 
-internal class MenuInterfaceImpl(plugin: MindustryPlugin) :
+private class MenuInterfaceImpl(plugin: MindustryPlugin) :
     AbstractTransformerInterface<MenuPane>(plugin, ::MenuPane), MenuInterface {
-    override var exitAction: Action = Action.back()
 
+    override var exitAction: Action = Action.back()
     private val id = Menus.registerMenu { player: Player, option: Int ->
         val view = views[MUUID.of(player)]
         if (view == null) {
@@ -51,7 +51,7 @@ internal class MenuInterfaceImpl(plugin: MindustryPlugin) :
         } else if (option == -1) {
             exitAction.accept(view)
         } else {
-            val choice = getChoice(view.pane, option)
+            val choice = view.pane.options.getOption(option)
             if (choice == null) {
                 this.plugin.logger.warn(
                     "Received invalid menu option {} from player {} (uuid: {})",
@@ -71,24 +71,13 @@ internal class MenuInterfaceImpl(plugin: MindustryPlugin) :
             id,
             view.pane.title,
             view.pane.content,
-            view.pane.options.map { row ->
-                row.map { obj -> obj.content }.toTypedArray()
+            view.pane.options.grid.map { row ->
+                row.map { option -> option.content }.toTypedArray()
             }.toTypedArray(),
         )
     }
 
     override fun onViewClose(view: SimpleView) {
         Call.hideFollowUpMenu(view.viewer.con(), id)
-    }
-
-    private fun getChoice(pane: MenuPane, id: Int): MenuOption? {
-        var i = 0
-        for (row in pane.options) {
-            i += row.size
-            if (i > id) {
-                return row[id - i + row.size]
-            }
-        }
-        return null
     }
 }

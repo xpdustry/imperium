@@ -36,7 +36,7 @@ interface PopupInterface : TransformerInterface<PopupPane> {
     }
 }
 
-internal class SimplePopupInterface(
+private class SimplePopupInterface(
     plugin: MindustryPlugin,
 ) : AbstractTransformerInterface<PopupPane>(plugin, ::PopupPane), PopupInterface {
 

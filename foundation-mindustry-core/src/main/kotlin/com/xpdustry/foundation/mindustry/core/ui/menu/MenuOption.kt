@@ -19,7 +19,4 @@ package com.xpdustry.foundation.mindustry.core.ui.menu
 
 import com.xpdustry.foundation.mindustry.core.ui.action.Action
 
-data class MenuOption(
-    val content: String = "",
-    val action: Action = Action.none(),
-)
+data class MenuOption(val content: String = "", val action: Action = Action.none())

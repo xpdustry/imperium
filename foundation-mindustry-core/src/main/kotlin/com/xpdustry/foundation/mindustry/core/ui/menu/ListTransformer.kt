@@ -40,7 +40,7 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
     override fun transform(view: View, pane: MenuPane) {
         val elements = elementProvider.get()
         if (elements.isEmpty()) {
-            pane.options += mutableListOf(MenuOption("Nothing", Action.none()))
+            pane.options.addRow(MenuOption("Nothing", Action.none()))
             renderNavigation(pane, 0, false)
             return
         }
@@ -64,8 +64,8 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
                     break
                 }
             }
-            if (!options.isEmpty()) {
-                pane.options += options
+            if (options.isNotEmpty()) {
+                pane.options.addRow(options)
             }
             if (cursor >= elements.size && !fillEmpty) {
                 break
@@ -75,7 +75,7 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
     }
 
     private fun renderNavigation(pane: MenuPane, page: Int, hasNext: Boolean) {
-        pane.options += mutableListOf(
+        pane.options.addRow(
             enableIf(
                 page > 0,
                 Iconc.left,

@@ -17,6 +17,7 @@
  */
 package com.xpdustry.foundation.mindustry.core.ui.popup
 
+import arc.util.Align
 import com.xpdustry.foundation.mindustry.core.ui.Pane
 
 data class PopupPane(
@@ -25,3 +26,15 @@ data class PopupPane(
     var shiftY: Int = 0,
     var alignement: PopupAlignement = PopupAlignement.CENTER,
 ) : Pane
+
+enum class PopupAlignement(val align: Int) {
+    TOP_LEFT(Align.topLeft),
+    TOP(Align.top),
+    TOP_RIGHT(Align.topRight),
+    LEFT(Align.left),
+    CENTER(Align.center),
+    RIGHT(Align.right),
+    BOTTOM_LEFT(Align.bottomLeft),
+    BOTTOM(Align.bottom),
+    BOTTOM_RIGHT(Align.bottomRight),
+}

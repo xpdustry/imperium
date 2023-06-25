@@ -19,10 +19,60 @@ package com.xpdustry.foundation.mindustry.core.ui.menu
 
 import com.xpdustry.foundation.mindustry.core.ui.Pane
 
-typealias MenuOptionGrid = MutableList<MutableList<MenuOption>>
-
 data class MenuPane(
     val title: String = "",
     val content: String = "",
-    val options: MenuOptionGrid = mutableListOf(),
+    val options: MenuOptionGrid = MenuOptionGrid(),
 ) : Pane
+
+class MenuOptionGrid {
+    private val _grid: MutableList<MutableList<MenuOption>> = mutableListOf()
+
+    val grid: List<List<MenuOption>> get() = _grid
+
+    fun getRow(index: Int): List<MenuOption> = _grid[index]
+
+    fun setRow(index: Int, options: List<MenuOption>) {
+        _grid[index] = options.toMutableList()
+    }
+
+    fun addRow(vararg options: MenuOption) {
+        _grid.add(options.toMutableList())
+    }
+
+    fun addRow(options: List<MenuOption>) {
+        _grid.add(options.toMutableList())
+    }
+
+    fun addRow(index: Int, vararg options: MenuOption) {
+        _grid.add(index, options.toMutableList())
+    }
+
+    fun addRow(index: Int, options: List<MenuOption>) {
+        _grid.add(index, options.toMutableList())
+    }
+
+    fun removeRow(index: Int) {
+        _grid.removeAt(index)
+    }
+
+    fun getOption(id: Int): MenuOption? {
+        var i = 0
+        for (row in _grid) {
+            i += row.size
+            if (i > id) {
+                return row[id - i + row.size]
+            }
+        }
+        return null
+    }
+}
+
+fun bob() {
+    val grid = MenuOptionGrid()
+    grid.addRow(
+        MenuOption("1"),
+        MenuOption("2"),
+        MenuOption("3"),
+    )
+}
