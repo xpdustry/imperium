@@ -17,6 +17,12 @@
  */
 package com.xpdustry.foundation.common.database
 
+import org.bson.types.ObjectId
+import java.time.Instant
+
 interface Entity<I> {
     val id: I
 }
+
+val Entity<ObjectId>.timestamp: Instant
+    get() = id.date.toInstant()

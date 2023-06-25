@@ -15,23 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo.codec
+package com.xpdustry.foundation.mindustry.core.account
 
-import org.bson.BsonReader
-import org.bson.BsonWriter
-import org.bson.codecs.Codec
-import org.bson.codecs.DecoderContext
-import org.bson.codecs.EncoderContext
-import java.time.Duration
+import com.xpdustry.foundation.common.application.FoundationListener
 
-class DurationCodec : Codec<Duration> {
-    override fun getEncoderClass(): Class<Duration> = Duration::class.java
-
-    override fun encode(writer: BsonWriter, value: Duration, encoderContext: EncoderContext) {
-        writer.writeInt64(value.seconds)
-    }
-
-    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Duration {
-        return Duration.ofSeconds(reader.readInt64())
+class AccountService : FoundationListener {
+    override fun onFoundationInit() {
+        super.onFoundationInit()
     }
 }

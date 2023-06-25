@@ -15,23 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo.convention
+package com.xpdustry.foundation.common.database.mongo
 
-import org.bson.codecs.pojo.ClassModelBuilder
-import org.bson.codecs.pojo.Convention
+import com.google.common.net.InetAddresses
+import org.bson.BsonReader
+import org.bson.BsonWriter
+import org.bson.codecs.Codec
+import org.bson.codecs.DecoderContext
+import org.bson.codecs.EncoderContext
+import java.net.InetAddress
 
-object SnakeCaseConvention : Convention {
-    override fun apply(classModelBuilder: ClassModelBuilder<*>) {
-        classModelBuilder.propertyModelBuilders.forEach {
-            it.readName(it.readName.camelToSnakeCase())
-            it.writeName(it.writeName.camelToSnakeCase())
-        }
-    }
+class InetAddressCodec : Codec<InetAddress> {
+    override fun getEncoderClass(): Class<InetAddress> = InetAddress::class.java
 
-    // https://www.baeldung.com/kotlin/convert-camel-case-snake-case
-    private fun String.camelToSnakeCase(): String {
-        return this.fold(StringBuilder()) { acc, c ->
-            acc.append(if (acc.isNotEmpty() && c.isUpperCase()) "_${c.lowercase()}" else c.lowercase())
-        }.toString()
-    }
+    override fun encode(writer: BsonWriter, value: InetAddress, encoderContext: EncoderContext) =
+        writer.writeString(value.hostAddress)
+
+    override fun decode(reader: BsonReader, decoderContext: DecoderContext): InetAddress =
+        InetAddresses.forString(reader.readString())
 }

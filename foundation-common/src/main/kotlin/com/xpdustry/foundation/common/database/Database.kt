@@ -17,10 +17,12 @@
  */
 package com.xpdustry.foundation.common.database
 
+import com.xpdustry.foundation.common.database.model.AccountManager
 import com.xpdustry.foundation.common.database.model.PunishmentManager
 import com.xpdustry.foundation.common.database.model.UserManager
 
 interface Database {
     val users: UserManager
     val punishments: PunishmentManager
+    val accounts: AccountManager
 }

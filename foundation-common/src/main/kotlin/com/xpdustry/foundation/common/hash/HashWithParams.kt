@@ -15,22 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo.codec
+package com.xpdustry.foundation.common.hash
 
-import com.google.common.net.InetAddresses
-import org.bson.BsonReader
-import org.bson.BsonWriter
-import org.bson.codecs.Codec
-import org.bson.codecs.DecoderContext
-import org.bson.codecs.EncoderContext
-import java.net.InetAddress
-
-class InetAddressCodec : Codec<InetAddress> {
-    override fun getEncoderClass(): Class<InetAddress> = InetAddress::class.java
-
-    override fun encode(writer: BsonWriter, value: InetAddress, encoderContext: EncoderContext) =
-        writer.writeString(value.hostAddress)
-
-    override fun decode(reader: BsonReader, decoderContext: DecoderContext): InetAddress =
-        InetAddresses.forString(reader.readString())
-}
+// TODO: Write mongo codec for that
+data class HashWithParams(val hash: Hash, val params: HashParams)

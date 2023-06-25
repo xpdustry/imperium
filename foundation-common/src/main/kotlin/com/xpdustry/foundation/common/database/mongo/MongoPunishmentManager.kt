@@ -23,13 +23,13 @@ import com.xpdustry.foundation.common.database.model.MindustryUUID
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
 import com.xpdustry.foundation.common.misc.toValueFlux
-import jakarta.inject.Inject
 import org.bson.types.ObjectId
 import reactor.core.publisher.Flux
 import java.net.InetAddress
 
-class MongoPunishmentManager @Inject constructor(collection: MongoCollection<Punishment>) :
-    MongoEntityManager<Punishment, ObjectId>(collection), PunishmentManager {
+class MongoPunishmentManager(
+    collection: MongoCollection<Punishment>,
+) : MongoEntityManager<Punishment, ObjectId>(collection), PunishmentManager {
 
     override fun findAllByTargetIp(target: InetAddress): Flux<Punishment> =
         collection.find(Filters.eq("target_ip", target.hostAddress)).toValueFlux()

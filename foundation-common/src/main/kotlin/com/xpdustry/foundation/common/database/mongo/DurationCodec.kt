@@ -17,8 +17,21 @@
  */
 package com.xpdustry.foundation.common.database.mongo
 
-import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.User
-import com.xpdustry.foundation.common.database.model.UserManager
+import org.bson.BsonReader
+import org.bson.BsonWriter
+import org.bson.codecs.Codec
+import org.bson.codecs.DecoderContext
+import org.bson.codecs.EncoderContext
+import java.time.Duration
 
-class MongoUserManager(collection: MongoCollection<User>) : MongoEntityManager<User, String>(collection), UserManager
+class DurationCodec : Codec<Duration> {
+    override fun getEncoderClass(): Class<Duration> = Duration::class.java
+
+    override fun encode(writer: BsonWriter, value: Duration, encoderContext: EncoderContext) {
+        writer.writeInt64(value.seconds)
+    }
+
+    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Duration {
+        return Duration.ofSeconds(reader.readInt64())
+    }
+}

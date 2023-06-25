@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo.convention
+package com.xpdustry.foundation.common.database.mongo
 
 import org.bson.codecs.pojo.ClassModelBuilder
 import org.bson.codecs.pojo.Convention
@@ -27,7 +27,7 @@ import java.lang.reflect.Method
 
 // NOTE: Extremely unsafe, but it works.
 // TODO: Maybe use the faster alternative sun.reflect.ReflectionFactory
-object UnsafeInstanciationConvention : Convention {
+object InstanciationConvention : Convention {
     override fun apply(classModelBuilder: ClassModelBuilder<*>) = apply0(classModelBuilder)
 
     private fun <T : Any> apply0(classModelBuilder: ClassModelBuilder<T>) {

@@ -17,8 +17,21 @@
  */
 package com.xpdustry.foundation.common.database.mongo
 
-import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.User
-import com.xpdustry.foundation.common.database.model.UserManager
+import org.bson.codecs.pojo.ClassModelBuilder
+import org.bson.codecs.pojo.Convention
 
-class MongoUserManager(collection: MongoCollection<User>) : MongoEntityManager<User, String>(collection), UserManager
+object SnakeCaseConvention : Convention {
+    override fun apply(classModelBuilder: ClassModelBuilder<*>) {
+        classModelBuilder.propertyModelBuilders.forEach {
+            it.readName(it.readName.camelToSnakeCase())
+            it.writeName(it.writeName.camelToSnakeCase())
+        }
+    }
+}
+
+// https://www.baeldung.com/kotlin/convert-camel-case-snake-case
+private fun String.camelToSnakeCase(): String {
+    return fold(StringBuilder()) { builder, char ->
+        builder.append(if (builder.isNotEmpty() && char.isUpperCase()) "_${char.lowercase()}" else char.lowercase())
+    }.toString()
+}

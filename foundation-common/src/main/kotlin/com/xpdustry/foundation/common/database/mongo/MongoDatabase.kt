@@ -30,14 +30,12 @@ import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.database.model.Account
+import com.xpdustry.foundation.common.database.model.AccountManager
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
 import com.xpdustry.foundation.common.database.model.User
 import com.xpdustry.foundation.common.database.model.UserManager
-import com.xpdustry.foundation.common.database.mongo.codec.DurationCodec
-import com.xpdustry.foundation.common.database.mongo.codec.InetAddressCodec
-import com.xpdustry.foundation.common.database.mongo.convention.SnakeCaseConvention
-import com.xpdustry.foundation.common.database.mongo.convention.UnsafeInstanciationConvention
 import com.xpdustry.foundation.common.misc.toValueFlux
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
@@ -49,6 +47,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
     private lateinit var client: MongoClient
     override lateinit var users: UserManager
     override lateinit var punishments: PunishmentManager
+    override lateinit var accounts: AccountManager
 
     override fun onFoundationInit() {
         client = MongoClients.create(
@@ -89,7 +88,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
                                 Conventions.DEFAULT_CONVENTIONS + listOf(
                                     SnakeCaseConvention,
                                     Conventions.SET_PRIVATE_FIELDS_CONVENTION,
-                                    UnsafeInstanciationConvention,
+                                    InstanciationConvention,
                                 ),
                             )
                             .build(),
@@ -111,6 +110,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
         val database = client.getDatabase(config.mongo.database)
         users = MongoUserManager(database.getCollection("users", User::class.java))
         punishments = MongoPunishmentManager(database.getCollection("punishments", Punishment::class.java))
+        accounts = MongoAccountManager(database.getCollection("accounts", Account::class.java))
     }
 
     override fun onFoundationExit() {

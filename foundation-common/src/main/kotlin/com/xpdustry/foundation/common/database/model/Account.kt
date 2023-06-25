@@ -18,23 +18,33 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
-import com.xpdustry.foundation.common.database.timestamp
+import com.xpdustry.foundation.common.hash.HashWithParams
 import org.bson.types.ObjectId
-import java.net.InetAddress
-import java.time.Duration
-import java.time.Instant
 
-data class Punishment(
+// This structure stores the users bound to an account.
+// The HashWithParams is the hashed usid (NOTE: It is nullable because the previous database did not it)
+typealias BoundUsers = MutableMap<MindustryUUID, HashWithParams?>
+
+data class Account(
     override val id: ObjectId,
-    var targetIp: InetAddress,
-    var targetUuid: MindustryUUID,
-    var reason: String = "Unknown",
-    var duration: Duration? = Duration.ofDays(1L),
-    var pardonned: Boolean = false,
+    var username: String,
+    var password: HashWithParams,
+    var rank: Rank = Rank.NEWBIE,
+    var steam: String? = null,
+    var discord: String? = null,
+    val users: BoundUsers = mutableMapOf(),
 ) : Entity<ObjectId> {
-    val expired: Boolean
-        get() = duration != null && (pardonned || timestamp.plus(duration).isBefore(Instant.now()))
+    val verified: Boolean
+        get() = steam != null || discord != null
 
-    val remaining: Duration
-        get() = if (duration == null) Duration.ZERO else duration!!.minus(Duration.between(Instant.now(), timestamp))
+    enum class Rank {
+        NEWBIE,
+        ACTIVE,
+        HYPER_ACTIVE,
+        CONTRIBUTOR,
+        OVERSEER,
+        MODERATOR,
+        ADMINISTRATOR,
+        OWNER,
+    }
 }

@@ -15,10 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.mongo
+package com.xpdustry.foundation.mindustry.core.account
 
-import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.User
-import com.xpdustry.foundation.common.database.model.UserManager
+import com.google.inject.Inject
+import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.mindustry.core.command.FoundationPluginCommandManager
+import jakarta.inject.Named
 
-class MongoUserManager(collection: MongoCollection<User>) : MongoEntityManager<User, String>(collection), UserManager
+class AccountCommand @Inject constructor(
+    private val database: Database,
+    @param:Named("client") private val clientCommandManager: FoundationPluginCommandManager,
+) : FoundationListener {
+    override fun onFoundationInit() {
+    }
+}

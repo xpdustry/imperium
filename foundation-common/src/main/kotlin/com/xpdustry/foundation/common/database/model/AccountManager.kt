@@ -17,24 +17,7 @@
  */
 package com.xpdustry.foundation.common.database.model
 
-import com.xpdustry.foundation.common.database.Entity
-import com.xpdustry.foundation.common.database.timestamp
+import com.xpdustry.foundation.common.database.EntityManager
 import org.bson.types.ObjectId
-import java.net.InetAddress
-import java.time.Duration
-import java.time.Instant
 
-data class Punishment(
-    override val id: ObjectId,
-    var targetIp: InetAddress,
-    var targetUuid: MindustryUUID,
-    var reason: String = "Unknown",
-    var duration: Duration? = Duration.ofDays(1L),
-    var pardonned: Boolean = false,
-) : Entity<ObjectId> {
-    val expired: Boolean
-        get() = duration != null && (pardonned || timestamp.plus(duration).isBefore(Instant.now()))
-
-    val remaining: Duration
-        get() = if (duration == null) Duration.ZERO else duration!!.minus(Duration.between(Instant.now(), timestamp))
-}
+interface AccountManager : EntityManager<ObjectId, Account>
