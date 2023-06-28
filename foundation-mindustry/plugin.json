@@ -1,6 +1,6 @@
 {
-  "name": "foundation-core",
-  "displayName": "FoundationCore",
+  "name": "foundation",
+  "displayName": "Foundation",
   "author": "Xpdustry",
   "hidden": true,
   "java": true,

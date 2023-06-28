@@ -10,7 +10,9 @@ mindustry = "145"
 # libraries
 distributor = "3.0.0"
 junit = "5.9.0"
+testcontainers = "1.18.3"
 mongodb = "4.9.0"
+kmongo = "4.9.0"
 guice = "7.0.0"
 guava = "32.0.1-jre"
 gson = "2.10.1"
@@ -38,7 +40,12 @@ distributor-api = { module = "fr.xpdustry:distributor-api", version.ref = "distr
 distributor-kotlin = { module = "fr.xpdustry:distributor-kotlin", version.ref = "distributor" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
+testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
+testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
+testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
 mongodb-driver-reactive = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
+kmongo-async-native = { module = "org.litote.kmongo:kmongo-async-native", version.ref = "kmongo" }
 guice = { module = "com.google.inject:guice", version.ref = "guice" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }

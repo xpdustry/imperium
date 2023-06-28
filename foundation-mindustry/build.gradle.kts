@@ -35,19 +35,15 @@ dependencies {
         exclude("org.jetbrains.kotlin", "kotlin-reflect")
         exclude("org.slf4j")
     }
-    implementation(libs.jsoup)
+
     mindustryDependencies()
     compileOnly(libs.distributor.api)
     compileOnly(libs.distributor.kotlin)
 
-    testImplementation("org.testcontainers:testcontainers:1.18.3")
-    testImplementation("org.testcontainers:mongodb:1.18.3")
-    testImplementation("org.testcontainers:rabbitmq:1.18.3")
-    testImplementation("org.testcontainers:junit-jupiter:1.18.3")
-    testImplementation(libs.reactor.test)
-    testImplementation(kotlin("stdlib"))
-    testImplementation(kotlin("reflect"))
+    implementation(libs.jsoup)
+
     testImplementation(libs.distributor.api)
+    testImplementation(libs.distributor.kotlin)
 }
 
 tasks.shadowJar {

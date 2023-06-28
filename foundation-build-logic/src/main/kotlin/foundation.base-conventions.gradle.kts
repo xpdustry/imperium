@@ -23,8 +23,17 @@ kotlin {
 dependencies {
     compileOnlyApi(kotlin("stdlib"))
     compileOnlyApi(kotlin("reflect"))
+    testImplementation(kotlin("stdlib"))
+    testImplementation(kotlin("reflect"))
+
     testImplementation(libs.junit.api)
+    testImplementation(libs.reactor.test)
     testRuntimeOnly(libs.junit.engine)
+
+    testImplementation(libs.testcontainers)
+    testImplementation(libs.testcontainers.junit.jupiter)
+    testImplementation(libs.testcontainers.mongodb)
+    testImplementation(libs.testcontainers.rabbitmq)
 }
 
 spotless {
