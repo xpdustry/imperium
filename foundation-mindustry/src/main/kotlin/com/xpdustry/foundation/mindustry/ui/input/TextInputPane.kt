@@ -18,9 +18,14 @@
 package com.xpdustry.foundation.mindustry.ui.input
 
 import com.xpdustry.foundation.mindustry.ui.Pane
+import com.xpdustry.foundation.mindustry.ui.action.Action
+import com.xpdustry.foundation.mindustry.ui.action.BiAction
 
 data class TextInputPane(
     var title: String = "",
-    var text: String = "",
+    var description: String = "",
     var placeholder: String = "",
+    var length: Int = 64,
+    var inputAction: BiAction<String> = Action.none().asBiAction(),
+    var exitAction: Action = Action.none(),
 ) : Pane

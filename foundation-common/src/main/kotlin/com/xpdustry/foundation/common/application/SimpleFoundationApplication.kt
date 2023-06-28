@@ -27,11 +27,11 @@ import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.common.misc.LoggerDelegate
 import kotlin.reflect.KClass
 
-open class SimpleFoundationApplication(common: Module, implementation: Module) : FoundationApplication {
+open class SimpleFoundationApplication(common: Module, implementation: Module, production: Boolean) : FoundationApplication {
 
     private val listeners = arrayListOf<FoundationListener>()
     private val injector: Injector = Guice.createInjector(
-        Stage.PRODUCTION,
+        if (production) Stage.PRODUCTION else Stage.DEVELOPMENT,
         FoundationAwareModule(Modules.override(common).with(implementation)),
     )
 
@@ -45,7 +45,7 @@ open class SimpleFoundationApplication(common: Module, implementation: Module) :
     fun register(listener: KClass<out FoundationListener>) =
         register(injector.getInstance(listener.java))
 
-    fun <T : Any> instance(clazz: KClass<*>): Any =
+    fun <T : Any> instance(clazz: KClass<T>): T =
         injector.getInstance(clazz.java)
 
     protected open fun onListenerRegistration(listener: FoundationListener) {

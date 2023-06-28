@@ -18,4 +18,5 @@ dependencies {
     api(libs.password4j)
     api(libs.kryo)
     api(libs.rabbitmq.client)
+    api("org.litote.kmongo:kmongo-async-native:4.9.0")
 }

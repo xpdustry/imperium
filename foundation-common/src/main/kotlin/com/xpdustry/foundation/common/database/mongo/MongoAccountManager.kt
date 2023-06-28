@@ -20,8 +20,18 @@ package com.xpdustry.foundation.common.database.mongo
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.database.model.Account
 import com.xpdustry.foundation.common.database.model.AccountManager
+import com.xpdustry.foundation.common.misc.toValueMono
 import org.bson.types.ObjectId
+import org.litote.kmongo.contains
+import org.litote.kmongo.eq
+import org.litote.kmongo.reactivestreams.findOne
+import reactor.core.publisher.Mono
 
-class MongoAccountManager(
-    collection: MongoCollection<Account>,
-) : MongoEntityManager<Account, ObjectId>(collection), AccountManager
+class MongoAccountManager(collection: MongoCollection<Account>) : MongoEntityManager<Account, ObjectId>(collection), AccountManager {
+
+    override fun findByUuid(uuid: String): Mono<Account> =
+        collection.findOne(Account::uuids contains uuid).toValueMono()
+
+    override fun findByHashedUsername(hashedUsername: String): Mono<Account> =
+        collection.findOne(Account::hashedUsername eq hashedUsername).toValueMono()
+}

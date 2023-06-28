@@ -63,7 +63,8 @@ class FoundationPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         application = PluginFoundationApplication(
             FoundationCommonModule(),
-            com.xpdustry.foundation.mindustry.FoundationMindustryModule(this),
+            FoundationMindustryModule(this),
+            false,
             this,
         )
 
@@ -87,8 +88,9 @@ class FoundationPlugin : AbstractMindustryPlugin() {
 private class PluginFoundationApplication(
     common: Module,
     implementation: Module,
+    production: Boolean = true,
     private val plugin: MindustryPlugin,
-) : SimpleFoundationApplication(common, implementation) {
+) : SimpleFoundationApplication(common, implementation, production) {
     override fun exit(status: ExitStatus) {
         super.exit(status)
         when (status) {

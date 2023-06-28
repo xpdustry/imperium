@@ -25,7 +25,7 @@ import java.time.Duration
 import java.time.Instant
 
 data class Punishment(
-    override val id: ObjectId,
+    override val id: ObjectId = ObjectId(),
     var targetIp: InetAddress,
     var targetUuid: MindustryUUID,
     var reason: String = "Unknown",

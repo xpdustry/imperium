@@ -18,33 +18,32 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
-import com.xpdustry.foundation.common.hash.HashWithParams
+import com.xpdustry.foundation.common.hash.Hash
 import org.bson.types.ObjectId
-
-// This structure stores the users bound to an account.
-// The HashWithParams is the hashed usid (NOTE: It is nullable because the previous database did not it)
-typealias BoundUsers = MutableMap<MindustryUUID, HashWithParams?>
+import java.time.Instant
 
 data class Account(
-    override val id: ObjectId,
-    var username: String,
-    var password: HashWithParams,
+    override val id: ObjectId = ObjectId(),
+    val uuids: MutableSet<String> = mutableSetOf(),
+    var password: Hash,
+    val hashedUsername: String? = null,
     var rank: Rank = Rank.NEWBIE,
     var steam: String? = null,
     var discord: String? = null,
-    val users: BoundUsers = mutableMapOf(),
+    val sessions: MutableMap<String, Instant> = mutableMapOf(),
 ) : Entity<ObjectId> {
-    val verified: Boolean
-        get() = steam != null || discord != null
+
+    val verified: Boolean get() = steam != null || discord != null
 
     enum class Rank {
         NEWBIE,
         ACTIVE,
         HYPER_ACTIVE,
-        CONTRIBUTOR,
         OVERSEER,
         MODERATOR,
         ADMINISTRATOR,
         OWNER,
     }
+
+    data class UuidData(val sessions: MutableMap<String, Instant> = mutableMapOf())
 }

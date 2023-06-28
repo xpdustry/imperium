@@ -26,8 +26,9 @@ import java.util.function.Consumer
 
 fun interface Action {
     fun accept(view: View)
+
     fun then(after: Action): Action {
-        return Action { view: View ->
+        return Action { view ->
             accept(view)
             after.accept(view)
         }

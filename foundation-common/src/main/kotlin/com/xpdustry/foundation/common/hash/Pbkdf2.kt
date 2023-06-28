@@ -26,7 +26,7 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import java.util.Locale
 
-data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int) : HashParams {
+data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, val saltLength: Int) : HashParams {
     init {
         require(iterations > 0) { "iterations must be positive" }
         require(length > 0) { "length must be positive" }
@@ -45,41 +45,45 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int) : 
             if (!str.startsWith("pbkdf2/")) {
                 throw IllegalArgumentException("Invalid pbkdf2 params: $str")
             }
+
             val params = str.substring("pbkdf2/".length)
                 .split(",")
                 .map { it.trim().split("=") }
                 .associate { it[0] to it[1] }
+
             return PBKDF2Params(
                 Hmac.valueOf(params["h"]!!.uppercase(Locale.ROOT)),
                 params["i"]!!.toInt(),
                 params["l"]!!.toInt(),
+                params["s"]!!.toInt(),
             )
         }
     }
 }
 
-object PBKDF2HashFunction : HashFunction<PBKDF2Params> {
+object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
 
-    override fun create(password: CharArray, params: PBKDF2Params, saltLength: Int): Mono<Hash> {
-        return create0(Password.hash(SecureString(password)).addRandomSalt(saltLength), params)
-    }
+    override fun create(chars: CharArray, params: PBKDF2Params): Mono<Hash> =
+        create0(Password.hash(SecureString(chars)).addRandomSalt(params.saltLength), params)
 
-    override fun create(password: CharArray, params: PBKDF2Params, salt: ByteArray): Mono<Hash> {
-        return create0(Password.hash(SecureString(password)).addSalt(salt), params)
-    }
+    override fun create(bytes: ByteArray, params: PBKDF2Params): Mono<Hash> =
+        create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
+
+    override fun create(chars: CharArray, params: PBKDF2Params, salt: CharArray): Mono<Hash> =
+        create0(Password.hash(SecureString(chars)).addSalt(salt.toString()), params)
+
+    override fun create(chars: CharArray, params: PBKDF2Params, salt: ByteArray): Mono<Hash> =
+        create0(Password.hash(SecureString(chars)).addSalt(salt), params)
+
+    override fun create(bytes: ByteArray, params: PBKDF2Params, salt: ByteArray): Mono<Hash> =
+        create0(Password.hash(bytes).addSalt(salt), params)
 
     private fun create0(builder: HashBuilder, params: PBKDF2Params): Mono<Hash> {
         return Mono.fromSupplier {
-            builder.with(
-                PBKDF2Function.getInstance(
-                    params.hmac.toP4J(),
-                    params.iterations,
-                    params.length,
-                ),
-            )
+            builder.with(PBKDF2Function.getInstance(params.hmac.toP4J(), params.iterations, params.length))
         }
-            .map { Hash(it.bytes, it.saltBytes) }
             .subscribeOn(Schedulers.boundedElastic())
+            .map { Hash(it.bytes, it.saltBytes, params) }
     }
 
     private fun PBKDF2Params.Hmac.toP4J() = when (this) {

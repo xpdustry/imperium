@@ -19,8 +19,6 @@ package com.xpdustry.foundation.mindustry.ui.input
 
 import com.xpdustry.foundation.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.foundation.mindustry.ui.TransformerInterface
-import com.xpdustry.foundation.mindustry.ui.action.Action
-import com.xpdustry.foundation.mindustry.ui.action.BiAction
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.MUUID
 import mindustry.gen.Call
@@ -28,10 +26,6 @@ import mindustry.gen.Player
 import mindustry.ui.Menus
 
 interface TextInputInterface : TransformerInterface<TextInputPane> {
-    var maxInputLength: Int
-    var inputAction: BiAction<String>
-    var exitAction: Action
-
     companion object {
         fun create(plugin: MindustryPlugin): TextInputInterface {
             return SimpleTextInputInterface(plugin)
@@ -42,11 +36,6 @@ interface TextInputInterface : TransformerInterface<TextInputPane> {
 private class SimpleTextInputInterface(
     plugin: MindustryPlugin,
 ) : AbstractTransformerInterface<TextInputPane>(plugin, ::TextInputPane), TextInputInterface {
-
-    override var maxInputLength = 64
-    override var inputAction: BiAction<String> = Action.none().asBiAction()
-    override var exitAction: Action = Action.back()
-
     private val visible: MutableSet<MUUID> = HashSet()
 
     private val id: Int = Menus.registerTextInput { player: Player, text: String? ->
@@ -65,8 +54,8 @@ private class SimpleTextInputInterface(
         // Simple trick to not reopen an interface when an action already does it.
         visible.remove(MUUID.of(player))
         if (text == null) {
-            exitAction.accept(view)
-        } else if (text.length > maxInputLength) {
+            view.pane.exitAction.accept(view)
+        } else if (text.length > view.pane.length) {
             this.plugin
                 .logger
                 .warn(
@@ -74,11 +63,11 @@ private class SimpleTextInputInterface(
                     player.plainName(),
                     player.uuid(),
                     text.length,
-                    maxInputLength,
+                    view.pane.length,
                 )
             view.close()
         } else {
-            inputAction.accept(view, text)
+            view.pane.inputAction.accept(view, text)
         }
         // The text input closes automatically when the player presses enter,
         // so reopen if it was not explicitly closed by the server.
@@ -93,8 +82,8 @@ private class SimpleTextInputInterface(
                 view.viewer.con(),
                 id,
                 view.pane.title,
-                view.pane.text,
-                maxInputLength,
+                view.pane.description,
+                view.pane.length,
                 view.pane.placeholder,
                 false,
             )

@@ -27,6 +27,8 @@ import com.xpdustry.foundation.common.application.KotlinAbstractModule
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.network.ServerInfo
 import com.xpdustry.foundation.common.version.FoundationVersion
+import com.xpdustry.foundation.mindustry.account.AccountService
+import com.xpdustry.foundation.mindustry.account.SimpleAccountService
 import com.xpdustry.foundation.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.foundation.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
@@ -38,14 +40,18 @@ import com.xpdustry.foundation.mindustry.verification.SimpleVerificationPipeline
 import com.xpdustry.foundation.mindustry.verification.VerificationPipeline
 import java.nio.file.Path
 
-class FoundationMindustryModule(private val plugin: com.xpdustry.foundation.mindustry.FoundationPlugin) : KotlinAbstractModule() {
+class FoundationMindustryModule(private val plugin: FoundationPlugin) : KotlinAbstractModule() {
     override fun configure() {
         bind(ServerInfo::class)
-            .provider(com.xpdustry.foundation.mindustry.MindustryServerInfoProvider::class)
+            .provider(MindustryServerInfoProvider::class)
             .singleton()
 
         bind(BlockHistory::class)
             .implementation(SimpleBlockHistory::class)
+            .singleton()
+
+        bind(AccountService::class)
+            .implementation(SimpleAccountService::class)
             .singleton()
     }
 

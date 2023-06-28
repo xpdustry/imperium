@@ -20,23 +20,21 @@ package com.xpdustry.foundation.common.hash
 import java.util.Base64
 import java.util.Objects
 
-class Hash(hash: ByteArray, salt: ByteArray) {
+class Hash(hash: ByteArray, salt: ByteArray, val params: HashParams) {
     private val _hash: ByteArray = hash.clone()
     private val _salt: ByteArray = salt.clone()
 
-    val hash: ByteArray
-        get() = _hash.clone()
-    val salt: ByteArray
-        get() = _salt.clone()
+    val hash: ByteArray get() = _hash.clone()
+    val salt: ByteArray get() = _salt.clone()
 
     override fun equals(other: Any?): Boolean =
-        other is Hash && timeConstantEquals(hash, other.hash) && timeConstantEquals(salt, other.salt)
+        other is Hash && timeConstantEquals(hash, other.hash) && timeConstantEquals(salt, other.salt) && params == other.params
 
     override fun hashCode() =
-        Objects.hash(_hash.contentHashCode(), _salt.contentHashCode())
+        Objects.hash(_hash.contentHashCode(), _salt.contentHashCode(), params)
 
     override fun toString() =
-        "Password(hash=${_hash.toBase64()}, salt=${_salt.toBase64()})"
+        "Password(hash=${_hash.toBase64()}, salt=${_salt.toBase64()}, params=$params)"
 }
 
 // Stolen from password4j

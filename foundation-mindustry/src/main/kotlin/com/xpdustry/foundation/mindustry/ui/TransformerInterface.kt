@@ -22,5 +22,7 @@ import fr.xpdustry.distributor.api.util.Priority
 
 interface TransformerInterface<P : Pane> : Interface {
     val transformers: List<Transformer<P>>
-    fun addTransformer(priority: Priority = Priority.NORMAL, transformer: Transformer<P>)
+    fun addTransformer(priority: Priority, transformer: Transformer<P>)
+    fun addTransformer(transformer: Transformer<P>) =
+        addTransformer(Priority.NORMAL, transformer)
 }

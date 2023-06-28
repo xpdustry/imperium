@@ -22,6 +22,7 @@ import java.net.InetAddress
 import java.time.Duration
 
 typealias MindustryUUID = String
+typealias MindustryUSID = String
 
 data class User(
     override val id: MindustryUUID,

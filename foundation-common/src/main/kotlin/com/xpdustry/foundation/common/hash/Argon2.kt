@@ -33,6 +33,7 @@ data class Argon2Params(
     val parallelism: Int,
     val type: Type,
     val version: Version,
+    val saltLength: Int,
 ) : HashParams {
     init {
         require(memory > 0) { "memory must be positive" }
@@ -42,11 +43,7 @@ data class Argon2Params(
     }
 
     override fun toString(): String {
-        return "argon2/m=$memory,i=$iterations,p=$parallelism,l=$length,t=${type.name.lowercase(Locale.ROOT)},v=${
-            version.name.lowercase(
-                Locale.ROOT,
-            )
-        }"
+        return "argon2/m=$memory,i=$iterations,p=$parallelism,l=$length,t=${type.name.lowercase(Locale.ROOT)},v=${version.name.lowercase()},s=$saltLength"
     }
 
     enum class Type {
@@ -62,10 +59,12 @@ data class Argon2Params(
             if (!str.startsWith("argon2/")) {
                 throw IllegalArgumentException("Invalid argon2 params: $str")
             }
+
             val params = str.substring("argon2/".length)
                 .split(",")
                 .map { it.trim().split("=") }
                 .associate { it[0] to it[1] }
+
             return Argon2Params(
                 params["m"]!!.toInt(),
                 params["i"]!!.toInt(),
@@ -73,20 +72,28 @@ data class Argon2Params(
                 params["p"]!!.toInt(),
                 Type.valueOf(params["t"]!!.uppercase(Locale.ROOT)),
                 Version.valueOf(params["v"]!!.uppercase(Locale.ROOT)),
+                params["s"]!!.toInt(),
             )
         }
     }
 }
 
-object Argon2HashFunction : HashFunction<Argon2Params> {
+object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
 
-    override fun create(password: CharArray, params: Argon2Params, salt: ByteArray): Mono<Hash> {
-        return create0(Password.hash(SecureString(password)).addSalt(salt), params)
-    }
+    override fun create(chars: CharArray, params: Argon2Params): Mono<Hash> =
+        create0(Password.hash(SecureString(chars)).addRandomSalt(params.saltLength), params)
 
-    override fun create(password: CharArray, params: Argon2Params, saltLength: Int): Mono<Hash> {
-        return create0(Password.hash(SecureString(password)).addRandomSalt(saltLength), params)
-    }
+    override fun create(bytes: ByteArray, params: Argon2Params): Mono<Hash> =
+        create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
+
+    override fun create(chars: CharArray, params: Argon2Params, salt: CharArray): Mono<Hash> =
+        create0(Password.hash(SecureString(chars)).addSalt(salt.toString()), params)
+
+    override fun create(chars: CharArray, params: Argon2Params, salt: ByteArray): Mono<Hash> =
+        create0(Password.hash(SecureString(chars)).addSalt(salt), params)
+
+    override fun create(bytes: ByteArray, params: Argon2Params, salt: ByteArray): Mono<Hash> =
+        create0(Password.hash(bytes).addSalt(salt), params)
 
     private fun create0(builder: HashBuilder, params: Argon2Params): Mono<Hash> {
         return Mono.fromSupplier {
@@ -101,7 +108,7 @@ object Argon2HashFunction : HashFunction<Argon2Params> {
                 ),
             )
         }
-            .map { Hash(it.bytes, it.saltBytes) }
+            .map { Hash(it.bytes, it.saltBytes, params) }
             .subscribeOn(Schedulers.boundedElastic())
     }
 

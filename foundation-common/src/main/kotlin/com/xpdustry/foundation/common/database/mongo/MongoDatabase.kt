@@ -25,7 +25,6 @@ import com.mongodb.ServerApi
 import com.mongodb.ServerApiVersion
 import com.mongodb.connection.SslSettings
 import com.mongodb.reactivestreams.client.MongoClient
-import com.mongodb.reactivestreams.client.MongoClients
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
@@ -40,6 +39,7 @@ import com.xpdustry.foundation.common.misc.toValueFlux
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
+import org.litote.kmongo.reactivestreams.KMongo
 import java.time.Duration
 
 class MongoDatabase @Inject constructor(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Database, FoundationListener {
@@ -50,7 +50,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
     override lateinit var accounts: AccountManager
 
     override fun onFoundationInit() {
-        client = MongoClients.create(
+        client = KMongo.createClient(
             MongoClientSettings.builder()
                 .applicationName("foundation-${metadata.name}")
                 .applyToClusterSettings {
@@ -95,6 +95,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
                         CodecRegistries.fromCodecs(
                             DurationCodec(),
                             InetAddressCodec(),
+                            HashCodec(),
                         ),
                     ),
                 )

@@ -25,6 +25,8 @@ import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.EntityManager
 import com.xpdustry.foundation.common.misc.toValueFlux
 import com.xpdustry.foundation.common.misc.toValueMono
+import org.litote.kmongo.eq
+import org.litote.kmongo.`in`
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -35,26 +37,28 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
 ) : EntityManager<I, E> {
 
     override fun save(entity: E): Mono<Void> =
-        collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity, ReplaceOptions().upsert(true)).toValueMono().then()
+        collection.replaceOne(Entity<I>::id eq entity.id, entity, ReplaceOptions().upsert(true)).toValueMono().then()
 
     override fun saveAll(entities: Iterable<E>): Mono<Void> =
         entities.toValueFlux()
-            .map { ReplaceOneModel(Filters.eq(ID_FIELD, it.id), it, ReplaceOptions().upsert(true)) }
+            .map { ReplaceOneModel(Entity<I>::id eq it.id, it, ReplaceOptions().upsert(true)) }
             .collectList()
             .flatMap { collection.bulkWrite(it).toValueMono().then() }
 
     override fun findById(id: I): Mono<E> =
-        collection.find(Filters.eq(ID_FIELD, id)).first().toValueMono()
+        collection.find(
+            Entity<I>::id eq id,
+        ).first().toValueMono()
 
     override fun findAll(): Flux<E> = collection.find().toValueFlux()
 
     override fun exists(entity: E): Mono<Boolean> =
-        collection.countDocuments(Filters.eq(ID_FIELD, entity.id)).toValueMono().map { it > 0 }
+        collection.countDocuments(Entity<I>::id eq entity.id).toValueMono().map { it > 0 }
 
     override fun count(): Mono<Long> = collection.countDocuments().toValueMono()
 
     override fun deleteById(id: I): Mono<Void> =
-        collection.deleteOne(Filters.eq(ID_FIELD, id)).toValueMono().then()
+        collection.deleteOne(Entity<I>::id eq id).toValueMono().then()
 
     override fun deleteAll(): Mono<Void> = collection.deleteMany(Filters.empty()).toValueMono().then()
 
@@ -62,5 +66,5 @@ abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
         entities.toValueFlux()
             .map(Entity<I>::id)
             .collectList()
-            .flatMap { collection.deleteMany(Filters.`in`(ID_FIELD, it)).toValueMono().then() }
+            .flatMap { ids -> collection.deleteMany(Entity<I>::id `in` ids).toValueMono().then() }
 }

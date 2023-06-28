@@ -19,5 +19,9 @@ package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.EntityManager
 import org.bson.types.ObjectId
+import reactor.core.publisher.Mono
 
-interface AccountManager : EntityManager<ObjectId, Account>
+interface AccountManager : EntityManager<ObjectId, Account> {
+    fun findByUuid(uuid: String): Mono<Account>
+    fun findByHashedUsername(hashedUsername: String): Mono<Account>
+}

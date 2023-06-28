@@ -17,26 +17,48 @@
  */
 package com.xpdustry.foundation.common.hash
 
+import com.xpdustry.foundation.common.misc.toErrorMono
 import reactor.core.publisher.Mono
 
-// NOTE:
-//  1. Wrapping hash in monos since computing can take a few seconds
-//  2. This class is not designed to work with hash functions that generate a salt themselves such as bcrypt
 interface HashFunction<P : HashParams> {
-    fun create(password: CharArray, params: P, saltLength: Int): Mono<Hash>
-    fun create(password: CharArray, params: P, salt: ByteArray): Mono<Hash>
+    fun create(chars: CharArray, params: P): Mono<Hash>
+    fun create(bytes: ByteArray, params: P): Mono<Hash>
 }
 
-object GenericHashFunction : HashFunction<HashParams> {
-    override fun create(password: CharArray, params: HashParams, saltLength: Int): Mono<Hash> = when (params) {
-        is Argon2Params -> Argon2HashFunction.create(password, params, saltLength)
-        is PBKDF2Params -> PBKDF2HashFunction.create(password, params, saltLength)
-        else -> throw IllegalArgumentException("Unsupported params: $params")
+interface SaltyHashFunction<P : HashParams> : HashFunction<P> {
+    fun create(chars: CharArray, params: P, salt: CharArray): Mono<Hash>
+    fun create(chars: CharArray, params: P, salt: ByteArray): Mono<Hash>
+    fun create(bytes: ByteArray, params: P, salt: ByteArray): Mono<Hash>
+}
+
+object GenericSaltyHashFunction : SaltyHashFunction<HashParams> {
+    override fun create(chars: CharArray, params: HashParams): Mono<Hash> = when (params) {
+        is Argon2Params -> Argon2HashFunction.create(chars, params)
+        is PBKDF2Params -> PBKDF2HashFunction.create(chars, params)
+        else -> IllegalArgumentException("Unsupported params: $params").toErrorMono()
     }
 
-    override fun create(password: CharArray, params: HashParams, salt: ByteArray): Mono<Hash> = when (params) {
-        is Argon2Params -> Argon2HashFunction.create(password, params, salt)
-        is PBKDF2Params -> PBKDF2HashFunction.create(password, params, salt)
-        else -> throw IllegalArgumentException("Unsupported params: $params")
+    override fun create(bytes: ByteArray, params: HashParams): Mono<Hash> = when (params) {
+        is Argon2Params -> Argon2HashFunction.create(bytes, params)
+        is PBKDF2Params -> PBKDF2HashFunction.create(bytes, params)
+        else -> IllegalArgumentException("Unsupported params: $params").toErrorMono()
+    }
+
+    override fun create(chars: CharArray, params: HashParams, salt: CharArray): Mono<Hash> = when (params) {
+        is Argon2Params -> Argon2HashFunction.create(chars, params, salt)
+        is PBKDF2Params -> PBKDF2HashFunction.create(chars, params, salt)
+        else -> IllegalArgumentException("Unsupported params: $params").toErrorMono()
+    }
+
+    override fun create(chars: CharArray, params: HashParams, salt: ByteArray): Mono<Hash> = when (params) {
+        is Argon2Params -> Argon2HashFunction.create(chars, params, salt)
+        is PBKDF2Params -> PBKDF2HashFunction.create(chars, params, salt)
+        else -> IllegalArgumentException("Unsupported params: $params").toErrorMono()
+    }
+
+    override fun create(bytes: ByteArray, params: HashParams, salt: ByteArray): Mono<Hash> = when (params) {
+        is Argon2Params -> Argon2HashFunction.create(bytes, params, salt)
+        is PBKDF2Params -> PBKDF2HashFunction.create(bytes, params, salt)
+        else -> IllegalArgumentException("Unsupported params: $params").toErrorMono()
     }
 }
