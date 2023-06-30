@@ -43,7 +43,7 @@ class SimplePlaceholderManager : PlaceholderPipeline, AbstractProcessorPipeline<
                 val processor = processor(parts[0])
                     ?: return@flatMap Mono.empty()
                 val query = parts.getOrNull(1) ?: ""
-                return@flatMap processor.process(PlaceholderContext(context.player, query))
+                return@flatMap Mono.defer { processor.process(PlaceholderContext(context.player, query)) }
                     .onErrorResume { error ->
                         logger.error("Failed to process placeholder '{}'", placeholder, error)
                         Mono.empty()

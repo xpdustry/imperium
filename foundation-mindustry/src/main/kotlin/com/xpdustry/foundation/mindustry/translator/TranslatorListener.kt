@@ -30,7 +30,7 @@ import mindustry.game.EventType.PlayerJoin
 import reactor.core.publisher.Mono
 import java.time.Duration
 
-class TranslatorService @Inject constructor(
+class TranslatorListener @Inject constructor(
     private val translator: Translator,
     private val pipeline: ChatMessagePipeline,
 ) : FoundationListener {

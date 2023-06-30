@@ -22,15 +22,17 @@ import com.xpdustry.foundation.common.hash.Hash
 import org.bson.types.ObjectId
 import java.time.Instant
 
+typealias HashedSessionToken = String
+
 data class Account(
     override val id: ObjectId = ObjectId(),
-    val uuids: MutableSet<String> = mutableSetOf(),
+    val uuids: MutableSet<MindustryUUID> = mutableSetOf(),
     var password: Hash,
     val hashedUsername: String? = null,
     var rank: Rank = Rank.NEWBIE,
     var steam: String? = null,
     var discord: String? = null,
-    val sessions: MutableMap<String, Instant> = mutableMapOf(),
+    val sessions: MutableMap<HashedSessionToken, Instant> = mutableMapOf(),
 ) : Entity<ObjectId> {
 
     val verified: Boolean get() = steam != null || discord != null
@@ -44,6 +46,4 @@ data class Account(
         ADMINISTRATOR,
         OWNER,
     }
-
-    data class UuidData(val sessions: MutableMap<String, Instant> = mutableMapOf())
 }

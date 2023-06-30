@@ -17,25 +17,37 @@
  */
 package com.xpdustry.foundation.common
 
+import com.google.inject.util.Providers
+import com.xpdustry.foundation.common.application.FoundationMetadata
+import com.xpdustry.foundation.common.application.FoundationPlatform
 import com.xpdustry.foundation.common.application.KotlinAbstractModule
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.config.FoundationConfigProvider
 import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.database.model.AccountService
+import com.xpdustry.foundation.common.database.model.SimpleAccountService
 import com.xpdustry.foundation.common.database.mongo.MongoDatabase
 import com.xpdustry.foundation.common.message.Messenger
 import com.xpdustry.foundation.common.message.RabbitmqMessenger
 import com.xpdustry.foundation.common.network.Discovery
 import com.xpdustry.foundation.common.network.IpHubVpnAddressDetector
+import com.xpdustry.foundation.common.network.MindustryServerInfo
 import com.xpdustry.foundation.common.network.SimpleDiscovery
 import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.common.translator.DeeplTranslator
 import com.xpdustry.foundation.common.translator.Translator
+import com.xpdustry.foundation.common.version.FoundationVersion
 
 class FoundationCommonModule : KotlinAbstractModule() {
     override fun configure() {
         // Database
         bind(Database::class)
             .implementation(MongoDatabase::class)
+            .singleton()
+
+        // Services
+        bind(AccountService::class)
+            .implementation(SimpleAccountService::class)
             .singleton()
 
         // Translation
@@ -61,5 +73,12 @@ class FoundationCommonModule : KotlinAbstractModule() {
         bind(FoundationConfig::class)
             .provider(FoundationConfigProvider::class)
             .singleton()
+
+        // Misc
+        bind(MindustryServerInfo::class)
+            .provider(Providers.of(null))
+
+        bind(FoundationMetadata::class)
+            .instance(FoundationMetadata("unknown", FoundationPlatform.UNKNOWN, FoundationVersion(1, 1, 1)))
     }
 }

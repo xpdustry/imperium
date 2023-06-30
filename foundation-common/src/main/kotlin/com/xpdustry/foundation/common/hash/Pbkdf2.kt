@@ -70,7 +70,7 @@ object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
         create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
 
     override fun create(chars: CharArray, params: PBKDF2Params, salt: CharArray): Mono<Hash> =
-        create0(Password.hash(SecureString(chars)).addSalt(salt.toString()), params)
+        create0(Password.hash(SecureString(chars)).addSalt(salt.concatToString()), params)
 
     override fun create(chars: CharArray, params: PBKDF2Params, salt: ByteArray): Mono<Hash> =
         create0(Password.hash(SecureString(chars)).addSalt(salt), params)

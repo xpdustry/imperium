@@ -60,7 +60,7 @@ class DdosVerification : Processor<VerificationContext, VerificationResult> {
             it.fetchAddresses()
                 .onErrorResume { error ->
                     logger.error("Failed to fetch addresses for cloud provider '{}'", it.provider, error)
-                    Mono.empty()
+                    Mono.just(emptyList())
                 }
                 .doOnNext { result ->
                     logger.debug("Found {} addresses for cloud provider '{}'", result.size, it.provider)

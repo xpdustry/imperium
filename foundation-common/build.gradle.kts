@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     api(libs.mongodb.driver.reactive)
-    api(libs.kmongo.async.native)
     api(libs.reactor.core)
     api(libs.guice)
     api(libs.guava)
@@ -19,4 +18,5 @@ dependencies {
     api(libs.password4j)
     api(libs.kryo)
     api(libs.rabbitmq.client)
+    testApi(libs.slf4j.simple)
 }

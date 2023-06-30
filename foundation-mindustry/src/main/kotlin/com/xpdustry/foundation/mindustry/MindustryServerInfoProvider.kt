@@ -19,10 +19,8 @@ package com.xpdustry.foundation.mindustry
 
 import com.google.inject.Inject
 import com.google.inject.Provider
-import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.network.MindustryServerInfo
-import com.xpdustry.foundation.common.network.ServerInfo
 import com.xpdustry.foundation.common.version.MindustryVersion
 import mindustry.Vars
 import mindustry.core.Version
@@ -30,17 +28,9 @@ import mindustry.game.Gamemode
 import mindustry.gen.Groups
 import mindustry.net.Administration
 
-class MindustryServerInfoProvider @Inject constructor(
-    private val metadata: FoundationMetadata,
-    private val config: FoundationConfig,
-) : Provider<ServerInfo> {
+class MindustryServerInfoProvider @Inject constructor(private val config: FoundationConfig) : Provider<MindustryServerInfo> {
 
-    override fun get(): ServerInfo = ServerInfo(
-        metadata,
-        getMindustryServerInfo(),
-    )
-
-    private fun getMindustryServerInfo(): MindustryServerInfo? {
+    override fun get(): MindustryServerInfo? {
         if (Vars.state.isMenu) {
             return null
         }

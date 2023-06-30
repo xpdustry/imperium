@@ -43,7 +43,7 @@ import mindustry.net.Packets.KickReason
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class VerificationService @Inject constructor(
+class VerificationListener @Inject constructor(
     private val pipeline: VerificationPipeline,
     private val database: Database,
     private val provider: VpnAddressDetector,

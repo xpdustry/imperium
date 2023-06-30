@@ -26,12 +26,13 @@ import com.xpdustry.foundation.common.FoundationCommonModule
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.SimpleFoundationApplication
 import com.xpdustry.foundation.common.misc.ExitStatus
-import com.xpdustry.foundation.mindustry.chat.ChatMessageService
+import com.xpdustry.foundation.mindustry.account.AccountListener
+import com.xpdustry.foundation.mindustry.chat.ChatMessageListener
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.history.HistoryCommand
 import com.xpdustry.foundation.mindustry.listener.ConventionListener
-import com.xpdustry.foundation.mindustry.translator.TranslatorService
-import com.xpdustry.foundation.mindustry.verification.VerificationService
+import com.xpdustry.foundation.mindustry.translator.TranslatorListener
+import com.xpdustry.foundation.mindustry.verification.VerificationListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -62,17 +63,17 @@ class FoundationPlugin : AbstractMindustryPlugin() {
 
     override fun onLoad() {
         application = PluginFoundationApplication(
-            FoundationCommonModule(),
-            FoundationMindustryModule(this),
-            false,
-            this,
+            modules = listOf(FoundationCommonModule(), FoundationMindustryModule(this)),
+            plugin = this,
+            production = true,
         )
 
-        // Services
+        // Listeners
         application.register(ConventionListener::class)
-        application.register(VerificationService::class)
-        application.register(ChatMessageService::class)
-        application.register(TranslatorService::class)
+        application.register(VerificationListener::class)
+        application.register(TranslatorListener::class)
+        application.register(AccountListener::class)
+        application.register(ChatMessageListener::class)
 
         // Commands
         application.register(HistoryCommand::class)
@@ -86,11 +87,10 @@ class FoundationPlugin : AbstractMindustryPlugin() {
 }
 
 private class PluginFoundationApplication(
-    common: Module,
-    implementation: Module,
-    production: Boolean = true,
+    modules: List<Module>,
+    production: Boolean,
     private val plugin: MindustryPlugin,
-) : SimpleFoundationApplication(common, implementation, production) {
+) : SimpleFoundationApplication(modules, production) {
     override fun exit(status: ExitStatus) {
         super.exit(status)
         when (status) {

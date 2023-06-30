@@ -17,16 +17,6 @@
  */
 package com.xpdustry.foundation.common.hash
 
-val DEFAULT_PARAMS: HashParams = Argon2Params(
-    memory = 64 * 1024,
-    iterations = 3,
-    parallelism = 2,
-    length = 64,
-    type = Argon2Params.Type.ID,
-    version = Argon2Params.Version.V13,
-    saltLength = 64,
-)
-
 interface HashParams {
     companion object {
         fun fromString(str: String): HashParams = when {

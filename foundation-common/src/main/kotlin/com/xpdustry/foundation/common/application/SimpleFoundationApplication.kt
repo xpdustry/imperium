@@ -27,13 +27,21 @@ import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.common.misc.LoggerDelegate
 import kotlin.reflect.KClass
 
-open class SimpleFoundationApplication(common: Module, implementation: Module, production: Boolean) : FoundationApplication {
+open class SimpleFoundationApplication(modules: List<Module>, production: Boolean) : FoundationApplication {
 
     private val listeners = arrayListOf<FoundationListener>()
-    private val injector: Injector = Guice.createInjector(
-        if (production) Stage.PRODUCTION else Stage.DEVELOPMENT,
-        FoundationAwareModule(Modules.override(common).with(implementation)),
-    )
+    private val injector: Injector
+
+    init {
+        var module: Module = modules.getOrNull(0) ?: throw IllegalArgumentException("No module provided.")
+        for (i in 1 until modules.size) {
+            module = Modules.override(module).with(modules[i])
+        }
+        injector = Guice.createInjector(
+            if (production) Stage.PRODUCTION else Stage.DEVELOPMENT,
+            FoundationAwareModule(module),
+        )
+    }
 
     fun register(listener: FoundationListener) = synchronized(listeners) {
         if (listeners.contains(listener)) {
@@ -67,7 +75,8 @@ open class SimpleFoundationApplication(common: Module, implementation: Module, p
     inner class FoundationAwareModule(private val module: Module) : KotlinAbstractModule() {
         override fun configure() {
             install(module)
-            bind(FoundationApplication::class).instance(this@SimpleFoundationApplication)
+            bind(FoundationApplication::class)
+                .instance(this@SimpleFoundationApplication)
             bindProvisionListener(Matchers.any()) {
                 val provision = it.provision()
                 if (provision is FoundationListener) {

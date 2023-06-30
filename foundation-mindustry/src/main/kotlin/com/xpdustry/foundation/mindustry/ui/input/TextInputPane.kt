@@ -27,5 +27,5 @@ data class TextInputPane(
     var placeholder: String = "",
     var length: Int = 64,
     var inputAction: BiAction<String> = Action.none().asBiAction(),
-    var exitAction: Action = Action.none(),
+    var exitAction: Action = Action.back(),
 ) : Pane

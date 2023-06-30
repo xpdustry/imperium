@@ -69,8 +69,10 @@ tasks.shadowJar {
         into("META-INF")
     }
 
-    minimize()
     mergeServiceFiles()
+    minimize {
+        exclude(dependency(libs.kmongo.async.native.get()))
+    }
 }
 
 tasks.register("getArtifactPath") {

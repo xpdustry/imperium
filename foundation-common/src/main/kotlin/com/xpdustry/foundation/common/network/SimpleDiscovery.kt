@@ -23,6 +23,7 @@ import com.google.common.cache.RemovalCause
 import com.google.common.cache.RemovalListener
 import com.google.common.cache.RemovalNotification
 import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.message.Messenger
 import jakarta.inject.Inject
 import jakarta.inject.Provider
@@ -40,7 +41,8 @@ private val logger = LoggerFactory.getLogger(SimpleDiscovery::class.java)
 // TODO: Test this discovery system since it uses monos and stuff
 class SimpleDiscovery @Inject constructor(
     private val messenger: Messenger,
-    private val infoProvider: Provider<ServerInfo>,
+    private val metadata: FoundationMetadata,
+    private val mindustryServerProvider: Provider<MindustryServerInfo?>,
 ) : Discovery, FoundationListener {
 
     private val _servers: Cache<String, ServerInfo> = CacheBuilder.newBuilder()
@@ -51,7 +53,7 @@ class SimpleDiscovery @Inject constructor(
     private var heartbeatTask: Disposable? = null
 
     override fun onFoundationInit() {
-        logger.debug("Starting discovery as {}", infoProvider.get().metadata.identifier)
+        logger.debug("Starting discovery as {}", metadata.identifier)
 
         messenger.on(DiscoveryMessage::class).subscribe {
             if (it.type === DiscoveryMessage.Type.DISCOVER) {
@@ -84,7 +86,7 @@ class SimpleDiscovery @Inject constructor(
 
     private fun sendDiscovery(type: DiscoveryMessage.Type): Mono<Void> {
         logger.trace("Sending {} discovery message", type.name.lowercase(Locale.ROOT))
-        return messenger.publish(DiscoveryMessage(infoProvider.get(), type))
+        return messenger.publish(DiscoveryMessage(ServerInfo(metadata, mindustryServerProvider.get()), type))
     }
 
     override fun onFoundationExit() {

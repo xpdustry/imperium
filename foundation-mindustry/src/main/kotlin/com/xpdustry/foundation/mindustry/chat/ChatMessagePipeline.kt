@@ -40,8 +40,7 @@ class SimpleChatMessagePipeline : ChatMessagePipeline, AbstractProcessorPipeline
         if (index >= processors.size) {
             return Mono.just(context.message)
         }
-        return processors[index]
-            .process(context)
+        return Mono.defer { processors[index].process(context) }
             .onErrorResume { error ->
                 logger.error("Error while processing chat message for player ${context.sender.name()}", error)
                 Mono.empty()

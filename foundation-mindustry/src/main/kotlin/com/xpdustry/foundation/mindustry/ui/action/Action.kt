@@ -74,7 +74,7 @@ fun interface Action {
         }
 
         fun close(): Action {
-            return Action { obj: View -> obj.close() }
+            return Action { it.close() }
         }
 
         fun closeAll(): Action {

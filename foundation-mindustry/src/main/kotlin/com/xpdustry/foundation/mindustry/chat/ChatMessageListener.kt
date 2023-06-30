@@ -38,7 +38,7 @@ import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
-class ChatMessageService @Inject constructor(
+class ChatMessageListener @Inject constructor(
     private val pipeline: ChatMessagePipeline,
     @Named("client")
     private val clientCommandManager: FoundationPluginCommandManager,

@@ -43,6 +43,9 @@ abstract class KotlinAbstractModule : AbstractModule() {
     protected fun <T : Any> LinkedBindingBuilder<T>.provider(clazz: KClass<out Provider<out T>>): ScopedBindingBuilder =
         toProvider(clazz.java)
 
+    protected fun <T : Any> LinkedBindingBuilder<T>.provider(provider: Provider<out T?>): ScopedBindingBuilder =
+        toProvider(provider)
+
     protected fun <T : Any> LinkedBindingBuilder<T>.instance(instance: T): Unit =
         toInstance(instance)
 

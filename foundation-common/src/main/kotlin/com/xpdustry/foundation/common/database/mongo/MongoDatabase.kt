@@ -25,6 +25,7 @@ import com.mongodb.ServerApi
 import com.mongodb.ServerApiVersion
 import com.mongodb.connection.SslSettings
 import com.mongodb.reactivestreams.client.MongoClient
+import com.mongodb.reactivestreams.client.MongoClients
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
@@ -39,68 +40,69 @@ import com.xpdustry.foundation.common.misc.toValueFlux
 import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
-import org.litote.kmongo.reactivestreams.KMongo
 import java.time.Duration
 
 class MongoDatabase @Inject constructor(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Database, FoundationListener {
 
     private lateinit var client: MongoClient
+
     override lateinit var users: UserManager
     override lateinit var punishments: PunishmentManager
     override lateinit var accounts: AccountManager
 
     override fun onFoundationInit() {
-        client = KMongo.createClient(
-            MongoClientSettings.builder()
-                .applicationName("foundation-${metadata.name}")
-                .applyToClusterSettings {
-                    it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
+        val settings = MongoClientSettings.builder()
+            .applicationName("foundation-${metadata.name}")
+            .applyToClusterSettings {
+                it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
+            }
+            .also {
+                if (config.mongo.username.isBlank()) {
+                    return@also
                 }
-                .also {
-                    if (config.mongo.username.isBlank()) {
-                        return@also
-                    }
-                    it.credential(
-                        MongoCredential.createCredential(
-                            config.mongo.username,
-                            config.mongo.authDatabase,
-                            config.mongo.password.value.toCharArray(),
-                        ),
-                    )
-                }
-                .serverApi(
-                    ServerApi.builder()
-                        .version(ServerApiVersion.V1)
-                        .strict(true)
-                        .deprecationErrors(true)
-                        .build(),
-                )
-                .applyToSslSettings {
-                    it.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
-                }
-                .codecRegistry(
-                    CodecRegistries.fromProviders(
-                        MongoClientSettings.getDefaultCodecRegistry(),
-                        PojoCodecProvider.builder()
-                            .register(User::class.java)
-                            .register(Punishment::class.java)
-                            .conventions(
-                                Conventions.DEFAULT_CONVENTIONS + listOf(
-                                    SnakeCaseConvention,
-                                    Conventions.SET_PRIVATE_FIELDS_CONVENTION,
-                                    InstanciationConvention,
-                                ),
-                            )
-                            .build(),
-                        CodecRegistries.fromCodecs(
-                            DurationCodec(),
-                            InetAddressCodec(),
-                            HashCodec(),
-                        ),
+                it.credential(
+                    MongoCredential.createCredential(
+                        config.mongo.username,
+                        config.mongo.authDatabase,
+                        config.mongo.password.value.toCharArray(),
                     ),
                 )
-                .build(),
-        )
+            }
+            .serverApi(
+                ServerApi.builder()
+                    .version(ServerApiVersion.V1)
+                    .strict(true)
+                    .deprecationErrors(true)
+                    .build(),
+            )
+            .applyToSslSettings {
+                it.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
+            }
+            .codecRegistry(
+                CodecRegistries.fromProviders(
+                    MongoClientSettings.getDefaultCodecRegistry(),
+                    PojoCodecProvider.builder()
+                        .register(Account::class.java)
+                        .register(User::class.java)
+                        .register(Punishment::class.java)
+                        .conventions(
+                            Conventions.DEFAULT_CONVENTIONS + listOf(
+                                SnakeCaseConvention,
+                                Conventions.SET_PRIVATE_FIELDS_CONVENTION,
+                                InstanciationConvention,
+                            ),
+                        )
+                        .build(),
+                    CodecRegistries.fromCodecs(
+                        DurationCodec(),
+                        HashCodec(),
+                    ),
+                    InetAddressCodecProvider(),
+                ),
+            )
+            .build()
+
+        client = MongoClients.create(settings)
 
         // Check if client is correctly authenticated
         client.listDatabaseNames().toValueFlux()

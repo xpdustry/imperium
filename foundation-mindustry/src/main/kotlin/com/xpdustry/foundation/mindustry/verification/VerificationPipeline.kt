@@ -44,10 +44,11 @@ class SimpleVerificationPipeline : VerificationPipeline, AbstractProcessorPipeli
     override fun build(context: VerificationContext): Mono<VerificationResult> =
         processors.toValueFlux()
             .flatMapSequential {
-                it.process(context).onErrorResume { error ->
-                    logger.error("Error while verifying player ${context.name}", error)
-                    VerificationResult.Success.toValueMono()
-                }
+                Mono.defer { it.process(context) }
+                    .onErrorResume { error ->
+                        logger.error("Error while verifying player ${context.name}", error)
+                        VerificationResult.Success.toValueMono()
+                    }
             }
             .takeUntil { it is VerificationResult.Failure }
             .last(VerificationResult.Success)

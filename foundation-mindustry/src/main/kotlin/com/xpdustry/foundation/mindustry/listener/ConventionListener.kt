@@ -26,7 +26,6 @@ import fr.xpdustry.distributor.api.scheduler.TaskHandler
 import jakarta.inject.Inject
 import mindustry.net.Administration
 
-// TODO: Turn into ConventionService
 class ConventionListener @Inject constructor(private val config: FoundationConfig) : FoundationListener {
 
     override fun onFoundationInit() {

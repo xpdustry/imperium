@@ -87,7 +87,7 @@ object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
         create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
 
     override fun create(chars: CharArray, params: Argon2Params, salt: CharArray): Mono<Hash> =
-        create0(Password.hash(SecureString(chars)).addSalt(salt.toString()), params)
+        create0(Password.hash(SecureString(chars)).addSalt(salt.concatToString()), params)
 
     override fun create(chars: CharArray, params: Argon2Params, salt: ByteArray): Mono<Hash> =
         create0(Password.hash(SecureString(chars)).addSalt(salt), params)
