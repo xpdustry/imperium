@@ -26,6 +26,7 @@ import com.xpdustry.foundation.common.hash.GenericSaltyHashFunction
 import com.xpdustry.foundation.common.hash.ShaHashFunction
 import com.xpdustry.foundation.common.hash.ShaType
 import com.xpdustry.foundation.common.misc.switchIfEmpty
+import com.xpdustry.foundation.common.misc.then
 import com.xpdustry.foundation.common.misc.toValueMono
 import reactor.core.publisher.Mono
 import java.time.Duration
@@ -34,70 +35,100 @@ import java.util.Base64
 
 class SimpleAccountService @Inject constructor(private val database: Database) : AccountService {
 
-    override fun login(token: SessionToken, username: String, password: CharArray): Mono<LoginResult> =
-        ShaHashFunction.create(username.lowercase().toCharArray(), ShaType.SHA256)
-            .flatMap { database.accounts.findByHashedUsername(Base64.getEncoder().encodeToString(it.hash)) }
-            .flatMap { login0(it, token, password) }
-            .switchIfEmpty { LoginResult.NotRegistered.toValueMono() }
-
-    override fun login(token: SessionToken, password: CharArray): Mono<LoginResult> =
-        database.accounts.findByUuid(token.uuid)
-            .flatMap { account -> login0(account, token, password) }
-            .switchIfEmpty { LoginResult.NotRegistered.toValueMono() }
-
-    private fun login0(account: Account, token: SessionToken, password: CharArray): Mono<LoginResult> =
-        GenericSaltyHashFunction.create(password, account.password.params, account.password.salt)
-            .filter { it == account.password }
-            .flatMap<LoginResult> {
-                updatePassword(account, password)
-                    .then(updateSessions(token, account))
-                    .then(database.accounts.save(account))
-                    .thenReturn(LoginResult.Success)
-            }
-            .switchIfEmpty { LoginResult.WrongPassword.toValueMono() }
-
-    override fun register(token: SessionToken, password: CharArray): Mono<RegisterResult> {
+    override fun register(token: SessionToken, password: CharArray): Mono<AccountOperationResult> {
         return database.accounts.findByUuid(token.uuid)
-            .map<RegisterResult> { RegisterResult.AlreadyRegistered }
+            .map<AccountOperationResult> { AccountOperationResult.AlreadyRegistered }
             .switchIfEmpty { register0(token, password) }
     }
 
-    private fun register0(token: SessionToken, password: CharArray): Mono<RegisterResult> {
-        val check = checkPassword(password)
-        if (check != null) return Mono.just(check)
-
+    private fun register0(token: SessionToken, password: CharArray): Mono<AccountOperationResult> {
+        val missing = getMissingPasswordRequirements(password)
+        if (missing.isNotEmpty()) {
+            return AccountOperationResult.InvalidPassword(missing).toValueMono()
+        }
         return GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
             .map { hash -> Account(uuids = mutableSetOf(token.uuid), password = hash) }
             .flatMap { account -> database.accounts.save(account) }
-            .thenReturn(RegisterResult.Success)
+            .thenReturn(AccountOperationResult.Success)
     }
 
-    @VisibleForTesting
-    internal fun checkPassword(password: CharArray): RegisterResult.InvalidPassword? = when {
-        password.size < PASSWORD_MIN_LENGTH || password.size > PASSWORD_MAX_LENGTH ->
-            RegisterResult.InvalidPassword.Length(PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH)
-        password.none { it.isLetter() } -> RegisterResult.InvalidPassword.NoLetter
-        password.none { it.isDigit() } -> RegisterResult.InvalidPassword.NoNumber
-        password.none { !it.isLetterOrDigit() } -> RegisterResult.InvalidPassword.NoSymbol
-        else -> null
-    }
+    override fun login(token: SessionToken, username: String, password: CharArray): Mono<AccountOperationResult> =
+        ShaHashFunction.create(username.lowercase().toCharArray(), ShaType.SHA256)
+            .flatMap { database.accounts.findByHashedUsername(Base64.getEncoder().encodeToString(it.hash)) }
+            .flatMap { login0(it, token, password) }
+            .switchIfEmpty { AccountOperationResult.NotRegistered.toValueMono() }
+
+    override fun login(token: SessionToken, password: CharArray): Mono<AccountOperationResult> =
+        database.accounts.findByUuid(token.uuid)
+            .flatMap { account -> login0(account, token, password) }
+            .switchIfEmpty { AccountOperationResult.NotRegistered.toValueMono() }
+
+    private fun login0(account: Account, token: SessionToken, password: CharArray): Mono<AccountOperationResult> =
+        GenericSaltyHashFunction.create(password, account.password.params, account.password.salt)
+            .filter { it == account.password }
+            .flatMap<AccountOperationResult> {
+                updatePassword(account, password)
+                    .then(updateSessions(token, account))
+                    .then(database.accounts.save(account))
+                    .thenReturn(AccountOperationResult.Success)
+            }
+            .switchIfEmpty { AccountOperationResult.WrongPassword.toValueMono() }
 
     override fun logout(token: SessionToken): Mono<Void> = database.accounts
         .findByUuid(token.uuid)
         .flatMap { account ->
             hashSessionToken(token)
                 .doOnNext { hash -> account.sessions.remove(hash) }
-                .then(database.accounts.save(account))
+                .then { database.accounts.save(account) }
         }
 
     override fun refresh(token: SessionToken): Mono<Void> =
-        getAccount(token).flatMap { account -> updateSessions(token, account).then(database.accounts.save(account)) }
+        findAccountBySession(token).flatMap { account ->
+            updateSessions(token, account).then { database.accounts.save(account) }
+        }
 
-    override fun getAccount(token: SessionToken): Mono<Account> = database.accounts
+    override fun findAccountBySession(token: SessionToken): Mono<Account> = database.accounts
         .findByUuid(token.uuid)
         .filterWhen { account ->
-            hashSessionToken(token).map { hash -> account.sessions.contains(hash) }
+            hashSessionToken(token).map { hash ->
+                account.sessions[hash]?.isAfter(Instant.now()) ?: false
+            }
         }
+
+    override fun updatePassword(token: SessionToken, oldPassword: CharArray, newPassword: CharArray): Mono<AccountOperationResult> =
+        findAccountBySession(token)
+            .flatMap { account ->
+                val missing = getMissingPasswordRequirements(newPassword)
+                if (missing.isNotEmpty()) {
+                    return@flatMap AccountOperationResult.InvalidPassword(missing).toValueMono()
+                }
+                GenericSaltyHashFunction.create(oldPassword, account.password.params, account.password.salt)
+                    .filter { it == account.password }
+                    .flatMap<AccountOperationResult> {
+                        updatePassword(account, newPassword)
+                            .then(database.accounts.save(account))
+                            .thenReturn(AccountOperationResult.Success)
+                    }
+                    .switchIfEmpty { AccountOperationResult.WrongPassword.toValueMono() }
+            }
+            .switchIfEmpty { AccountOperationResult.NotLogged.toValueMono() }
+
+    @VisibleForTesting
+    internal fun getMissingPasswordRequirements(password: CharArray): List<PasswordRequirement> {
+        val missing = mutableListOf<PasswordRequirement>()
+        if (password.size < PASSWORD_MIN_LENGTH || password.size > PASSWORD_MAX_LENGTH) {
+            missing += PasswordRequirement.Length(PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH)
+        } else if (password.none { it.isDigit() }) {
+            missing += PasswordRequirement.Number
+        } else if (password.none { !it.isLetterOrDigit() }) {
+            missing += PasswordRequirement.Symbol
+        } else if (password.none { it.isUpperCase() }) {
+            missing += PasswordRequirement.UppercaseLetter
+        } else if (password.none { it.isLowerCase() }) {
+            missing += PasswordRequirement.LowercaseLetter
+        }
+        return missing
+    }
 
     private fun updateSessions(token: SessionToken, account: Account): Mono<Void> =
         hashSessionToken(token).doOnNext { hash ->
@@ -112,7 +143,7 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
         }
         return Argon2HashFunction.create(password, PASSWORD_PARAMS)
             .doOnNext { account.password = it }
-            .then(database.accounts.save(account))
+            .then { database.accounts.save(account) }
     }
 
     @VisibleForTesting

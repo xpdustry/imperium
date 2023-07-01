@@ -20,8 +20,8 @@ package com.xpdustry.foundation.mindustry.account
 import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.google.inject.Inject
 import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.database.model.AccountOperationResult
 import com.xpdustry.foundation.common.database.model.AccountService
-import com.xpdustry.foundation.common.database.model.LoginResult
 import com.xpdustry.foundation.common.database.model.SessionToken
 import com.xpdustry.foundation.common.misc.switchIfEmpty
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
@@ -35,6 +35,7 @@ import com.xpdustry.foundation.mindustry.verification.VerificationResult
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.Priority
 import jakarta.inject.Named
+import mindustry.gen.Call
 import mindustry.gen.Player
 import reactor.core.publisher.Mono
 
@@ -57,7 +58,7 @@ class AccountListener @Inject constructor(
         clientCommandManager.buildAndRegister("login") {
             commandDescription("Login to your account")
             handler { ctx ->
-                service.getAccount(ctx.sender.player.token)
+                service.findAccountBySession(ctx.sender.player.token)
                     .publishOn(MindustryScheduler)
                     .doOnNext {
                         ctx.sender.sendMessage("You are already logged in!")
@@ -95,16 +96,19 @@ fun createLoginInterface(plugin: MindustryPlugin, service: AccountService): Inte
                 .publishOn(MindustryScheduler)
                 .subscribe { result ->
                     when (result) {
-                        is LoginResult.Success -> {
+                        is AccountOperationResult.Success -> {
                             view.viewer.sendMessage("Successfully logged in!")
                         }
-                        is LoginResult.WrongPassword -> {
+                        is AccountOperationResult.WrongPassword -> {
                             view.state[ERROR_MESSAGE] = "Wrong password! Try again."
                             view.open()
                         }
-                        is LoginResult.NotRegistered -> {
+                        is AccountOperationResult.NotRegistered -> {
                             view.state[ERROR_MESSAGE] = "You are not registered! Use /register to register."
                             view.open()
+                        }
+                        else -> {
+                            Call.infoMessage(view.viewer.con, "An unknown error occurred! Please report this to the server owner.")
                         }
                     }
                 }

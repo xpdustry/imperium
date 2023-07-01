@@ -33,6 +33,9 @@ fun <R : Any, T : Throwable> T.toErrorMono(): Mono<R> =
 fun <T> Mono<T>.switchIfEmpty(block: () -> Mono<T>): Mono<T> =
     switchIfEmpty(Mono.defer(block))
 
+fun <T> Mono<*>.then(block: () -> Mono<T>): Mono<T> =
+    then(Mono.defer(block))
+
 fun <T : Any> T?.toValueFlux(): Flux<T> =
     if (this == null) Flux.empty() else Flux.just(this)
 

@@ -20,29 +20,30 @@ package com.xpdustry.foundation.common.database.model
 import reactor.core.publisher.Mono
 
 interface AccountService {
-    fun register(token: SessionToken, password: CharArray): Mono<RegisterResult>
-    fun login(token: SessionToken, username: String, password: CharArray): Mono<LoginResult>
-    fun login(token: SessionToken, password: CharArray): Mono<LoginResult>
+    fun register(token: SessionToken, password: CharArray): Mono<AccountOperationResult>
+    fun login(token: SessionToken, username: String, password: CharArray): Mono<AccountOperationResult>
+    fun login(token: SessionToken, password: CharArray): Mono<AccountOperationResult>
     fun logout(token: SessionToken): Mono<Void>
     fun refresh(token: SessionToken): Mono<Void>
-    fun getAccount(token: SessionToken): Mono<Account>
+    fun findAccountBySession(token: SessionToken): Mono<Account>
+    fun updatePassword(token: SessionToken, oldPassword: CharArray, newPassword: CharArray): Mono<AccountOperationResult>
 }
 
 data class SessionToken(val uuid: String, val usid: String)
 
-sealed interface RegisterResult {
-    object Success : RegisterResult
-    object AlreadyRegistered : RegisterResult
-    sealed interface InvalidPassword : RegisterResult {
-        object NoLetter : InvalidPassword
-        object NoNumber : InvalidPassword
-        object NoSymbol : InvalidPassword
-        data class Length(val min: Int, val max: Int) : InvalidPassword
-    }
+sealed interface AccountOperationResult {
+    object Success : AccountOperationResult
+    object AlreadyRegistered : AccountOperationResult
+    object NotRegistered : AccountOperationResult
+    object NotLogged : AccountOperationResult
+    object WrongPassword : AccountOperationResult
+    data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountOperationResult
 }
 
-sealed interface LoginResult {
-    object Success : LoginResult
-    object WrongPassword : LoginResult
-    object NotRegistered : LoginResult
+sealed interface PasswordRequirement {
+    object LowercaseLetter : PasswordRequirement
+    object UppercaseLetter : PasswordRequirement
+    object Number : PasswordRequirement
+    object Symbol : PasswordRequirement
+    data class Length(val min: Int, val max: Int) : PasswordRequirement
 }

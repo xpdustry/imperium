@@ -67,12 +67,3 @@ class MenuOptionGrid {
         return null
     }
 }
-
-fun bob() {
-    val grid = MenuOptionGrid()
-    grid.addRow(
-        MenuOption("1"),
-        MenuOption("2"),
-        MenuOption("3"),
-    )
-}
