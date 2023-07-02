@@ -25,6 +25,7 @@ import com.xpdustry.foundation.common.config.MongoConfig
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.misc.ExitStatus
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.MongoDBContainer
@@ -104,25 +105,26 @@ class AccountServiceTest {
             .verifyComplete()
     }
 
-    /* TODO Update test
     @Test
     fun `test password validation`() {
-        fun assertPasswordCheckEquals(password: String, result: RegisterResult.InvalidPassword?) =
-            Assertions.assertEquals(result, service.getMissingPasswordRequirements(password.toCharArray()))
+        fun assertPasswordHasMissingRequirement(password: String, missing: PasswordRequirement?) {
+            val result = service.getMissingPasswordRequirements(password.toCharArray())
+            Assertions.assertTrue((missing == null && result.isEmpty()) || result.find { it == missing } != null)
+        }
 
-        val length = RegisterResult.InvalidPassword.Length(
+        val length = PasswordRequirement.Length(
             SimpleAccountService.PASSWORD_MIN_LENGTH,
             SimpleAccountService.PASSWORD_MAX_LENGTH,
         )
 
-        assertPasswordCheckEquals("1234", length)
-        assertPasswordCheckEquals("1234".repeat(100), length)
-        assertPasswordCheckEquals("12345678", RegisterResult.InvalidPassword.NoLetter)
-        assertPasswordCheckEquals("abcdefgh", RegisterResult.InvalidPassword.NoNumber)
-        assertPasswordCheckEquals("abcd1234", RegisterResult.InvalidPassword.NoSymbol)
-        assertPasswordCheckEquals("abc123!#", null)
+        assertPasswordHasMissingRequirement("1234", length)
+        assertPasswordHasMissingRequirement("1234".repeat(100), length)
+        assertPasswordHasMissingRequirement("12345678", PasswordRequirement.UppercaseLetter)
+        assertPasswordHasMissingRequirement("ABCDEFGH", PasswordRequirement.LowercaseLetter)
+        assertPasswordHasMissingRequirement("abcdefgh", PasswordRequirement.Number)
+        assertPasswordHasMissingRequirement("abcd1234", PasswordRequirement.Symbol)
+        assertPasswordHasMissingRequirement("ABc123!#", null)
     }
-     */
 
     private fun randomSessionToken(): SessionToken {
         val uuidBytes = ByteArray(16)
@@ -146,8 +148,8 @@ class AccountServiceTest {
         @Container
         private val MONGO_CONTAINER = MongoDBContainer(DockerImageName.parse("mongo:6"))
 
-        private val TEST_PASSWORD_1 = "abc123!#".toCharArray()
-        private val TEST_PASSWORD_2 = "123abc!#".toCharArray()
+        private val TEST_PASSWORD_1 = "ABc123!#".toCharArray()
+        private val TEST_PASSWORD_2 = "123ABc!#".toCharArray()
         private val INVALID_PASSWORD = "1234".toCharArray()
     }
 }

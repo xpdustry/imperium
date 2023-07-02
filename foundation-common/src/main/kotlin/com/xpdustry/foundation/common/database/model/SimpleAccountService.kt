@@ -118,13 +118,17 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
         val missing = mutableListOf<PasswordRequirement>()
         if (password.size < PASSWORD_MIN_LENGTH || password.size > PASSWORD_MAX_LENGTH) {
             missing += PasswordRequirement.Length(PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH)
-        } else if (password.none { it.isDigit() }) {
+        }
+        if (password.none { it.isDigit() }) {
             missing += PasswordRequirement.Number
-        } else if (password.none { !it.isLetterOrDigit() }) {
+        }
+        if (password.none { !it.isLetterOrDigit() }) {
             missing += PasswordRequirement.Symbol
-        } else if (password.none { it.isUpperCase() }) {
+        }
+        if (password.none { it.isUpperCase() }) {
             missing += PasswordRequirement.UppercaseLetter
-        } else if (password.none { it.isLowerCase() }) {
+        }
+        if (password.none { it.isLowerCase() }) {
             missing += PasswordRequirement.LowercaseLetter
         }
         return missing
