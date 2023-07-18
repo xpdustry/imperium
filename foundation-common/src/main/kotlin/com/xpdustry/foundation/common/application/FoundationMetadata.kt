@@ -21,8 +21,8 @@ import com.xpdustry.foundation.common.version.FoundationVersion
 import java.util.UUID
 
 data class FoundationMetadata(
-    val name: String,
-    val platform: FoundationPlatform,
-    val version: FoundationVersion,
+    val name: String = "unknown",
+    val platform: FoundationPlatform = FoundationPlatform.UNKNOWN,
+    val version: FoundationVersion = FoundationVersion(0, 0, 0),
     val identifier: String = "$name-${UUID.randomUUID()}",
 )

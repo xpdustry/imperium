@@ -22,6 +22,6 @@ import org.bson.types.ObjectId
 import reactor.core.publisher.Mono
 
 interface AccountManager : EntityManager<ObjectId, Account> {
-    fun findByUuid(uuid: String): Mono<Account>
+    fun findByUuid(uuid: MindustryUUID): Mono<Account>
     fun findByHashedUsername(hashedUsername: String): Mono<Account>
 }

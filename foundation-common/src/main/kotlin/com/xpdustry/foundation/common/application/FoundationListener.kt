@@ -18,6 +18,6 @@
 package com.xpdustry.foundation.common.application
 
 interface FoundationListener {
-    fun onFoundationInit() {}
-    fun onFoundationExit() {}
+    fun onFoundationInit() = Unit
+    fun onFoundationExit() = Unit
 }

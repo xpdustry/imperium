@@ -18,18 +18,31 @@
 package com.xpdustry.foundation.common.database.mongo
 
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Updates
 import com.mongodb.reactivestreams.client.MongoCollection
 import com.xpdustry.foundation.common.database.model.Account
 import com.xpdustry.foundation.common.database.model.AccountManager
+import com.xpdustry.foundation.common.database.model.MindustryUUID
+import com.xpdustry.foundation.common.misc.then
 import com.xpdustry.foundation.common.misc.toValueMono
 import org.bson.types.ObjectId
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 class MongoAccountManager(collection: MongoCollection<Account>) : MongoEntityManager<Account, ObjectId>(collection), AccountManager {
 
-    override fun findByUuid(uuid: String): Mono<Account> =
+    override fun findByUuid(uuid: MindustryUUID): Mono<Account> =
         collection.find(Filters.`in`("uuids", uuid)).toValueMono()
 
     override fun findByHashedUsername(hashedUsername: String): Mono<Account> =
-        collection.find(Filters.eq("hashedUsername", hashedUsername)).toValueMono()
+        collection.find(Filters.eq("hashed_username", hashedUsername)).toValueMono()
+
+    override fun deleteById(id: ObjectId): Mono<Void> = super.deleteById(id)
+        .then { deleteFriendFromAll(id) }
+
+    override fun deleteAll(entities: Iterable<Account>): Mono<Void> = super.deleteAll(entities)
+        .then { Flux.fromIterable(entities).map(Account::id).flatMap(::deleteFriendFromAll).then() }
+
+    private fun deleteFriendFromAll(id: ObjectId): Mono<Void> =
+        collection.updateMany(Filters.`in`("friends", id), Updates.pull("friends", id)).toValueMono().then()
 }

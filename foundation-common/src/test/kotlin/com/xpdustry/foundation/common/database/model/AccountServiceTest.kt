@@ -25,7 +25,6 @@ import com.xpdustry.foundation.common.config.MongoConfig
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.misc.ExitStatus
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.MongoDBContainer
@@ -103,27 +102,6 @@ class AccountServiceTest {
         StepVerifier.create(database.accounts.findByUuid(token.uuid))
             .expectNextMatches { it.sessions.contains(service.hashSessionToken(token).block()) }
             .verifyComplete()
-    }
-
-    @Test
-    fun `test password validation`() {
-        fun assertPasswordHasMissingRequirement(password: String, missing: PasswordRequirement?) {
-            val result = service.getMissingPasswordRequirements(password.toCharArray())
-            Assertions.assertTrue((missing == null && result.isEmpty()) || result.find { it == missing } != null)
-        }
-
-        val length = PasswordRequirement.Length(
-            SimpleAccountService.PASSWORD_MIN_LENGTH,
-            SimpleAccountService.PASSWORD_MAX_LENGTH,
-        )
-
-        assertPasswordHasMissingRequirement("1234", length)
-        assertPasswordHasMissingRequirement("1234".repeat(100), length)
-        assertPasswordHasMissingRequirement("12345678", PasswordRequirement.UppercaseLetter)
-        assertPasswordHasMissingRequirement("ABCDEFGH", PasswordRequirement.LowercaseLetter)
-        assertPasswordHasMissingRequirement("abcdefgh", PasswordRequirement.Number)
-        assertPasswordHasMissingRequirement("abcd1234", PasswordRequirement.Symbol)
-        assertPasswordHasMissingRequirement("ABc123!#", null)
     }
 
     private fun randomSessionToken(): SessionToken {

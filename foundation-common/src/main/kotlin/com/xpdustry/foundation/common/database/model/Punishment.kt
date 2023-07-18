@@ -19,6 +19,7 @@ package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.database.timestamp
+import org.bson.codecs.pojo.annotations.BsonIgnore
 import org.bson.types.ObjectId
 import java.net.InetAddress
 import java.time.Duration
@@ -32,9 +33,11 @@ data class Punishment(
     var duration: Duration? = Duration.ofDays(1L),
     var pardonned: Boolean = false,
 ) : Entity<ObjectId> {
+    @get:BsonIgnore
     val expired: Boolean
         get() = duration != null && (pardonned || timestamp.plus(duration).isBefore(Instant.now()))
 
+    @get:BsonIgnore
     val remaining: Duration
         get() = if (duration == null) Duration.ZERO else duration!!.minus(Duration.between(Instant.now(), timestamp))
 }

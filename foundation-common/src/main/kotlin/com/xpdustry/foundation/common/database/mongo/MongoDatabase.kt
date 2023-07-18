@@ -32,6 +32,7 @@ import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.database.model.Account
 import com.xpdustry.foundation.common.database.model.AccountManager
+import com.xpdustry.foundation.common.database.model.FriendData
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
 import com.xpdustry.foundation.common.database.model.User
@@ -53,14 +54,14 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
     override fun onFoundationInit() {
         val settings = MongoClientSettings.builder()
             .applicationName("foundation-${metadata.name}")
-            .applyToClusterSettings {
-                it.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
+            .applyToClusterSettings { cluster ->
+                cluster.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
             }
-            .also {
+            .also { settings ->
                 if (config.mongo.username.isBlank()) {
                     return@also
                 }
-                it.credential(
+                settings.credential(
                     MongoCredential.createCredential(
                         config.mongo.username,
                         config.mongo.authDatabase,
@@ -75,21 +76,24 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
                     .deprecationErrors(true)
                     .build(),
             )
-            .applyToSslSettings {
-                it.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
+            .applyToSslSettings { ssl ->
+                ssl.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
             }
             .codecRegistry(
                 CodecRegistries.fromProviders(
                     MongoClientSettings.getDefaultCodecRegistry(),
                     PojoCodecProvider.builder()
                         .register(Account::class.java)
+                        .register(FriendData::class.java)
                         .register(User::class.java)
                         .register(Punishment::class.java)
                         .conventions(
-                            Conventions.DEFAULT_CONVENTIONS + listOf(
-                                SnakeCaseConvention,
+                            listOf(
+                                Conventions.CLASS_AND_PROPERTY_CONVENTION,
+                                Conventions.ANNOTATION_CONVENTION,
                                 Conventions.SET_PRIVATE_FIELDS_CONVENTION,
-                                InstanciationConvention,
+                                SnakeCaseConvention,
+                                UnsafeInstanciationConvention,
                             ),
                         )
                         .build(),

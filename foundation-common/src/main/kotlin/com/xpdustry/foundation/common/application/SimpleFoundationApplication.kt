@@ -33,7 +33,7 @@ open class SimpleFoundationApplication(modules: List<Module>, production: Boolea
     private val injector: Injector
 
     init {
-        var module: Module = modules.getOrNull(0) ?: throw IllegalArgumentException("No module provided.")
+        var module = modules.getOrNull(0) ?: throw IllegalArgumentException("No module provided.")
         for (i in 1 until modules.size) {
             module = Modules.override(module).with(modules[i])
         }

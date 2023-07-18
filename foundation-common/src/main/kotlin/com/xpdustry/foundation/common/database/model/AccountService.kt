@@ -17,14 +17,15 @@
  */
 package com.xpdustry.foundation.common.database.model
 
+import com.xpdustry.foundation.common.misc.PasswordRequirement
 import reactor.core.publisher.Mono
 
 interface AccountService {
     fun register(token: SessionToken, password: CharArray): Mono<AccountOperationResult>
     fun login(token: SessionToken, username: String, password: CharArray): Mono<AccountOperationResult>
     fun login(token: SessionToken, password: CharArray): Mono<AccountOperationResult>
-    fun logout(token: SessionToken): Mono<Void>
-    fun refresh(token: SessionToken): Mono<Void>
+    fun logout(token: SessionToken): Mono<Boolean>
+    fun refresh(token: SessionToken): Mono<Boolean>
     fun findAccountBySession(token: SessionToken): Mono<Account>
     fun updatePassword(token: SessionToken, oldPassword: CharArray, newPassword: CharArray): Mono<AccountOperationResult>
 }
@@ -38,12 +39,4 @@ sealed interface AccountOperationResult {
     object NotLogged : AccountOperationResult
     object WrongPassword : AccountOperationResult
     data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountOperationResult
-}
-
-sealed interface PasswordRequirement {
-    object LowercaseLetter : PasswordRequirement
-    object UppercaseLetter : PasswordRequirement
-    object Number : PasswordRequirement
-    object Symbol : PasswordRequirement
-    data class Length(val min: Int, val max: Int) : PasswordRequirement
 }

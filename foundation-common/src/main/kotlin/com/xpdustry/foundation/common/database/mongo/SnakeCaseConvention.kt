@@ -23,8 +23,9 @@ import org.bson.codecs.pojo.Convention
 object SnakeCaseConvention : Convention {
     override fun apply(classModelBuilder: ClassModelBuilder<*>) {
         classModelBuilder.propertyModelBuilders.forEach {
-            it.readName(it.readName.camelToSnakeCase())
-            it.writeName(it.writeName.camelToSnakeCase())
+            // Using null safe operator to avoid NPEs with ignored properties
+            it.readName(it.readName?.camelToSnakeCase())
+            it.writeName(it.writeName?.camelToSnakeCase())
         }
     }
 }

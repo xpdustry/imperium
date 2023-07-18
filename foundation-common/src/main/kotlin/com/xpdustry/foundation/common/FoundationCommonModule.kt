@@ -19,7 +19,6 @@ package com.xpdustry.foundation.common
 
 import com.google.inject.util.Providers
 import com.xpdustry.foundation.common.application.FoundationMetadata
-import com.xpdustry.foundation.common.application.FoundationPlatform
 import com.xpdustry.foundation.common.application.KotlinAbstractModule
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.config.FoundationConfigProvider
@@ -36,7 +35,6 @@ import com.xpdustry.foundation.common.network.SimpleDiscovery
 import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.common.translator.DeeplTranslator
 import com.xpdustry.foundation.common.translator.Translator
-import com.xpdustry.foundation.common.version.FoundationVersion
 
 class FoundationCommonModule : KotlinAbstractModule() {
     override fun configure() {
@@ -79,6 +77,6 @@ class FoundationCommonModule : KotlinAbstractModule() {
             .provider(Providers.of(null))
 
         bind(FoundationMetadata::class)
-            .instance(FoundationMetadata("unknown", FoundationPlatform.UNKNOWN, FoundationVersion(1, 1, 1)))
+            .instance(FoundationMetadata())
     }
 }

@@ -34,4 +34,5 @@ data class User(
     var timesKicked: Int = 0,
     var gamesPlayed: Int = 0,
     var playTime: Duration = Duration.ZERO,
+    var verified: Boolean = false,
 ) : Entity<MindustryUUID>
