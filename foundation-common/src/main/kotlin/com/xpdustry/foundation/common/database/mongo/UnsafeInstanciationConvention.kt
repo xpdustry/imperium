@@ -27,7 +27,7 @@ import java.lang.reflect.Method
 
 // NOTE: Extremely unsafe, but it works.
 // TODO: Maybe use the faster alternative sun.reflect.ReflectionFactory
-object InstanciationConvention : Convention {
+object UnsafeInstanciationConvention : Convention {
     override fun apply(classModelBuilder: ClassModelBuilder<*>) = apply0(classModelBuilder)
 
     private fun <T : Any> apply0(classModelBuilder: ClassModelBuilder<T>) {

@@ -40,7 +40,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.stream.Collectors
 
-private val PROVIDERS = listOf(
+private val PROVIDERS = listOf<AddressProvider>(
     AzureAddressProvider(),
     GithubActionsAddressProvider(),
     AmazonWebServicesAddressProvider(),
@@ -56,14 +56,14 @@ class DdosVerification : Processor<VerificationContext, VerificationResult> {
         .thenMany(Flux.fromIterable(PROVIDERS))
         .parallel()
         .runOn(Schedulers.parallel())
-        .flatMap {
-            it.fetchAddresses()
+        .flatMap { provider ->
+            provider.fetchAddresses()
                 .onErrorResume { error ->
-                    logger.error("Failed to fetch addresses for cloud provider '{}'", it.provider, error)
-                    Mono.just(emptyList())
+                    logger.error("Failed to fetch addresses for cloud provider '{}'", provider.name, error)
+                    emptyList<InetAddress>().toValueMono()
                 }
                 .doOnNext { result ->
-                    logger.debug("Found {} addresses for cloud provider '{}'", result.size, it.provider)
+                    logger.debug("Found {} addresses for cloud provider '{}'", result.size, provider.name)
                 }
         }
         .flatMap { Flux.fromIterable(it) }
@@ -85,11 +85,11 @@ class DdosVerification : Processor<VerificationContext, VerificationResult> {
 }
 
 private interface AddressProvider {
-    val provider: String
+    val name: String
     fun fetchAddresses(): Mono<List<InetAddress>>
 }
 
-private abstract class JsonAddressProvider protected constructor(override val provider: String) : AddressProvider {
+private abstract class JsonAddressProvider protected constructor(override val name: String) : AddressProvider {
 
     override fun fetchAddresses(): Mono<List<InetAddress>> = fetchUri()
         .map {
@@ -105,7 +105,7 @@ private abstract class JsonAddressProvider protected constructor(override val pr
         .flatMap {
             if (it.statusCode() != 200) {
                 return@flatMap IOException(
-                    "Failed to download '$provider' public addresses file (status-code: ${it.statusCode()}, url: ${it.uri()}).",
+                    "Failed to download '$name' public addresses file (status-code: ${it.statusCode()}, url: ${it.uri()}).",
                 ).toErrorMono()
             }
             InputStreamReader(it.body(), StandardCharsets.UTF_8).use { reader ->

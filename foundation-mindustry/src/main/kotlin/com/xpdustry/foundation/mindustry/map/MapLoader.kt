@@ -33,10 +33,9 @@ import java.io.IOException
 import java.util.function.Consumer
 
 class MapLoader private constructor() : Closeable {
-    private val paused: Boolean
+    private val paused: Boolean = Vars.state.isPaused
 
     init {
-        paused = Vars.state.isPaused
         if (Vars.state.isGame) {
             Groups.player.each { player: Player -> player.kick(KickReason.serverRestarting) }
             Vars.state.set(GameState.State.menu)
@@ -64,9 +63,7 @@ class MapLoader private constructor() : Closeable {
 
         // Clear tile entities
         for (tile in Vars.world.tiles) {
-            if (tile != null && tile.build != null) {
-                tile.build.remove()
-            }
+            tile.build?.remove()
         }
 
         // I hate it

@@ -59,10 +59,7 @@ abstract class AbstractTransformerInterface<P : Pane> protected constructor(
     protected abstract fun onViewOpen(view: SimpleView)
     protected open fun onViewClose(view: SimpleView) = Unit
 
-    protected inner class SimpleView(
-        override val viewer: Player,
-        override val parent: View?,
-    ) : View {
+    protected inner class SimpleView(override val viewer: Player, override val parent: View?) : View {
         override val state: State = stateOf()
 
         lateinit var pane: P

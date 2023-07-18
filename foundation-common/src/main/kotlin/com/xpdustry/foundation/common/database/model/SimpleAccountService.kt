@@ -25,6 +25,8 @@ import com.xpdustry.foundation.common.hash.Argon2Params
 import com.xpdustry.foundation.common.hash.GenericSaltyHashFunction
 import com.xpdustry.foundation.common.hash.ShaHashFunction
 import com.xpdustry.foundation.common.hash.ShaType
+import com.xpdustry.foundation.common.misc.DEFAULT_PASSWORD_REQUIREMENTS
+import com.xpdustry.foundation.common.misc.findMissingRequirements
 import com.xpdustry.foundation.common.misc.switchIfEmpty
 import com.xpdustry.foundation.common.misc.then
 import com.xpdustry.foundation.common.misc.toValueMono
@@ -42,12 +44,12 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
     }
 
     private fun register0(token: SessionToken, password: CharArray): Mono<AccountOperationResult> {
-        val missing = getMissingPasswordRequirements(password)
+        val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingRequirements(password)
         if (missing.isNotEmpty()) {
             return AccountOperationResult.InvalidPassword(missing).toValueMono()
         }
         return GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
-            .map { hash -> Account(uuids = mutableSetOf(token.uuid), password = hash) }
+            .map { hash -> Account(token.uuid, hash) }
             .flatMap { account -> database.accounts.save(account) }
             .thenReturn(AccountOperationResult.Success)
     }
@@ -74,18 +76,22 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
             }
             .switchIfEmpty { AccountOperationResult.WrongPassword.toValueMono() }
 
-    override fun logout(token: SessionToken): Mono<Void> = database.accounts
+    override fun logout(token: SessionToken): Mono<Boolean> = database.accounts
         .findByUuid(token.uuid)
         .flatMap { account ->
             hashSessionToken(token)
                 .doOnNext { hash -> account.sessions.remove(hash) }
                 .then { database.accounts.save(account) }
+                .thenReturn(true)
         }
+        .switchIfEmpty { false.toValueMono() }
 
-    override fun refresh(token: SessionToken): Mono<Void> =
+    override fun refresh(token: SessionToken): Mono<Boolean> =
         findAccountBySession(token).flatMap { account ->
             updateSessions(token, account).then { database.accounts.save(account) }
+                .thenReturn(true)
         }
+            .switchIfEmpty { false.toValueMono() }
 
     override fun findAccountBySession(token: SessionToken): Mono<Account> = database.accounts
         .findByUuid(token.uuid)
@@ -98,7 +104,7 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
     override fun updatePassword(token: SessionToken, oldPassword: CharArray, newPassword: CharArray): Mono<AccountOperationResult> =
         findAccountBySession(token)
             .flatMap { account ->
-                val missing = getMissingPasswordRequirements(newPassword)
+                val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingRequirements(newPassword)
                 if (missing.isNotEmpty()) {
                     return@flatMap AccountOperationResult.InvalidPassword(missing).toValueMono()
                 }
@@ -112,27 +118,6 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
                     .switchIfEmpty { AccountOperationResult.WrongPassword.toValueMono() }
             }
             .switchIfEmpty { AccountOperationResult.NotLogged.toValueMono() }
-
-    @VisibleForTesting
-    internal fun getMissingPasswordRequirements(password: CharArray): List<PasswordRequirement> {
-        val missing = mutableListOf<PasswordRequirement>()
-        if (password.size < PASSWORD_MIN_LENGTH || password.size > PASSWORD_MAX_LENGTH) {
-            missing += PasswordRequirement.Length(PASSWORD_MIN_LENGTH, PASSWORD_MAX_LENGTH)
-        }
-        if (password.none { it.isDigit() }) {
-            missing += PasswordRequirement.Number
-        }
-        if (password.none { !it.isLetterOrDigit() }) {
-            missing += PasswordRequirement.Symbol
-        }
-        if (password.none { it.isUpperCase() }) {
-            missing += PasswordRequirement.UppercaseLetter
-        }
-        if (password.none { it.isLowerCase() }) {
-            missing += PasswordRequirement.LowercaseLetter
-        }
-        return missing
-    }
 
     private fun updateSessions(token: SessionToken, account: Account): Mono<Void> =
         hashSessionToken(token).doOnNext { hash ->
@@ -156,9 +141,6 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
             .map { Base64.getEncoder().encodeToString(it.hash) }
 
     companion object {
-        internal const val PASSWORD_MIN_LENGTH = 8
-        internal const val PASSWORD_MAX_LENGTH = 64
-
         private val SESSION_TOKEN_DURATION = Duration.ofDays(7L)
 
         private val SESSION_TOKEN_PARAMS = Argon2Params(

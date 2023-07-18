@@ -19,6 +19,7 @@ package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.hash.Hash
+import org.bson.codecs.pojo.annotations.BsonIgnore
 import org.bson.types.ObjectId
 import java.time.Instant
 
@@ -30,11 +31,17 @@ data class Account(
     var password: Hash,
     val hashedUsername: String? = null,
     var rank: Rank = Rank.NEWBIE,
-    var steam: String? = null,
-    var discord: String? = null,
+    var steam: Long? = null,
+    var discord: Long? = null,
     val sessions: MutableMap<HashedSessionToken, Instant> = mutableMapOf(),
+    val friends: MutableMap<String, FriendData> = mutableMapOf(),
 ) : Entity<ObjectId> {
+    constructor(uuid: MindustryUUID, password: Hash) : this(uuids = mutableSetOf(uuid), password = password)
 
+    @get:BsonIgnore
+    val legacy: Boolean get() = hashedUsername != null
+
+    @get:BsonIgnore
     val verified: Boolean get() = steam != null || discord != null
 
     enum class Rank {
@@ -45,5 +52,12 @@ data class Account(
         MODERATOR,
         ADMINISTRATOR,
         OWNER,
+    }
+}
+
+data class FriendData(val status: Status) {
+    enum class Status {
+        REQUEST,
+        ACCEPTED,
     }
 }

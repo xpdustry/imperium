@@ -94,8 +94,7 @@ class SimpleDiscovery @Inject constructor(
         sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER).block()
     }
 
-    override val servers: List<ServerInfo>
-        get() = this._servers.asMap().values.toList()
+    override val servers: List<ServerInfo> get() = this._servers.asMap().values.toList()
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {
         override fun onRemoval(notification: RemovalNotification<String, ServerInfo>) {
