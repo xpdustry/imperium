@@ -23,6 +23,6 @@ import java.util.UUID
 data class FoundationMetadata(
     val name: String = "unknown",
     val platform: FoundationPlatform = FoundationPlatform.UNKNOWN,
-    val version: FoundationVersion = FoundationVersion(0, 0, 0),
+    val version: FoundationVersion = FoundationVersion(1, 1, 1),
     val identifier: String = "$name-${UUID.randomUUID()}",
 )

@@ -32,6 +32,9 @@ interface SaltyHashFunction<P : HashParams> : HashFunction<P> {
 }
 
 object GenericSaltyHashFunction : SaltyHashFunction<HashParams> {
+    fun equals(chars: CharArray, hash: Hash): Mono<Boolean> =
+        create(chars, hash.params, hash.salt).map { it == hash }
+
     override fun create(chars: CharArray, params: HashParams): Mono<Hash> = when (params) {
         is Argon2Params -> Argon2HashFunction.create(chars, params)
         is PBKDF2Params -> PBKDF2HashFunction.create(chars, params)

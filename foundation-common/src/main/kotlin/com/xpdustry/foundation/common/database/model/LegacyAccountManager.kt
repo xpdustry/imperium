@@ -15,17 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database
+package com.xpdustry.foundation.common.database.model
 
-import com.xpdustry.foundation.common.database.model.AccountManager
-import com.xpdustry.foundation.common.database.model.LegacyAccountManager
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.model.UserManager
+import com.xpdustry.foundation.common.database.EntityManager
 
-// TODO: Get rid of this interface and rename managers to repositories, also rename package to data
-interface Database {
-    val users: UserManager
-    val punishments: PunishmentManager
-    val accounts: AccountManager
-    val legacyAccounts: LegacyAccountManager
-}
+interface LegacyAccountManager : EntityManager<HashedUsername, LegacyAccount>

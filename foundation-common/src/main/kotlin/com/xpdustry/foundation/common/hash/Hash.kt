@@ -17,7 +17,7 @@
  */
 package com.xpdustry.foundation.common.hash
 
-import java.util.Base64
+import com.xpdustry.foundation.common.misc.toBase64
 import java.util.Objects
 
 class Hash(hash: ByteArray, salt: ByteArray, val params: HashParams) {
@@ -47,6 +47,3 @@ private fun timeConstantEquals(a: ByteArray, b: ByteArray): Boolean {
     }
     return diff == 0
 }
-
-private fun ByteArray.toBase64() =
-    Base64.getEncoder().encodeToString(this)

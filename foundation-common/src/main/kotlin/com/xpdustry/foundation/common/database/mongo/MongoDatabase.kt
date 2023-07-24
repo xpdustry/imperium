@@ -32,7 +32,8 @@ import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.database.model.Account
 import com.xpdustry.foundation.common.database.model.AccountManager
-import com.xpdustry.foundation.common.database.model.FriendData
+import com.xpdustry.foundation.common.database.model.LegacyAccount
+import com.xpdustry.foundation.common.database.model.LegacyAccountManager
 import com.xpdustry.foundation.common.database.model.Punishment
 import com.xpdustry.foundation.common.database.model.PunishmentManager
 import com.xpdustry.foundation.common.database.model.User
@@ -50,6 +51,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
     override lateinit var users: UserManager
     override lateinit var punishments: PunishmentManager
     override lateinit var accounts: AccountManager
+    override lateinit var legacyAccounts: LegacyAccountManager
 
     override fun onFoundationInit() {
         val settings = MongoClientSettings.builder()
@@ -84,7 +86,9 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
                     MongoClientSettings.getDefaultCodecRegistry(),
                     PojoCodecProvider.builder()
                         .register(Account::class.java)
-                        .register(FriendData::class.java)
+                        .register(Account.Friend::class.java)
+                        .register(Account.Session::class.java)
+                        .register(LegacyAccount::class.java)
                         .register(User::class.java)
                         .register(Punishment::class.java)
                         .conventions(
@@ -118,6 +122,7 @@ class MongoDatabase @Inject constructor(private val config: FoundationConfig, pr
         users = MongoUserManager(database.getCollection("users", User::class.java))
         punishments = MongoPunishmentManager(database.getCollection("punishments", Punishment::class.java))
         accounts = MongoAccountManager(database.getCollection("accounts", Account::class.java))
+        legacyAccounts = MongoLegacyAccountManager(database.getCollection("accounts_legacy", LegacyAccount::class.java))
     }
 
     override fun onFoundationExit() {

@@ -19,37 +19,14 @@ package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
 import com.xpdustry.foundation.common.hash.Hash
-import org.bson.codecs.pojo.annotations.BsonIgnore
-import org.bson.types.ObjectId
 import java.time.Duration
-import java.time.Instant
 
-data class Account(
-    var username: String,
+typealias HashedUsername = String
+
+data class LegacyAccount(
+    override val id: HashedUsername,
     var password: Hash,
-    var rank: Rank = Rank.NORMAL,
-    var steam: Long? = null,
-    var discord: Long? = null,
-    var legacy: Boolean = false,
-    val sessions: MutableMap<String, Session> = mutableMapOf(),
-    val friends: MutableMap<String, Friend> = mutableMapOf(),
-    var playtime: Duration = Duration.ZERO,
+    var rank: Account.Rank = Account.Rank.NORMAL,
     var games: Int = 0,
-    override val id: ObjectId = ObjectId(),
-) : Entity<ObjectId> {
-
-    @get:BsonIgnore
-    val verified: Boolean get() = steam != null || discord != null
-
-    enum class Rank {
-        NORMAL,
-        OVERSEER,
-        MODERATOR,
-        ADMINISTRATOR,
-        OWNER,
-    }
-
-    data class Session(val expiration: Instant)
-
-    data class Friend(var pending: Boolean)
-}
+    var playtime: Duration = Duration.ZERO,
+) : Entity<HashedUsername>

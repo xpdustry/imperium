@@ -18,25 +18,26 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.misc.PasswordRequirement
+import com.xpdustry.foundation.common.misc.UsernameRequirement
 import reactor.core.publisher.Mono
 
+data class PlayerIdentity(val uuid: String, val usid: String)
+
 interface AccountService {
-    fun register(token: SessionToken, password: CharArray): Mono<AccountOperationResult>
-    fun login(token: SessionToken, username: String, password: CharArray): Mono<AccountOperationResult>
-    fun login(token: SessionToken, password: CharArray): Mono<AccountOperationResult>
-    fun logout(token: SessionToken): Mono<Boolean>
-    fun refresh(token: SessionToken): Mono<Boolean>
-    fun findAccountBySession(token: SessionToken): Mono<Account>
-    fun updatePassword(token: SessionToken, oldPassword: CharArray, newPassword: CharArray): Mono<AccountOperationResult>
+    fun register(username: String, password: CharArray, allowReservedUsernames: Boolean = false): Mono<Void>
+    fun migrate(oldUsername: String, newUsername: String, password: CharArray): Mono<Void>
+    fun login(username: String, password: CharArray, identity: PlayerIdentity): Mono<Void>
+    fun logout(identity: PlayerIdentity, all: Boolean = false): Mono<Boolean>
+    fun refresh(identity: PlayerIdentity): Mono<Void>
+    fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: PlayerIdentity): Mono<Void>
+    fun findAccountByIdentity(identity: PlayerIdentity): Mono<Account>
 }
 
-data class SessionToken(val uuid: String, val usid: String)
-
-sealed interface AccountOperationResult {
-    object Success : AccountOperationResult
-    object AlreadyRegistered : AccountOperationResult
-    object NotRegistered : AccountOperationResult
-    object NotLogged : AccountOperationResult
-    object WrongPassword : AccountOperationResult
-    data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountOperationResult
+sealed class AccountException : Exception() {
+    class AlreadyRegistered : AccountException()
+    class NotRegistered : AccountException()
+    class NotLogged : AccountException()
+    class WrongPassword : AccountException()
+    class InvalidPassword(val missing: List<PasswordRequirement>) : AccountException()
+    class InvalidUsername(val missing: List<UsernameRequirement>) : AccountException()
 }

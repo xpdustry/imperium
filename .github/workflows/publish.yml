@@ -26,6 +26,12 @@ jobs:
       - name: Build Artifacts
         run: ./gradlew build
 
+      - name: Upload Test Summary
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if : always()
+        with:
+          junit_files: "**/build/test-results/test/TEST-*.xml"
+
       - name: Set up Artifacts Upload
         id: setup
         run: |

@@ -15,17 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database
+package com.xpdustry.foundation.common.database.mongo
 
-import com.xpdustry.foundation.common.database.model.AccountManager
+import com.mongodb.reactivestreams.client.MongoCollection
+import com.xpdustry.foundation.common.database.model.HashedUsername
+import com.xpdustry.foundation.common.database.model.LegacyAccount
 import com.xpdustry.foundation.common.database.model.LegacyAccountManager
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.model.UserManager
 
-// TODO: Get rid of this interface and rename managers to repositories, also rename package to data
-interface Database {
-    val users: UserManager
-    val punishments: PunishmentManager
-    val accounts: AccountManager
-    val legacyAccounts: LegacyAccountManager
-}
+class MongoLegacyAccountManager(
+    collection: MongoCollection<LegacyAccount>,
+) : MongoEntityManager<LegacyAccount, HashedUsername>(collection), LegacyAccountManager

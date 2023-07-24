@@ -20,6 +20,7 @@ package com.xpdustry.foundation.common.misc
 import com.google.common.net.InetAddresses
 import java.awt.Color
 import java.net.InetAddress
+import java.util.Base64
 import java.util.Locale
 
 // TODO: Cleanup this file ?
@@ -36,3 +37,6 @@ fun Color.toHexString(): String =
 
 fun String.toInetAddress(): InetAddress =
     InetAddresses.forString(this)
+
+fun ByteArray.toBase64(): String =
+    Base64.getEncoder().encodeToString(this)

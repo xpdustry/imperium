@@ -62,57 +62,65 @@ class AccountServiceTest {
 
     @Test
     fun `test simple registration`() {
-        val token = randomSessionToken()
+        val username = randomUsername()
 
-        StepVerifier.create(service.register(token, INVALID_PASSWORD))
-            .expectNextMatches { it is AccountOperationResult.InvalidPassword }
+        StepVerifier.create(service.register(username, INVALID_PASSWORD))
+            .expectError(AccountException.InvalidPassword::class.java)
+            .verify()
+
+        StepVerifier.create(service.register(username, TEST_PASSWORD_1))
             .verifyComplete()
 
-        StepVerifier.create(service.register(token, TEST_PASSWORD_1))
-            .expectNextMatches { it is AccountOperationResult.Success }
-            .verifyComplete()
+        StepVerifier.create(service.register(username, TEST_PASSWORD_1))
+            .expectError(AccountException.AlreadyRegistered::class.java)
+            .verify()
 
-        StepVerifier.create(service.register(token, TEST_PASSWORD_1))
-            .expectNextMatches { it is AccountOperationResult.AlreadyRegistered }
-            .verifyComplete()
-
-        StepVerifier.create(database.accounts.findByUuid(token.uuid))
-            .expectNextMatches { it.uuids.size == 1 && it.uuids.contains(token.uuid) }
+        StepVerifier.create(database.accounts.findByUsername(username))
+            .expectNextMatches { it.username == username }
             .verifyComplete()
     }
 
     @Test
     fun `test simple login`() {
-        val token = randomSessionToken()
+        val username = randomUsername()
+        val identity = randomPlayerIdentity()
 
-        StepVerifier.create(service.login(token, TEST_PASSWORD_1))
-            .expectNextMatches { it is AccountOperationResult.NotRegistered }
+        StepVerifier.create(service.login(username, TEST_PASSWORD_1, identity))
+            .expectError(AccountException.NotRegistered::class.java)
+            .verify()
+
+        StepVerifier.create(service.register(username, TEST_PASSWORD_1))
             .verifyComplete()
 
-        service.register(token, TEST_PASSWORD_1).block()
+        StepVerifier.create(service.login(username, TEST_PASSWORD_2, identity))
+            .expectError(AccountException.WrongPassword::class.java)
+            .verify()
 
-        StepVerifier.create(service.login(token, TEST_PASSWORD_2))
-            .expectNextMatches { it is AccountOperationResult.WrongPassword }
+        StepVerifier.create(service.login(username, TEST_PASSWORD_1, identity))
             .verifyComplete()
 
-        StepVerifier.create(service.login(token, TEST_PASSWORD_1))
-            .expectNextMatches { it is AccountOperationResult.Success }
-            .verifyComplete()
-
-        StepVerifier.create(database.accounts.findByUuid(token.uuid))
-            .expectNextMatches { it.sessions.contains(service.hashSessionToken(token).block()) }
+        StepVerifier.create(database.accounts.findByUsername(username))
+            .expectNextMatches { it.sessions.contains(service.createSessionToken(identity).block()) }
             .verifyComplete()
     }
 
-    private fun randomSessionToken(): SessionToken {
+    private fun randomPlayerIdentity(): PlayerIdentity {
         val uuidBytes = ByteArray(16)
         Random.nextBytes(uuidBytes)
         val usidBytes = ByteArray(8)
         Random.nextBytes(usidBytes)
-        return SessionToken(
+        return PlayerIdentity(
             Base64.getEncoder().encodeToString(uuidBytes),
             Base64.getEncoder().encodeToString(usidBytes),
         )
+    }
+
+    private fun randomUsername(): String {
+        val chars = CharArray(16)
+        for (i in chars.indices) {
+            chars[i] = Random.nextInt('a'.code, 'z'.code).toChar()
+        }
+        return String(chars)
     }
 
     private class AccountServiceTestModule : KotlinAbstractModule() {

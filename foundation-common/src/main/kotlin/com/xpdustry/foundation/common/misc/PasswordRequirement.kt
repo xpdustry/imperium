@@ -19,36 +19,36 @@ package com.xpdustry.foundation.common.misc
 
 fun interface PasswordRequirement {
     fun check(password: CharArray): Boolean
+
+    object LowercaseLetter : PasswordRequirement {
+        override fun check(password: CharArray) = password.any { it.isLowerCase() }
+    }
+
+    object UppercaseLetter : PasswordRequirement {
+        override fun check(password: CharArray) = password.any { it.isUpperCase() }
+    }
+
+    object Number : PasswordRequirement {
+        override fun check(password: CharArray) = password.any { it.isDigit() }
+    }
+
+    object Symbol : PasswordRequirement {
+        override fun check(password: CharArray) = password.any { it.isLetterOrDigit().not() }
+    }
+
+    data class Length(val min: Int, val max: Int) : PasswordRequirement {
+        override fun check(password: CharArray) = password.size in min..max
+    }
 }
 
-fun List<PasswordRequirement>.findMissingRequirements(password: CharArray): List<PasswordRequirement> {
+fun List<PasswordRequirement>.findMissingPasswordRequirements(password: CharArray): List<PasswordRequirement> {
     return filter { !it.check(password) }
 }
 
 val DEFAULT_PASSWORD_REQUIREMENTS = listOf(
-    LengthRequirement(8, 64),
-    NumberRequirement,
-    SymbolRequirement,
-    UppercaseLetterRequirement,
-    LowercaseLetterRequirement,
+    PasswordRequirement.Length(8, 64),
+    PasswordRequirement.Number,
+    PasswordRequirement.Symbol,
+    PasswordRequirement.LowercaseLetter,
+    PasswordRequirement.UppercaseLetter,
 )
-
-object LowercaseLetterRequirement : PasswordRequirement {
-    override fun check(password: CharArray) = password.any { it.isLowerCase() }
-}
-
-object UppercaseLetterRequirement : PasswordRequirement {
-    override fun check(password: CharArray) = password.any { it.isUpperCase() }
-}
-
-object NumberRequirement : PasswordRequirement {
-    override fun check(password: CharArray) = password.any { it.isDigit() }
-}
-
-object SymbolRequirement : PasswordRequirement {
-    override fun check(password: CharArray) = password.any { !it.isLetterOrDigit() }
-}
-
-data class LengthRequirement(val min: Int, val max: Int) : PasswordRequirement {
-    override fun check(password: CharArray) = password.size in min..max
-}
