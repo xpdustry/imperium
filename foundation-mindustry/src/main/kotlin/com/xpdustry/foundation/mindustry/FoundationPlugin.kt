@@ -26,6 +26,7 @@ import com.xpdustry.foundation.common.FoundationCommonModule
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.application.SimpleFoundationApplication
 import com.xpdustry.foundation.common.misc.ExitStatus
+import com.xpdustry.foundation.mindustry.account.AccountCommand
 import com.xpdustry.foundation.mindustry.account.AccountListener
 import com.xpdustry.foundation.mindustry.chat.ChatMessageListener
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
@@ -73,6 +74,7 @@ class FoundationPlugin : AbstractMindustryPlugin() {
         application.register(VerificationListener::class)
         application.register(TranslatorListener::class)
         application.register(AccountListener::class)
+        application.register(AccountCommand::class)
         application.register(ChatMessageListener::class)
 
         // Commands
