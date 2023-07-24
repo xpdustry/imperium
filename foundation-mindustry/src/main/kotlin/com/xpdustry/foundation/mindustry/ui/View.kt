@@ -28,4 +28,14 @@ interface View {
     val isOpen: Boolean
     fun open()
     fun close()
+
+    fun back(depth: Int = 1) {
+        var current: View? = this
+        var i = depth
+        while (current != null && i-- > 0) {
+            current.close()
+            current = current.parent
+        }
+        current?.open()
+    }
 }

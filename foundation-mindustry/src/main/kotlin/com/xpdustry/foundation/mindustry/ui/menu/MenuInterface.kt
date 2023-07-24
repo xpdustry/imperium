@@ -19,6 +19,7 @@ package com.xpdustry.foundation.mindustry.ui.menu
 
 import com.xpdustry.foundation.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.foundation.mindustry.ui.TransformerInterface
+import com.xpdustry.foundation.mindustry.ui.View
 import com.xpdustry.foundation.mindustry.ui.action.Action
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.MUUID
@@ -39,7 +40,8 @@ interface MenuInterface : TransformerInterface<MenuPane> {
 private class MenuInterfaceImpl(plugin: MindustryPlugin) :
     AbstractTransformerInterface<MenuPane>(plugin, ::MenuPane), MenuInterface {
 
-    override var exitAction: Action = Action.back()
+    override var exitAction: Action = View::back as Action
+
     private val id = Menus.registerMenu { player: Player, option: Int ->
         val view = views[MUUID.of(player)]
         if (view == null) {
@@ -71,9 +73,9 @@ private class MenuInterfaceImpl(plugin: MindustryPlugin) :
             id,
             view.pane.title,
             view.pane.content,
-            view.pane.options.grid.map { row ->
-                row.map { option -> option.content }.toTypedArray()
-            }.toTypedArray(),
+            view.pane.options.grid
+                .map { row -> row.map { option -> option.content }.toTypedArray() }
+                .toTypedArray(),
         )
     }
 

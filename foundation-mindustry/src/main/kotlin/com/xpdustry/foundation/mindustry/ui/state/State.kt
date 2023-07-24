@@ -28,12 +28,12 @@ operator fun <V : Any> State.minusAssign(key: StateKey<V>) {
     remove(key)
 }
 
-fun stateOf(parent: State? = null): State = SimpleState(parent)
+fun stateOf(): State = SimpleState()
 
 @Suppress("UNCHECKED_CAST")
-private class SimpleState(private val parent: State?) : State {
+private class SimpleState : State {
     private val map: MutableMap<String, Any> = mutableMapOf()
-    override fun <V : Any> get(key: StateKey<V>): V? = map[key.name] as V? ?: parent?.get(key)
+    override fun <V : Any> get(key: StateKey<V>): V? = map[key.name] as V?
     override fun <V : Any> set(key: StateKey<V>, value: V): V? = map.put(key.name, value) as V?
     override fun <V : Any> remove(key: StateKey<V>): V? = map.remove(key.name) as V?
     override fun contains(key: StateKey<*>): Boolean = map.containsKey(key.name)

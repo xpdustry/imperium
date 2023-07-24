@@ -81,7 +81,7 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
                 Iconc.left,
                 Action.open { state -> state[PAGE] = page - 1 },
             ),
-            MenuOption(Iconc.cancel.toString(), Action.back()),
+            MenuOption(Iconc.cancel.toString(), View::back as Action),
             enableIf(
                 hasNext,
                 Iconc.right,

@@ -29,5 +29,5 @@ class MongoAccountManager(collection: MongoCollection<Account>) : MongoEntityMan
     override fun findByUsername(username: String): Mono<Account> =
         collection.find(Filters.eq("username", username)).toValueMono()
     override fun findBySessionToken(token: String): Mono<Account> =
-        collection.find(Filters.`in`("sessions", token)).toValueMono()
+        collection.find(Filters.exists("sessions.$token")).toValueMono()
 }

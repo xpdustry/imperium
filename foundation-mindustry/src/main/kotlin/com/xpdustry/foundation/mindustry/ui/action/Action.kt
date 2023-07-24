@@ -55,25 +55,6 @@ fun interface Action {
             }
         }
 
-        fun back(): Action {
-            return Action { view: View ->
-                view.close()
-                view.parent?.open()
-            }
-        }
-
-        fun back(depth: Int): Action {
-            return Action { view ->
-                var current: View? = view
-                var i = depth
-                while (current != null && i-- > 0) {
-                    current.close()
-                    current = current.parent
-                }
-                current?.open()
-            }
-        }
-
         fun close(): Action {
             return Action { it.close() }
         }

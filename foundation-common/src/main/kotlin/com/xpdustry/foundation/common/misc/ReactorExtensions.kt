@@ -33,6 +33,12 @@ fun <R : Any, T : Throwable> T.toErrorMono(): Mono<R> =
 fun <T> Mono<T>.switchIfEmpty(block: () -> Mono<T>): Mono<T> =
     switchIfEmpty(Mono.defer(block))
 
+fun <T> Mono<T>.doOnEmpty(block: () -> Unit): Mono<T> =
+    switchIfEmpty {
+        block()
+        Mono.empty()
+    }
+
 fun <T> Mono<*>.then(block: () -> Mono<T>): Mono<T> =
     then(Mono.defer(block))
 

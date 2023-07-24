@@ -78,7 +78,7 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     }
 
     // NOTE: We do not want to save the data of DDOSers, so we postpone the saving of the player info
-    val info = Vars.netServer.admins.getInfoOptional(packet.uuid) ?: PlayerInfo()
+    val info = Vars.netServer.admins.getInfoOptional(packet.uuid) ?: PlayerInfo().apply { id = packet.uuid }
 
     con.hasBegunConnecting = true
     con.mobile = packet.mobile

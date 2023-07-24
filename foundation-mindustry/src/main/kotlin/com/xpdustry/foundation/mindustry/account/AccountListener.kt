@@ -24,12 +24,11 @@ import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.model.AccountException
 import com.xpdustry.foundation.common.database.model.AccountService
 import com.xpdustry.foundation.common.database.model.PlayerIdentity
-import com.xpdustry.foundation.common.misc.switchIfEmpty
+import com.xpdustry.foundation.common.misc.doOnEmpty
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.misc.MindustryScheduler
 import com.xpdustry.foundation.mindustry.ui.Interface
 import com.xpdustry.foundation.mindustry.ui.View
-import com.xpdustry.foundation.mindustry.ui.action.Action
 import com.xpdustry.foundation.mindustry.ui.action.BiAction
 import com.xpdustry.foundation.mindustry.ui.input.TextInputInterface
 import com.xpdustry.foundation.mindustry.ui.state.stateKey
@@ -49,6 +48,7 @@ private val logger = LoggerFactory.getLogger(AccountListener::class.java)
 //  - Add rate limiting
 //  - Add password reset and update
 //  - Add migrate command
+//  - Improve error mono handling
 class AccountListener @Inject constructor(
     private val plugin: MindustryPlugin,
     private val service: AccountService,
@@ -70,15 +70,14 @@ class AccountListener @Inject constructor(
             handler { ctx ->
                 service.findAccountByIdentity(ctx.sender.player.identity)
                     .publishOn(MindustryScheduler)
-                    .doOnNext {
-                        ctx.sender.sendMessage("You are already logged in!")
+                    .doOnEmpty { loginInterface.open(ctx.sender.player) }
+                    .doOnError {
+                        logger.error("Error while logging in", it)
+                        ctx.sender.player.showInfoMessage(
+                            "[red]A critical error occurred in the server, please report this to the server owners.",
+                        )
                     }
-                    .switchIfEmpty {
-                        Mono.fromRunnable {
-                            loginInterface.open(ctx.sender.player)
-                        }
-                    }
-                    .subscribe()
+                    .subscribe { ctx.sender.player.showInfoMessage("You are already logged in!") }
             }
         }
 
@@ -86,19 +85,7 @@ class AccountListener @Inject constructor(
 
         clientCommandManager.buildAndRegister("register") {
             commandDescription("Register your account")
-            handler { ctx ->
-                service.findAccountByIdentity(ctx.sender.player.identity)
-                    .publishOn(MindustryScheduler)
-                    .doOnNext {
-                        ctx.sender.sendMessage("You are already logged in!")
-                    }
-                    .switchIfEmpty {
-                        Mono.fromRunnable {
-                            registerInterface.open(ctx.sender.player)
-                        }
-                    }
-                    .subscribe()
-            }
+            handler { ctx -> registerInterface.open(ctx.sender.player) }
         }
 
         clientCommandManager.buildAndRegister("logout") {
@@ -108,7 +95,7 @@ class AccountListener @Inject constructor(
                     .publishOn(MindustryScheduler)
                     .doOnError { error ->
                         logger.error("Error while logging out", error)
-                        ctx.sender.sendMessage(
+                        ctx.sender.player.showInfoMessage(
                             "[red]A critical error occurred in the server, please report this to the server owners.",
                         )
                     }
@@ -193,13 +180,13 @@ fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): I
         pane.inputAction = BiAction { _, value ->
             view.close()
             if (value != view.state[PASSWORD]) {
-                Action.back().accept(view)
-                Call.infoMessage(view.viewer.con, "[red]Passwords do not match")
+                view.back()
+                view.viewer.showInfoMessage("[red]Passwords do not match")
                 return@BiAction
             }
             service.register(view.state[USERNAME]!!, value.toCharArray())
                 .publishOn(MindustryScheduler)
-                .doOnSuccess { view.viewer.sendMessage("Your have been created! You can do /login now") }
+                .doOnSuccess { view.viewer.sendMessage("Your account have been created! You can do /login now.") }
                 .onAccountErrorResume(view)
                 .subscribe()
         }
