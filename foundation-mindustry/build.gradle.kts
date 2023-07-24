@@ -70,9 +70,6 @@ tasks.shadowJar {
     }
 
     mergeServiceFiles()
-    minimize {
-        exclude(dependency(libs.kmongo.async.native.get()))
-    }
 }
 
 tasks.register("getArtifactPath") {

@@ -74,9 +74,9 @@ class AccountListener @Inject constructor(
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {
-        val join = playtime.remove(event.player) ?: System.currentTimeMillis()
+        val now = System.currentTimeMillis()
         findAccountByIdentityAndUpdate(event.player.identity) { account ->
-            account.playtime += Duration.ofMillis(System.currentTimeMillis() - join)
+            account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
         }
     }
 

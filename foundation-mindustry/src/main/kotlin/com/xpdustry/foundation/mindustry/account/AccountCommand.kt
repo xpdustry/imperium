@@ -131,6 +131,7 @@ private fun createLoginInterface(plugin: MindustryPlugin, service: AccountServic
                 .onErrorResume { error ->
                     // According to log, it's better to not let the client know if the username is incorrect
                     if (error is AccountException.WrongPassword || error is AccountException.NotRegistered) {
+                        view.open()
                         view.viewer.showInfoMessage("The username or password is incorrect!")
                         return@onErrorResume Mono.empty()
                     }

@@ -30,6 +30,7 @@ import reactor.core.publisher.Mono
 
 const val ID_FIELD = "_id"
 
+// TODO Implement transactional updates
 abstract class MongoEntityManager<E : Entity<I>, I> protected constructor(
     protected val collection: MongoCollection<E>,
 ) : EntityManager<I, E> {
