@@ -58,7 +58,7 @@ private class SimplePopupInterface(
         Call.infoPopup(
             view.viewer.con(),
             view.pane.content,
-            // NOTE: Don't even ask me why this works, I don't know either
+            // Don't even ask me why this works, I don't know either
             Time.delta / 60f * updateInterval,
             view.pane.alignement.align,
             0,

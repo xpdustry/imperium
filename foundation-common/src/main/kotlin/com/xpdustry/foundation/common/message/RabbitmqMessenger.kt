@@ -129,7 +129,7 @@ class RabbitmqMessenger @Inject constructor(private val config: FoundationConfig
         }
 
         override fun handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: ByteArray) {
-            // NOTE: Have to call toString() because it's wrapped in another object
+            // Have to call toString() because it's wrapped in another object
             if (properties.headers[ORIGIN_HEADER]?.toString() == metadata.identifier) return
             sink.next(Input(body).use { input -> kryo.readObject(input, type.java) })
         }

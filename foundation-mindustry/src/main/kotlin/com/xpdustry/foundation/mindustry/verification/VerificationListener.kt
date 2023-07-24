@@ -62,6 +62,7 @@ class VerificationListener @Inject constructor(
 private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: VerificationPipeline) {
     if (con.kicked) return
 
+    // TODO Add steam support
     if (con.address.startsWith("steam:")) {
         packet.uuid = con.address.substring("steam:".length)
     }
@@ -77,8 +78,9 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
         return
     }
 
-    // NOTE: We do not want to save the data of DDOSers, so we postpone the saving of the player info
-    val info = Vars.netServer.admins.getInfoOptional(packet.uuid) ?: PlayerInfo().apply { id = packet.uuid }
+    // We do not want to save the data of DDOSers, so we postpone the saving of the player info
+    val info = Vars.netServer.admins.getInfoOptional(packet.uuid)
+        ?: PlayerInfo().apply { id = packet.uuid }
 
     con.hasBegunConnecting = true
     con.mobile = packet.mobile
@@ -189,7 +191,7 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
         con.modclient = true
     }
 
-    // NOTE: To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
+    // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
     pipeline
         .build(VerificationContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
         .publishOn(MindustryScheduler)
@@ -199,7 +201,7 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
                 return@subscribe
             }
 
-            // NOTE: The postponed info is now saved
+            // The postponed info is now saved
             Vars.netServer.admins.playerInfo.put(info.id, info)
             Vars.netServer.admins.updatePlayerJoined(packet.uuid, con.address, packet.name)
 

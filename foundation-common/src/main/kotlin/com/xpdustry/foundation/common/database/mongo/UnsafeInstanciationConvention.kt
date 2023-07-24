@@ -25,7 +25,7 @@ import org.bson.codecs.pojo.PropertyModel
 import sun.misc.Unsafe
 import java.lang.reflect.Method
 
-// NOTE: Extremely unsafe, but it works.
+// Extremely unsafe, but it works.
 // TODO: Maybe use the faster alternative sun.reflect.ReflectionFactory
 object UnsafeInstanciationConvention : Convention {
     override fun apply(classModelBuilder: ClassModelBuilder<*>) = apply0(classModelBuilder)
