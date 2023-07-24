@@ -59,16 +59,6 @@ fun interface Action {
             return Action { it.close() }
         }
 
-        fun closeAll(): Action {
-            return Action { view ->
-                var current: View? = view
-                while (current != null) {
-                    current.close()
-                    current = current.parent
-                }
-            }
-        }
-
         fun info(message: String): Action {
             return Action { view -> Call.infoMessage(view.viewer.con(), message) }
         }

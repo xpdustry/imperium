@@ -15,17 +15,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.mindustry.ui.input
+package com.xpdustry.foundation.common.misc
 
-import com.xpdustry.foundation.mindustry.ui.Pane
-import com.xpdustry.foundation.mindustry.ui.action.Action
-import com.xpdustry.foundation.mindustry.ui.action.BiAction
+import com.google.common.cache.CacheBuilder
+import java.time.Duration
 
-data class TextInputPane(
-    var title: String = "",
-    var description: String = "",
-    var placeholder: String = "",
-    var length: Int = 64,
-    var inputAction: BiAction<String> = Action.none().asBiAction(),
-    var exitAction: Action = Action { it.back() },
-) : Pane
+class RateLimiter<T : Any>(val limit: Int, val period: Duration) {
+    private val cache = CacheBuilder.newBuilder()
+        .expireAfterWrite(period)
+        .build<T, Int>()
+
+    fun increment(key: T) {
+        val attempts = cache.getIfPresent(key) ?: 0
+        cache.put(key, attempts + 1)
+    }
+
+    fun check(key: T): Boolean {
+        val attempts = cache.getIfPresent(key) ?: 0
+        return attempts <= limit
+    }
+
+    fun checkAndIncrement(key: T): Boolean {
+        val check = check(key)
+        increment(key)
+        return check
+    }
+}

@@ -20,12 +20,13 @@ package com.xpdustry.foundation.common.database.model
 import com.xpdustry.foundation.common.misc.PasswordRequirement
 import com.xpdustry.foundation.common.misc.UsernameRequirement
 import reactor.core.publisher.Mono
+import java.net.InetAddress
 
-data class PlayerIdentity(val uuid: String, val usid: String)
+data class PlayerIdentity(val uuid: String, val usid: String, val address: InetAddress)
 
 interface AccountService {
-    fun register(username: String, password: CharArray, allowReservedUsernames: Boolean = false): Mono<Void>
-    fun migrate(oldUsername: String, newUsername: String, password: CharArray): Mono<Void>
+    fun register(username: String, password: CharArray, identity: PlayerIdentity, allowReservedUsernames: Boolean = false): Mono<Void>
+    fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): Mono<Void>
     fun login(username: String, password: CharArray, identity: PlayerIdentity): Mono<Void>
     fun logout(identity: PlayerIdentity, all: Boolean = false): Mono<Boolean>
     fun refresh(identity: PlayerIdentity): Mono<Void>
@@ -40,4 +41,5 @@ sealed class AccountException : Exception() {
     class WrongPassword : AccountException()
     class InvalidPassword(val missing: List<PasswordRequirement>) : AccountException()
     class InvalidUsername(val missing: List<UsernameRequirement>) : AccountException()
+    class RateLimit : AccountException()
 }

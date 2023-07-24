@@ -25,6 +25,8 @@ import com.xpdustry.foundation.common.database.model.AccountException
 import com.xpdustry.foundation.common.database.model.AccountService
 import com.xpdustry.foundation.common.database.model.PlayerIdentity
 import com.xpdustry.foundation.common.misc.doOnEmpty
+import com.xpdustry.foundation.common.misc.toErrorMono
+import com.xpdustry.foundation.common.misc.toInetAddress
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.misc.MindustryScheduler
 import com.xpdustry.foundation.mindustry.ui.Interface
@@ -45,10 +47,7 @@ import reactor.core.publisher.Mono
 private val logger = LoggerFactory.getLogger(AccountListener::class.java)
 
 // TODO
-//  - Add rate limiting
 //  - Add password reset and update
-//  - Add migrate command
-//  - Improve error mono handling
 class AccountListener @Inject constructor(
     private val plugin: MindustryPlugin,
     private val service: AccountService,
@@ -59,7 +58,7 @@ class AccountListener @Inject constructor(
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         verificationPipeline.register("account", Priority.LOWEST) {
-            service.refresh(PlayerIdentity(it.uuid, it.usid)).thenReturn(VerificationResult.Success)
+            service.refresh(PlayerIdentity(it.uuid, it.usid, it.address)).thenReturn(VerificationResult.Success)
         }
 
         val loginInterface = createLoginInterface(plugin, service)
@@ -71,12 +70,7 @@ class AccountListener @Inject constructor(
                 service.findAccountByIdentity(ctx.sender.player.identity)
                     .publishOn(MindustryScheduler)
                     .doOnEmpty { loginInterface.open(ctx.sender.player) }
-                    .doOnError {
-                        logger.error("Error while logging in", it)
-                        ctx.sender.player.showInfoMessage(
-                            "[red]A critical error occurred in the server, please report this to the server owners.",
-                        )
-                    }
+                    .onAccountErrorResume(ctx.sender.player)
                     .subscribe { ctx.sender.player.showInfoMessage("You are already logged in!") }
             }
         }
@@ -88,17 +82,19 @@ class AccountListener @Inject constructor(
             handler { ctx -> registerInterface.open(ctx.sender.player) }
         }
 
+        val migrateInterface = createMigrateInterface(plugin, service)
+
+        clientCommandManager.buildAndRegister("migrate") {
+            commandDescription("Migrate your CN account")
+            handler { ctx -> migrateInterface.open(ctx.sender.player) }
+        }
+
         clientCommandManager.buildAndRegister("logout") {
             commandDescription("Logout from your account")
             handler { ctx ->
                 service.logout(ctx.sender.player.identity)
                     .publishOn(MindustryScheduler)
-                    .doOnError { error ->
-                        logger.error("Error while logging out", error)
-                        ctx.sender.player.showInfoMessage(
-                            "[red]A critical error occurred in the server, please report this to the server owners.",
-                        )
-                    }
+                    .onAccountErrorResume(ctx.sender.player)
                     .subscribe { logged ->
                         if (logged) {
                             ctx.sender.sendMessage("You have been logged out!")
@@ -139,6 +135,14 @@ fun createLoginInterface(plugin: MindustryPlugin, service: AccountService): Inte
             service.login(view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)
                 .publishOn(MindustryScheduler)
                 .doOnSuccess { view.viewer.sendMessage("You have been logged in!") }
+                .onErrorResume { error ->
+                    // According to log, it's better to not let the client know if the username is incorrect
+                    if (error is AccountException.WrongPassword || error is AccountException.NotRegistered) {
+                        view.viewer.showInfoMessage("The username or password is incorrect!")
+                        return@onErrorResume Mono.empty()
+                    }
+                    error.toErrorMono()
+                }
                 .onAccountErrorResume(view)
                 .subscribe()
         }
@@ -184,7 +188,7 @@ fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): I
                 view.viewer.showInfoMessage("[red]Passwords do not match")
                 return@BiAction
             }
-            service.register(view.state[USERNAME]!!, value.toCharArray())
+            service.register(view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)
                 .publishOn(MindustryScheduler)
                 .doOnSuccess { view.viewer.sendMessage("Your account have been created! You can do /login now.") }
                 .onAccountErrorResume(view)
@@ -195,33 +199,85 @@ fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): I
     return usernameInterface
 }
 
-private fun Mono<Void>.onAccountErrorResume(view: View) = onErrorResume { error ->
+private val OLD_USERNAME = stateKey<String>("old_username")
+
+fun createMigrateInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+    val oldUsernameInterface = TextInputInterface.create(plugin)
+    val oldPasswordInterface = TextInputInterface.create(plugin)
+    val newUsernameInterface = TextInputInterface.create(plugin)
+
+    oldUsernameInterface.addTransformer { view, pane ->
+        pane.title = "Migrate (1/3)"
+        pane.description = "Enter your old username"
+        pane.placeholder = view.state[OLD_USERNAME] ?: ""
+        pane.inputAction = BiAction { _, value ->
+            view.close()
+            view.state[OLD_USERNAME] = value
+            oldPasswordInterface.open(view)
+        }
+    }
+
+    oldPasswordInterface.addTransformer { view, pane ->
+        pane.title = "Migrate (2/3)"
+        pane.description = "Enter your old password"
+        pane.placeholder = view.state[PASSWORD] ?: ""
+        pane.inputAction = BiAction { _, value ->
+            view.close()
+            view.state[PASSWORD] = value
+            newUsernameInterface.open(view)
+        }
+    }
+
+    newUsernameInterface.addTransformer { view, pane ->
+        pane.title = "Migrate (3/3)"
+        pane.description = "Enter your new username"
+        pane.placeholder = view.state[USERNAME] ?: ""
+        pane.inputAction = BiAction { _, value ->
+            view.close()
+            view.state[USERNAME] = value
+            service.migrate(view.state[OLD_USERNAME]!!, value, view.state[PASSWORD]!!.toCharArray(), view.viewer.identity)
+                .publishOn(MindustryScheduler)
+                .doOnSuccess { view.viewer.sendMessage("Your account have been migrated! You can do /login now.") }
+                .onAccountErrorResume(view)
+                .subscribe()
+        }
+    }
+
+    return oldUsernameInterface
+}
+
+private fun <T> Mono<T>.onAccountErrorResume(player: Player) = doOnAccountError0(player, null)
+private fun <T> Mono<T>.onAccountErrorResume(view: View) = doOnAccountError0(view.viewer, view)
+
+private fun <T> Mono<T>.doOnAccountError0(player: Player, view: View?) = onErrorResume { error ->
     if (error !is AccountException) {
         logger.error("An error occurred in a account interface", error)
         return@onErrorResume Mono.fromRunnable {
-            Call.infoMessage(
-                view.viewer.con,
+            view?.closeAll()
+            player.showInfoMessage(
                 "[red]A critical error occurred in the server, please report this to the server owners.",
             )
         }
     }
     val message = when (error) {
-        is AccountException.AlreadyRegistered -> "You are already registered! Use /login to login."
-        is AccountException.NotRegistered -> "You are not registered! Use /register to register."
+        is AccountException.AlreadyRegistered -> "This account is already registered!"
+        is AccountException.NotRegistered -> "You are not registered!"
         is AccountException.NotLogged -> "You are not logged in! Use /login to login."
-        is AccountException.WrongPassword -> "Wrong password! Try again."
+        is AccountException.WrongPassword -> "Wrong password!"
         is AccountException.InvalidPassword ->
             "The password does not meet the requirements:\n - ${error.missing.joinToString("\n - ")}"
         is AccountException.InvalidUsername ->
             "The username does not meet the requirements:\n - ${error.missing.joinToString("\n - ")}"
+        is AccountException.RateLimit ->
+            "You have made too many attempts, please try again later."
     }
 
-    Mono.fromRunnable<Void> {
-        view.open()
-        view.viewer.showInfoMessage("[red]$message")
+    Mono.fromRunnable<T> {
+        view?.open()
+        player.showInfoMessage("[red]$message")
     }
         .subscribeOn(MindustryScheduler)
 }
 
-private val Player.identity: PlayerIdentity get() = PlayerIdentity(uuid(), usid())
+private val Player.identity: PlayerIdentity get() = PlayerIdentity(uuid(), usid(), con.address.toInetAddress())
 private fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)

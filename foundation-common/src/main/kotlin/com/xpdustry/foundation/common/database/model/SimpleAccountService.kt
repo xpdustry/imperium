@@ -28,23 +28,30 @@ import com.xpdustry.foundation.common.hash.ShaHashFunction
 import com.xpdustry.foundation.common.hash.ShaType
 import com.xpdustry.foundation.common.misc.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.foundation.common.misc.DEFAULT_USERNAME_REQUIREMENTS
+import com.xpdustry.foundation.common.misc.RateLimiter
 import com.xpdustry.foundation.common.misc.UsernameRequirement
 import com.xpdustry.foundation.common.misc.findMissingPasswordRequirements
 import com.xpdustry.foundation.common.misc.findMissingUsernameRequirements
 import com.xpdustry.foundation.common.misc.switchIfEmpty
+import com.xpdustry.foundation.common.misc.then
 import com.xpdustry.foundation.common.misc.toBase64
 import com.xpdustry.foundation.common.misc.toErrorMono
 import com.xpdustry.foundation.common.misc.toValueMono
 import reactor.core.publisher.Mono
 import reactor.util.function.Tuple2
+import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 
 class SimpleAccountService @Inject constructor(private val database: Database) : AccountService {
-    override fun register(username: String, password: CharArray, allowReservedUsernames: Boolean): Mono<Void> {
+
+    private val limiter = RateLimiter<AccountRateLimitKey>(5, Duration.ofMinutes(5L))
+
+    override fun register(username: String, password: CharArray, identity: PlayerIdentity, allowReservedUsernames: Boolean): Mono<Void> {
         val normalized = username.normalize()
-        return database.accounts.findByUsername(normalized)
+        return checkRateLimit("register", identity)
+            .then { database.accounts.findByUsername(normalized) }
             .flatMap<Void> {
                 AccountException.AlreadyRegistered().toErrorMono()
             }
@@ -69,8 +76,9 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
             }
     }
 
-    override fun migrate(oldUsername: String, newUsername: String, password: CharArray): Mono<Void> =
-        findLegacyAccountByUsername(oldUsername.normalize())
+    override fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): Mono<Void> =
+        checkRateLimit("migrate", identity)
+            .then { findLegacyAccountByUsername(oldUsername.normalize()) }
             .filterWhen { GenericSaltyHashFunction.equals(password, it.password) }
             .switchIfEmpty { AccountException.WrongPassword().toErrorMono() }
             .flatMap { legacy ->
@@ -92,7 +100,8 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
             }
 
     override fun login(username: String, password: CharArray, identity: PlayerIdentity): Mono<Void> =
-        database.accounts.findByUsername(username.normalize())
+        checkRateLimit("login", identity)
+            .then { database.accounts.findByUsername(username.normalize()) }
             .switchIfEmpty { AccountException.NotRegistered().toErrorMono() }
             .filterWhen { GenericSaltyHashFunction.equals(password, it.password) }
             .switchIfEmpty { AccountException.WrongPassword().toErrorMono() }
@@ -119,7 +128,8 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
         }
 
     override fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: PlayerIdentity): Mono<Void> =
-        findAccountByIdentity(identity)
+        checkRateLimit("changePassword", identity)
+            .then { findAccountByIdentity(identity) }
             .switchIfEmpty { AccountException.NotLogged().toErrorMono() }
             .filterWhen { GenericSaltyHashFunction.equals(oldPassword, it.password) }
             .switchIfEmpty { AccountException.WrongPassword().toErrorMono() }
@@ -164,6 +174,13 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
         sessions[token] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
     }
 
+    private fun checkRateLimit(operation: String, identity: PlayerIdentity): Mono<Void> {
+        if (limiter.checkAndIncrement(AccountRateLimitKey(operation, identity.address))) {
+            return Mono.empty()
+        }
+        return AccountException.RateLimit().toErrorMono()
+    }
+
     companion object {
         private val SESSION_TOKEN_DURATION = Duration.ofDays(7L)
 
@@ -194,4 +211,6 @@ class SimpleAccountService @Inject constructor(private val database: Database) :
             saltLength = 16,
         )
     }
+
+    private data class AccountRateLimitKey(val operation: String, val address: InetAddress)
 }

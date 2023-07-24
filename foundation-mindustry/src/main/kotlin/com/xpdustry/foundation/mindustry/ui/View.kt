@@ -38,4 +38,12 @@ interface View {
         }
         current?.open()
     }
+
+    fun closeAll() {
+        var current: View? = this
+        while (current != null) {
+            current.close()
+            current = current.parent
+        }
+    }
 }

@@ -32,6 +32,7 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
 import reactor.test.StepVerifier
+import java.net.InetAddress
 import java.util.Base64
 import kotlin.random.Random
 
@@ -63,15 +64,16 @@ class AccountServiceTest {
     @Test
     fun `test simple registration`() {
         val username = randomUsername()
+        val identity = randomPlayerIdentity()
 
-        StepVerifier.create(service.register(username, INVALID_PASSWORD))
+        StepVerifier.create(service.register(username, INVALID_PASSWORD, identity))
             .expectError(AccountException.InvalidPassword::class.java)
             .verify()
 
-        StepVerifier.create(service.register(username, TEST_PASSWORD_1))
+        StepVerifier.create(service.register(username, TEST_PASSWORD_1, identity))
             .verifyComplete()
 
-        StepVerifier.create(service.register(username, TEST_PASSWORD_1))
+        StepVerifier.create(service.register(username, TEST_PASSWORD_1, identity))
             .expectError(AccountException.AlreadyRegistered::class.java)
             .verify()
 
@@ -89,7 +91,7 @@ class AccountServiceTest {
             .expectError(AccountException.NotRegistered::class.java)
             .verify()
 
-        StepVerifier.create(service.register(username, TEST_PASSWORD_1))
+        StepVerifier.create(service.register(username, TEST_PASSWORD_1, identity))
             .verifyComplete()
 
         StepVerifier.create(service.login(username, TEST_PASSWORD_2, identity))
@@ -112,6 +114,7 @@ class AccountServiceTest {
         return PlayerIdentity(
             Base64.getEncoder().encodeToString(uuidBytes),
             Base64.getEncoder().encodeToString(usidBytes),
+            InetAddress.getLoopbackAddress(),
         )
     }
 
