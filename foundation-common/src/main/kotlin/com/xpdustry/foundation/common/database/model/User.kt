@@ -19,7 +19,7 @@ package com.xpdustry.foundation.common.database.model
 
 import com.xpdustry.foundation.common.database.Entity
 import java.net.InetAddress
-import java.time.Duration
+import java.time.Instant
 
 typealias MindustryUUID = String
 typealias MindustryUSID = String
@@ -31,8 +31,6 @@ data class User(
     var lastName: String? = null,
     var lastAddress: InetAddress? = null,
     var timesJoined: Int = 0,
-    var timesKicked: Int = 0,
-    var gamesPlayed: Int = 0,
-    var playTime: Duration = Duration.ZERO,
     var verified: Boolean = false,
+    var timestamp: Instant = Instant.now(),
 ) : Entity<MindustryUUID>

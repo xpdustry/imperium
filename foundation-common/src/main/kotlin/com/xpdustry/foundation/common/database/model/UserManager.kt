@@ -21,11 +21,11 @@ import com.xpdustry.foundation.common.database.EntityManager
 import com.xpdustry.foundation.common.misc.switchIfEmpty
 import com.xpdustry.foundation.common.misc.toValueMono
 import reactor.core.publisher.Mono
-import java.util.function.UnaryOperator
+import java.util.function.Consumer
 
 interface UserManager : EntityManager<String, User> {
     fun findByIdOrCreate(id: String): Mono<User> =
         findById(id).switchIfEmpty { User(id).toValueMono() }
-    fun updateOrCreate(id: String, updater: UnaryOperator<User>): Mono<Void> =
-        findByIdOrCreate(id).map(updater).flatMap(::save)
+    fun updateOrCreate(id: String, updater: Consumer<User>): Mono<Void> =
+        findByIdOrCreate(id).doOnNext(updater).flatMap(::save)
 }
