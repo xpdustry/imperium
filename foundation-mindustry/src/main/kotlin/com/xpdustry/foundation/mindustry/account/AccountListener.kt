@@ -21,9 +21,11 @@ import com.google.inject.Inject
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.model.AccountService
 import com.xpdustry.foundation.common.database.model.PlayerIdentity
+import com.xpdustry.foundation.common.misc.toInetAddress
 import com.xpdustry.foundation.mindustry.verification.VerificationPipeline
 import com.xpdustry.foundation.mindustry.verification.VerificationResult
 import fr.xpdustry.distributor.api.util.Priority
+import mindustry.gen.Player
 import org.slf4j.LoggerFactory
 
 private val logger = LoggerFactory.getLogger(AccountListener::class.java)
@@ -40,3 +42,5 @@ class AccountListener @Inject constructor(
         }
     }
 }
+
+val Player.identity: PlayerIdentity get() = PlayerIdentity(uuid(), usid(), con.address.toInetAddress())

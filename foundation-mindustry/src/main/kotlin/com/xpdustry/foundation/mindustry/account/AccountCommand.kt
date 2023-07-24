@@ -23,10 +23,8 @@ import com.google.inject.Inject
 import com.xpdustry.foundation.common.application.FoundationListener
 import com.xpdustry.foundation.common.database.model.AccountException
 import com.xpdustry.foundation.common.database.model.AccountService
-import com.xpdustry.foundation.common.database.model.PlayerIdentity
 import com.xpdustry.foundation.common.misc.doOnEmpty
 import com.xpdustry.foundation.common.misc.toErrorMono
-import com.xpdustry.foundation.common.misc.toInetAddress
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.misc.MindustryScheduler
 import com.xpdustry.foundation.mindustry.ui.Interface
@@ -41,10 +39,15 @@ import mindustry.gen.Player
 import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
+// TODO Replace sequential interfaces with a proper form interface
+
 private val logger = LoggerFactory.getLogger(AccountCommand::class.java)
 
-// TODO
-//  - Add password change
+private val USERNAME = stateKey<String>("username")
+private val PASSWORD = stateKey<String>("password")
+private val OLD_USERNAME = stateKey<String>("old_username")
+private val OLD_PASSWORD = stateKey<String>("old_password")
+
 class AccountCommand @Inject constructor(
     private val plugin: MindustryPlugin,
     private val service: AccountService,
@@ -91,13 +94,16 @@ class AccountCommand @Inject constructor(
                     }
             }
         }
+
+        val changePasswordInterface = createPasswordChangeInterface(plugin, service)
+        clientCommandManager.buildAndRegister("change-password") {
+            commandDescription("Change your password")
+            handler { ctx -> changePasswordInterface.open(ctx.sender.player) }
+        }
     }
 }
 
-private val USERNAME = stateKey<String>("username")
-private val PASSWORD = stateKey<String>("password")
-
-fun createLoginInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+private fun createLoginInterface(plugin: MindustryPlugin, service: AccountService): Interface {
     val usernameInterface = TextInputInterface.create(plugin)
     val passwordInterface = TextInputInterface.create(plugin)
 
@@ -138,7 +144,7 @@ fun createLoginInterface(plugin: MindustryPlugin, service: AccountService): Inte
     return usernameInterface
 }
 
-fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+private fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): Interface {
     val usernameInterface = TextInputInterface.create(plugin)
     val initialPasswordInterface = TextInputInterface.create(plugin)
     val confirmPasswordInterface = TextInputInterface.create(plugin)
@@ -186,8 +192,6 @@ fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): I
     return usernameInterface
 }
 
-private val OLD_USERNAME = stateKey<String>("old_username")
-
 fun createMigrateInterface(plugin: MindustryPlugin, service: AccountService): Interface {
     val oldUsernameInterface = TextInputInterface.create(plugin)
     val oldPasswordInterface = TextInputInterface.create(plugin)
@@ -233,10 +237,58 @@ fun createMigrateInterface(plugin: MindustryPlugin, service: AccountService): In
     return oldUsernameInterface
 }
 
-private fun <T> Mono<T>.onAccountErrorResume(player: Player) = doOnAccountError0(player, null)
-private fun <T> Mono<T>.onAccountErrorResume(view: View) = doOnAccountError0(view.viewer, view)
+private fun createPasswordChangeInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+    val oldPasswordInterface = TextInputInterface.create(plugin)
+    val newPasswordInterface = TextInputInterface.create(plugin)
+    val confirmPasswordInterface = TextInputInterface.create(plugin)
 
-private fun <T> Mono<T>.doOnAccountError0(player: Player, view: View?) = onErrorResume { error ->
+    oldPasswordInterface.addTransformer { view, pane ->
+        pane.title = "Change Password (1/3)"
+        pane.description = "Enter your old password"
+        pane.placeholder = view.state[OLD_PASSWORD] ?: ""
+        pane.inputAction = BiAction { _, value ->
+            view.close()
+            view.state[OLD_PASSWORD] = value
+            newPasswordInterface.open(view)
+        }
+    }
+
+    newPasswordInterface.addTransformer { view, pane ->
+        pane.title = "Change Password (2/3)"
+        pane.description = "Enter your new password"
+        pane.placeholder = view.state[PASSWORD] ?: ""
+        pane.inputAction = BiAction { _, value ->
+            view.close()
+            view.state[PASSWORD] = value
+            confirmPasswordInterface.open(view)
+        }
+    }
+
+    confirmPasswordInterface.addTransformer { view, pane ->
+        pane.title = "Change Password (3/3)"
+        pane.description = "Confirm your new password"
+        pane.inputAction = BiAction { _, value ->
+            view.close()
+            if (value != view.state[PASSWORD]) {
+                view.back()
+                view.viewer.showInfoMessage("[red]Passwords do not match")
+                return@BiAction
+            }
+            service.changePassword(view.state[OLD_PASSWORD]!!.toCharArray(), value.toCharArray(), view.viewer.identity)
+                .publishOn(MindustryScheduler)
+                .doOnSuccess { view.viewer.showInfoMessage("Your password have been changed!") }
+                .onAccountErrorResume(view)
+                .subscribe()
+        }
+    }
+
+    return oldPasswordInterface
+}
+
+private fun <T> Mono<T>.onAccountErrorResume(player: Player) = onAccountErrorResume0(player, null)
+private fun <T> Mono<T>.onAccountErrorResume(view: View) = onAccountErrorResume0(view.viewer, view)
+
+private fun <T> Mono<T>.onAccountErrorResume0(player: Player, view: View?) = onErrorResume { error ->
     if (error !is AccountException) {
         logger.error("An error occurred in a account interface", error)
         return@onErrorResume Mono.fromRunnable {
@@ -267,5 +319,3 @@ private fun <T> Mono<T>.doOnAccountError0(player: Player, view: View?) = onError
 }
 
 private fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
-
-val Player.identity: PlayerIdentity get() = PlayerIdentity(uuid(), usid(), con.address.toInetAddress())
