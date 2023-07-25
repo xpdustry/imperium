@@ -20,12 +20,12 @@ package com.xpdustry.foundation.mindustry.history
 import arc.util.Strings
 import cloud.commandframework.arguments.standard.IntegerArgument
 import cloud.commandframework.meta.CommandMeta
-import com.google.inject.Inject
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import fr.xpdustry.distributor.api.command.argument.PlayerInfoArgument
 import fr.xpdustry.distributor.api.command.sender.CommandSender
-import jakarta.inject.Named
 import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
 import java.awt.Color
@@ -34,11 +34,11 @@ import java.util.function.Consumer
 // TODO
 //  - Add interactive mode like the "/inspector" command ?
 //  - Move the rendering logic to a separate class ?
-class HistoryCommand @Inject constructor(
-    private val history: BlockHistory,
-    @param:Named("client") private val clientCommandManager: FoundationPluginCommandManager,
-    @param:Named("server") private val serverCommandManager: FoundationPluginCommandManager,
-) : FoundationListener {
+class HistoryCommand(instances: InstanceManager) : FoundationApplication.Listener {
+    private val history: BlockHistory = instances.get()
+    private val clientCommandManager: FoundationPluginCommandManager = instances.get("client")
+    private val serverCommandManager: FoundationPluginCommandManager = instances.get("server")
+
     override fun onFoundationInit() {
         withCommandManagers { manager ->
             manager.command(

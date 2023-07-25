@@ -18,8 +18,7 @@
 package com.xpdustry.foundation.mindustry.history
 
 import arc.math.geom.Point2
-import com.google.inject.Inject
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.mindustry.history.factory.CANVAS_CONFIGURATION_FACTORY
 import com.xpdustry.foundation.mindustry.history.factory.CommonConfigurationFactory
@@ -47,7 +46,7 @@ import mindustry.world.blocks.power.PowerNode
 import mindustry.world.blocks.units.UnitFactory
 import java.util.LinkedList
 
-class SimpleBlockHistory @Inject constructor(private val config: FoundationConfig) : BlockHistory, FoundationListener {
+class SimpleBlockHistory(private val config: FoundationConfig) : BlockHistory, FoundationApplication.Listener {
     private val positions: MutableMap<Int, LimitedList<HistoryEntry>> = HashMap()
     private val players: MutableMap<String, LimitedList<HistoryEntry>> = HashMap()
     private val factories: MutableMap<Class<out Building>, HistoryConfig.Factory<*>> = HashMap()

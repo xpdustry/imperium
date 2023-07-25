@@ -17,12 +17,14 @@
  */
 package com.xpdustry.foundation.common.database.model
 
-import com.xpdustry.foundation.common.FoundationCommonModule
-import com.xpdustry.foundation.common.application.KotlinAbstractModule
 import com.xpdustry.foundation.common.application.SimpleFoundationApplication
+import com.xpdustry.foundation.common.commonModule
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.config.MongoConfig
 import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.inject.get
+import com.xpdustry.foundation.common.inject.module
+import com.xpdustry.foundation.common.inject.single
 import com.xpdustry.foundation.common.misc.ExitStatus
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -45,13 +47,10 @@ class AccountServiceTest {
 
     @BeforeEach
     fun init() {
-        application = SimpleFoundationApplication(
-            modules = listOf(FoundationCommonModule(), AccountServiceTestModule()),
-            production = false,
-        )
+        application = SimpleFoundationApplication(MODULE)
 
-        database = application.instance(Database::class)
-        service = application.instance(SimpleAccountService::class)
+        database = application.instances.get<Database>()
+        service = application.instances.get<AccountService>() as SimpleAccountService
 
         application.init()
     }
@@ -126,13 +125,6 @@ class AccountServiceTest {
         return String(chars)
     }
 
-    private class AccountServiceTestModule : KotlinAbstractModule() {
-        override fun configure() {
-            bind(FoundationConfig::class)
-                .instance(FoundationConfig(mongo = MongoConfig(port = MONGO_CONTAINER.getMappedPort(27017))))
-        }
-    }
-
     companion object {
         @Container
         private val MONGO_CONTAINER = MongoDBContainer(DockerImageName.parse("mongo:6"))
@@ -140,5 +132,12 @@ class AccountServiceTest {
         private val TEST_PASSWORD_1 = "ABc123!#".toCharArray()
         private val TEST_PASSWORD_2 = "123ABc!#".toCharArray()
         private val INVALID_PASSWORD = "1234".toCharArray()
+
+        private val MODULE = module("account-test") {
+            include(commonModule())
+            single<FoundationConfig> {
+                FoundationConfig(mongo = MongoConfig(port = MONGO_CONTAINER.getMappedPort(27017)))
+            }
+        }
     }
 }

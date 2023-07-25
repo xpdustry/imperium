@@ -23,9 +23,9 @@ import arc.util.Log
 import arc.util.Time
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
-import com.google.inject.Inject
-import com.google.inject.name.Named
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.misc.MindustryScheduler
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
@@ -38,11 +38,10 @@ import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
-class ChatMessageListener @Inject constructor(
-    private val pipeline: ChatMessagePipeline,
-    @Named("client")
-    private val clientCommandManager: FoundationPluginCommandManager,
-) : FoundationListener {
+class ChatMessageListener(instances: InstanceManager) : FoundationApplication.Listener {
+    private val pipeline: ChatMessagePipeline = instances.get()
+    private val clientCommandManager: FoundationPluginCommandManager = instances.get("client")
+
     override fun onFoundationInit() {
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->

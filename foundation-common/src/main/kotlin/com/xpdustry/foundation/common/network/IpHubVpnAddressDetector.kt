@@ -19,7 +19,6 @@ package com.xpdustry.foundation.common.network
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.google.inject.Inject
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.misc.toErrorMono
 import com.xpdustry.foundation.common.misc.toValueMono
@@ -31,7 +30,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
 
-class IpHubVpnAddressDetector @Inject constructor(config: FoundationConfig) : VpnAddressDetector {
+class IpHubVpnAddressDetector(config: FoundationConfig) : VpnAddressDetector {
 
     private val token: String? = config.network.ipHub?.value
     private val gson = Gson()

@@ -17,71 +17,61 @@
  */
 package com.xpdustry.foundation.common.application
 
-import com.google.inject.Guice
-import com.google.inject.Injector
-import com.google.inject.Module
-import com.google.inject.Stage
-import com.google.inject.matcher.Matchers
-import com.google.inject.util.Modules
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.Module
+import com.xpdustry.foundation.common.inject.SimpleInstanceManager
 import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.common.misc.LoggerDelegate
 import kotlin.reflect.KClass
 
-open class SimpleFoundationApplication(modules: List<Module>, production: Boolean) : FoundationApplication {
+open class SimpleFoundationApplication(module: Module) : FoundationApplication {
 
-    private val listeners = arrayListOf<FoundationListener>()
-    private val injector: Injector
+    override val instances: InstanceManager = SimpleInstanceManager(module, ApplicationInjectorListener())
+    private val listeners = arrayListOf<FoundationApplication.Listener>()
 
-    init {
-        var module = modules.getOrNull(0) ?: throw IllegalArgumentException("No module provided.")
-        for (i in 1 until modules.size) {
-            module = Modules.override(module).with(modules[i])
-        }
-        injector = Guice.createInjector(
-            if (production) Stage.PRODUCTION else Stage.DEVELOPMENT,
-            FoundationAwareModule(module),
-        )
-    }
-
-    fun register(listener: FoundationListener) = synchronized(listeners) {
+    fun register(listener: FoundationApplication.Listener) = synchronized(listeners) {
         if (listeners.contains(listener)) {
             return
         }
         onListenerRegistration(listener)
     }
 
-    fun register(listener: KClass<out FoundationListener>) =
-        register(injector.getInstance(listener.java))
+    fun register(listener: KClass<out FoundationApplication.Listener>) {
+        var constructor = listener.constructors.find { it.parameters.isEmpty() }
+        if (constructor != null) {
+            register(constructor.call())
+            return
+        }
+        constructor = listener.constructors.find {
+            it.parameters.size == 1 && it.parameters[0].type.classifier == InstanceManager::class
+        }
+        if (constructor != null) {
+            register(constructor.call(instances))
+            return
+        }
+        throw IllegalArgumentException("Cannot find a valid constructor for listener: ${listener.simpleName}")
+    }
 
-    fun <T : Any> instance(clazz: KClass<T>): T =
-        injector.getInstance(clazz.java)
-
-    protected open fun onListenerRegistration(listener: FoundationListener) {
+    protected open fun onListenerRegistration(listener: FoundationApplication.Listener) {
         logger.debug("Registered listener: {}", listener::class.simpleName)
         listeners.add(listener)
     }
 
     override fun init() {
-        listeners.forEach(FoundationListener::onFoundationInit)
+        listeners.forEach(FoundationApplication.Listener::onFoundationInit)
         logger.info("Foundation has successfully init.")
     }
 
     override fun exit(status: ExitStatus) {
-        listeners.reversed().forEach(FoundationListener::onFoundationExit)
+        listeners.reversed().forEach(FoundationApplication.Listener::onFoundationExit)
         listeners.clear()
         logger.info("Foundation has successfully exit with status: {}", status)
     }
 
-    inner class FoundationAwareModule(private val module: Module) : KotlinAbstractModule() {
-        override fun configure() {
-            install(module)
-            bind(FoundationApplication::class)
-                .instance(this@SimpleFoundationApplication)
-            bindProvisionListener(Matchers.any()) {
-                val provision = it.provision()
-                if (provision is FoundationListener) {
-                    this@SimpleFoundationApplication.register(provision)
-                }
+    private inner class ApplicationInjectorListener : InstanceManager.Listener {
+        override fun onInstanceProvision(instance: Any) {
+            if (instance is FoundationApplication.Listener) {
+                this@SimpleFoundationApplication.register(instance)
             }
         }
     }

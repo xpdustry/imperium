@@ -22,11 +22,9 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalCause
 import com.google.common.cache.RemovalListener
 import com.google.common.cache.RemovalNotification
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.message.Messenger
-import jakarta.inject.Inject
-import jakarta.inject.Provider
 import org.slf4j.LoggerFactory
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
@@ -34,16 +32,19 @@ import reactor.core.publisher.SignalType
 import java.time.Duration
 import java.util.Locale
 import java.util.concurrent.TimeUnit
+import java.util.function.Supplier
 import kotlin.random.Random
 
 private val logger = LoggerFactory.getLogger(SimpleDiscovery::class.java)
 
 // TODO: Test this discovery system since it uses monos and stuff
-class SimpleDiscovery @Inject constructor(
+class SimpleDiscovery(
     private val messenger: Messenger,
     private val metadata: FoundationMetadata,
-    private val mindustryServerProvider: Provider<MindustryServerInfo?>,
-) : Discovery, FoundationListener {
+    private val mindustryServerProvider: Supplier<MindustryServerInfo?>,
+) : Discovery, FoundationApplication.Listener {
+
+    override val servers: List<ServerInfo> get() = this._servers.asMap().values.toList()
 
     private val _servers: Cache<String, ServerInfo> = CacheBuilder.newBuilder()
         .expireAfterWrite(45L, TimeUnit.SECONDS)
@@ -68,7 +69,7 @@ class SimpleDiscovery @Inject constructor(
         }
 
         Mono.delay(Duration.ofSeconds(Random.nextLong(5)))
-            .doFinally { this.heartbeat() }
+            .doFinally { heartbeat() }
             .subscribe()
     }
 
@@ -93,8 +94,6 @@ class SimpleDiscovery @Inject constructor(
         heartbeatTask?.dispose()
         sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER).block()
     }
-
-    override val servers: List<ServerInfo> get() = this._servers.asMap().values.toList()
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {
         override fun onRemoval(notification: RemovalNotification<String, ServerInfo>) {

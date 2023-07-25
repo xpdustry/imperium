@@ -17,12 +17,13 @@
  */
 package com.xpdustry.foundation.mindustry.account
 
-import com.google.inject.Inject
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.database.model.Account
 import com.xpdustry.foundation.common.database.model.AccountService
 import com.xpdustry.foundation.common.database.model.PlayerIdentity
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.toInetAddress
 import com.xpdustry.foundation.mindustry.verification.VerificationPipeline
 import com.xpdustry.foundation.mindustry.verification.VerificationResult
@@ -34,11 +35,11 @@ import mindustry.gen.Player
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
-class AccountListener @Inject constructor(
-    private val service: AccountService,
-    private val pipeline: VerificationPipeline,
-    private val database: Database,
-) : FoundationListener {
+class AccountListener(instances: InstanceManager) : FoundationApplication.Listener {
+    private val service: AccountService = instances.get()
+    private val pipeline: VerificationPipeline = instances.get()
+    private val database: Database = instances.get()
+
     private val playtime = ConcurrentHashMap<Player, Long>()
 
     override fun onFoundationInit() {

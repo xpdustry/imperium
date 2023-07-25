@@ -19,10 +19,11 @@ package com.xpdustry.foundation.mindustry.account
 
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
-import com.google.inject.Inject
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.database.model.AccountException
 import com.xpdustry.foundation.common.database.model.AccountService
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.doOnEmpty
 import com.xpdustry.foundation.common.misc.toErrorMono
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
@@ -33,7 +34,6 @@ import com.xpdustry.foundation.mindustry.ui.action.BiAction
 import com.xpdustry.foundation.mindustry.ui.input.TextInputInterface
 import com.xpdustry.foundation.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import jakarta.inject.Named
 import mindustry.gen.Call
 import mindustry.gen.Player
 import org.slf4j.LoggerFactory
@@ -48,11 +48,12 @@ private val PASSWORD = stateKey<String>("password")
 private val OLD_USERNAME = stateKey<String>("old_username")
 private val OLD_PASSWORD = stateKey<String>("old_password")
 
-class AccountCommand @Inject constructor(
-    private val plugin: MindustryPlugin,
-    private val service: AccountService,
-    @param:Named("client") private val clientCommandManager: FoundationPluginCommandManager,
-) : FoundationListener {
+class AccountCommand(instances: InstanceManager) : FoundationApplication.Listener {
+
+    private val plugin: MindustryPlugin = instances.get()
+    private val service: AccountService = instances.get()
+    private val clientCommandManager: FoundationPluginCommandManager = instances.get("client")
+
     override fun onFoundationInit() {
         val loginInterface = createLoginInterface(plugin, service)
         clientCommandManager.buildAndRegister("login") {

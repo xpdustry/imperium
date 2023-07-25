@@ -17,66 +17,52 @@
  */
 package com.xpdustry.foundation.common
 
-import com.google.inject.util.Providers
 import com.xpdustry.foundation.common.application.FoundationMetadata
-import com.xpdustry.foundation.common.application.KotlinAbstractModule
-import com.xpdustry.foundation.common.config.FoundationConfig
-import com.xpdustry.foundation.common.config.FoundationConfigProvider
+import com.xpdustry.foundation.common.config.FoundationConfigFactory
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.database.model.AccountService
 import com.xpdustry.foundation.common.database.model.SimpleAccountService
 import com.xpdustry.foundation.common.database.mongo.MongoDatabase
+import com.xpdustry.foundation.common.inject.get
+import com.xpdustry.foundation.common.inject.module
+import com.xpdustry.foundation.common.inject.single
 import com.xpdustry.foundation.common.message.Messenger
 import com.xpdustry.foundation.common.message.RabbitmqMessenger
 import com.xpdustry.foundation.common.network.Discovery
 import com.xpdustry.foundation.common.network.IpHubVpnAddressDetector
-import com.xpdustry.foundation.common.network.MindustryServerInfo
 import com.xpdustry.foundation.common.network.SimpleDiscovery
 import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.common.translator.DeeplTranslator
 import com.xpdustry.foundation.common.translator.Translator
 
-class FoundationCommonModule : KotlinAbstractModule() {
-    override fun configure() {
-        // Database
-        bind(Database::class)
-            .implementation(MongoDatabase::class)
-            .singleton()
+fun commonModule() = module("common") {
+    single(FoundationConfigFactory())
 
-        // Services
-        bind(AccountService::class)
-            .implementation(SimpleAccountService::class)
-            .singleton()
+    single<Database> {
+        MongoDatabase(get(), get())
+    }
 
-        // Translation
-        bind(Translator::class)
-            .implementation(DeeplTranslator::class)
-            .singleton()
+    single<AccountService> {
+        SimpleAccountService(get())
+    }
 
-        // Networking
-        bind(Discovery::class)
-            .implementation(SimpleDiscovery::class)
-            .singleton()
+    single<Translator> {
+        DeeplTranslator(get(), get())
+    }
 
-        bind(VpnAddressDetector::class)
-            .implementation(IpHubVpnAddressDetector::class)
-            .singleton()
+    single<Discovery> {
+        SimpleDiscovery(get(), get(), get())
+    }
 
-        // Messaging
-        bind(Messenger::class)
-            .implementation(RabbitmqMessenger::class)
-            .singleton()
+    single<VpnAddressDetector> {
+        IpHubVpnAddressDetector(get())
+    }
 
-        // Config
-        bind(FoundationConfig::class)
-            .provider(FoundationConfigProvider::class)
-            .singleton()
+    single<Messenger> {
+        RabbitmqMessenger(get(), get())
+    }
 
-        // Misc
-        bind(MindustryServerInfo::class)
-            .provider(Providers.of(null))
-
-        bind(FoundationMetadata::class)
-            .instance(FoundationMetadata())
+    single {
+        FoundationMetadata()
     }
 }

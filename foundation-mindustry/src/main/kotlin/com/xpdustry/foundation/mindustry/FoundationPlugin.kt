@@ -21,9 +21,7 @@ import arc.Application
 import arc.ApplicationListener
 import arc.Core
 import arc.util.CommandHandler
-import com.google.inject.Module
-import com.xpdustry.foundation.common.FoundationCommonModule
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.application.SimpleFoundationApplication
 import com.xpdustry.foundation.common.misc.ExitStatus
 import com.xpdustry.foundation.mindustry.account.AccountCommand
@@ -36,19 +34,17 @@ import com.xpdustry.foundation.mindustry.translator.TranslatorListener
 import com.xpdustry.foundation.mindustry.verification.VerificationListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import reactor.core.publisher.Hooks
 import kotlin.system.exitProcess
 
 class FoundationPlugin : AbstractMindustryPlugin() {
-
     init {
         Hooks.onOperatorDebug()
     }
 
     internal val serverCommandManager = FoundationPluginCommandManager(this)
     internal val clientCommandManager = FoundationPluginCommandManager(this)
-    private lateinit var application: PluginFoundationApplication
+    private val application: MindustryFoundationApplication = MindustryFoundationApplication()
 
     override fun onInit() {
         logger.info("Foundation plugin loaded!")
@@ -63,12 +59,6 @@ class FoundationPlugin : AbstractMindustryPlugin() {
     }
 
     override fun onLoad() {
-        application = PluginFoundationApplication(
-            modules = listOf(FoundationCommonModule(), FoundationMindustryModule(this)),
-            plugin = this,
-            production = true,
-        )
-
         // Listeners
         application.register(ConventionListener::class)
         application.register(VerificationListener::class)
@@ -76,35 +66,30 @@ class FoundationPlugin : AbstractMindustryPlugin() {
         application.register(AccountListener::class)
         application.register(AccountCommand::class)
         application.register(ChatMessageListener::class)
-
-        // Commands
         application.register(HistoryCommand::class)
 
+        application.instances.createSingletons()
         application.init()
     }
 
     override fun onExit() {
         application.exit(ExitStatus.EXIT)
     }
-}
 
-private class PluginFoundationApplication(
-    modules: List<Module>,
-    production: Boolean,
-    private val plugin: MindustryPlugin,
-) : SimpleFoundationApplication(modules, production) {
-    override fun exit(status: ExitStatus) {
-        super.exit(status)
-        when (status) {
-            ExitStatus.EXIT -> Core.app.exit()
-            ExitStatus.RESTART -> Core.app.restart()
+    private inner class MindustryFoundationApplication : SimpleFoundationApplication(mindustryModule(this@FoundationPlugin)) {
+        override fun exit(status: ExitStatus) {
+            super.exit(status)
+            when (status) {
+                ExitStatus.EXIT -> Core.app.exit()
+                ExitStatus.RESTART -> Core.app.restart()
+            }
         }
-    }
 
-    override fun onListenerRegistration(listener: FoundationListener) {
-        super.onListenerRegistration(listener)
-        DistributorProvider.get().eventBus.parse(plugin, listener)
-        DistributorProvider.get().pluginScheduler.parse(plugin, listener)
+        override fun onListenerRegistration(listener: FoundationApplication.Listener) {
+            super.onListenerRegistration(listener)
+            DistributorProvider.get().eventBus.parse(this@FoundationPlugin, listener)
+            DistributorProvider.get().pluginScheduler.parse(this@FoundationPlugin, listener)
+        }
     }
 }
 

@@ -23,9 +23,10 @@ import arc.util.Strings
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
-import com.google.inject.Inject
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.network.VpnAddressDetector
 import com.xpdustry.foundation.mindustry.misc.MindustryScheduler
 import fr.xpdustry.distributor.api.util.Priority
@@ -43,11 +44,11 @@ import mindustry.net.Packets.KickReason
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class VerificationListener @Inject constructor(
-    private val pipeline: VerificationPipeline,
-    private val database: Database,
-    private val provider: VpnAddressDetector,
-) : FoundationListener {
+class VerificationListener(instances: InstanceManager) : FoundationApplication.Listener {
+    private val pipeline: VerificationPipeline = instances.get()
+    private val database: Database = instances.get()
+    private val provider: VpnAddressDetector = instances.get()
+
     override fun onFoundationInit() {
         pipeline.register("ddos", Priority.HIGH, DdosVerification())
         pipeline.register("punishment", Priority.NORMAL, PunishmentVerification(database))

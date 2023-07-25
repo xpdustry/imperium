@@ -17,39 +17,36 @@
  */
 package com.xpdustry.foundation.common.config
 
-import com.google.inject.Provider
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addPathSource
-import com.xpdustry.foundation.common.annotation.FoundationDir
+import com.xpdustry.foundation.common.inject.InstanceFactory
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.LoggerDelegate
-import jakarta.inject.Inject
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.notExists
 
-class FoundationConfigProvider @Inject constructor(@FoundationDir directory: Path) : Provider<FoundationConfig> {
-
-    private val file = directory.resolve("config.yaml")
-
-    private val loader = ConfigLoaderBuilder.empty()
-        .withClassLoader(FoundationConfigProvider::class.java.classLoader)
-        .addDefaultDecoders()
-        .addDefaultPreprocessors()
-        .addDefaultParamMappers()
-        .addDefaultPropertySources()
-        .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-        .addPathSource(file)
-        .addDecoder(ColorDecoder())
-        .addDecoder(HiddenStringDecoder())
-        .strict()
-        .build()
-
-    override fun get(): FoundationConfig {
+class FoundationConfigFactory : InstanceFactory<FoundationConfig> {
+    override fun create(instances: InstanceManager): FoundationConfig {
+        val file = instances.get<Path>("directory").resolve("config.yaml")
         if (file.notExists()) {
             logger.warn("Config file not found, please create one at ${file.absolutePathString()}")
             return FoundationConfig()
         }
-        return loader.loadConfigOrThrow()
+        return ConfigLoaderBuilder.empty()
+            .withClassLoader(FoundationConfigFactory::class.java.classLoader)
+            .addDefaultDecoders()
+            .addDefaultPreprocessors()
+            .addDefaultParamMappers()
+            .addDefaultPropertySources()
+            .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
+            .addPathSource(file)
+            .addDecoder(ColorDecoder())
+            .addDecoder(HiddenStringDecoder())
+            .strict()
+            .build()
+            .loadConfigOrThrow()
     }
 
     companion object {

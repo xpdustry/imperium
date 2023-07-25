@@ -15,9 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.application
+package com.xpdustry.foundation.common.inject
 
-interface FoundationListener {
-    fun onFoundationInit() = Unit
-    fun onFoundationExit() = Unit
+fun interface InstanceFactory<T> {
+    fun create(instances: InstanceManager): T?
 }

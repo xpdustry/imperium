@@ -12,7 +12,6 @@ distributor = "3.0.0"
 junit = "5.9.0"
 testcontainers = "1.18.3"
 mongodb = "4.9.0"
-guice = "7.0.0"
 guava = "32.0.1-jre"
 gson = "2.10.1"
 hoplite = "2.7.4"
@@ -44,7 +43,6 @@ testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", ve
 testcontainers-mongodb = { module = "org.testcontainers:mongodb", version.ref = "testcontainers" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
 mongodb-driver-reactive = { module = "org.mongodb:mongodb-driver-reactivestreams", version.ref = "mongodb" }
-guice = { module = "com.google.inject:guice", version.ref = "guice" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
 reactor-core = { module = "io.projectreactor:reactor-core", version.ref = "reactor-core" }

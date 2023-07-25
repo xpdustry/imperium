@@ -20,7 +20,6 @@ package com.xpdustry.foundation.common.message
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
-import com.google.inject.Inject
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.Connection
@@ -28,7 +27,7 @@ import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
 import org.objenesis.strategy.StdInstantiatorStrategy
@@ -38,7 +37,7 @@ import reactor.core.publisher.Mono
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
-class RabbitmqMessenger @Inject constructor(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Messenger, FoundationListener {
+class RabbitmqMessenger(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Messenger, FoundationApplication.Listener {
 
     // TODO: Test if kryo is still broken
     @Suppress("UsePropertyAccessSyntax")

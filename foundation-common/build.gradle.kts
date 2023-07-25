@@ -6,7 +6,6 @@ plugins {
 dependencies {
     api(libs.mongodb.driver.reactive)
     api(libs.reactor.core)
-    api(libs.guice)
     api(libs.guava)
     api(libs.gson)
     api(libs.hoplite.core)

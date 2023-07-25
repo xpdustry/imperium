@@ -18,7 +18,6 @@
 package com.xpdustry.foundation.common.database.model
 
 import com.google.common.annotations.VisibleForTesting
-import com.google.inject.Inject
 import com.xpdustry.foundation.common.database.Database
 import com.xpdustry.foundation.common.hash.Argon2HashFunction
 import com.xpdustry.foundation.common.hash.Argon2Params
@@ -44,7 +43,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 
-class SimpleAccountService @Inject constructor(private val database: Database) : AccountService {
+class SimpleAccountService(private val database: Database) : AccountService {
 
     private val limiter = RateLimiter<AccountRateLimitKey>(5, Duration.ofMinutes(5L))
 

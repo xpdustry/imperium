@@ -18,8 +18,9 @@
 package com.xpdustry.foundation.mindustry.translator
 
 import arc.util.Strings
-import com.google.inject.Inject
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.LoggerDelegate
 import com.xpdustry.foundation.common.translator.Translator
 import com.xpdustry.foundation.mindustry.chat.ChatMessagePipeline
@@ -30,10 +31,10 @@ import mindustry.game.EventType.PlayerJoin
 import reactor.core.publisher.Mono
 import java.time.Duration
 
-class TranslatorListener @Inject constructor(
-    private val translator: Translator,
-    private val pipeline: ChatMessagePipeline,
-) : FoundationListener {
+class TranslatorListener(instances: InstanceManager) : FoundationApplication.Listener {
+    private val translator: Translator = instances.get()
+    private val pipeline: ChatMessagePipeline = instances.get()
+
     override fun onFoundationInit() {
         pipeline.register("translator", Priority.LOW) { context ->
             val sourceLocale = Players.getLocale(context.sender)

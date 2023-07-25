@@ -17,9 +17,15 @@
  */
 package com.xpdustry.foundation.common.application
 
+import com.xpdustry.foundation.common.inject.InstanceManager
 import com.xpdustry.foundation.common.misc.ExitStatus
 
 interface FoundationApplication {
+    val instances: InstanceManager
     fun init()
     fun exit(status: ExitStatus)
+    interface Listener {
+        fun onFoundationInit() = Unit
+        fun onFoundationExit() = Unit
+    }
 }

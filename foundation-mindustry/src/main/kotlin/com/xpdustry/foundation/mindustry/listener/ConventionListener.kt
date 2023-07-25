@@ -17,16 +17,18 @@
  */
 package com.xpdustry.foundation.mindustry.listener
 
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.config.FoundationConfig
+import com.xpdustry.foundation.common.inject.InstanceManager
+import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.capitalize
 import com.xpdustry.foundation.common.misc.toHexString
 import fr.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import fr.xpdustry.distributor.api.scheduler.TaskHandler
-import jakarta.inject.Inject
 import mindustry.net.Administration
 
-class ConventionListener @Inject constructor(private val config: FoundationConfig) : FoundationListener {
+class ConventionListener(instances: InstanceManager) : FoundationApplication.Listener {
+    private val config: FoundationConfig = instances.get()
 
     override fun onFoundationInit() {
         Administration.Config.serverName.set(

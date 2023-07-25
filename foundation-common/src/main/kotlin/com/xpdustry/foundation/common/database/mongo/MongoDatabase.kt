@@ -17,7 +17,6 @@
  */
 package com.xpdustry.foundation.common.database.mongo
 
-import com.google.inject.Inject
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoCredential
 import com.mongodb.ServerAddress
@@ -26,7 +25,7 @@ import com.mongodb.ServerApiVersion
 import com.mongodb.connection.SslSettings
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
-import com.xpdustry.foundation.common.application.FoundationListener
+import com.xpdustry.foundation.common.application.FoundationApplication
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfig
 import com.xpdustry.foundation.common.database.Database
@@ -44,7 +43,7 @@ import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
 import java.time.Duration
 
-class MongoDatabase @Inject constructor(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Database, FoundationListener {
+class MongoDatabase(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Database, FoundationApplication.Listener {
 
     private lateinit var client: MongoClient
 
