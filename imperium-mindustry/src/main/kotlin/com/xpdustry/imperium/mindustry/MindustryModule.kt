@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
@@ -43,7 +44,7 @@ import java.nio.file.Path
 import java.util.function.Supplier
 
 fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
-    include(com.xpdustry.imperium.common.commonModule())
+    include(commonModule())
 
     factory<Supplier<MindustryServerInfo?>> {
         val config = get<ImperiumConfig>()
