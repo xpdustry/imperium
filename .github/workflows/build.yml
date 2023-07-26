@@ -43,8 +43,8 @@ jobs:
 
       - name: Set up Artifacts Upload
         run: |
-          echo "MINDUSTRY_ARTIFACT_PATH=$(./gradlew :foundation-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
-          echo "DISCORD_ARTIFACT_PATH=$(./gradlew :foundation-discord:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "MINDUSTRY_ARTIFACT_PATH=$(./gradlew :imperium-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "DISCORD_ARTIFACT_PATH=$(./gradlew :imperium-discord:getArtifactPath -q)" >> $GITHUB_ENV
 
       - name: Upload Mindustry Artifact to Actions
         uses: actions/upload-artifact@v3

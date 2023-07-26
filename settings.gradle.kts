@@ -1,8 +1,8 @@
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
-rootProject.name = "foundation-parent"
+rootProject.name = "imperium-parent"
 
-includeBuild("foundation-build-logic")
-include("foundation-common")
-include("foundation-discord")
-include("foundation-mindustry")
+includeBuild("imperium-build-logic")
+include("imperium-common")
+include("imperium-discord")
+include("imperium-mindustry")

@@ -1,4 +1,4 @@
-Foundation, the software collection powering the Xpdustry network.
+Imperium, the software collection powering the Xpdustry network.
 Copyright (C) 2023  Xpdustry
 
 This program is free software: you can redistribute it and/or modify

@@ -1,5 +1,5 @@
 plugins {
-    id("foundation.parent-conventions")
+    id("imperium.parent-conventions")
 }
 
 group = "com.xpdustry"
