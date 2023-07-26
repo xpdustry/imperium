@@ -30,7 +30,6 @@ data class PlaceholderContext(val player: Player, val message: String)
 interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String>
 
 class SimplePlaceholderManager : PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
-
     override fun build(context: PlaceholderContext): Mono<String> =
         PLACEHOLDER_REGEX.findAll(context.message)
             .map { it.groupValues[1] }

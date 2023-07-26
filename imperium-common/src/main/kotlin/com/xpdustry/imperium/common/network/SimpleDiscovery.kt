@@ -25,7 +25,7 @@ import com.google.common.cache.RemovalNotification
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.message.Messenger
-import org.slf4j.LoggerFactory
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
 import reactor.core.publisher.SignalType
@@ -35,9 +35,6 @@ import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 import kotlin.random.Random
 
-private val logger = LoggerFactory.getLogger(SimpleDiscovery::class.java)
-
-// TODO: Test this discovery system since it uses monos and stuff
 class SimpleDiscovery(
     private val messenger: Messenger,
     private val metadata: ImperiumMetadata,
@@ -101,5 +98,9 @@ class SimpleDiscovery(
                 logger.debug("Server {} has timeout.", notification.key)
             }
         }
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
     }
 }

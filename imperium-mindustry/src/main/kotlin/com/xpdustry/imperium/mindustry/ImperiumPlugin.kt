@@ -44,7 +44,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
     internal val serverCommandManager = ImperiumPluginCommandManager(this)
     internal val clientCommandManager = ImperiumPluginCommandManager(this)
-    private val application: MindustryImperiumApplication = MindustryImperiumApplication()
+    private val application = MindustryImperiumApplication()
 
     override fun onInit() {
         logger.info("Imperium plugin loaded!")

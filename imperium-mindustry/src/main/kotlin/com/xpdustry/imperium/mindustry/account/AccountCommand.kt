@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.doOnEmpty
+import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toErrorMono
 import com.xpdustry.imperium.common.service.AccountException
 import com.xpdustry.imperium.common.service.AccountService
@@ -36,12 +37,11 @@ import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.gen.Call
 import mindustry.gen.Player
-import org.slf4j.LoggerFactory
 import reactor.core.publisher.Mono
 
 // TODO Replace sequential interfaces with a proper form interface
 
-private val logger = LoggerFactory.getLogger(AccountCommand::class.java)
+private val logger = logger<AccountCommand>()
 
 private val USERNAME = stateKey<String>("username")
 private val PASSWORD = stateKey<String>("password")

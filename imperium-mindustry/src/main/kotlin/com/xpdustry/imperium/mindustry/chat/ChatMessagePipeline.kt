@@ -32,10 +32,7 @@ data class ChatMessageContext(
 interface ChatMessagePipeline : ProcessorPipeline<ChatMessageContext, String>
 
 class SimpleChatMessagePipeline : ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>() {
-
-    override fun build(context: ChatMessageContext): Mono<String> =
-        build0(context, 0)
-
+    override fun build(context: ChatMessageContext): Mono<String> = build0(context, 0)
     private fun build0(context: ChatMessageContext, index: Int): Mono<String> {
         if (index >= processors.size) {
             return Mono.just(context.message)

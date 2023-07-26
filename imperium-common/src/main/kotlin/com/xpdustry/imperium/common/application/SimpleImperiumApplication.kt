@@ -27,6 +27,7 @@ import kotlin.reflect.KClass
 open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
     override val instances: InstanceManager = SimpleInstanceManager(module, ApplicationInjectorListener())
+    private val logger by LoggerDelegate()
     private val listeners = arrayListOf<ImperiumApplication.Listener>()
 
     fun register(listener: ImperiumApplication.Listener) = synchronized(listeners) {
@@ -74,9 +75,5 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
                 this@SimpleImperiumApplication.register(instance)
             }
         }
-    }
-
-    companion object {
-        private val logger by LoggerDelegate()
     }
 }

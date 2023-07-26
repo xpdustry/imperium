@@ -23,12 +23,7 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.companionObject
 
-// TODO:
-//   Create an interface LoggerAware and implement it in all classes that use the logger
-//   open class LoggerAsPropertyDelegate {
-//      protected val logger by LoggerDelegate()
-//      //...
-//   }
+inline fun <reified T : Any> logger(): Logger = LoggerFactory.getLogger(T::class.java)
 
 // https://www.baeldung.com/kotlin/logging
 class LoggerDelegate<in R : Any> : ReadOnlyProperty<R, Logger> {
