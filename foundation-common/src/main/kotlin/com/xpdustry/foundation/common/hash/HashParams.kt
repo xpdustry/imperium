@@ -22,6 +22,7 @@ interface HashParams {
         fun fromString(str: String): HashParams = when {
             str.startsWith("argon2/") -> Argon2Params.fromString(str)
             str.startsWith("pbkdf2/") -> PBKDF2Params.fromString(str)
+            str.startsWith("sha/") -> ShaType.fromString(str)
             else -> throw IllegalArgumentException("Unknown params: $str")
         }
     }
