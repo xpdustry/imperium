@@ -15,17 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.common.database
 
-import com.xpdustry.foundation.common.database.EntityManager
-import com.xpdustry.foundation.common.misc.switchIfEmpty
-import com.xpdustry.foundation.common.misc.toValueMono
-import reactor.core.publisher.Mono
-import java.util.function.Consumer
+import org.bson.types.ObjectId
+import reactor.core.publisher.Flux
+import java.net.InetAddress
 
-interface UserManager : EntityManager<String, User> {
-    fun findByIdOrCreate(id: String): Mono<User> =
-        findById(id).switchIfEmpty { User(id).toValueMono() }
-    fun updateOrCreate(id: String, updater: Consumer<User>): Mono<Void> =
-        findByIdOrCreate(id).doOnNext(updater).flatMap(::save)
+interface PunishmentManager : EntityManager<ObjectId, Punishment> {
+    fun findAllByTargetIp(target: InetAddress): Flux<Punishment>
+    fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment>
 }

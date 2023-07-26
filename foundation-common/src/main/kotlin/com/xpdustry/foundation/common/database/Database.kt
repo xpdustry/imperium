@@ -17,12 +17,6 @@
  */
 package com.xpdustry.foundation.common.database
 
-import com.xpdustry.foundation.common.database.model.AccountManager
-import com.xpdustry.foundation.common.database.model.LegacyAccountManager
-import com.xpdustry.foundation.common.database.model.PunishmentManager
-import com.xpdustry.foundation.common.database.model.UserManager
-
-// TODO: Get rid of this interface and rename managers to repositories, also rename package to data
 interface Database {
     val users: UserManager
     val punishments: PunishmentManager

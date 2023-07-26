@@ -18,13 +18,13 @@
 package com.xpdustry.foundation.mindustry.account
 
 import com.xpdustry.foundation.common.application.FoundationApplication
+import com.xpdustry.foundation.common.database.Account
 import com.xpdustry.foundation.common.database.Database
-import com.xpdustry.foundation.common.database.model.Account
-import com.xpdustry.foundation.common.database.model.AccountService
-import com.xpdustry.foundation.common.database.model.PlayerIdentity
 import com.xpdustry.foundation.common.inject.InstanceManager
 import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.toInetAddress
+import com.xpdustry.foundation.common.service.AccountService
+import com.xpdustry.foundation.common.service.PlayerIdentity
 import com.xpdustry.foundation.mindustry.verification.VerificationPipeline
 import com.xpdustry.foundation.mindustry.verification.VerificationResult
 import fr.xpdustry.distributor.api.event.EventHandler

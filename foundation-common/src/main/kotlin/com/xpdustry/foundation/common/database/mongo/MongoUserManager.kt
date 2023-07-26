@@ -18,7 +18,7 @@
 package com.xpdustry.foundation.common.database.mongo
 
 import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.User
-import com.xpdustry.foundation.common.database.model.UserManager
+import com.xpdustry.foundation.common.database.User
+import com.xpdustry.foundation.common.database.UserManager
 
 class MongoUserManager(collection: MongoCollection<User>) : MongoEntityManager<User, String>(collection), UserManager

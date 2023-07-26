@@ -19,8 +19,8 @@ package com.xpdustry.foundation.common.database.mongo
 
 import com.mongodb.client.model.Filters
 import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.Account
-import com.xpdustry.foundation.common.database.model.AccountManager
+import com.xpdustry.foundation.common.database.Account
+import com.xpdustry.foundation.common.database.AccountManager
 import com.xpdustry.foundation.common.misc.toValueMono
 import org.bson.types.ObjectId
 import reactor.core.publisher.Mono

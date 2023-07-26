@@ -17,7 +17,7 @@
  */
 package com.xpdustry.foundation.mindustry.history
 
-import com.xpdustry.foundation.common.database.model.MindustryUUID
+import com.xpdustry.foundation.common.database.MindustryUUID
 import mindustry.game.Team
 import mindustry.gen.Unit
 import mindustry.type.UnitType

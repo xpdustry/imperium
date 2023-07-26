@@ -15,10 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.common.service
 
 import com.google.common.annotations.VisibleForTesting
+import com.xpdustry.foundation.common.database.Account
 import com.xpdustry.foundation.common.database.Database
+import com.xpdustry.foundation.common.database.LegacyAccount
 import com.xpdustry.foundation.common.hash.Argon2HashFunction
 import com.xpdustry.foundation.common.hash.Argon2Params
 import com.xpdustry.foundation.common.hash.GenericSaltyHashFunction

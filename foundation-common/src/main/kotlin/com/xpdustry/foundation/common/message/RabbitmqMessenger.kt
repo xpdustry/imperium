@@ -39,7 +39,7 @@ import kotlin.reflect.jvm.jvmName
 
 class RabbitmqMessenger(private val config: FoundationConfig, private val metadata: FoundationMetadata) : Messenger, FoundationApplication.Listener {
 
-    // TODO: Test if kryo is still broken
+    // TODO Test if kryo is still broken
     @Suppress("UsePropertyAccessSyntax")
     private val kryo = Kryo().apply {
         setRegistrationRequired(false)

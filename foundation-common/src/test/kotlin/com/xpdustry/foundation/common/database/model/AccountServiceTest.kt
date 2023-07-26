@@ -26,6 +26,10 @@ import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.inject.module
 import com.xpdustry.foundation.common.inject.single
 import com.xpdustry.foundation.common.misc.ExitStatus
+import com.xpdustry.foundation.common.service.AccountException
+import com.xpdustry.foundation.common.service.AccountService
+import com.xpdustry.foundation.common.service.PlayerIdentity
+import com.xpdustry.foundation.common.service.SimpleAccountService
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test

@@ -18,10 +18,8 @@
 package com.xpdustry.foundation.common.database.mongo
 
 import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.HashedUsername
-import com.xpdustry.foundation.common.database.model.LegacyAccount
-import com.xpdustry.foundation.common.database.model.LegacyAccountManager
+import com.xpdustry.foundation.common.database.HashedUsername
+import com.xpdustry.foundation.common.database.LegacyAccount
+import com.xpdustry.foundation.common.database.LegacyAccountManager
 
-class MongoLegacyAccountManager(
-    collection: MongoCollection<LegacyAccount>,
-) : MongoEntityManager<LegacyAccount, HashedUsername>(collection), LegacyAccountManager
+class MongoLegacyAccountManager(collection: MongoCollection<LegacyAccount>) : MongoEntityManager<LegacyAccount, HashedUsername>(collection), LegacyAccountManager

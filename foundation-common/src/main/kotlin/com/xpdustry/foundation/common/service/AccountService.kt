@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.common.service
 
+import com.xpdustry.foundation.common.database.Account
 import com.xpdustry.foundation.common.misc.PasswordRequirement
 import com.xpdustry.foundation.common.misc.UsernameRequirement
 import reactor.core.publisher.Mono

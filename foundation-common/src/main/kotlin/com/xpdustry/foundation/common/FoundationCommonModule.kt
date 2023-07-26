@@ -20,8 +20,6 @@ package com.xpdustry.foundation.common
 import com.xpdustry.foundation.common.application.FoundationMetadata
 import com.xpdustry.foundation.common.config.FoundationConfigFactory
 import com.xpdustry.foundation.common.database.Database
-import com.xpdustry.foundation.common.database.model.AccountService
-import com.xpdustry.foundation.common.database.model.SimpleAccountService
 import com.xpdustry.foundation.common.database.mongo.MongoDatabase
 import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.inject.module
@@ -32,6 +30,8 @@ import com.xpdustry.foundation.common.network.Discovery
 import com.xpdustry.foundation.common.network.IpHubVpnAddressDetector
 import com.xpdustry.foundation.common.network.SimpleDiscovery
 import com.xpdustry.foundation.common.network.VpnAddressDetector
+import com.xpdustry.foundation.common.service.AccountService
+import com.xpdustry.foundation.common.service.SimpleAccountService
 import com.xpdustry.foundation.common.translator.DeeplTranslator
 import com.xpdustry.foundation.common.translator.Translator
 

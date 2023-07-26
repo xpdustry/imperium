@@ -19,9 +19,9 @@ package com.xpdustry.foundation.common.database.mongo
 
 import com.mongodb.client.model.Filters
 import com.mongodb.reactivestreams.client.MongoCollection
-import com.xpdustry.foundation.common.database.model.MindustryUUID
-import com.xpdustry.foundation.common.database.model.Punishment
-import com.xpdustry.foundation.common.database.model.PunishmentManager
+import com.xpdustry.foundation.common.database.MindustryUUID
+import com.xpdustry.foundation.common.database.Punishment
+import com.xpdustry.foundation.common.database.PunishmentManager
 import com.xpdustry.foundation.common.misc.toValueFlux
 import org.bson.types.ObjectId
 import reactor.core.publisher.Flux

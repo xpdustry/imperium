@@ -15,22 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.common.database
 
-import com.xpdustry.foundation.common.database.Entity
-import java.net.InetAddress
-import java.time.Instant
+import com.xpdustry.foundation.common.misc.switchIfEmpty
+import com.xpdustry.foundation.common.misc.toValueMono
+import reactor.core.publisher.Mono
+import java.util.function.Consumer
 
-typealias MindustryUUID = String
-typealias MindustryUSID = String
-
-data class User(
-    override val id: MindustryUUID,
-    val names: MutableSet<String> = mutableSetOf(),
-    val addresses: MutableSet<InetAddress> = mutableSetOf(),
-    var lastName: String? = null,
-    var lastAddress: InetAddress? = null,
-    var timesJoined: Int = 0,
-    var verified: Boolean = false,
-    var timestamp: Instant = Instant.now(),
-) : Entity<MindustryUUID>
+interface UserManager : EntityManager<String, User> {
+    fun findByIdOrCreate(id: String): Mono<User> =
+        findById(id).switchIfEmpty { User(id).toValueMono() }
+    fun updateOrCreate(id: String, updater: Consumer<User>): Mono<Void> =
+        findByIdOrCreate(id).doOnNext(updater).flatMap(::save)
+}

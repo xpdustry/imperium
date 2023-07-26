@@ -20,12 +20,12 @@ package com.xpdustry.foundation.mindustry.account
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.foundation.common.application.FoundationApplication
-import com.xpdustry.foundation.common.database.model.AccountException
-import com.xpdustry.foundation.common.database.model.AccountService
 import com.xpdustry.foundation.common.inject.InstanceManager
 import com.xpdustry.foundation.common.inject.get
 import com.xpdustry.foundation.common.misc.doOnEmpty
 import com.xpdustry.foundation.common.misc.toErrorMono
+import com.xpdustry.foundation.common.service.AccountException
+import com.xpdustry.foundation.common.service.AccountService
 import com.xpdustry.foundation.mindustry.command.FoundationPluginCommandManager
 import com.xpdustry.foundation.mindustry.misc.MindustryScheduler
 import com.xpdustry.foundation.mindustry.ui.Interface

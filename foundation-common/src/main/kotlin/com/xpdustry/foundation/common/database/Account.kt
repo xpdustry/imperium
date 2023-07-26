@@ -15,29 +15,40 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.foundation.common.database.model
+package com.xpdustry.foundation.common.database
 
-import com.xpdustry.foundation.common.database.Entity
-import com.xpdustry.foundation.common.database.timestamp
+import com.xpdustry.foundation.common.hash.Hash
 import org.bson.codecs.pojo.annotations.BsonIgnore
 import org.bson.types.ObjectId
-import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-data class Punishment(
+data class Account(
+    var username: String,
+    var password: Hash,
+    var rank: Rank = Rank.NORMAL,
+    var steam: Long? = null,
+    var discord: Long? = null,
+    var legacy: Boolean = false,
+    val sessions: MutableMap<String, Session> = mutableMapOf(),
+    val friends: MutableMap<String, Friend> = mutableMapOf(),
+    var playtime: Duration = Duration.ZERO,
+    var games: Int = 0,
     override val id: ObjectId = ObjectId(),
-    var targetIp: InetAddress,
-    var targetUuid: MindustryUUID,
-    var reason: String = "Unknown",
-    var duration: Duration? = Duration.ofDays(1L),
-    var pardonned: Boolean = false,
 ) : Entity<ObjectId> {
-    @get:BsonIgnore
-    val expired: Boolean
-        get() = duration != null && (pardonned || timestamp.plus(duration).isBefore(Instant.now()))
 
     @get:BsonIgnore
-    val remaining: Duration
-        get() = if (duration == null) Duration.ZERO else duration!!.minus(Duration.between(Instant.now(), timestamp))
+    val verified: Boolean get() = steam != null || discord != null
+
+    enum class Rank {
+        NORMAL,
+        OVERSEER,
+        MODERATOR,
+        ADMINISTRATOR,
+        OWNER,
+    }
+
+    data class Session(val expiration: Instant)
+
+    data class Friend(var pending: Boolean)
 }
