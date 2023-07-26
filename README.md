@@ -8,9 +8,6 @@ We welcome contributions from developers of all levels of experience, including 
 If you're interested in contributing to Imperium, feel free to explore our codebase,
 check the issue tracker for tasks or bugs, and don't hesitate to ask questions on our Discord server.
 
-> If you are a server owner or plugin developer and contribute to our project,
-> we will contribute to your projects as well 😉.
-
 ## Building
 
 You will need:
