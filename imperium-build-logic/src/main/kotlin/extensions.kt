@@ -8,7 +8,7 @@ import org.gradle.kotlin.dsl.the
 
 fun RepositoryHandler.xpdustryReleases() {
     maven {
-        url = URI.create("https://maven.xpdustry.fr/releases")
+        url = URI.create("https://maven.xpdustry.com/releases")
         name = "xpdustry-releases"
         mavenContent { releasesOnly() }
     }
@@ -16,7 +16,7 @@ fun RepositoryHandler.xpdustryReleases() {
 
 fun RepositoryHandler.xpdustryAnuken() {
     maven {
-        url = URI.create("https://maven.xpdustry.fr/anuken")
+        url = URI.create("https://maven.xpdustry.com/anuken")
         name = "xpdustry-anuken"
         mavenContent { releasesOnly() }
     }

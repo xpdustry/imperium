@@ -10,7 +10,7 @@ signing {
 
 indra {
     gpl3OnlyLicense()
-    publishReleasesTo("xpdustry", "https://maven.xpdustry.fr/releases")
+    publishReleasesTo("xpdustry", "https://maven.xpdustry.com/releases")
 
     github("xpdustry", "imperium") {
         ci(true)
@@ -22,7 +22,7 @@ indra {
         pom {
             organization {
                 name.set("Xpdustry")
-                url.set("https://www.xpdustry.fr")
+                url.set("https://www.xpdustry.com")
             }
 
             developers {
