@@ -1,4 +1,4 @@
-# Imperium
+# imperium
 
 The core of the Chaotic server network, maintained by Xpdustry.
 
