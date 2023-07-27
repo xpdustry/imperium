@@ -47,7 +47,7 @@ dependencies {
 }
 
 tasks.shadowJar {
-    archiveFileName.set("ImperiumMindustry.jar")
+    archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
 
     doFirst {
@@ -81,23 +81,23 @@ tasks.build {
 }
 
 val downloadKotlinRuntime = tasks.register<GithubArtifactDownload>("downloadKotlinRuntime") {
-    user.set("Xpdustry")
-    repo.set("KotlinRuntimePlugin")
-    name.set("KotlinRuntimePlugin.jar")
-    version.set(libs.versions.kotlin.map { "v2.0.0-k.$it" })
+    user.set("xpdustry")
+    repo.set("kotlin-runtime")
+    name.set("kotlin-runtime.jar")
+    version.set(libs.versions.kotlin.map { "v3.0.0-k.$it" })
 }
 
 val downloadDistributorCore = tasks.register<GithubArtifactDownload>("downloadDistributor") {
-    user.set("Xpdustry")
-    repo.set("Distributor")
-    name.set("DistributorCore.jar")
+    user.set("xpdustry")
+    repo.set("distributor")
+    name.set("distributor-core.jar")
     version.set(libs.versions.distributor.map { "v$it" })
 }
 
 val downloadDistributorKotlin = tasks.register<GithubArtifactDownload>("downloadDistributorKotlin") {
-    user.set("Xpdustry")
-    repo.set("Distributor")
-    name.set("DistributorKotlin.jar")
+    user.set("xpdustry")
+    repo.set("distributor")
+    name.set("distributor-kotlin.jar")
     version.set(libs.versions.distributor.map { "v$it" })
 }
 

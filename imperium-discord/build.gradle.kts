@@ -12,7 +12,7 @@ dependencies {
 }
 
 tasks.shadowJar {
-    archiveFileName.set("ImperiumDiscord.jar")
+    archiveFileName.set("imperium-discord.jar")
     manifest {
         attributes(
             "Main-Class" to "com.xpdustry.imperium.discord.ImperiumDiscordKt",

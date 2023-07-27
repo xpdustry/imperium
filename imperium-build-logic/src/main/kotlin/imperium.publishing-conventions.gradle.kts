@@ -10,9 +10,9 @@ signing {
 
 indra {
     gpl3OnlyLicense()
-    publishReleasesTo("xpdustry", "https://maven.xpdustry.fr/private")
+    publishReleasesTo("xpdustry", "https://maven.xpdustry.fr/releases")
 
-    github("Xpdustry", "Imperium") {
+    github("xpdustry", "imperium") {
         ci(true)
         issues(true)
         scm(true)

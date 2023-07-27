@@ -3,12 +3,12 @@ version = "1.0"
 
 [versions]
 # platforms
-kotlin = "1.8.20"
+kotlin = "1.9.0"
 java = "17"
 mindustry = "145"
 
 # libraries
-distributor = "3.0.0"
+distributor = "3.1.0"
 junit = "5.9.0"
 testcontainers = "1.18.3"
 mongodb = "4.9.0"
