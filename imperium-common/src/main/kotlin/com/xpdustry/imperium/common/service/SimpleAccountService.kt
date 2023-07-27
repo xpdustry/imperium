@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.service
 
 import com.google.common.annotations.VisibleForTesting
 import com.xpdustry.imperium.common.database.Account
+import com.xpdustry.imperium.common.database.Achievement
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.database.LegacyAccount
 import com.xpdustry.imperium.common.hash.Argon2HashFunction
@@ -87,14 +88,17 @@ class SimpleAccountService(private val database: Database) : AccountService {
                 if (missing.isNotEmpty()) {
                     return@flatMap AccountException.InvalidUsername(missing).toErrorMono()
                 }
-                GenericSaltyHashFunction.create(password, PASSWORD_PARAMS).flatMap {
+                GenericSaltyHashFunction.create(password, PASSWORD_PARAMS).flatMap { hash ->
                     database.accounts.save(
                         Account(
                             username = newUsername.normalize(),
-                            password = it,
+                            password = hash,
                             playtime = legacy.playtime,
                             rank = legacy.rank,
                             games = legacy.games,
+                            achievements = legacy.achievements
+                                .map { it.name.lowercase() }
+                                .associateWithTo(mutableMapOf()) { Achievement.Progression(completed = true) },
                         ),
                     )
                 }

@@ -32,6 +32,7 @@ data class Account(
     var legacy: Boolean = false,
     val sessions: MutableMap<String, Session> = mutableMapOf(),
     val friends: MutableMap<String, Friend> = mutableMapOf(),
+    val achievements: MutableMap<String, Achievement.Progression> = mutableMapOf(),
     var playtime: Duration = Duration.ZERO,
     var games: Int = 0,
     override val id: ObjectId = ObjectId(),
@@ -39,6 +40,19 @@ data class Account(
 
     @get:BsonIgnore
     val verified: Boolean get() = steam != null || discord != null
+
+    fun progress(achievement: Achievement) {
+        if (completed(achievement)) return
+        val progression = achievements.getOrPut(achievement.name.lowercase(), Achievement::Progression)
+        progression.progress++
+        if (progression.progress >= achievement.goal) {
+            progression.completed = true
+        }
+    }
+
+    fun completed(achievement: Achievement): Boolean {
+        return achievements[achievement.name.lowercase()]?.completed == true
+    }
 
     enum class Rank {
         NORMAL,

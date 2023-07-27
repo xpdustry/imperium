@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.Account
 import com.xpdustry.imperium.common.database.AccountManager
+import com.xpdustry.imperium.common.database.Achievement
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.database.LegacyAccount
 import com.xpdustry.imperium.common.database.LegacyAccountManager
@@ -90,6 +91,7 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
                         .register(LegacyAccount::class.java)
                         .register(User::class.java)
                         .register(Punishment::class.java)
+                        .register(Achievement.Progression::class.java)
                         .conventions(
                             listOf(
                                 Conventions.CLASS_AND_PROPERTY_CONVENTION,

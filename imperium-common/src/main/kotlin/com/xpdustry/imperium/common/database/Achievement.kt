@@ -17,16 +17,17 @@
  */
 package com.xpdustry.imperium.common.database
 
-import com.xpdustry.imperium.common.hash.Hash
-import java.time.Duration
+enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
+    ACTIVE(7, true),
+    HYPER(30, true),
+    ADDICT(90, true),
+    GAMER(8 * 60),
+    STEAM,
+    DISCORD,
+    DAY(24 * 60),
+    WEEK(7 * 24 * 60),
+    MONTH(30 * 24 * 60),
+    ;
 
-typealias HashedUsername = String
-
-data class LegacyAccount(
-    override val id: HashedUsername,
-    var password: Hash,
-    var rank: Account.Rank = Account.Rank.NORMAL,
-    var games: Int = 0,
-    var playtime: Duration = Duration.ZERO,
-    val achievements: MutableSet<Achievement> = mutableSetOf(),
-) : Entity<HashedUsername>
+    data class Progression(var progress: Int = 0, var completed: Boolean = false)
+}
