@@ -78,10 +78,13 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 }
 
 private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) : SimpleImperiumApplication(mindustryModule(plugin)) {
+    private var exited = false
     override fun exit(status: ExitStatus) {
+        if (exited) return
+        exited = true
         super.exit(status)
         when (status) {
-            ExitStatus.EXIT -> Core.app.exit()
+            ExitStatus.EXIT, ExitStatus.INIT_FAILURE -> Core.app.exit()
             ExitStatus.RESTART -> Core.app.restart()
         }
     }

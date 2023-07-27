@@ -59,13 +59,19 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
     }
 
     override fun init() {
-        listeners.forEach(ImperiumApplication.Listener::onImperiumInit)
-        logger.info("Imperium has successfully init.")
+        try {
+            listeners.forEach(ImperiumApplication.Listener::onImperiumInit)
+            logger.info("Imperium has successfully init.")
+        } catch (e: Exception) {
+            logger.error("Imperium failed to init.", e)
+            exit(ExitStatus.INIT_FAILURE)
+        }
     }
 
     override fun exit(status: ExitStatus) {
-        listeners.reversed().forEach(ImperiumApplication.Listener::onImperiumExit)
-        listeners.clear()
+        if (status != ExitStatus.INIT_FAILURE) {
+            listeners.reversed().forEach(ImperiumApplication.Listener::onImperiumExit)
+        }
         logger.info("Imperium has successfully exit with status: {}", status)
     }
 

@@ -114,10 +114,13 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
         client = MongoClients.create(settings)
 
         // Check if client is correctly authenticated
-        client.listDatabaseNames().toValueFlux()
-            .onErrorMap { IllegalStateException("MongoDB authentication failed", it) }
-            .collectList()
-            .block(Duration.ofSeconds(5L))
+        try {
+            client.listDatabaseNames().toValueFlux()
+                .collectList()
+                .block(Duration.ofSeconds(5L))
+        } catch (e: Exception) {
+            throw RuntimeException("Failed to authenticate to MongoDB", e)
+        }
 
         val database = client.getDatabase(config.mongo.database)
         users = MongoUserManager(database.getCollection("users", User::class.java))

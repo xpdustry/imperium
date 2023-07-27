@@ -17,33 +17,29 @@
  */
 package com.xpdustry.imperium.discord
 
-import com.xpdustry.imperium.common.application.SimpleImperiumApplication
-import com.xpdustry.imperium.common.misc.ExitStatus
-import com.xpdustry.imperium.common.misc.logger
-import java.util.Scanner
-import kotlin.system.exitProcess
+import com.xpdustry.imperium.common.commonModule
+import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.inject.module
+import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.network.MindustryServerInfo
+import com.xpdustry.imperium.discord.service.DiscordService
+import com.xpdustry.imperium.discord.service.SimpleDiscordService
+import java.nio.file.Path
+import java.util.function.Supplier
+import kotlin.io.path.Path
 
-class ImperiumDiscord : SimpleImperiumApplication(discordModule()) {
-    override fun exit(status: ExitStatus) {
-        super.exit(status)
-        exitProcess(status.ordinal)
-    }
-}
+fun discordModule() = module("discord") {
+    include(commonModule())
 
-fun main() {
-    val application = ImperiumDiscord()
-
-    application.instances.createSingletons()
-    application.init()
-
-    val scanner = Scanner(System.`in`)
-    while (scanner.hasNextLine()) {
-        val line = scanner.nextLine()
-        if (line == "exit") {
-            break
-        }
-        logger<ImperiumDiscord>().info("Type 'exit' to exit.")
+    single<DiscordService> {
+        SimpleDiscordService(get())
     }
 
-    application.exit(ExitStatus.EXIT)
+    single<Path>("directory") {
+        Path(".")
+    }
+
+    single<Supplier<MindustryServerInfo?>> {
+        Supplier { null }
+    }
 }

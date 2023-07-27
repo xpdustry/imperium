@@ -20,4 +20,5 @@ package com.xpdustry.imperium.common.misc
 enum class ExitStatus {
     EXIT,
     RESTART,
+    INIT_FAILURE,
 }

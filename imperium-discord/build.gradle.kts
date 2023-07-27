@@ -41,4 +41,5 @@ tasks.register<JavaExec>("runImperiumDiscord") {
     dependsOn(tasks.shadowJar)
     classpath(tasks.shadowJar)
     description = "Starts a local Imperium discord bot"
+    standardInput = System.`in`
 }
