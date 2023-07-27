@@ -44,7 +44,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
     internal val serverCommandManager = ImperiumPluginCommandManager(this)
     internal val clientCommandManager = ImperiumPluginCommandManager(this)
-    private val application = MindustryImperiumApplication()
+    private val application = MindustryImperiumApplication(this)
 
     override fun onInit() {
         logger.info("Imperium plugin loaded!")
@@ -75,21 +75,20 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onExit() {
         application.exit(ExitStatus.EXIT)
     }
+}
 
-    private inner class MindustryImperiumApplication : SimpleImperiumApplication(mindustryModule(this@ImperiumPlugin)) {
-        override fun exit(status: ExitStatus) {
-            super.exit(status)
-            when (status) {
-                ExitStatus.EXIT -> Core.app.exit()
-                ExitStatus.RESTART -> Core.app.restart()
-            }
+private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) : SimpleImperiumApplication(mindustryModule(plugin)) {
+    override fun exit(status: ExitStatus) {
+        super.exit(status)
+        when (status) {
+            ExitStatus.EXIT -> Core.app.exit()
+            ExitStatus.RESTART -> Core.app.restart()
         }
-
-        override fun onListenerRegistration(listener: ImperiumApplication.Listener) {
-            super.onListenerRegistration(listener)
-            DistributorProvider.get().eventBus.parse(this@ImperiumPlugin, listener)
-            DistributorProvider.get().pluginScheduler.parse(this@ImperiumPlugin, listener)
-        }
+    }
+    override fun onListenerRegistration(listener: ImperiumApplication.Listener) {
+        super.onListenerRegistration(listener)
+        DistributorProvider.get().eventBus.parse(plugin, listener)
+        DistributorProvider.get().pluginScheduler.parse(plugin, listener)
     }
 }
 
