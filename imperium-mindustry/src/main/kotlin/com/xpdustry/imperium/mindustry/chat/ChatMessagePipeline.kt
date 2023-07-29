@@ -25,7 +25,7 @@ import reactor.core.publisher.Mono
 
 data class ChatMessageContext(
     val sender: Player,
-    val target: Player,
+    val target: Player?,
     val message: String,
 )
 

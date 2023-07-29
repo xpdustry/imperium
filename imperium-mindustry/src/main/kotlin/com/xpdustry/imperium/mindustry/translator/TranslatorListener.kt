@@ -19,6 +19,7 @@ package com.xpdustry.imperium.mindustry.translator
 
 import arc.util.Strings
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -34,6 +35,7 @@ import java.time.Duration
 class TranslatorListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val translator: Translator = instances.get()
     private val pipeline: ChatMessagePipeline = instances.get()
+    private val config = instances.get<ImperiumConfig>()
 
     override fun onImperiumInit() {
         pipeline.register("translator", Priority.LOW) { context ->
@@ -43,7 +45,7 @@ class TranslatorListener(instances: InstanceManager) : ImperiumApplication.Liste
                 return@register Mono.just(context.message)
             }
 
-            val targetLocale = Players.getLocale(context.target)
+            val targetLocale = context.target?.let(Players::getLocale) ?: config.language
             if (translator.isSupportedLanguage(targetLocale).not()) {
                 logger.debug("Warning: The locale {} is not supported by the chat translator", targetLocale)
                 return@register Mono.just(context.message)

@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.config
 
 import java.awt.Color
 import java.net.InetAddress
+import java.util.Locale
 
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
@@ -27,6 +28,7 @@ data class ImperiumConfig(
     val messenger: MessengerConfig = MessengerConfig(),
     val mindustry: MindustryConfig = MindustryConfig(),
     val discord: DiscordConfig = DiscordConfig(),
+    val language: Locale = Locale.ENGLISH,
 )
 
 data class NetworkConfig(

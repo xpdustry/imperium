@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.chat
 
-import arc.Events
 import arc.util.CommandHandler.ResponseType
 import arc.util.Log
+import arc.util.Strings
 import arc.util.Time
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
@@ -28,6 +28,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
+import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
@@ -113,7 +114,7 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
 
     val escaped = message.replace("\n", "")
 
-    Events.fire(PlayerChatEvent(sender, escaped))
+    DistributorProvider.get().eventBus.post(PlayerChatEvent(sender, escaped))
 
     // log commands before they are handled
     if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
@@ -138,21 +139,17 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
     val filtered = Vars.netServer.admins.filterMessage(sender, escaped)
         ?: return
 
-    Groups.player.each { target ->
+    // The null target represents the server, for logging and event purposes
+    (Groups.player.toList() + listOf(null)).forEach { target ->
         pipeline
             .build(ChatMessageContext(sender, target, filtered))
             .publishOn(MindustryScheduler)
             .subscribe { result ->
-                if (target == sender) {
-                    // server console logging
-                    if (result != escaped) {
-                        Log.info("&fi@: @ (original: @)", "&lc" + sender.plainName(), "&lw$result", "&lw$escaped")
-                    } else {
-                        Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw$result")
-                    }
+                target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
+                if (target == null) {
+                    Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw${Strings.stripColors(result)}")
+                    DistributorProvider.get().eventBus.post(ProcessedPlayerChatEvent(sender, result))
                 }
-
-                target.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
             }
     }
 }
