@@ -39,6 +39,12 @@ fun <T> Mono<T>.doOnEmpty(block: () -> Unit): Mono<T> =
         Mono.empty()
     }
 
+fun <T> Mono<T>.onErrorResumeEmpty(block: (Throwable) -> Unit): Mono<T> =
+    onErrorResume {
+        block(it)
+        Mono.empty()
+    }
+
 fun <T> Mono<*>.then(block: () -> Mono<T>): Mono<T> =
     then(Mono.defer(block))
 

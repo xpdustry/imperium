@@ -34,6 +34,8 @@ import org.objenesis.strategy.StdInstantiatorStrategy
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
+import java.net.Inet4Address
+import java.net.Inet6Address
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
@@ -46,6 +48,8 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         setAutoReset(true)
         setOptimizedGenerics(false)
         setInstantiatorStrategy(StdInstantiatorStrategy())
+        addDefaultSerializer(Inet4Address::class.java, InetAddressSerializer)
+        addDefaultSerializer(Inet6Address::class.java, InetAddressSerializer)
     }
 
     private lateinit var connection: Connection

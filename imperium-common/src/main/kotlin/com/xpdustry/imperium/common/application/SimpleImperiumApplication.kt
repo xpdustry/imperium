@@ -70,9 +70,15 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
     override fun exit(status: ExitStatus) {
         if (status != ExitStatus.INIT_FAILURE) {
-            listeners.reversed().forEach(ImperiumApplication.Listener::onImperiumExit)
+            listeners.reversed().forEach {
+                try {
+                    it.onImperiumExit()
+                } catch (e: Exception) {
+                    logger.error("Error while exiting listener {}", it::class.simpleName, e)
+                }
+            }
         }
-        logger.info("Imperium has successfully exit with status: {}", status)
+        logger.info("Imperium has exit with status: {}", status)
     }
 
     private inner class ApplicationInjectorListener : InstanceManager.Listener {

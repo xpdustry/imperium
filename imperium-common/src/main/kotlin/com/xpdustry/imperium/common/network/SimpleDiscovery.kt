@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.onErrorResumeEmpty
 import reactor.core.Disposable
 import reactor.core.publisher.Mono
 import reactor.core.publisher.SignalType
@@ -75,7 +76,7 @@ class SimpleDiscovery(
             heartbeatTask?.dispose()
         }
         heartbeatTask = sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-            .onErrorComplete()
+            .onErrorResumeEmpty { logger.error("Failed to send discovery message", it) }
             // TODO: Make delay configurable
             .delaySubscription(Duration.ofSeconds(5L))
             .doFinally { if (it == SignalType.ON_COMPLETE) heartbeat() }
@@ -89,7 +90,9 @@ class SimpleDiscovery(
 
     override fun onImperiumExit() {
         heartbeatTask?.dispose()
-        sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER).block()
+        sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER)
+            .onErrorResumeEmpty { logger.error("Failed to send un-discovery message", it) }
+            .block()
     }
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {
