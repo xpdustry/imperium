@@ -17,7 +17,7 @@ services:
       - mongo
 
   # The RabbitMQ instance for inter-server communication
-  # This image comes with an admin frontend available at http://localhost:15672, login with guest/guest
+  # This image comes with an admin frontend available at http://localhost:15672, login with guest:guest
   rabbitmq:
     image: rabbitmq:3-management
     ports:

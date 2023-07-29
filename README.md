@@ -22,7 +22,8 @@ Then you can compile the project with `./gradlew build` or specific modules with
 For local testing, you will need a mongo database and a rabbitmq server,
 fortunately for you a docker-compose file is provided. You will simply have to run `docker-compose up -d` once.
 - To access the web front-end of these services, see the comments in the docker-compose file.
-- The mongo express container fails to start with the other containers sometimes. If this happens, just restart it.
+- The mongo express container fails to start with the other containers sometimes. If this happens,
+  just restart it with the command `docker-compose restart mongo-express`.
 
 ### Mindustry
 
