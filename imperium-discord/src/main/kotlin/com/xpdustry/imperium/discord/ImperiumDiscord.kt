@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.discord.listener.BridgeListener
 import java.util.Scanner
 import kotlin.system.exitProcess
 
@@ -34,6 +35,8 @@ fun main() {
     val application = ImperiumDiscord()
 
     application.instances.createSingletons()
+    application.register(BridgeListener::class)
+
     application.init()
 
     val scanner = Scanner(System.`in`)

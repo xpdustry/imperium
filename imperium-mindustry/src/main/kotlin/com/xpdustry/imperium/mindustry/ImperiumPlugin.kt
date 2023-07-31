@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
+import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
@@ -67,6 +68,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(AccountCommand::class)
         application.register(ChatMessageListener::class)
         application.register(HistoryCommand::class)
+        application.register(BridgeChatMessageListener::class)
 
         application.instances.createSingletons()
         application.init()

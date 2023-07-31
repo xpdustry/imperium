@@ -41,6 +41,7 @@ import java.net.Inet6Address
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
+// TODO The current system does not intercept the subclasses of a message type. We need to fix this.
 class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
 
     private val kryo = Kryo().apply {

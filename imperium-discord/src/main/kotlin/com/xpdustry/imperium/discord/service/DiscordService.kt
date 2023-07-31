@@ -19,11 +19,16 @@ package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.discord.misc.toSnowflake
 import discord4j.core.DiscordClient
 import discord4j.core.GatewayDiscordClient
+import discord4j.core.`object`.entity.Guild
+import discord4j.core.`object`.entity.channel.Category
+import reactor.core.publisher.Mono
 
 interface DiscordService {
     val gateway: GatewayDiscordClient
+    fun getMainGuild(): Mono<Guild>
 }
 
 class SimpleDiscordService(private val config: ImperiumConfig) : DiscordService, ImperiumApplication.Listener {
@@ -38,7 +43,25 @@ class SimpleDiscordService(private val config: ImperiumConfig) : DiscordService,
             .gateway()
             .login()
             .block()!!
+
+        if (getMainGuild().blockOptional().isEmpty) {
+            throw IllegalStateException("Main guild not found")
+        }
+
+        // TODO Do config validation elsewhere ?
+        val liveChat = config.discord.categories.liveChat?.toSnowflake()
+        if (liveChat != null) {
+            val channel = gateway.getChannelById(liveChat).onErrorComplete().blockOptional()
+            if (channel.isEmpty) {
+                throw IllegalStateException("Live chat channel not found")
+            }
+            if (channel.get() !is Category) {
+                throw IllegalStateException("Live chat channel is not a category")
+            }
+        }
     }
+
+    override fun getMainGuild(): Mono<Guild> = gateway.guilds.single()
 
     override fun onImperiumExit() {
         gateway.logout().block()

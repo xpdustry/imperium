@@ -73,4 +73,9 @@ data class HistoryConfig(
 
 data class DiscordConfig(
     val token: HiddenString? = null,
+    val categories: CategoryConfig = CategoryConfig(),
+)
+
+data class CategoryConfig(
+    val liveChat: Long? = null,
 )

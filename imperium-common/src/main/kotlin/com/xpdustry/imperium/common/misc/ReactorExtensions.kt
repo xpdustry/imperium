@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.misc
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import kotlin.reflect.KClass
 
 fun <T> T?.toValueMono(): Mono<T> =
     Mono.justOrEmpty(this)
@@ -44,6 +45,12 @@ fun <T> Mono<T>.onErrorResumeEmpty(block: (Throwable) -> Unit): Mono<T> =
         block(it)
         Mono.empty()
     }
+
+fun <A : Any, B : A> Flux<A>.filterAndCast(target: KClass<B>): Flux<B> =
+    filter(target::isInstance).cast(target.java)
+
+fun <A : Any, B : A> Mono<A>.filterAndCast(target: KClass<B>): Mono<B> =
+    filter(target::isInstance).cast(target.java)
 
 fun <T> Mono<*>.then(block: () -> Mono<T>): Mono<T> =
     then(Mono.defer(block))
