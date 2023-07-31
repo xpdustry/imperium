@@ -51,6 +51,7 @@ class VerificationListener(instances: InstanceManager) : ImperiumApplication.Lis
 
     override fun onImperiumInit() {
         pipeline.register("ddos", Priority.HIGH, DdosVerification())
+        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientVerification())
         pipeline.register("punishment", Priority.NORMAL, PunishmentVerification(database))
         pipeline.register("vpn", Priority.LOW, VpnVerification(provider))
 
@@ -115,7 +116,7 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     val mods = packet.mods.copy()
     val missing = Vars.mods.getIncompatibility(mods)
     if (!mods.isEmpty || !missing.isEmpty) {
-        // TODO: Localize this message
+        // TODO Localize this message
         // can't easily be localized since kick reasons can't have formatted text with them
         val result = StringBuilder("[accent]Incompatible mods![]\n\n")
         if (!missing.isEmpty) {
