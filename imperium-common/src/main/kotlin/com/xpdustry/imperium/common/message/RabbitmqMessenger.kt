@@ -21,6 +21,7 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
 import com.rabbitmq.client.AMQP
+import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
 import com.rabbitmq.client.Connection
 import com.rabbitmq.client.ConnectionFactory
@@ -30,6 +31,7 @@ import com.rabbitmq.client.ShutdownSignalException
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import org.objenesis.strategy.StdInstantiatorStrategy
 import reactor.core.publisher.Flux
 import reactor.core.publisher.FluxSink
@@ -41,13 +43,11 @@ import kotlin.reflect.jvm.jvmName
 
 class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
 
-    // TODO Test if kryo is still broken
-    @Suppress("UsePropertyAccessSyntax")
     private val kryo = Kryo().apply {
+        instantiatorStrategy = StdInstantiatorStrategy()
         setRegistrationRequired(false)
         setAutoReset(true)
         setOptimizedGenerics(false)
-        setInstantiatorStrategy(StdInstantiatorStrategy())
         addDefaultSerializer(Inet4Address::class.java, InetAddressSerializer)
         addDefaultSerializer(Inet6Address::class.java, InetAddressSerializer)
     }
@@ -73,7 +73,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
 
         connection = factory.newConnection(metadata.identifier)
         channel = connection.createChannel()
-        channel.exchangeDeclare("imperium-${metadata.version}", "direct", true)
+        channel.exchangeDeclare(IMPERIUM_EXCHANGE, BuiltinExchangeType.DIRECT, false, true, null)
     }
 
     override fun onImperiumExit() {
@@ -85,9 +85,9 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         .map { Output(MAX_OBJECT_SIZE).also { kryo.writeObject(it, message) }.toBytes() }
         .map {
             channel.basicPublish(
-                "imperium-${metadata.version}",
-                message::class.qualifiedName,
-                AMQP.BasicProperties.Builder().headers(mapOf(ORIGIN_HEADER to metadata.identifier)).build(),
+                IMPERIUM_EXCHANGE,
+                message::class.jvmName,
+                AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier)).build(),
                 it,
             )
         }
@@ -96,50 +96,50 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
     override fun <M : Message> on(type: KClass<M>): Flux<M> {
         return Mono.fromSupplier {
             val queue = channel.queueDeclare().queue
-            channel.queueBind(queue, "imperium-${metadata.version}", type.jvmName)
+            channel.queueBind(queue, IMPERIUM_EXCHANGE, type.jvmName)
             queue
         }.flatMapMany { queue ->
-            Flux.create {
-                val adapter = RabbitmqFluxAdapter(it, type)
-                val consumerTag = channel.basicConsume(queue, true, adapter)
-                it.onDispose {
-                    if (channel.isOpen) {
-                        channel.basicCancel(consumerTag)
-                        channel.queueDelete(queue, false, false)
-                    }
-                }
+            Flux.create { sink ->
+                val consumerTag = channel.basicConsume(queue, true, RabbitmqFluxAdapter(sink, type))
+                sink.onDispose { if (channel.isOpen) channel.basicCancel(consumerTag) }
             }
         }
     }
 
     private inner class RabbitmqFluxAdapter<T : Message>(private val sink: FluxSink<T>, private val type: KClass<T>) : Consumer {
-
         override fun handleConsumeOk(consumerTag: String) = Unit
-
         override fun handleRecoverOk(consumerTag: String) = Unit
-
-        override fun handleCancelOk(consumerTag: String) {
-            sink.complete()
-        }
-
-        override fun handleCancel(consumerTag: String) {
-            sink.complete()
-        }
-
+        override fun handleCancelOk(consumerTag: String) = sink.complete()
+        override fun handleCancel(consumerTag: String) = sink.complete()
         override fun handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) {
-            if (sig.isInitiatedByApplication) return
-            sink.error(sig)
+            if (!sig.isInitiatedByApplication) sink.error(sig)
         }
-
         override fun handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: ByteArray) {
             // Have to call toString() because it's wrapped in another object
-            if (properties.headers[ORIGIN_HEADER]?.toString() == metadata.identifier) return
-            sink.next(Input(body).use { input -> kryo.readObject(input, type.java) })
+            val sender = properties.headers[SENDER_HEADER]?.toString()
+            if (sender == null) {
+                logger.warn("Received message without sender header from $envelope of type ${type.jvmName}")
+            } else if (sender == metadata.identifier) {
+                return
+            } else if (body.isEmpty()) {
+                logger.warn("Received empty message from $sender of type ${type.jvmName}")
+            } else if (body.size > MAX_OBJECT_SIZE) {
+                logger.warn("Received message from $sender that is too large of type ${type.jvmName}: ${body.size} bytes")
+            } else {
+                try {
+                    sink.next(Input(body).use { input -> kryo.readObject(input, type.java) })
+                } catch (e: Exception) {
+                    logger.error("Failed to handle message from $sender of type ${type.jvmName}", e)
+                    return
+                }
+            }
         }
     }
 
     companion object {
-        const val ORIGIN_HEADER = "Imperium-Origin"
+        val logger by LoggerDelegate()
+        const val IMPERIUM_EXCHANGE = "imperium"
+        const val SENDER_HEADER = "Imperium-Sender"
         const val MAX_OBJECT_SIZE = 1024 * 1024
     }
 }
