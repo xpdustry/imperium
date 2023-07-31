@@ -22,41 +22,25 @@ import org.bson.codecs.pojo.Convention
 import org.bson.codecs.pojo.InstanceCreator
 import org.bson.codecs.pojo.InstanceCreatorFactory
 import org.bson.codecs.pojo.PropertyModel
-import sun.misc.Unsafe
-import java.lang.reflect.Method
+import org.objenesis.strategy.StdInstantiatorStrategy
 
-// Extremely unsafe, but it works.
-// TODO: Maybe use the faster alternative sun.reflect.ReflectionFactory
-object UnsafeInstanciationConvention : Convention {
+object ConstructorFreeInstanciationConvention : Convention {
     override fun apply(classModelBuilder: ClassModelBuilder<*>) = apply0(classModelBuilder)
 
     private fun <T : Any> apply0(classModelBuilder: ClassModelBuilder<T>) {
-        classModelBuilder.instanceCreatorFactory(UnsafeInstanceCreatorFactory(classModelBuilder.type))
+        classModelBuilder.instanceCreatorFactory(KryoInstanceCreatorFactory(classModelBuilder.type))
     }
 }
 
-private class UnsafeInstanceCreatorFactory<T : Any>(private val type: Class<T>) : InstanceCreatorFactory<T> {
-
-    private val allocateInstance: Method
-    private val unsafe: Unsafe
-
-    init {
-        val unsafeClass = Class.forName("sun.misc.Unsafe")
-        val theUnsafe = unsafeClass.getDeclaredField("theUnsafe")
-        theUnsafe.isAccessible = true
-        unsafe = theUnsafe.get(null) as Unsafe
-        allocateInstance = unsafeClass.getMethod("allocateInstance", Class::class.java)
+private class KryoInstanceCreatorFactory<T : Any>(private val type: Class<T>) : InstanceCreatorFactory<T> {
+    override fun create(): InstanceCreator<T> = object : InstanceCreator<T> {
+        private val instance = STRATEGY.newInstantiatorOf(type).newInstance()
+        override fun getInstance(): T = instance
+        override fun <S : Any?> set(value: S, propertyModel: PropertyModel<S>) =
+            propertyModel.propertyAccessor.set(instance, value)
     }
 
-    override fun create(): InstanceCreator<T> = object : InstanceCreator<T> {
-
-        @Suppress("UNCHECKED_CAST")
-        private val instance = allocateInstance.invoke(unsafe, type) as T
-
-        override fun <S : Any?> set(value: S, propertyModel: PropertyModel<S>) {
-            propertyModel.propertyAccessor.set(instance, value)
-        }
-
-        override fun getInstance(): T = instance
+    companion object {
+        private val STRATEGY = StdInstantiatorStrategy()
     }
 }

@@ -98,7 +98,7 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
                                 Conventions.ANNOTATION_CONVENTION,
                                 Conventions.SET_PRIVATE_FIELDS_CONVENTION,
                                 SnakeCaseConvention,
-                                UnsafeInstanciationConvention,
+                                ConstructorFreeInstanciationConvention,
                             ),
                         )
                         .build(),
