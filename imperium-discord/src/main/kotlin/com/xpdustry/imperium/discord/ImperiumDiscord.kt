@@ -21,8 +21,6 @@ import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.misc.logger
-import com.xpdustry.imperium.discord.command.Command
-import com.xpdustry.imperium.discord.command.CommandActor
 import com.xpdustry.imperium.discord.command.CommandManager
 import com.xpdustry.imperium.discord.command.standard.PingCommand
 import com.xpdustry.imperium.discord.listener.BridgeListener
@@ -60,21 +58,4 @@ fun main() {
     }
 
     application.exit(ExitStatus.EXIT)
-}
-
-@Command("test1")
-private class Test1 {
-
-    @Command("test3")
-    fun cum(actor: CommandActor) {
-        actor.reply("Hello world!").subscribe()
-    }
-}
-
-private class Test2 {
-
-    @Command("test2")
-    fun cum(actor: CommandActor, something: String) {
-        actor.error("Failed to $something").subscribe()
-    }
 }
