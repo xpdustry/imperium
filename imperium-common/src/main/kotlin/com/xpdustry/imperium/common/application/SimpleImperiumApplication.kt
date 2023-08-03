@@ -28,7 +28,9 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
     override val instances: InstanceManager = SimpleInstanceManager(module, ApplicationInjectorListener())
     private val logger by LoggerDelegate()
-    private val listeners = arrayListOf<ImperiumApplication.Listener>()
+
+    // TODO This should be hidden, but I need to process the instances for the commands for the discord bot
+    val listeners = arrayListOf<ImperiumApplication.Listener>()
 
     fun register(listener: ImperiumApplication.Listener) = synchronized(listeners) {
         if (listeners.contains(listener)) {

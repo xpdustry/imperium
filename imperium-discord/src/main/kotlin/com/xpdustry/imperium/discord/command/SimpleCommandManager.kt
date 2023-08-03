@@ -15,15 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.service
+package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.CommandActor
-import com.xpdustry.imperium.common.command.CommandEngine
-import com.xpdustry.imperium.common.command.Permission
-import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.discord.service.DiscordService
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOption
 import discord4j.core.`object`.command.ApplicationCommandOption.Type
@@ -39,8 +35,12 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
 
-// TODO This engine is not clean at all, but do I really want to spend more time on this? Probably not.
-class DiscordCommandEngine(private val discord: DiscordService) : CommandEngine, ImperiumApplication.Listener {
+// TODO
+//  - This manager is not clean at all, but do I really want to spend more time on this? Probably not.
+//  - Implement permission validation
+//  - Lack of validation before command execution
+//  - Check return type of command functions
+class SimpleCommandManager(private val discord: DiscordService) : CommandManager, ImperiumApplication.Listener {
 
     private val containers = mutableListOf<Any>()
     private val tree = CommandNode("root", null)
@@ -61,7 +61,7 @@ class DiscordCommandEngine(private val discord: DiscordService) : CommandEngine,
                 break
             }
 
-            val actor = DiscordCommandActor(event)
+            val actor = CommandActor(event)
             val parameters = mutableListOf<Any?>()
             for (parameter in node.command!!.parameters) {
                 if (parameter.index == 0) {
@@ -69,7 +69,7 @@ class DiscordCommandEngine(private val discord: DiscordService) : CommandEngine,
                     continue
                 }
 
-                if (parameter.type.classifier == CommandActor::class || parameter.type.classifier == DiscordCommandActor::class) {
+                if (parameter.type.classifier == CommandActor::class) {
                     parameters += actor
                     continue
                 }
@@ -124,8 +124,8 @@ class DiscordCommandEngine(private val discord: DiscordService) : CommandEngine,
                 }
 
                 if (parameter.index == 1) {
-                    if (parameter.type.classifier != CommandActor::class && parameter.type.classifier != DiscordCommandActor::class) {
-                        throw IllegalArgumentException("First parameter must be of type CommandActor or DiscordCommandActor")
+                    if (parameter.type.classifier != CommandActor::class) {
+                        throw IllegalArgumentException("First parameter must be of type CommandActor")
                     }
                     continue
                 }
@@ -195,7 +195,7 @@ class DiscordCommandEngine(private val discord: DiscordService) : CommandEngine,
 
     private fun compile(options: Consumer<ApplicationCommandOptionData>, function: KFunction<*>) {
         for (parameter in function.parameters) {
-            if (parameter.type.classifier == CommandActor::class || parameter.type.classifier == DiscordCommandActor::class || parameter.index == 0) {
+            if (parameter.type.classifier == CommandActor::class || parameter.index == 0) {
                 continue
             }
 

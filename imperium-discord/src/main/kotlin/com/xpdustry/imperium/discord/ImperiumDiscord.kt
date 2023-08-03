@@ -18,12 +18,13 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.CommandActor
-import com.xpdustry.imperium.common.command.CommandEngine
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.discord.command.Command
+import com.xpdustry.imperium.discord.command.CommandActor
+import com.xpdustry.imperium.discord.command.CommandManager
+import com.xpdustry.imperium.discord.command.standard.PingCommand
 import com.xpdustry.imperium.discord.listener.BridgeListener
 import java.util.Scanner
 import kotlin.system.exitProcess
@@ -40,9 +41,12 @@ fun main() {
 
     application.instances.createSingletons()
     application.register(BridgeListener::class)
+    application.register(PingCommand::class)
 
-    application.instances.get<CommandEngine>().register(Test1())
-    application.instances.get<CommandEngine>().register(Test2())
+    val commands = application.instances.get<CommandManager>()
+    for (listener in application.listeners) {
+        commands.register(listener)
+    }
 
     application.init()
 

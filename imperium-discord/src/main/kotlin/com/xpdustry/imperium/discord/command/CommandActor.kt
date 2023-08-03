@@ -15,12 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command
+package com.xpdustry.imperium.discord.command
 
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import reactor.core.publisher.Mono
 
-interface CommandActor {
-    val name: String
-    fun reply(message: String): Mono<Void>
-    fun error(message: String): Mono<Void>
+data class CommandActor(val event: ChatInputInteractionEvent) {
+    val name: String get() = event.interaction.user.username
+    fun reply(message: String): Mono<Void> = event.reply(message)
+    fun error(message: String): Mono<Void> = event.reply("**ERROR:** $message")
 }

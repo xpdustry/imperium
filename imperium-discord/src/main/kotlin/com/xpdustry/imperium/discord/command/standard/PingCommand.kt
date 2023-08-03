@@ -15,17 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.service
+package com.xpdustry.imperium.discord.command.standard
 
-import com.xpdustry.imperium.common.command.CommandActor
-import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
-import reactor.core.publisher.Mono
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.discord.command.Command
+import com.xpdustry.imperium.discord.command.CommandActor
 
-class DiscordCommandActor(val event: ChatInputInteractionEvent) : CommandActor {
-    override val name: String get() = event.interaction.user.username
-    override fun reply(message: String): Mono<Void> = event.reply(message)
-    override fun error(message: String): Mono<Void> = event.reply("ERROR: $message")
-    fun maine() {
-        event.deferReply().block()
-    }
+class PingCommand : ImperiumApplication.Listener {
+    @Command("ping")
+    fun onPingCommand(actor: CommandActor) = actor.reply("Pong!").subscribe()
 }

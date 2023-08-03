@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.discord
 
-import com.xpdustry.imperium.common.command.CommandEngine
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.network.MindustryServerInfo
-import com.xpdustry.imperium.discord.service.DiscordCommandEngine
+import com.xpdustry.imperium.discord.command.CommandManager
+import com.xpdustry.imperium.discord.command.SimpleCommandManager
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
@@ -41,8 +41,8 @@ fun discordModule() = module("discord") {
         Path(".")
     }
 
-    single<CommandEngine> {
-        DiscordCommandEngine(get())
+    single<CommandManager> {
+        SimpleCommandManager(get())
     }
 
     single<Supplier<MindustryServerInfo?>> {
