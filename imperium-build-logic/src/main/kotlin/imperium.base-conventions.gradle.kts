@@ -14,6 +14,7 @@ kotlin {
     target {
         compilations.configureEach {
             kotlinOptions {
+                javaParameters = true // Needed for commands
                 jvmTarget = libs.versions.java.get()
             }
         }
