@@ -13,6 +13,7 @@ dependencies {
 
 tasks.shadowJar {
     archiveFileName.set("imperium-discord.jar")
+
     manifest {
         attributes(
             "Main-Class" to "com.xpdustry.imperium.discord.ImperiumDiscordKt",
@@ -21,10 +22,18 @@ tasks.shadowJar {
             "Implementation-Vendor" to "Xpdustry",
         )
     }
+
     doFirst {
         val file = temporaryDir.resolve("VERSION.txt")
         file.writeText(project.version.toString())
         from(file)
+    }
+
+    mergeServiceFiles()
+    minimize {
+        exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
+        exclude(dependency("org.slf4j:slf4j-.*:.*"))
+        exclude(dependency("com.discord4j:discord4j-.*:.*"))
     }
 }
 

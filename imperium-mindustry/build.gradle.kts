@@ -70,6 +70,7 @@ tasks.shadowJar {
     }
 
     mergeServiceFiles()
+    minimize()
 }
 
 tasks.register("getArtifactPath") {
