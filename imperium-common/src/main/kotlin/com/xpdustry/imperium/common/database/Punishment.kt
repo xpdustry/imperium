@@ -24,9 +24,9 @@ import java.time.Duration
 import java.time.Instant
 
 data class Punishment(
+    var targetAddress: InetAddress,
+    var targetUuid: MindustryUUID? = null,
     override val id: ObjectId = ObjectId(),
-    var targetIp: InetAddress,
-    var targetUuid: MindustryUUID,
     var reason: String = "Unknown",
     var duration: Duration? = Duration.ofDays(1L),
     var pardoned: Boolean = false,
@@ -37,5 +37,5 @@ data class Punishment(
 
     @get:BsonIgnore
     val remaining: Duration
-        get() = if (duration == null) Duration.ZERO else duration!!.minus(Duration.between(Instant.now(), timestamp))
+        get() = duration?.minus(Duration.between(Instant.now(), timestamp)) ?: Duration.ZERO
 }

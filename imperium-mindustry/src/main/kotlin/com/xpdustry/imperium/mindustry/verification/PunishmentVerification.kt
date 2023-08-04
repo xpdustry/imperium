@@ -27,7 +27,7 @@ import java.time.temporal.ChronoUnit
 class PunishmentVerification(private val database: Database) : Processor<VerificationContext, VerificationResult> {
     override fun process(context: VerificationContext): Mono<VerificationResult> =
         database.punishments
-            .findAllByTargetIp(context.address)
+            .findAllByTargetAddress(context.address)
             .filter { it.expired.not() }
             .sort { a, b ->
                 val aDuration = a.duration ?: ChronoUnit.FOREVER.duration

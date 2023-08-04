@@ -28,8 +28,8 @@ import reactor.core.publisher.Flux
 import java.net.InetAddress
 
 class MongoPunishmentManager(collection: MongoCollection<Punishment>) : MongoEntityManager<Punishment, ObjectId>(collection), PunishmentManager {
-    override fun findAllByTargetIp(target: InetAddress): Flux<Punishment> =
-        collection.find(Filters.eq("target_ip", target)).toValueFlux()
+    override fun findAllByTargetAddress(target: InetAddress): Flux<Punishment> =
+        collection.find(Filters.eq("target_address", target)).toValueFlux()
     override fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment> =
         collection.find(Filters.eq("target_uuid", target)).toValueFlux()
 }

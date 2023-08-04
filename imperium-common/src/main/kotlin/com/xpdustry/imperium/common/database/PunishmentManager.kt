@@ -22,6 +22,6 @@ import reactor.core.publisher.Flux
 import java.net.InetAddress
 
 interface PunishmentManager : EntityManager<ObjectId, Punishment> {
-    fun findAllByTargetIp(target: InetAddress): Flux<Punishment>
+    fun findAllByTargetAddress(target: InetAddress): Flux<Punishment>
     fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment>
 }
