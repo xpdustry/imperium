@@ -19,58 +19,63 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.Strings
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.application.ImperiumPlatform
-import com.xpdustry.imperium.common.bridge.BridgeMessage
+import com.xpdustry.imperium.common.bridge.BridgeChatMessage
+import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
+import com.xpdustry.imperium.common.bridge.PlayerInfo
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.filterAndCast
 import com.xpdustry.imperium.common.misc.onErrorResumeEmpty
+import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
 import fr.xpdustry.distributor.api.event.EventHandler
 import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Iconc
+import mindustry.gen.Player
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
-        messenger.on(BridgeMessage::class)
-            .filter { it.origin == ImperiumPlatform.DISCORD && it.serverName == config.mindustry.serverName }
-            .map(BridgeMessage::payload)
-            .filterAndCast(BridgeMessage.Payload.PlayerChat::class)
+        messenger.on(BridgeChatMessage::class)
+            .filter { it.serverName == config.mindustry.serverName }
             .publishOn(MindustryScheduler)
             .subscribe {
-                Call.sendMessage("[coral][[[white]${Iconc.discord}[]][[[orange]${it.playerName}[coral]]:[white] ${it.message}")
+                Call.sendMessage(
+                    "[coral][[[white]${Iconc.discord}[]][[[orange]${it.senderName}[coral]]:[white] ${it.message}",
+                )
             }
     }
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        sendBridgeMessage(BridgeMessage.Payload.PlayerJoin(event.player.plainName()))
+        messenger.publish(MindustryPlayerMessage.Join(config.mindustry.serverName, event.player.playerInfo))
+            .onErrorResumeEmpty { logger.error("Failed to send bridge message", it) }
+            .subscribe()
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
-        sendBridgeMessage(BridgeMessage.Payload.PlayerQuit(event.player.plainName()))
+        messenger.publish(MindustryPlayerMessage.Quit(config.mindustry.serverName, event.player.playerInfo))
+            .onErrorResumeEmpty { logger.error("Failed to send bridge message", it) }
+            .subscribe()
 
     @EventHandler
     fun onPlayerChat(event: ProcessedPlayerChatEvent) =
-        sendBridgeMessage(
-            BridgeMessage.Payload.PlayerChat(event.player.plainName(), Strings.stripColors(event.message)),
+        messenger.publish(
+            MindustryPlayerMessage.Chat(
+                config.mindustry.serverName,
+                event.player.playerInfo,
+                Strings.stripColors(event.message),
+            ),
         )
-
-    @EventHandler
-    fun onGameOver(event: EventType.GameOverEvent) =
-        sendBridgeMessage(BridgeMessage.Payload.System("Game over! ${event.winner.name} won!"))
-
-    private fun sendBridgeMessage(payload: BridgeMessage.Payload) =
-        messenger.publish(BridgeMessage(config.mindustry.serverName, ImperiumPlatform.MINDUSTRY, payload))
             .onErrorResumeEmpty { logger.error("Failed to send bridge message", it) }
             .subscribe()
+
+    private val Player.playerInfo get() = PlayerInfo(name, uuid(), ip().toInetAddress())
 
     companion object {
         private val logger by LoggerDelegate()

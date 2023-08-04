@@ -17,14 +17,6 @@
  */
 package com.xpdustry.imperium.common.bridge
 
-import com.xpdustry.imperium.common.application.ImperiumPlatform
 import com.xpdustry.imperium.common.message.Message
 
-data class BridgeMessage(val serverName: String, val origin: ImperiumPlatform, val payload: Payload) : Message {
-    sealed interface Payload {
-        data class PlayerJoin(val playerName: String) : Payload
-        data class PlayerQuit(val playerName: String) : Payload
-        data class PlayerChat(val playerName: String, val message: String) : Payload
-        data class System(val message: String) : Payload
-    }
-}
+data class BridgeChatMessage(val serverName: String, val senderName: String, val message: String) : Message

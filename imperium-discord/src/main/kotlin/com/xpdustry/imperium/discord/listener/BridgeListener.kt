@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.discord.listener
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.application.ImperiumPlatform
-import com.xpdustry.imperium.common.bridge.BridgeMessage
+import com.xpdustry.imperium.common.bridge.BridgeChatMessage
+import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -37,6 +37,8 @@ import discord4j.core.spec.CategoryCreateSpec
 import discord4j.core.spec.MessageCreateSpec
 import discord4j.core.spec.TextChannelCreateSpec
 import discord4j.rest.util.AllowedMentions
+import reactor.core.Disposable
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import kotlin.jvm.optionals.getOrNull
 
@@ -57,48 +59,20 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                     .filterWhen { channel ->
                         getLiveChatCategoryId().map { id -> channel.categoryId.getOrNull() == id }
                     }
-                    .flatMap {
+                    .flatMap { channel ->
                         messenger.publish(
-                            BridgeMessage(
-                                it.name,
-                                ImperiumPlatform.DISCORD,
-                                BridgeMessage.Payload.PlayerChat(message.author.get().username, message.content),
-                            ),
+                            BridgeChatMessage(channel.name, message.author.get().username, message.content),
                         )
                     }
             }
             .subscribe()
 
-        messenger.on(BridgeMessage::class)
-            .flatMap { message ->
-                discord.getMainGuild().flatMap { guild ->
-                    guild.channels.filterAndCast(TextChannel::class)
-                        .filter { it.name == message.serverName }
-                        .filterWhen { channel ->
-                            getLiveChatCategoryId().map { channel.categoryId.getOrNull() == it }
-                        }
-                        .next()
-                        .switchIfEmpty {
-                            getLiveChatCategoryId().flatMap { categoryId ->
-                                guild.createTextChannel(
-                                    TextChannelCreateSpec.builder()
-                                        .name(message.serverName)
-                                        .parentId(categoryId)
-                                        .build(),
-                                )
-                            }
-                        }
-                        .flatMap {
-                            it.createMessage(
-                                MessageCreateSpec.builder()
-                                    .content(message.payload.toDiscordMessage())
-                                    .allowedMentions(AllowedMentions.suppressAll())
-                                    .build(),
-                            )
-                        }
-                }
-            }
-            .subscribe()
+        messenger.on(MindustryPlayerMessage.Join::class)
+            .handleMindustryServerMessage()
+        messenger.on(MindustryPlayerMessage.Quit::class)
+            .handleMindustryServerMessage()
+        messenger.on(MindustryPlayerMessage.Chat::class)
+            .handleMindustryServerMessage()
     }
 
     private fun getLiveChatCategoryId(): Mono<Snowflake> = config.discord.categories.liveChat?.toSnowflake()?.toValueMono()
@@ -110,10 +84,38 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 .map { it.id }
         }
 
-    private fun BridgeMessage.Payload.toDiscordMessage(): String = when (this) {
-        is BridgeMessage.Payload.PlayerJoin -> ":green_square: **$playerName** has joined the server."
-        is BridgeMessage.Payload.PlayerQuit -> ":red_square: **$playerName** has left the server."
-        is BridgeMessage.Payload.PlayerChat -> ":blue_square: **$playerName**: $message"
-        is BridgeMessage.Payload.System -> ":yellow_square: $message"
+    private fun <M : MindustryPlayerMessage> Flux<M>.handleMindustryServerMessage(): Disposable = flatMap { message ->
+        discord.getMainGuild().flatMap { guild ->
+            guild.channels.filterAndCast(TextChannel::class)
+                .filter { it.name == message.serverName }
+                .filterWhen { channel ->
+                    getLiveChatCategoryId().map { channel.categoryId.getOrNull() == it }
+                }
+                .next()
+                .switchIfEmpty {
+                    getLiveChatCategoryId().flatMap { categoryId ->
+                        guild.createTextChannel(
+                            TextChannelCreateSpec.builder()
+                                .name(message.serverName)
+                                .parentId(categoryId)
+                                .build(),
+                        )
+                    }
+                }
+        }
+            .flatMap {
+                it.createMessage(
+                    MessageCreateSpec.builder()
+                        .content(message.toDiscordMessage())
+                        .allowedMentions(AllowedMentions.suppressAll())
+                        .build(),
+                )
+            }
+    }.subscribe()
+
+    private fun MindustryPlayerMessage.toDiscordMessage(): String = when (this) {
+        is MindustryPlayerMessage.Join -> ":green_square: **${player.name}** has joined the server."
+        is MindustryPlayerMessage.Quit -> ":red_square: **${player.name}** has left the server."
+        is MindustryPlayerMessage.Chat -> ":blue_square: **${player.name}**: $message"
     }
 }
