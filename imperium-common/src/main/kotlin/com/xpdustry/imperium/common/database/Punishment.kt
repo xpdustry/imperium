@@ -29,11 +29,11 @@ data class Punishment(
     var targetUuid: MindustryUUID,
     var reason: String = "Unknown",
     var duration: Duration? = Duration.ofDays(1L),
-    var pardonned: Boolean = false,
+    var pardoned: Boolean = false,
 ) : Entity<ObjectId> {
     @get:BsonIgnore
     val expired: Boolean
-        get() = duration != null && (pardonned || timestamp.plus(duration).isBefore(Instant.now()))
+        get() = duration != null && (pardoned || timestamp.plus(duration).isBefore(Instant.now()))
 
     @get:BsonIgnore
     val remaining: Duration
