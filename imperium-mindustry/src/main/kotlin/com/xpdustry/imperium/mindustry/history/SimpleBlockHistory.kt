@@ -20,6 +20,7 @@ package com.xpdustry.imperium.mindustry.history
 import arc.math.geom.Point2
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.misc.LimitedList
 import com.xpdustry.imperium.mindustry.history.factory.CANVAS_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.factory.CommonConfigurationFactory
 import com.xpdustry.imperium.mindustry.history.factory.ITEM_BRIDGE_CONFIGURATION_FACTORY
@@ -44,7 +45,6 @@ import mindustry.world.blocks.payloads.PayloadMassDriver
 import mindustry.world.blocks.power.LightBlock
 import mindustry.world.blocks.power.PowerNode
 import mindustry.world.blocks.units.UnitFactory
-import java.util.LinkedList
 
 class SimpleBlockHistory(private val config: ImperiumConfig) : BlockHistory, ImperiumApplication.Listener {
     private val positions: MutableMap<Int, LimitedList<HistoryEntry>> = HashMap()
@@ -192,14 +192,5 @@ class SimpleBlockHistory(private val config: ImperiumConfig) : BlockHistory, Imp
 
     private fun haveSameConfiguration(entryA: HistoryEntry, entryB: HistoryEntry): Boolean {
         return entryA.block == entryB.block && entryA.configuration == entryB.configuration && entryA.type === entryB.type
-    }
-
-    private class LimitedList<E>(private val limit: Int) : LinkedList<E>() {
-        override fun add(element: E): Boolean {
-            if (this.size >= limit) {
-                removeFirst()
-            }
-            return super.add(element)
-        }
     }
 }

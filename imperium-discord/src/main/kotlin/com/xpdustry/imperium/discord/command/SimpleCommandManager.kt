@@ -21,83 +21,94 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.service.DiscordService
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
-import discord4j.core.`object`.command.ApplicationCommandInteractionOption
-import discord4j.core.`object`.command.ApplicationCommandOption.Type
+import discord4j.core.`object`.command.ApplicationCommandInteractionOptionValue
+import discord4j.core.`object`.command.ApplicationCommandOption
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.Channel
 import discord4j.discordjson.json.ApplicationCommandOptionData
 import discord4j.discordjson.json.ApplicationCommandRequest
+import discord4j.discordjson.json.ImmutableApplicationCommandOptionData
+import reactor.core.publisher.Mono
 import java.util.function.Consumer
-import kotlin.jvm.optionals.getOrNull
+import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.jvm.isAccessible
 
 // TODO
-//  - This manager is not clean at all, but do I really want to spend more time on this? Probably not.
 //  - Implement permission validation
-//  - Lack of validation before command execution
-//  - Check return type of command functions
 class SimpleCommandManager(private val discord: DiscordService) : CommandManager, ImperiumApplication.Listener {
-
     private val containers = mutableListOf<Any>()
-    private val tree = CommandNode("root", null)
+    private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
+    private val tree = CommandNode("root", parent = null)
+
+    init {
+        registerHandler(String::class, STRING_TYPE_HANDLER)
+        registerHandler(Int::class, INT_TYPE_HANDLER)
+        registerHandler(Boolean::class, BOOLEAN_TYPE_HANDLER)
+        registerHandler(User::class, USER_TYPE_HANDLER)
+        registerHandler(Channel::class, CHANNEL_TYPE_HANDLER)
+    }
 
     override fun onImperiumInit() {
         containers.forEach(::register0)
         compile()
-        discord.gateway.on(ChatInputInteractionEvent::class.java).subscribe { event ->
-            var node = tree.resolveOrThrow(event.commandName)
-            var options = emptyList<ApplicationCommandInteractionOption>()
-            for (i in 0 until event.options.size) {
-                val option = event.options[i]
-                if (option.type == Type.SUB_COMMAND || option.type == Type.SUB_COMMAND_GROUP) {
-                    node = node.resolveOrThrow(option.name)
-                    continue
-                }
-                options = event.options.subList(i, event.options.size)
-                break
-            }
-
-            val actor = CommandActor(event)
-            val parameters = mutableListOf<Any?>()
-            for (parameter in node.command!!.parameters) {
-                if (parameter.index == 0) {
-                    parameters += node.container!!
-                    continue
+        discord.gateway
+            .on(ChatInputInteractionEvent::class.java)
+            .flatMap { it.deferReply().withEphemeral(true).thenReturn(it) }
+            .flatMap { event ->
+                var node = tree.resolve(listOf(event.commandName))
+                var options = event.options
+                while (options.size == 1 &&
+                    (
+                        options[0].type == ApplicationCommandOption.Type.SUB_COMMAND ||
+                            options[0].type == ApplicationCommandOption.Type.SUB_COMMAND_GROUP
+                        )
+                ) {
+                    node = node.resolve(listOf(options[0].name))
+                    options = options[0].options
                 }
 
-                if (parameter.type.classifier == CommandActor::class) {
-                    parameters += actor
-                    continue
-                }
+                val command = node.edge!!
+                val actor = CommandActor(event)
+                Mono.fromCallable {
+                    command.function.parameters.associateWith { parameter ->
+                        if (parameter.index == 0) {
+                            return@associateWith command.container
+                        }
 
-                val value = options.find { it.name == parameter.name!! }?.value?.getOrNull()
-                if (value == null) {
-                    if (parameter.isOptional || parameter.type.isMarkedNullable) {
-                        parameters += null
-                        continue
+                        if (parameter.type.classifier == CommandActor::class) {
+                            return@associateWith actor
+                        }
+
+                        val argument = command.arguments.find { it.name == parameter.name!! }!!
+                        val option = options.find { it.name == parameter.name!! }
+                        if (option == null || option.value.isEmpty) {
+                            if (argument.optional) {
+                                return@associateWith null
+                            }
+                            throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
+                        }
+
+                        argument.handler.parse(option.value.get())
                     }
-                    throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
                 }
-
-                parameters += when (findDiscordType(parameter.type.classifier as KClass<*>)!!) {
-                    Type.SUB_COMMAND, Type.SUB_COMMAND_GROUP, Type.UNKNOWN, Type.MENTIONABLE -> throw IllegalArgumentException("Invalid parameter type: ${parameter.type}")
-                    Type.BOOLEAN -> value.asBoolean()
-                    Type.INTEGER -> value.asLong().toInt()
-                    Type.NUMBER -> value.asDouble()
-                    Type.STRING -> value.asString()
-                    Type.USER -> value.asUser().block()!!
-                    Type.CHANNEL -> value.asChannel().block()!!
-                    Type.ROLE -> value.asRole().block()!!
-                    Type.ATTACHMENT -> value.asAttachment()
-                }
+                    .onErrorResume {
+                        logger.error("Error while parsing arguments for command ${node.fullName}", it)
+                        actor.reply(":warning: **An unexpected error occurred while parsing your command.**")
+                            .then(Mono.empty())
+                    }
+                    .flatMap { arguments ->
+                        Mono.defer { command.function.callBy(arguments).then() }
+                            .onErrorResume {
+                                logger.error("Error while executing command ${node.fullName}", it)
+                                actor.reply(":warning: **An unexpected error occurred while executing your command.**")
+                                    .then()
+                            }
+                    }
             }
-
-            node.command!!.call(*parameters.toTypedArray())
-        }
+            .subscribe()
     }
 
     override fun register(container: Any) {
@@ -111,12 +122,13 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
 
         for (function in container::class.memberFunctions) {
             val local = function.findAnnotation<Command>()?.apply(Command::validate) ?: continue
-            val node = tree.resolveAndCreate(base + local.path.toList())
-            node.command = function.apply { isAccessible = true }
-            node.permission = function.findAnnotation<Permission>()?.rank ?: permission ?: Permission.Rank.EVERYONE
-            node.container = container
 
-            var wasRequired = true
+            if (function.returnType.classifier != Mono::class) {
+                throw IllegalArgumentException("$function must return a Mono")
+            }
+
+            val arguments = mutableListOf<CommandEdge.Argument>()
+            var wasOptional = false
             for (parameter in function.parameters) {
                 // Skip "this"
                 if (parameter.index == 0) {
@@ -130,15 +142,30 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                     continue
                 }
 
-                if (wasRequired && (parameter.isOptional || parameter.type.isMarkedNullable)) {
+                val optional = parameter.isOptional || parameter.type.isMarkedNullable
+                if (wasOptional && !optional) {
                     throw IllegalArgumentException("Optional parameters must be at the end of the parameter list.")
                 }
-                wasRequired = !(parameter.isOptional || parameter.type.isMarkedNullable)
+                wasOptional = optional
+
                 val classifier = parameter.type.classifier
-                if (classifier !is KClass<*> || findDiscordType(classifier) == null) {
+                if (classifier !is KClass<*> || classifier !in handlers) {
                     throw IllegalArgumentException("Unsupported parameter type $classifier")
                 }
+
+                arguments += CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
             }
+
+            @Suppress("UNCHECKED_CAST")
+            tree.resolve(
+                path = base + local.path.toList(),
+                edge = CommandEdge(
+                    container,
+                    function as KFunction<Mono<*>>,
+                    function.findAnnotation<Permission>()?.rank ?: permission ?: Rank.EVERYONE,
+                    arguments,
+                ),
+            )
         }
     }
 
@@ -153,8 +180,8 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 compile(builder::addOption, child)
             }
 
-            if (entry.value.command != null) {
-                compile(builder::addOption, entry.value.command!!)
+            if (entry.value.edge != null) {
+                compile(builder::addOption, entry.value.edge!!)
             }
 
             compiled.add(builder.build())
@@ -175,9 +202,9 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
             .description("No description.")
             .type(
                 when (node.type) {
-                    CommandNode.Type.COMMAND -> Type.SUB_COMMAND.value
-                    CommandNode.Type.SUB_COMMAND_GROUP -> Type.SUB_COMMAND_GROUP.value
-                    CommandNode.Type.SUB_COMMAND -> Type.SUB_COMMAND.value
+                    CommandNode.Type.COMMAND -> 0
+                    CommandNode.Type.SUB_COMMAND_GROUP -> ApplicationCommandOption.Type.SUB_COMMAND_GROUP.value
+                    CommandNode.Type.SUB_COMMAND -> ApplicationCommandOption.Type.SUB_COMMAND.value
                     CommandNode.Type.ROOT -> throw IllegalStateException("Root node cannot be compiled.")
                 },
             )
@@ -186,80 +213,108 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
             compile(builder::addOption, child)
         }
 
-        if (node.command != null) {
-            compile(builder::addOption, node.command!!)
+        if (node.edge != null) {
+            compile(builder::addOption, node.edge!!)
         }
 
         options.accept(builder.build())
     }
 
-    private fun compile(options: Consumer<ApplicationCommandOptionData>, function: KFunction<*>) {
-        for (parameter in function.parameters) {
-            if (parameter.type.classifier == CommandActor::class || parameter.index == 0) {
-                continue
-            }
-
-            val option = ApplicationCommandOptionData.builder()
-                .name(parameter.name!!)
-                .description("No description.")
-                .required(!parameter.isOptional)
-
-            val type = findDiscordType(parameter.type.classifier as KClass<*>)
-                ?: throw IllegalArgumentException("Unsupported argument type " + parameter.type.classifier)
-
-            options.accept(option.type(type.value).build())
+    private fun compile(options: Consumer<ApplicationCommandOptionData>, edge: CommandEdge) {
+        for (parameter in edge.arguments) {
+            options.accept(
+                ApplicationCommandOptionData.builder()
+                    .name(parameter.name)
+                    .description("No description.")
+                    .required(!parameter.optional)
+                    .type(parameter.handler.type.value)
+                    .build(),
+            )
         }
     }
 
-    private fun findDiscordType(klass: KClass<*>): Type? = when (klass) {
-        String::class -> Type.STRING
-        Int::class -> Type.INTEGER
-        User::class -> Type.USER
-        Channel::class -> Type.CHANNEL
-        else -> null
-    }
-
-    private class CommandNode(val name: String, val parent: CommandNode?) {
-        var permission = Permission.Rank.EVERYONE
-        var command: KFunction<*>? = null
-        var type: Type = if (parent == null) Type.ROOT else Type.COMMAND
-        var container: Any? = null
-        val children = mutableMapOf<String, CommandNode>()
-
-        fun resolveAndCreate(path: List<String>): CommandNode {
-            if (path.isEmpty()) {
-                throw IllegalArgumentException("Path cannot be empty")
-            }
-            var node = this
-            for (name in path) {
-                var previous = node
-                while (previous.type != Type.ROOT) {
-                    previous.type = Type.entries.getOrNull(previous.type.ordinal + 1)
-                        ?: throw IllegalStateException("Reached the maximum depth of 3: $this, $path")
-                    previous = previous.parent!!
-                }
-                node = node.children.computeIfAbsent(name) { CommandNode(it, node) }
-                if (node.command != null) {
-                    throw IllegalStateException("Cannot add subcommand to a command: $this, $path")
-                }
-            }
-            return node
-        }
-
-        fun resolveOrThrow(vararg path: String): CommandNode {
-            var node: CommandNode = this
-            for (name in path) {
-                node = node.children[name]!!
-            }
-            return node
-        }
-
-        enum class Type {
-            ROOT, COMMAND, SUB_COMMAND, SUB_COMMAND_GROUP,
-        }
+    private fun <T : Any> registerHandler(klass: KClass<T>, handler: TypeHandler<T>) {
+        handlers[klass] = handler
     }
 
     companion object {
         private val logger by LoggerDelegate()
     }
+}
+
+private class CommandNode(val name: String, val parent: CommandNode?) {
+    val children = mutableMapOf<String, CommandNode>()
+    var edge: CommandEdge? = null
+    var type: Type = if (parent == null) Type.ROOT else Type.COMMAND
+    val fullName: String get() = if (parent == null) name else "${parent.fullName}.$name"
+
+    fun resolve(path: List<String>, edge: CommandEdge? = null): CommandNode {
+        if (path.isEmpty()) {
+            if (edge != null) {
+                if (this.edge != null) {
+                    throw IllegalArgumentException("$fullName already has a registered command")
+                }
+                if (!(type == Type.SUB_COMMAND || (type == Type.COMMAND && children.isEmpty()))) {
+                    throw IllegalArgumentException("$fullName is not valid for registering a command")
+                }
+                this.edge = edge
+            }
+            return this
+        }
+
+        if (path.size > type.ordinal) {
+            throw IllegalArgumentException("Invalid path size for node type $type: $path")
+        }
+
+        val next = if (path[0] in children) {
+            children[path[0]]!!
+        } else if (edge != null) {
+            children.computeIfAbsent(path[0]) { CommandNode(it, this) }
+        } else {
+            throw IllegalArgumentException("Element does not exist in node $this: $path")
+        }
+
+        if (edge != null && type != Type.ROOT) {
+            next.type = if (path.size == 2) Type.SUB_COMMAND_GROUP else Type.SUB_COMMAND
+        }
+
+        return next.resolve(path.subList(1, path.size), edge)
+    }
+
+    enum class Type {
+        SUB_COMMAND, SUB_COMMAND_GROUP, COMMAND, ROOT
+    }
+}
+
+private data class CommandEdge(val container: Any, val function: KFunction<Mono<*>>, val permission: Rank, val arguments: List<Argument>) {
+    data class Argument(val name: String, val optional: Boolean, val handler: TypeHandler<*>)
+}
+
+private abstract class TypeHandler<T : Any>(val type: ApplicationCommandOption.Type) {
+    abstract fun parse(option: ApplicationCommandInteractionOptionValue): T
+    open fun apply(builder: ImmutableApplicationCommandOptionData.Builder, annotation: KAnnotatedElement) = Unit
+}
+
+private val STRING_TYPE_HANDLER = object : TypeHandler<String>(ApplicationCommandOption.Type.STRING) {
+    override fun parse(option: ApplicationCommandInteractionOptionValue): String = option.asString()
+}
+
+private val INT_TYPE_HANDLER = object : TypeHandler<Int>(ApplicationCommandOption.Type.INTEGER) {
+    override fun parse(option: ApplicationCommandInteractionOptionValue): Int = option.asLong().toInt()
+    override fun apply(builder: ImmutableApplicationCommandOptionData.Builder, annotation: KAnnotatedElement) {
+        builder.maxValue(Int.MAX_VALUE.toDouble())
+        builder.minValue(Int.MIN_VALUE.toDouble())
+    }
+}
+
+private val BOOLEAN_TYPE_HANDLER = object : TypeHandler<Boolean>(ApplicationCommandOption.Type.BOOLEAN) {
+    override fun parse(option: ApplicationCommandInteractionOptionValue): Boolean = option.asBoolean()
+}
+
+private val USER_TYPE_HANDLER = object : TypeHandler<User>(ApplicationCommandOption.Type.USER) {
+    override fun parse(option: ApplicationCommandInteractionOptionValue): User = option.asUser().block()!!
+}
+
+private val CHANNEL_TYPE_HANDLER = object : TypeHandler<Channel>(ApplicationCommandOption.Type.CHANNEL) {
+    override fun parse(option: ApplicationCommandInteractionOptionValue): Channel = option.asChannel().block()!!
 }

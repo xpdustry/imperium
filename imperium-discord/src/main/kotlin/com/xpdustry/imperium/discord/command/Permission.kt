@@ -20,8 +20,8 @@ package com.xpdustry.imperium.discord.command
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class Permission(val rank: Rank) {
-    enum class Rank {
-        EVERYONE, VERIFIED, MODERATOR, ADMINISTRATOR, OWNER,
-    }
+annotation class Permission(val rank: Rank)
+
+enum class Rank {
+    EVERYONE, VERIFIED, MODERATOR, ADMINISTRATOR, OWNER,
 }

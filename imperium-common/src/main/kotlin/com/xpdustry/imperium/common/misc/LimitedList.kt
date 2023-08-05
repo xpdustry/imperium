@@ -15,13 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command.standard
+package com.xpdustry.imperium.common.misc
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.discord.command.Command
-import com.xpdustry.imperium.discord.command.CommandActor
+import java.util.LinkedList
 
-class PingCommand : ImperiumApplication.Listener {
-    @Command("ping")
-    fun onPingCommand(actor: CommandActor) = actor.reply("Pong!")
+class LimitedList<E>(private val limit: Int) : LinkedList<E>() {
+    override fun add(element: E): Boolean {
+        if (this.size >= limit) {
+            removeFirst()
+        }
+        return super.add(element)
+    }
 }

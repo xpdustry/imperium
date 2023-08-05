@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.command.CommandManager
 import com.xpdustry.imperium.discord.command.standard.PingCommand
+import com.xpdustry.imperium.discord.command.standard.ServerCommand
 import com.xpdustry.imperium.discord.listener.BridgeListener
 import java.util.Scanner
 import kotlin.system.exitProcess
@@ -40,6 +41,7 @@ fun main() {
     application.instances.createSingletons()
     application.register(BridgeListener::class)
     application.register(PingCommand::class)
+    application.register(ServerCommand::class)
 
     val commands = application.instances.get<CommandManager>()
     for (listener in application.listeners) {
