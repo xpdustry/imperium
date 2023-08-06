@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.service.AccountService
 import com.xpdustry.imperium.common.service.PlayerIdentity
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.verification.VerificationPipeline
 import com.xpdustry.imperium.mindustry.verification.VerificationResult
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -39,7 +40,6 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     private val service: AccountService = instances.get()
     private val pipeline: VerificationPipeline = instances.get()
     private val database: Database = instances.get()
-
     private val playtime = ConcurrentHashMap<Player, Long>()
 
     override fun onImperiumInit() {
@@ -90,5 +90,3 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
             .subscribe()
     }
 }
-
-val Player.identity: PlayerIdentity get() = PlayerIdentity(uuid(), usid(), con.address.toInetAddress())

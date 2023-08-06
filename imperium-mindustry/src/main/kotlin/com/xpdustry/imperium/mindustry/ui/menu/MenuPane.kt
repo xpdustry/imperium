@@ -18,11 +18,13 @@
 package com.xpdustry.imperium.mindustry.ui.menu
 
 import com.xpdustry.imperium.mindustry.ui.Pane
+import com.xpdustry.imperium.mindustry.ui.action.Action
 
 data class MenuPane(
-    val title: String = "",
-    val content: String = "",
+    var title: String = "",
+    var content: String = "",
     val options: MenuOptionGrid = MenuOptionGrid(),
+    var exitAction: Action = Action { it.closeAll() },
 ) : Pane
 
 class MenuOptionGrid {

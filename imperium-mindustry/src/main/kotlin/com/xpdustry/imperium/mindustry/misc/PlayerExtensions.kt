@@ -15,9 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.bridge
+package com.xpdustry.imperium.mindustry.misc
 
-import java.net.InetAddress
+import com.xpdustry.imperium.common.bridge.PlayerInfo
+import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.service.PlayerIdentity
+import mindustry.gen.Call
+import mindustry.gen.Player
 
-// TODO Move this class to a more appropriate package
-data class PlayerInfo(val name: String, val uuid: String, val address: InetAddress)
+val Player.playerInfo get() = PlayerInfo(name, uuid(), ip().toInetAddress())
+
+val Player.identity: PlayerIdentity get() = PlayerIdentity(uuid(), usid(), con.address.toInetAddress())
+
+fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)

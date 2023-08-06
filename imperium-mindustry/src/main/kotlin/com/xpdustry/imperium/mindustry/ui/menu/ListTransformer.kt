@@ -25,11 +25,10 @@ import com.xpdustry.imperium.mindustry.ui.transform.Transformer
 import mindustry.gen.Iconc
 import java.util.Objects
 import java.util.function.Function
-import java.util.function.Supplier
 
 class ListTransformer<E : Any> : Transformer<MenuPane> {
-    var elementProvider: Supplier<List<E>> = Supplier<List<E>> { emptyList() }
-    var elementRenderer: Function<E, String> = Function { o: E -> Objects.toString(o) }
+    var elementProvider: Function<View, List<E>> = Function<View, List<E>> { emptyList() }
+    var elementRenderer: Function<E, String> = Function { Objects.toString(it) }
     var choiceAction: BiAction<E> = Action.none().asBiAction()
     var pageHeight = 5
     var pageWidth = 1
@@ -38,7 +37,7 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
         get() = pageHeight * pageWidth
 
     override fun transform(view: View, pane: MenuPane) {
-        val elements = elementProvider.get()
+        val elements = elementProvider.apply(view)
         if (elements.isEmpty()) {
             pane.options.addRow(MenuOption("Nothing", Action.none()))
             renderNavigation(pane, 0, false)

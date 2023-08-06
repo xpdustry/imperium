@@ -74,8 +74,13 @@ data class HistoryConfig(
 data class DiscordConfig(
     val token: HiddenString? = null,
     val categories: CategoryConfig = CategoryConfig(),
+    val channels: ChannelConfig = ChannelConfig(),
 )
 
 data class CategoryConfig(
     val liveChat: Long? = null,
+)
+
+data class ChannelConfig(
+    val notifications: Long? = null,
 )

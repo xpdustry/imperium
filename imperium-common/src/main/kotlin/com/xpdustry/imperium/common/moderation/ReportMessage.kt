@@ -15,9 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.bridge
+package com.xpdustry.imperium.common.moderation
 
-import java.net.InetAddress
+import com.xpdustry.imperium.common.bridge.PlayerInfo
+import com.xpdustry.imperium.common.message.Message
 
-// TODO Move this class to a more appropriate package
-data class PlayerInfo(val name: String, val uuid: String, val address: InetAddress)
+data class ReportMessage(
+    val serverName: String,
+    val sender: PlayerInfo,
+    val target: PlayerInfo,
+    val reason: Reason,
+    val detail: String? = null,
+) : Message {
+    enum class Reason {
+        GRIEFING,
+        TOXICITY,
+        CHEATING,
+        SPAMMING,
+        SABOTAGE,
+        CUSTOM,
+    }
+}

@@ -21,20 +21,18 @@ import arc.util.Strings
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
-import com.xpdustry.imperium.common.bridge.PlayerInfo
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.onErrorResumeEmpty
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
+import com.xpdustry.imperium.mindustry.misc.playerInfo
 import fr.xpdustry.distributor.api.event.EventHandler
 import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Iconc
-import mindustry.gen.Player
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
@@ -74,8 +72,6 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         )
             .onErrorResumeEmpty { logger.error("Failed to send bridge message", it) }
             .subscribe()
-
-    private val Player.playerInfo get() = PlayerInfo(name, uuid(), ip().toInetAddress())
 
     companion object {
         private val logger by LoggerDelegate()

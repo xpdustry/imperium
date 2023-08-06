@@ -29,18 +29,20 @@ import com.xpdustry.imperium.common.service.AccountException
 import com.xpdustry.imperium.common.service.AccountService
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
+import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import mindustry.gen.Call
 import mindustry.gen.Player
 import reactor.core.publisher.Mono
 
-// TODO Replace sequential interfaces with a proper form interface
-
+// TODO
+//  - Replace sequential interfaces with a proper form interface
+//  - Add rate limit warning BEFORE running the command
 private val logger = logger<AccountCommand>()
 
 private val USERNAME = stateKey<String>("username")
@@ -319,5 +321,3 @@ private fun <T> Mono<T>.onAccountErrorResume0(player: Player, view: View?) = onE
     }
         .subscribeOn(MindustryScheduler)
 }
-
-private fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)

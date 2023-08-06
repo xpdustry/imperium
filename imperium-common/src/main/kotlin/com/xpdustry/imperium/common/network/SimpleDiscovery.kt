@@ -77,7 +77,7 @@ class SimpleDiscovery(
         }
         heartbeatTask = sendDiscovery(DiscoveryMessage.Type.DISCOVER)
             .onErrorResumeEmpty { logger.error("Failed to send discovery message", it) }
-            // TODO: Make delay configurable
+            // TODO Make delay configurable
             .delaySubscription(Duration.ofSeconds(5L))
             .doFinally { if (it == SignalType.ON_COMPLETE) heartbeat() }
             .subscribe()
