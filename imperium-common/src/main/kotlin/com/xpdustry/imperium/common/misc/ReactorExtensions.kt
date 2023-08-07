@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.misc
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.concurrent.CompletableFuture
 import kotlin.reflect.KClass
 
 fun <T> T?.toValueMono(): Mono<T> =
@@ -27,6 +28,9 @@ fun <T> T?.toValueMono(): Mono<T> =
 
 fun <T : Any> Publisher<T>.toValueMono(): Mono<T> =
     Mono.from(this)
+
+fun <T : Any> CompletableFuture<T>.toValueMono(): Mono<T> =
+    Mono.fromFuture(this)
 
 fun <R : Any, T : Throwable> T.toErrorMono(): Mono<R> =
     Mono.error(this)

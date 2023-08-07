@@ -32,6 +32,8 @@ import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnAddressDetector
 import com.xpdustry.imperium.common.service.AccountService
 import com.xpdustry.imperium.common.service.SimpleAccountService
+import com.xpdustry.imperium.common.storage.MinioStorage
+import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
 
@@ -60,6 +62,10 @@ fun commonModule() = module("common") {
 
     single<Messenger> {
         RabbitmqMessenger(get(), get())
+    }
+
+    single<Storage> {
+        MinioStorage(get())
     }
 
     single {

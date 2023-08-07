@@ -29,6 +29,7 @@ data class ImperiumConfig(
     val mindustry: MindustryConfig = MindustryConfig(),
     val discord: DiscordConfig = DiscordConfig(),
     val language: Locale = Locale.ENGLISH,
+    val storage: StorageConfig = StorageConfig(),
 )
 
 data class NetworkConfig(
@@ -83,4 +84,17 @@ data class CategoryConfig(
 
 data class ChannelConfig(
     val notifications: Long? = null,
+)
+
+data class StorageConfig(
+    val minio: MinioConfig = MinioConfig(),
+)
+
+data class MinioConfig(
+    val host: String = "localhost",
+    val port: Int = 9000,
+    val secure: Boolean = false,
+    val accessKey: HiddenString = HiddenString("minioadmin"),
+    val secretKey: HiddenString = HiddenString("minioadmin"),
+    val bucket: String = "imperium",
 )

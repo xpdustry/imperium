@@ -17,5 +17,6 @@ dependencies {
     api(libs.password4j)
     api(libs.kryo)
     api(libs.rabbitmq.client)
+    api(libs.minio)
     testApi(libs.slf4j.simple)
 }

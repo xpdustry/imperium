@@ -23,3 +23,17 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+
+  # For storing shared files such as maps, admin frontend available at http://localhost:9001,
+  # login with minioadmin:minioadmin
+  minio:
+    image: minio/minio:latest
+    command: server --console-address ":9001" /data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 30s
+      timeout: 20s
+      retries: 3

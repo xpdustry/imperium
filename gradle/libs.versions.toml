@@ -23,6 +23,7 @@ password4j = "1.7.1"
 kryo = "5.5.0"
 rabbitmq-client = "5.17.0"
 jsoup = "1.16.1"
+minio = "8.5.4"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -57,6 +58,7 @@ password4j = { module = "com.password4j:password4j", version.ref = "password4j" 
 kryo = { module = "com.esotericsoftware:kryo", version.ref = "kryo" }
 rabbitmq-client = { module = "com.rabbitmq:amqp-client", version.ref = "rabbitmq-client" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+minio = { module = "io.minio:minio", version.ref = "minio" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
