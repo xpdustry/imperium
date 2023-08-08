@@ -19,23 +19,29 @@ package com.xpdustry.imperium.common.storage
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.MinioConfig
 import com.xpdustry.imperium.common.misc.toValueFlux
 import com.xpdustry.imperium.common.misc.toValueMono
 import io.minio.BucketExistsArgs
 import io.minio.GetObjectArgs
+import io.minio.GetPresignedObjectUrlArgs
 import io.minio.ListObjectsArgs
 import io.minio.MakeBucketArgs
 import io.minio.MinioAsyncClient
 import io.minio.PutObjectArgs
 import io.minio.RemoveBucketArgs
 import io.minio.RemoveObjectArgs
+import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
 import io.minio.http.HttpUtils
 import okhttp3.OkHttpClient
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.io.InputStream
+import java.net.URL
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.TimeUnit
 
 class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplication.Listener {
@@ -43,10 +49,13 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
     private lateinit var httpClient: OkHttpClient
 
     override fun onImperiumInit() {
+        if (config.storage !is MinioConfig) {
+            throw IllegalStateException("The current storage configuration is not Minio")
+        }
         // TODO Replace java HttpClient with OkHttp everywhere?
         val timeout = Duration.ofMinutes(5).toMillis()
         httpClient = HttpUtils.newDefaultHttpClient(timeout, timeout, timeout)
-        client = with(config.storage.minio) {
+        client = with(config.storage) {
             MinioAsyncClient.builder()
                 .endpoint(host, port, secure)
                 .credentials(accessKey.value, secretKey.value)
@@ -94,13 +103,14 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
     }
 
     private inner class MinioBucket(override val name: String) : Bucket {
-        override fun getObject(name: String): Mono<InputStream> = Mono.defer {
-            client.getObject(
-                GetObjectArgs.builder()
+        override fun getObject(name: String): Mono<S3Object> = Mono.defer {
+            client.statObject(
+                StatObjectArgs.builder()
                     .bucket(this.name)
                     .`object`(name)
                     .build(),
             ).toValueMono()
+                .map { MinioObject(name, name.split("/"), it.size(), it.lastModified().toInstant()) }
                 .onErrorResume {
                     if (it is ErrorResponseException && it.errorResponse().code() == "NoSuchKey") {
                         Mono.empty()
@@ -120,17 +130,17 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
             ).toValueMono().then()
         }
 
-        override fun listObjects(prefix: String, recursive: Boolean) = Flux.defer {
+        override fun listObjects(prefix: String, recursive: Boolean) = Flux.defer<S3Object> {
             client.listObjects(
                 ListObjectsArgs.builder()
-                    .bucket(this.name)
+                    .bucket(name)
                     .prefix(prefix)
                     .recursive(recursive)
                     .build(),
             ).toValueFlux()
                 .map { it.get() }
                 .filter { !it.isDir && !it.isDeleteMarker }
-                .map { it.objectName() }
+                .map { MinioObject(name, it.objectName().split("/"), it.size(), it.lastModified().toInstant()) }
         }
 
         override fun deleteObject(name: String): Mono<Void> = Mono.defer {
@@ -140,6 +150,39 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
                     .`object`(name)
                     .build(),
             ).toValueMono().then()
+        }
+    }
+
+    private inner class MinioObject(
+        private val bucket: String,
+        override val path: List<String>,
+        override val size: Long,
+        override val lastModified: Instant,
+    ) : S3Object {
+        override fun getStream(): Mono<InputStream> = Mono.usingWhen(
+            Mono.defer {
+                client.getObject(
+                    GetObjectArgs.builder()
+                        .bucket(bucket)
+                        .`object`(path.joinToString("/"))
+                        .build(),
+                ).toValueMono()
+            },
+            { it.toValueMono() },
+            {
+                Mono.fromRunnable<InputStream> { it.close() }
+                    .subscribeOn(Schedulers.boundedElastic())
+            },
+        )
+
+        override fun getDownloadUrl(expiration: Duration): Mono<URL> = Mono.defer {
+            client.getPresignedObjectUrl(
+                GetPresignedObjectUrlArgs.builder()
+                    .bucket(bucket)
+                    .`object`(path.joinToString("/"))
+                    .expiry(expiration.toSeconds().toInt())
+                    .build(),
+            ).toValueMono().map(::URL)
         }
     }
 

@@ -20,6 +20,9 @@ package com.xpdustry.imperium.common.storage
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.io.InputStream
+import java.net.URL
+import java.time.Duration
+import java.time.Instant
 
 interface Storage {
     fun getBucket(name: String, create: Boolean = false): Mono<Bucket>
@@ -29,8 +32,17 @@ interface Storage {
 
 interface Bucket {
     val name: String
-    fun getObject(name: String): Mono<InputStream>
+    fun getObject(name: String): Mono<S3Object>
     fun putObject(name: String, stream: InputStream): Mono<Void>
-    fun listObjects(prefix: String = "", recursive: Boolean = false): Flux<String>
+    fun listObjects(prefix: String = "", recursive: Boolean = false): Flux<S3Object>
     fun deleteObject(name: String): Mono<Void>
+}
+
+interface S3Object {
+    val name: String get() = path.last()
+    val path: List<String>
+    val size: Long
+    val lastModified: Instant
+    fun getStream(): Mono<InputStream>
+    fun getDownloadUrl(expiration: Duration): Mono<URL>
 }

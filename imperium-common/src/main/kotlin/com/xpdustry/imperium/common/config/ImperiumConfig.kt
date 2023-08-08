@@ -21,6 +21,7 @@ import java.awt.Color
 import java.net.InetAddress
 import java.util.Locale
 
+// TODO Use sealed classes for representing different types of config
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val translator: TranslatorConfig = TranslatorConfig(),
@@ -29,7 +30,7 @@ data class ImperiumConfig(
     val mindustry: MindustryConfig = MindustryConfig(),
     val discord: DiscordConfig = DiscordConfig(),
     val language: Locale = Locale.ENGLISH,
-    val storage: StorageConfig = StorageConfig(),
+    val storage: StorageConfig = MinioConfig(),
 )
 
 data class NetworkConfig(
@@ -86,9 +87,7 @@ data class ChannelConfig(
     val notifications: Long? = null,
 )
 
-data class StorageConfig(
-    val minio: MinioConfig = MinioConfig(),
-)
+sealed interface StorageConfig
 
 data class MinioConfig(
     val host: String = "localhost",
@@ -97,4 +96,4 @@ data class MinioConfig(
     val accessKey: HiddenString = HiddenString("minioadmin"),
     val secretKey: HiddenString = HiddenString("minioadmin"),
     val bucket: String = "imperium",
-)
+) : StorageConfig
