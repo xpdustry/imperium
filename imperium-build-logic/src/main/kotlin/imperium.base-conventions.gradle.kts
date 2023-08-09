@@ -16,6 +16,8 @@ kotlin {
             kotlinOptions {
                 javaParameters = true // Needed for commands
                 jvmTarget = libs.versions.java.get()
+                // The kotlin version of libs is in the format x.y.z, but apiVersion needs to be in the format x.y
+                apiVersion = libs.versions.kotlin.get().split(".").take(2).joinToString(".")
             }
         }
     }
