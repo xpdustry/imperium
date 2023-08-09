@@ -34,8 +34,12 @@ import com.xpdustry.imperium.common.database.Achievement
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.database.LegacyAccount
 import com.xpdustry.imperium.common.database.LegacyAccountManager
+import com.xpdustry.imperium.common.database.MindustryMap
+import com.xpdustry.imperium.common.database.MindustryMapManager
+import com.xpdustry.imperium.common.database.MindustryMapRatingManager
 import com.xpdustry.imperium.common.database.Punishment
 import com.xpdustry.imperium.common.database.PunishmentManager
+import com.xpdustry.imperium.common.database.Rating
 import com.xpdustry.imperium.common.database.User
 import com.xpdustry.imperium.common.database.UserManager
 import com.xpdustry.imperium.common.misc.toValueFlux
@@ -52,6 +56,8 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
     override lateinit var punishments: PunishmentManager
     override lateinit var accounts: AccountManager
     override lateinit var legacyAccounts: LegacyAccountManager
+    override lateinit var maps: MindustryMapManager
+    override lateinit var mapRatings: MindustryMapRatingManager
 
     override fun onImperiumInit() {
         val settings = MongoClientSettings.builder()
@@ -127,6 +133,8 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
         punishments = MongoPunishmentManager(database.getCollection("punishments", Punishment::class.java))
         accounts = MongoAccountManager(database.getCollection("accounts", Account::class.java))
         legacyAccounts = MongoLegacyAccountManager(database.getCollection("accounts_legacy", LegacyAccount::class.java))
+        maps = MongoMindustryMapManager(database.getCollection("maps", MindustryMap::class.java))
+        mapRatings = MongoMindustryMapRatingManager(database.getCollection("map_ratings", Rating::class.java))
     }
 
     override fun onImperiumExit() {

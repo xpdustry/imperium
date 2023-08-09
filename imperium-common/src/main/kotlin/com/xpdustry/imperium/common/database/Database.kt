@@ -22,4 +22,6 @@ interface Database {
     val punishments: PunishmentManager
     val accounts: AccountManager
     val legacyAccounts: LegacyAccountManager
+    val maps: MindustryMapManager
+    val mapRatings: MindustryMapRatingManager
 }
