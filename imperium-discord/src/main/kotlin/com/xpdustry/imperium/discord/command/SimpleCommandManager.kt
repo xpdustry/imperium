@@ -23,6 +23,7 @@ import com.xpdustry.imperium.discord.service.DiscordService
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.command.ApplicationCommandInteractionOptionValue
 import discord4j.core.`object`.command.ApplicationCommandOption
+import discord4j.core.`object`.entity.Attachment
 import discord4j.core.`object`.entity.User
 import discord4j.core.`object`.entity.channel.Channel
 import discord4j.discordjson.json.ApplicationCommandOptionData
@@ -49,6 +50,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         registerHandler(Boolean::class, BOOLEAN_TYPE_HANDLER)
         registerHandler(User::class, USER_TYPE_HANDLER)
         registerHandler(Channel::class, CHANNEL_TYPE_HANDLER)
+        registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
     }
 
     override fun onImperiumInit() {
@@ -317,4 +319,8 @@ private val USER_TYPE_HANDLER = object : TypeHandler<User>(ApplicationCommandOpt
 
 private val CHANNEL_TYPE_HANDLER = object : TypeHandler<Channel>(ApplicationCommandOption.Type.CHANNEL) {
     override fun parse(option: ApplicationCommandInteractionOptionValue): Channel = option.asChannel().block()!!
+}
+
+private val ATTACHMENT_TYPE_HANDLER = object : TypeHandler<Attachment>(ApplicationCommandOption.Type.ATTACHMENT) {
+    override fun parse(option: ApplicationCommandInteractionOptionValue): Attachment = option.asAttachment()
 }
