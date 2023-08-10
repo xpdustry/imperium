@@ -2,13 +2,27 @@ plugins {
     id("imperium.base-conventions")
     id("imperium.publishing-conventions")
     id("com.github.johnrengelman.shadow")
+    id("fr.xpdustry.toxopid")
 }
 
 dependencies {
+    implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
+    implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
+    implementation("com.github.Anuken.Arc:g3d:v${libs.versions.mindustry.get()}")
     api(projects.imperiumCommon)
     api(libs.discord4j.core)
     runtimeOnly(kotlin("stdlib"))
     runtimeOnly(libs.slf4j.simple)
+}
+
+project.afterEvaluate {
+    project.configurations.all {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "com.github.Anuken.Arc") {
+                useVersion("v" + libs.versions.mindustry.get())
+            }
+        }
+    }
 }
 
 tasks.shadowJar {

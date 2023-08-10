@@ -75,6 +75,7 @@ data class HistoryConfig(
 
 data class DiscordConfig(
     val token: HiddenString? = null,
+    val mindustryVersion: String = "145",
     val categories: CategoryConfig = CategoryConfig(),
     val channels: ChannelConfig = ChannelConfig(),
 )
