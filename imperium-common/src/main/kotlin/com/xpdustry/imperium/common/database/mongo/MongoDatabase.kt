@@ -80,7 +80,6 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
             .serverApi(
                 ServerApi.builder()
                     .version(ServerApiVersion.V1)
-                    .strict(true)
                     .deprecationErrors(true)
                     .build(),
             )
