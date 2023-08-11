@@ -30,9 +30,11 @@ interface MindustryContentHandler {
 }
 
 data class MapPreview(
-    val name: String,
+    val name: String?,
     val description: String?,
     val author: String?,
+    val width: Int,
+    val height: Int,
     val tags: Map<String, String>,
     val image: BufferedImage,
 )

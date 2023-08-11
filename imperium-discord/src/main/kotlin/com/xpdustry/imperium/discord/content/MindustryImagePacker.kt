@@ -110,6 +110,7 @@ class MindustryImagePacker(private val directory: Path) {
     }
 
     private fun generateBlockIcons() {
+        logger.info("Generating full block images...")
         for (block in Vars.content.blocks()) {
             if (block.isAir || block is ConstructBlock || block is OreBlock || block is LegacyBlock) {
                 continue

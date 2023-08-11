@@ -239,6 +239,8 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
     }
 
     private fun downloadZipDirectory(http: HttpClient, uri: URI, folder: String, destination: String) {
+        logger.info("Downloading assets from $uri")
+
         val response = http.send(HttpRequest.newBuilder(uri).GET().build(), BodyHandlers.ofInputStream())
 
         if (response.statusCode() != 200) {
@@ -365,7 +367,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
                 val metaOut = arrayOf<StringMap?>(null)
                 ver.region("meta", stream, counter) { metaOut[0] = ver.readStringMap(it) }
                 val meta = metaOut[0]!!
-                val name = meta["name"] ?: throw IOException("This map has no name.")
+                val name: String? = meta["name"]
                 val author = meta["author"]
                 val description = meta["description"]
                 val width = meta.getInt("width")
@@ -460,7 +462,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
                 }
                 fGraphics.drawImage(walls, 0, 0, null)
                 fGraphics.dispose()
-                MapPreview(name, description, author, meta.associate { it.key to it.value }, floors)
+                MapPreview(name, description, author, width, height, meta.associate { it.key to it.value }, floors)
             }
         } finally {
             Vars.content.setTemporaryMapper(null)
