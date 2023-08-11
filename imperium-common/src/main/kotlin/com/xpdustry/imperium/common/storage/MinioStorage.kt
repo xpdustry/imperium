@@ -34,6 +34,7 @@ import io.minio.RemoveObjectArgs
 import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
 import io.minio.http.HttpUtils
+import io.minio.http.Method
 import okhttp3.OkHttpClient
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -110,7 +111,7 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
                     .`object`(name)
                     .build(),
             ).toValueMono()
-                .map { MinioObject(name, name.split("/"), it.size(), it.lastModified().toInstant()) }
+                .map { MinioObject(this.name, name.split("/"), it.size(), it.lastModified().toInstant()) }
                 .onErrorResume {
                     if (it is ErrorResponseException && it.errorResponse().code() == "NoSuchKey") {
                         Mono.empty()
@@ -133,14 +134,14 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         override fun listObjects(prefix: String, recursive: Boolean) = Flux.defer<S3Object> {
             client.listObjects(
                 ListObjectsArgs.builder()
-                    .bucket(name)
+                    .bucket(this.name)
                     .prefix(prefix)
                     .recursive(recursive)
                     .build(),
             ).toValueFlux()
                 .map { it.get() }
                 .filter { !it.isDir && !it.isDeleteMarker }
-                .map { MinioObject(name, it.objectName().split("/"), it.size(), it.lastModified().toInstant()) }
+                .map { MinioObject(this.name, it.objectName().split("/"), it.size(), it.lastModified().toInstant()) }
         }
 
         override fun deleteObject(name: String): Mono<Void> = Mono.defer {
@@ -178,6 +179,7 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         override fun getDownloadUrl(expiration: Duration): Mono<URL> = Mono.defer {
             client.getPresignedObjectUrl(
                 GetPresignedObjectUrlArgs.builder()
+                    .method(Method.GET)
                     .bucket(bucket)
                     .`object`(path.joinToString("/"))
                     .expiry(expiration.toSeconds().toInt())
