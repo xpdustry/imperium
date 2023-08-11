@@ -19,12 +19,14 @@ package com.xpdustry.imperium.discord.command
 
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
 import discord4j.core.`object`.entity.Message
+import discord4j.core.`object`.entity.User
 import discord4j.core.spec.EmbedCreateSpec
 import discord4j.core.spec.InteractionFollowupCreateSpec
 import reactor.core.publisher.Mono
 
 data class CommandActor(val event: ChatInputInteractionEvent) {
     val name: String get() = event.interaction.user.username
+    val user: User get() = event.interaction.user
 
     fun reply(message: String, ephemeral: Boolean = false): Mono<Message> =
         event.createFollowup(
