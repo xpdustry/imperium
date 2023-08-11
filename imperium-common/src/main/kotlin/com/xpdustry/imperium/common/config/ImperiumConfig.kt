@@ -18,83 +18,104 @@
 package com.xpdustry.imperium.common.config
 
 import java.awt.Color
-import java.net.InetAddress
+import java.time.Duration
 import java.util.Locale
 
-// TODO Use sealed classes for representing different types of config
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
-    val translator: TranslatorConfig = TranslatorConfig(),
-    val mongo: MongoConfig = MongoConfig(),
-    val messenger: MessengerConfig = MessengerConfig(),
-    val mindustry: MindustryConfig = MindustryConfig(),
-    val discord: DiscordConfig = DiscordConfig(),
+    val translator: TranslatorConfig = TranslatorConfig.None,
+    val database: DatabaseConfig = DatabaseConfig.Mongo(),
+    val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
+    val server: ServerConfig = ServerConfig.None,
     val language: Locale = Locale.ENGLISH,
-    val storage: StorageConfig = MinioConfig(),
+    val storage: StorageConfig = StorageConfig.Minio(),
 )
 
 data class NetworkConfig(
-    val ipHub: HiddenString? = null,
-)
+    val antiVpn: AntiVPN = AntiVPN.None,
+    val discoveryInterval: Duration = Duration.ofSeconds(5L),
+) {
+    sealed interface AntiVPN {
+        data object None : AntiVPN
+        data class IpHub(val token: HiddenString) : AntiVPN
+    }
+}
 
-data class TranslatorConfig(
-    val deepl: HiddenString? = null,
-)
+sealed interface TranslatorConfig {
+    data object None : TranslatorConfig
+    data class DeepL(val token: HiddenString) : TranslatorConfig
+}
 
-data class MongoConfig(
-    val host: String = "localhost",
-    val port: Int = 27017,
-    val username: String = "",
-    val password: HiddenString = HiddenString(""),
-    val ssl: Boolean = false,
-    val database: String = "imperium",
-    val authDatabase: String = "admin",
-)
+sealed interface DatabaseConfig {
+    data class Mongo(
+        val host: String = "localhost",
+        val port: Int = 27017,
+        val username: String = "",
+        val password: HiddenString = HiddenString(""),
+        val ssl: Boolean = false,
+        val database: String = "imperium",
+        val authDatabase: String = "admin",
+    ) : DatabaseConfig
+}
 
-data class MessengerConfig(
-    val host: String = "localhost",
-    val port: Int = 5672,
-    val username: String = "guest",
-    val password: HiddenString = HiddenString("guest"),
-    val ssl: Boolean = false,
-)
+sealed interface MessengerConfig {
+    data class RabbitMQ(
+        val host: String = "localhost",
+        val port: Int = 5672,
+        val username: String = "guest",
+        val password: HiddenString = HiddenString("guest"),
+        val ssl: Boolean = false,
+    ) : MessengerConfig
+}
 
-data class MindustryConfig(
-    val serverName: String = "unknown",
-    val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
-    val hub: Boolean = false,
-    val history: HistoryConfig = HistoryConfig(),
-    val color: Color = Color.WHITE,
-    val host: InetAddress = InetAddress.getLocalHost(),
-)
+sealed interface ServerConfig {
+    val name: String
 
-data class HistoryConfig(
-    val tileEntriesLimit: Int = 10,
-    val playerEntriesLimit: Int = 200,
-)
+    data object None : ServerConfig {
+        override val name: String = "none"
+    }
 
-data class DiscordConfig(
-    val token: HiddenString? = null,
-    val mindustryVersion: String = "145",
-    val categories: CategoryConfig = CategoryConfig(),
-    val channels: ChannelConfig = ChannelConfig(),
-)
+    data class Mindustry(
+        override val name: String,
+        val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
+        val hub: Boolean = false,
+        val history: History = History(),
+        val color: Color = Color.WHITE,
+    ) : ServerConfig {
+        init {
+            require(name != "discord") { "Mindustry Server name cannot be discord" }
+        }
+        data class History(
+            val tileEntriesLimit: Int = 10,
+            val playerEntriesLimit: Int = 200,
+        )
+    }
 
-data class CategoryConfig(
-    val liveChat: Long? = null,
-)
+    data class Discord(
+        val token: HiddenString,
+        val categories: Categories,
+        val channels: Channels,
+        val mindustryVersion: String = "145",
+    ) : ServerConfig {
+        override val name: String = "discord"
 
-data class ChannelConfig(
-    val notifications: Long? = null,
-)
+        data class Categories(
+            val liveChat: Long,
+        )
 
-sealed interface StorageConfig
+        data class Channels(
+            val notifications: Long,
+        )
+    }
+}
 
-data class MinioConfig(
-    val host: String = "localhost",
-    val port: Int = 9000,
-    val secure: Boolean = false,
-    val accessKey: HiddenString = HiddenString("minioadmin"),
-    val secretKey: HiddenString = HiddenString("minioadmin"),
-    val bucket: String = "imperium",
-) : StorageConfig
+sealed interface StorageConfig {
+    data class Minio(
+        val host: String = "localhost",
+        val port: Int = 9000,
+        val secure: Boolean = false,
+        val accessKey: HiddenString = HiddenString("minioadmin"),
+        val secretKey: HiddenString = HiddenString("minioadmin"),
+        val bucket: String = "imperium",
+    ) : StorageConfig
+}

@@ -40,7 +40,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     override fun onImperiumInit() {
         messenger.on(BridgeChatMessage::class)
-            .filter { it.serverName == config.mindustry.serverName }
+            .filter { it.serverName == config.server.name }
             .publishOn(MindustryScheduler)
             .subscribe {
                 Call.sendMessage(
@@ -51,13 +51,13 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        messenger.publish(MindustryPlayerMessage.Join(config.mindustry.serverName, event.player.playerInfo))
+        messenger.publish(MindustryPlayerMessage.Join(config.server.name, event.player.playerInfo))
             .onErrorResumeEmpty { logger.error("Failed to send bridge message", it) }
             .subscribe()
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
-        messenger.publish(MindustryPlayerMessage.Quit(config.mindustry.serverName, event.player.playerInfo))
+        messenger.publish(MindustryPlayerMessage.Quit(config.server.name, event.player.playerInfo))
             .onErrorResumeEmpty { logger.error("Failed to send bridge message", it) }
             .subscribe()
 
@@ -65,7 +65,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     fun onPlayerChat(event: ProcessedPlayerChatEvent) =
         messenger.publish(
             MindustryPlayerMessage.Chat(
-                config.mindustry.serverName,
+                config.server.name,
                 event.player.playerInfo,
                 Strings.stripColors(event.message),
             ),

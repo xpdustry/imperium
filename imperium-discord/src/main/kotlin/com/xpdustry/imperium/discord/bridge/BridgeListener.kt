@@ -20,20 +20,18 @@ package com.xpdustry.imperium.discord.bridge
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
-import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.filterAndCast
 import com.xpdustry.imperium.common.misc.switchIfEmpty
-import com.xpdustry.imperium.common.misc.toValueMono
+import com.xpdustry.imperium.common.misc.toErrorMono
 import com.xpdustry.imperium.discord.misc.toSnowflake
 import com.xpdustry.imperium.discord.service.DiscordService
-import discord4j.common.util.Snowflake
 import discord4j.core.event.domain.message.MessageCreateEvent
 import discord4j.core.`object`.entity.channel.Category
 import discord4j.core.`object`.entity.channel.TextChannel
-import discord4j.core.spec.CategoryCreateSpec
 import discord4j.core.spec.MessageCreateSpec
 import discord4j.core.spec.TextChannelCreateSpec
 import discord4j.rest.util.AllowedMentions
@@ -44,9 +42,10 @@ import kotlin.jvm.optionals.getOrNull
 
 // TODO Discord4j is so ugly, add extensions methods when the codebase will be a little bigger
 class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
+    private val config = instances.get<ServerConfig.Discord>()
+
     override fun onImperiumInit() {
         discord.gateway.on(MessageCreateEvent::class.java)
             .filter { it.message.author.isPresent && !it.message.author.get().isBot }
@@ -57,7 +56,7 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
             .flatMap { message ->
                 message.channel.filterAndCast(TextChannel::class)
                     .filterWhen { channel ->
-                        getLiveChatCategoryId().map { id -> channel.categoryId.getOrNull() == id }
+                        getLiveChatCategory().map { category -> channel.categoryId.getOrNull() == category.id }
                     }
                     .flatMap { channel ->
                         messenger.publish(
@@ -75,29 +74,27 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
             .handleMindustryServerMessage()
     }
 
-    private fun getLiveChatCategoryId(): Mono<Snowflake> = config.discord.categories.liveChat?.toSnowflake()?.toValueMono()
-        ?: discord.getMainGuild().flatMap { guild ->
-            guild.channels.filter { it is Category && it.name.lowercase() == "live chat" }
-                .next()
-                .cast(Category::class.java)
-                .switchIfEmpty { guild.createCategory(CategoryCreateSpec.of("Live Chat")) }
-                .map { it.id }
-        }
+    private fun getLiveChatCategory(): Mono<Category> = discord.getMainGuild().flatMap { guild ->
+        guild.channels.filter { it is Category && it.id == config.categories.liveChat.toSnowflake() }
+            .next()
+            .cast(Category::class.java)
+            .switchIfEmpty { RuntimeException("The live chat category is not found").toErrorMono() }
+    }
 
     private fun <M : MindustryPlayerMessage> Flux<M>.handleMindustryServerMessage(): Disposable = flatMap { message ->
         discord.getMainGuild().flatMap { guild ->
             guild.channels.filterAndCast(TextChannel::class)
                 .filter { it.name == message.serverName }
                 .filterWhen { channel ->
-                    getLiveChatCategoryId().map { channel.categoryId.getOrNull() == it }
+                    getLiveChatCategory().map { channel.categoryId.getOrNull() == it.id }
                 }
                 .next()
                 .switchIfEmpty {
-                    getLiveChatCategoryId().flatMap { categoryId ->
+                    getLiveChatCategory().flatMap { category ->
                         guild.createTextChannel(
                             TextChannelCreateSpec.builder()
                                 .name(message.serverName)
-                                .parentId(categoryId)
+                                .parentId(category.id)
                                 .build(),
                         )
                     }

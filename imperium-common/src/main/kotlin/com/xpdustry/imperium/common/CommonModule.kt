@@ -41,7 +41,7 @@ fun commonModule() = module("common") {
     single(ImperiumConfigFactory())
 
     single<Database> {
-        MongoDatabase(get(), get())
+        MongoDatabase(get())
     }
 
     single<AccountService> {

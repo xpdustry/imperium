@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.common.database.model
 
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
+import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MongoConfig
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
@@ -139,7 +139,7 @@ class AccountServiceTest {
         private val MODULE = module("account-test") {
             include(com.xpdustry.imperium.common.commonModule())
             single<ImperiumConfig> {
-                ImperiumConfig(mongo = MongoConfig(port = MONGO_CONTAINER.getMappedPort(27017)))
+                ImperiumConfig(database = DatabaseConfig.Mongo(port = MONGO_CONTAINER.getMappedPort(27017)))
             }
         }
     }

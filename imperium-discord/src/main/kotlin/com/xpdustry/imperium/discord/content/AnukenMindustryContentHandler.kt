@@ -40,7 +40,7 @@ import arc.util.io.Reads
 import arc.util.serialization.Base64Coder
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -89,8 +89,8 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 
 // The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a multithreaded environment.
-// TODO Add logging
-class AnukenMindustryContentHandler(directory: Path, private val config: ImperiumConfig) : MindustryContentHandler, ImperiumApplication.Listener {
+// TODO Add proper logging
+class AnukenMindustryContentHandler(directory: Path, private val config: ServerConfig.Discord) : MindustryContentHandler, ImperiumApplication.Listener {
     private var currentGraphics: Graphics2D? = null
     private var currentImage: BufferedImage? = null
     private var directory = directory.resolve("mindustry-assets")
@@ -205,7 +205,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
 
     private fun downloadAssets() {
         val versionFile = directory.resolve("VERSION.txt")
-        if (Files.exists(versionFile) && versionFile.readText() == config.discord.mindustryVersion) {
+        if (Files.exists(versionFile) && versionFile.readText() == config.mindustryVersion) {
             return
         }
 
@@ -221,21 +221,21 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
 
         downloadZipDirectory(
             http,
-            URI.create("https://github.com/Anuken/Mindustry/releases/download/v${config.discord.mindustryVersion}/Mindustry.jar"),
+            URI.create("https://github.com/Anuken/Mindustry/releases/download/v${config.mindustryVersion}/Mindustry.jar"),
             "sprites",
             "sprites",
         )
 
         downloadZipDirectory(
             http,
-            URI.create("https://github.com/Anuken/Mindustry/archive/refs/tags/v${config.discord.mindustryVersion}.zip"),
-            "Mindustry-${config.discord.mindustryVersion}/core/assets-raw/sprites",
+            URI.create("https://github.com/Anuken/Mindustry/archive/refs/tags/v${config.mindustryVersion}.zip"),
+            "Mindustry-${config.mindustryVersion}/core/assets-raw/sprites",
             "raw-sprites",
         )
 
         MindustryImagePacker(directory).pack()
 
-        versionFile.writeText(config.discord.mindustryVersion)
+        versionFile.writeText(config.mindustryVersion)
     }
 
     private fun downloadZipDirectory(http: HttpClient, uri: URI, folder: String, destination: String) {
@@ -482,7 +482,6 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
     ]
 
     private fun tint(image: BufferedImage, color: Color): BufferedImage {
-        Blocks.sorter
         val copy = BufferedImage(image.width, image.height, image.type)
         val tmp = Color()
         for (x in 0 until copy.width) {

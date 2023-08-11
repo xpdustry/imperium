@@ -73,7 +73,7 @@ class RabbitmqMessengerTest {
         private val MODULE = module("rabbitmq-messenger-test") {
             include(commonModule())
             single<ImperiumConfig> {
-                ImperiumConfig(messenger = MessengerConfig(port = RABBITMQ_CONTAINER.amqpPort))
+                ImperiumConfig(messenger = MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort))
             }
             factory<Messenger> {
                 RabbitmqMessenger(get(), ImperiumMetadata())

@@ -18,10 +18,8 @@
 package com.xpdustry.imperium.mindustry.history
 
 import com.xpdustry.imperium.common.database.MindustryUUID
-import mindustry.gen.Building
 
 interface BlockHistory {
-    fun <B : Building> setConfigurationFactory(clazz: Class<B>, factory: HistoryConfig.Factory<B>)
     fun getHistory(x: Int, y: Int): List<HistoryEntry>
     fun getHistory(uuid: MindustryUUID): List<HistoryEntry>
 }

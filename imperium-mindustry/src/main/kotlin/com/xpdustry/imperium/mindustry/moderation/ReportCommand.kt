@@ -90,7 +90,7 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
                 view.closeAll()
                 messenger.publish(
                     ReportMessage(
-                        config.mindustry.serverName,
+                        config.server.name,
                         view.viewer.playerInfo,
                         view.state[REPORT_PLAYER]!!.playerInfo,
                         view.state[REPORT_REASON]!!,

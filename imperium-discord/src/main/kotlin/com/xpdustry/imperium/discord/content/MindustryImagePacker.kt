@@ -40,7 +40,7 @@ import kotlin.time.measureTime
 
 // TODO
 //  - Move to MindustryContentHandler
-//  - Add logging
+//  - Add proper logging
 class MindustryImagePacker(private val directory: Path) {
     private val cache = mutableMapOf<String, PackIndex>()
 

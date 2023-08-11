@@ -26,7 +26,7 @@ import com.mongodb.connection.SslSettings
 import com.mongodb.reactivestreams.client.MongoClient
 import com.mongodb.reactivestreams.client.MongoClients
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.application.ImperiumMetadata
+import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.Account
 import com.xpdustry.imperium.common.database.AccountManager
@@ -48,7 +48,7 @@ import org.bson.codecs.pojo.Conventions
 import org.bson.codecs.pojo.PojoCodecProvider
 import java.time.Duration
 
-class MongoDatabase(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Database, ImperiumApplication.Listener {
+class MongoDatabase(private val config: ImperiumConfig) : Database, ImperiumApplication.Listener {
 
     private lateinit var client: MongoClient
 
@@ -60,20 +60,23 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
     override lateinit var mapRatings: MindustryMapRatingManager
 
     override fun onImperiumInit() {
+        if (config.database !is DatabaseConfig.Mongo) {
+            throw IllegalStateException("The current database configuration is not Mongo")
+        }
         val settings = MongoClientSettings.builder()
-            .applicationName("imperium-${metadata.name}")
+            .applicationName("imperium-${config.server.name}")
             .applyToClusterSettings { cluster ->
-                cluster.hosts(listOf(ServerAddress(config.mongo.host, config.mongo.port)))
+                cluster.hosts(listOf(ServerAddress(config.database.host, config.database.port)))
             }
             .also { settings ->
-                if (config.mongo.username.isBlank()) {
+                if (config.database.username.isBlank()) {
                     return@also
                 }
                 settings.credential(
                     MongoCredential.createCredential(
-                        config.mongo.username,
-                        config.mongo.authDatabase,
-                        config.mongo.password.value.toCharArray(),
+                        config.database.username,
+                        config.database.authDatabase,
+                        config.database.password.value.toCharArray(),
                     ),
                 )
             }
@@ -84,7 +87,7 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
                     .build(),
             )
             .applyToSslSettings { ssl ->
-                ssl.applySettings(SslSettings.builder().enabled(config.mongo.ssl).build())
+                ssl.applySettings(SslSettings.builder().enabled(config.database.ssl).build())
             }
             .codecRegistry(
                 CodecRegistries.fromProviders(
@@ -127,7 +130,7 @@ class MongoDatabase(private val config: ImperiumConfig, private val metadata: Im
             throw RuntimeException("Failed to authenticate to MongoDB", e)
         }
 
-        val database = client.getDatabase(config.mongo.database)
+        val database = client.getDatabase(config.database.database)
         users = MongoUserManager(database.getCollection("users", User::class.java))
         punishments = MongoPunishmentManager(database.getCollection("punishments", Punishment::class.java))
         accounts = MongoAccountManager(database.getCollection("accounts", Account::class.java))

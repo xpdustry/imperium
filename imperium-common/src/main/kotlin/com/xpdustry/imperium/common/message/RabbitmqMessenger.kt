@@ -31,6 +31,7 @@ import com.rabbitmq.client.ShutdownSignalException
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import org.objenesis.strategy.StdInstantiatorStrategy
 import reactor.core.publisher.Flux
@@ -57,6 +58,9 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
     private lateinit var channel: Channel
 
     override fun onImperiumInit() {
+        if (config.messenger !is MessengerConfig.RabbitMQ) {
+            throw IllegalStateException("The current Messenger configuration is not RabbitMQ")
+        }
         val factory = ConnectionFactory().apply {
             host = config.messenger.host
             port = config.messenger.port

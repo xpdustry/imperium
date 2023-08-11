@@ -18,6 +18,8 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.commonModule
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -53,5 +55,10 @@ fun discordModule() = module("discord") {
 
     single<MindustryContentHandler> {
         AnukenMindustryContentHandler(get("directory"), get())
+    }
+
+    single<ServerConfig.Discord> {
+        get<ImperiumConfig>().server as? ServerConfig.Discord
+            ?: error("The current server configuration is not Discord")
     }
 }

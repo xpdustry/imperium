@@ -26,6 +26,7 @@ import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.misc.switchIfEmpty
 import com.xpdustry.imperium.common.misc.toErrorMono
 import com.xpdustry.imperium.common.misc.toValueMono
@@ -41,7 +42,7 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
     private lateinit var targetLanguages: List<Locale>
 
     init {
-        translator = config.translator.deepl?.let {
+        translator = (config.translator as? TranslatorConfig.DeepL)?.token?.let {
             com.deepl.api.Translator(
                 it.value,
                 TranslatorOptions()

@@ -20,7 +20,7 @@ package com.xpdustry.imperium.common.storage
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MinioConfig
+import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -90,7 +90,7 @@ class MinioStorageTest {
         private val MODULE = module("minio-storage-test") {
             include(commonModule())
             single<ImperiumConfig> {
-                ImperiumConfig(storage = MinioConfig(port = MINIO_CONTAINER.firstMappedPort))
+                ImperiumConfig(storage = StorageConfig.Minio(port = MINIO_CONTAINER.firstMappedPort))
             }
         }
     }

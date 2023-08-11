@@ -19,10 +19,12 @@ package com.xpdustry.imperium.mindustry
 
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.network.MindustryServerInfo
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
@@ -40,6 +42,7 @@ import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.gen.Groups
 import mindustry.net.Administration
+import java.net.InetAddress
 import java.nio.file.Path
 import java.util.function.Supplier
 
@@ -82,6 +85,11 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
     single<ImperiumPluginCommandManager>("server") {
         plugin.serverCommandManager
     }
+
+    single<ServerConfig.Mindustry> {
+        get<ImperiumConfig>().server as? ServerConfig.Mindustry
+            ?: error("The current server configuration is not Mindustry")
+    }
 }
 
 private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo? {
@@ -89,8 +97,9 @@ private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo?
         return null
     }
     return MindustryServerInfo(
-        config.mindustry.serverName,
-        config.mindustry.host,
+        config.server.name,
+        // Our servers run within a pterodactyl container, so we can use the SERVER_IP environment variable
+        System.getenv("SERVER_IP")?.toInetAddress() ?: InetAddress.getLocalHost(),
         Administration.Config.port.num(),
         Vars.state.map.name(),
         Administration.Config.desc.string(),

@@ -19,7 +19,7 @@ package com.xpdustry.imperium.common.storage
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MinioConfig
+import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.misc.toValueFlux
 import com.xpdustry.imperium.common.misc.toValueMono
 import io.minio.BucketExistsArgs
@@ -50,7 +50,7 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
     private lateinit var httpClient: OkHttpClient
 
     override fun onImperiumInit() {
-        if (config.storage !is MinioConfig) {
+        if (config.storage !is StorageConfig.Minio) {
             throw IllegalStateException("The current storage configuration is not Minio")
         }
         // TODO Replace java HttpClient with OkHttp everywhere?

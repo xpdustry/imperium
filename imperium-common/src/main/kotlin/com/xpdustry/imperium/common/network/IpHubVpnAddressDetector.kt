@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.network
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.misc.toErrorMono
 import com.xpdustry.imperium.common.misc.toValueMono
 import reactor.core.publisher.Mono
@@ -32,7 +33,7 @@ import java.time.Duration
 
 class IpHubVpnAddressDetector(config: ImperiumConfig) : VpnAddressDetector {
 
-    private val token: String? = config.network.ipHub?.value
+    private val token: String? = (config.network.antiVpn as? NetworkConfig.AntiVPN.IpHub)?.token?.value
     private val gson = Gson()
     private val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3L)).build()
 

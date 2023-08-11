@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.listener
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.capitalize
@@ -28,16 +28,16 @@ import fr.xpdustry.distributor.api.scheduler.TaskHandler
 import mindustry.net.Administration
 
 class ConventionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config: ImperiumConfig = instances.get()
+    private val config = instances.get<ServerConfig.Mindustry>()
 
     override fun onImperiumInit() {
         Administration.Config.serverName.set(
-            "[accent]<[white]CN[]> [${config.mindustry.color.toHexString()}]${config.mindustry.serverName.capitalize(all = true)}",
+            "[accent]<[white]CN[]> [${config.color.toHexString()}]${config.name.capitalize(all = true)}",
         )
     }
 
     @TaskHandler(interval = 1L, unit = MindustryTimeUnit.MINUTES)
     fun onQuoteUpdate() {
-        Administration.Config.desc.set("\"${config.mindustry.quotes.random()}\"")
+        Administration.Config.desc.set("\"${config.quotes.random()}\"")
     }
 }
