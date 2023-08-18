@@ -49,7 +49,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onServerList(actor: CommandActor) = actor.reply {
         addEmbed {
             title("Server List")
-            description(discovery.servers.joinToString(separator = "\n") { " - " + it.metadata.name })
+            description(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName })
         }
     }
 

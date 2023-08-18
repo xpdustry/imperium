@@ -55,7 +55,7 @@ fun commonModule() = module("common") {
     }
 
     single<Discovery> {
-        SimpleDiscovery(get(), get(), get())
+        SimpleDiscovery(get(), get(), get(), get())
     }
 
     single<VpnAddressDetector> {

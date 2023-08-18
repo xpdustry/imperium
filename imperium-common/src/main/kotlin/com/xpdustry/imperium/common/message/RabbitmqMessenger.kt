@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.message
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.Input
 import com.esotericsoftware.kryo.io.Output
+import com.esotericsoftware.kryo.serializers.DefaultSerializers
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
@@ -44,6 +45,7 @@ import kotlinx.coroutines.withContext
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.net.Inet4Address
 import java.net.Inet6Address
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
@@ -58,6 +60,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         setOptimizedGenerics(false)
         addDefaultSerializer(Inet4Address::class.java, InetAddressSerializer)
         addDefaultSerializer(Inet6Address::class.java, InetAddressSerializer)
+        addDefaultSerializer(UUID::class.java, DefaultSerializers.UUIDSerializer())
     }
 
     private val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
@@ -99,7 +102,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
             channel.basicPublish(
                 IMPERIUM_EXCHANGE,
                 message::class.jvmName,
-                AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier)).build(),
+                AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier.toString())).build(),
                 Output(MAX_OBJECT_SIZE).also { kryo.writeObject(it, message) }.toBytes(),
             )
             true
