@@ -88,22 +88,19 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
                 }
                 view.closeAll()
                 ImperiumScope.MAIN.launch {
-                    try {
-                        messenger.publish(
-                            ReportMessage(
-                                config.server.name,
-                                view.viewer.playerInfo,
-                                view.state[REPORT_PLAYER]!!.playerInfo,
-                                view.state[REPORT_REASON]!!,
-                                view.state[REPORT_DETAIL],
-                            ),
-                        )
+                    val sent = messenger.publish(
+                        ReportMessage(
+                            config.server.name,
+                            view.viewer.playerInfo,
+                            view.state[REPORT_PLAYER]!!.playerInfo,
+                            view.state[REPORT_REASON]!!,
+                            view.state[REPORT_DETAIL],
+                        ),
+                    )
+                    if (sent) {
                         view.viewer.sendMessage("[green]Your report has been sent, thank you for your contribution.")
-                    } catch (e: Exception) {
-                        logger.error("An error occurred while sending a report", e)
-                        view.viewer.sendMessage(
-                            "[scarlet]An error occurred while sending your report, please try again later.",
-                        )
+                    } else {
+                        view.viewer.sendMessage("[scarlet]An error occurred while sending your report, please try again later.")
                     }
                 }
             },

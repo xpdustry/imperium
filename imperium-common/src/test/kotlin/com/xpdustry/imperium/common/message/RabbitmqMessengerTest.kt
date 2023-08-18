@@ -68,7 +68,7 @@ class RabbitmqMessengerTest {
         messenger1.subscribe<TestMessage> {
             deferred.complete(it)
         }
-        messenger2.publish(message)
+        Assertions.assertTrue(messenger2.publish(message))
         val result = withContext(ImperiumScope.MAIN.coroutineContext) {
             withTimeout(3.seconds) {
                 deferred.await()

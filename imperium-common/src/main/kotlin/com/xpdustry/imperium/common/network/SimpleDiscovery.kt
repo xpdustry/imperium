@@ -62,17 +62,12 @@ class SimpleDiscovery(
         messenger.subscribe<DiscoveryMessage> {
             if (it.info.serverName == config.server.name) {
                 logger.warn("Received discovery message from another server with the same name.")
-                return@subscribe
-            }
-
-            if (it.type === DiscoveryMessage.Type.DISCOVER) {
+            } else if (it.type === DiscoveryMessage.Type.DISCOVER) {
                 logger.trace("Received discovery message from {}", it.info.metadata.identifier)
                 this._servers.put(it.info.metadata.identifier.toString(), it.info)
             } else if (it.type === DiscoveryMessage.Type.UN_DISCOVER) {
                 this._servers.invalidate(it.info.metadata.identifier.toString())
                 logger.debug("Undiscovered server {}", it.info.metadata.identifier)
-            } else {
-                logger.warn("Received unknown discovery message type {}", it.type)
             }
         }
 
@@ -85,22 +80,18 @@ class SimpleDiscovery(
         }
     }
 
+    override fun onImperiumExit() = runBlocking {
+        heartbeatJob.cancelAndJoin()
+        sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER)
+    }
+
     override fun heartbeat() = runBlocking(ImperiumScope.MAIN.coroutineContext) {
         sendDiscovery(DiscoveryMessage.Type.DISCOVER)
     }
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
         logger.trace("Sending {} discovery message", type.name)
-        try {
-            messenger.publish(DiscoveryMessage(ServerInfo(config.server.name, metadata, mindustryServerProvider.get()), type))
-        } catch (e: Exception) {
-            logger.error("Failed to send discovery message (type: {})", type, e)
-        }
-    }
-
-    override fun onImperiumExit() = runBlocking {
-        heartbeatJob.cancelAndJoin()
-        sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER)
+        messenger.publish(DiscoveryMessage(ServerInfo(config.server.name, metadata, mindustryServerProvider.get()), type))
     }
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {

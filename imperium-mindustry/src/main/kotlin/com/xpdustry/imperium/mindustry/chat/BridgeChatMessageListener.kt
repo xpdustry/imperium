@@ -27,7 +27,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
-import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.misc.playerInfo
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
@@ -49,26 +48,19 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     }
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        sendMessage(MindustryPlayerMessage.Join(config.server.name, event.player.playerInfo))
-
-    @EventHandler
-    fun onPlayerQuit(event: EventType.PlayerLeave) =
-        sendMessage(MindustryPlayerMessage.Quit(config.server.name, event.player.playerInfo))
-
-    @EventHandler
-    fun onPlayerChat(event: ProcessedPlayerChatEvent) =
-        sendMessage(MindustryPlayerMessage.Chat(config.server.name, event.player.playerInfo, Strings.stripColors(event.message)))
-
-    private fun sendMessage(message: MindustryPlayerMessage) = ImperiumScope.MAIN.launch {
-        try {
-            messenger.publish(message)
-        } catch (e: Exception) {
-            logger.error("Failed to send bridge message", e)
-        }
+    fun onPlayerJoin(event: EventType.PlayerJoin) = ImperiumScope.MAIN.launch {
+        messenger.publish(MindustryPlayerMessage.Join(config.server.name, event.player.playerInfo))
     }
 
-    companion object {
-        private val logger by LoggerDelegate()
+    @EventHandler
+    fun onPlayerQuit(event: EventType.PlayerLeave) = ImperiumScope.MAIN.launch {
+        messenger.publish(MindustryPlayerMessage.Quit(config.server.name, event.player.playerInfo))
+    }
+
+    @EventHandler
+    fun onPlayerChat(event: ProcessedPlayerChatEvent) = ImperiumScope.MAIN.launch {
+        messenger.publish(
+            MindustryPlayerMessage.Chat(config.server.name, event.player.playerInfo, Strings.stripColors(event.message)),
+        )
     }
 }

@@ -21,7 +21,7 @@ import kotlinx.coroutines.Job
 import kotlin.reflect.KClass
 
 interface Messenger {
-    suspend fun publish(message: Message)
+    suspend fun publish(message: Message): Boolean
     fun <M : Message> subscribe(type: KClass<M>, listener: Listener<M>): Job
     fun interface Listener<M : Message> {
         suspend fun onMessage(message: M)

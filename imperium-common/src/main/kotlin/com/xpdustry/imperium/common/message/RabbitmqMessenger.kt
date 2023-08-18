@@ -95,12 +95,18 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
     }
 
     override suspend fun publish(message: Message) = withContext(ImperiumScope.IO.coroutineContext) {
-        channel.basicPublish(
-            IMPERIUM_EXCHANGE,
-            message::class.jvmName,
-            AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier)).build(),
-            Output(MAX_OBJECT_SIZE).also { kryo.writeObject(it, message) }.toBytes(),
-        )
+        try {
+            channel.basicPublish(
+                IMPERIUM_EXCHANGE,
+                message::class.jvmName,
+                AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier)).build(),
+                Output(MAX_OBJECT_SIZE).also { kryo.writeObject(it, message) }.toBytes(),
+            )
+            true
+        } catch (e: Exception) {
+            logger.error("Failed to publish message of type ${message::class.jvmName}", e)
+            false
+        }
     }
 
     override fun <M : Message> subscribe(type: KClass<M>, listener: Messenger.Listener<M>): Job {
