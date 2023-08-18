@@ -18,10 +18,9 @@
 package com.xpdustry.imperium.common.storage
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.StorageConfig
-import com.xpdustry.imperium.common.misc.toValueFlux
-import com.xpdustry.imperium.common.misc.toValueMono
 import io.minio.BucketExistsArgs
 import io.minio.GetObjectArgs
 import io.minio.GetPresignedObjectUrlArgs
@@ -35,13 +34,16 @@ import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
 import io.minio.http.HttpUtils
 import io.minio.http.Method
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.io.InputStream
 import java.net.URL
-import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 
@@ -54,7 +56,7 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
             throw IllegalStateException("The current storage configuration is not Minio")
         }
         // TODO Replace java HttpClient with OkHttp everywhere?
-        val timeout = Duration.ofMinutes(5).toMillis()
+        val timeout = java.time.Duration.ofMinutes(5).toMillis()
         httpClient = HttpUtils.newDefaultHttpClient(timeout, timeout, timeout)
         client = with(config.storage) {
             MinioAsyncClient.builder()
@@ -79,78 +81,71 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         httpClient.dispatcher.executorService.awaitTermination(5, TimeUnit.SECONDS)
     }
 
-    override fun getBucket(name: String, create: Boolean): Mono<Bucket> = Mono.defer {
-        client.bucketExists(BucketExistsArgs.builder().bucket(name).build()).toValueMono().flatMap { exists ->
-            if (exists) {
-                MinioBucket(name).toValueMono()
-            } else if (create) {
-                return@flatMap client.makeBucket(MakeBucketArgs.builder().bucket(name).build())
-                    .toValueMono()
-                    .thenReturn(MinioBucket(name))
-            } else {
-                Mono.empty()
-            }
+    override suspend fun getBucket(name: String, create: Boolean): Bucket? {
+        if (client.bucketExists(BucketExistsArgs.builder().bucket(name).build()).await()) {
+            return MinioBucket(name)
         }
+        if (create) {
+            client.makeBucket(MakeBucketArgs.builder().bucket(name).build()).await()
+            return MinioBucket(name)
+        }
+        return null
     }
 
-    override fun listBuckets(): Flux<Bucket> = Flux.defer {
-        client.listBuckets().toValueMono().flatMapMany { buckets ->
-            Flux.fromIterable(buckets).map { MinioBucket(it.name()) }
-        }
-    }
+    override suspend fun listBuckets(): List<Bucket> =
+        client.listBuckets().await().map { MinioBucket(it.name()) }
 
-    override fun deleteBucket(name: String): Mono<Void> = Mono.defer {
-        client.removeBucket(RemoveBucketArgs.builder().bucket(name).build()).toValueMono().then()
+    override suspend fun deleteBucket(name: String) {
+        client.removeBucket(RemoveBucketArgs.builder().bucket(name).build()).await()
     }
 
     private inner class MinioBucket(override val name: String) : Bucket {
-        override fun getObject(name: String): Mono<S3Object> = Mono.defer {
-            client.statObject(
+        override suspend fun getObject(name: String): S3Object? = try {
+            val stats = client.statObject(
                 StatObjectArgs.builder()
                     .bucket(this.name)
                     .`object`(name)
                     .build(),
-            ).toValueMono()
-                .map { MinioObject(this.name, name.split("/"), it.size(), it.lastModified().toInstant()) }
-                .onErrorResume {
-                    if (it is ErrorResponseException && it.errorResponse().code() == "NoSuchKey") {
-                        Mono.empty()
-                    } else {
-                        Mono.error(it)
-                    }
-                }
+            ).await()
+            MinioObject(this.name, name.split("/"), stats.size(), stats.lastModified().toInstant())
+        } catch (e: ErrorResponseException) {
+            if (e.errorResponse().code() != "NoSuchKey") {
+                throw e
+            }
+            null
         }
 
-        override fun putObject(name: String, stream: InputStream) = Mono.defer {
+        override suspend fun putObject(name: String, stream: InputStream) {
             client.putObject(
                 PutObjectArgs.builder()
                     .bucket(this.name)
                     .`object`(name)
                     .stream(stream, -1, DEFAULT_PART_SIZE)
                     .build(),
-            ).toValueMono().then()
+            ).await()
         }
 
-        override fun listObjects(prefix: String, recursive: Boolean) = Flux.defer<S3Object> {
-            client.listObjects(
-                ListObjectsArgs.builder()
-                    .bucket(this.name)
-                    .prefix(prefix)
-                    .recursive(recursive)
-                    .build(),
-            ).toValueFlux()
+        override suspend fun listObjects(prefix: String, recursive: Boolean): Flow<S3Object> = withContext(ImperiumScope.IO.coroutineContext) {
+            flow {
+                client.listObjects(
+                    ListObjectsArgs.builder()
+                        .bucket(name)
+                        .prefix(prefix)
+                        .recursive(recursive)
+                        .build(),
+                ).forEach {
+                    launch {
+                        emit(it)
+                    }
+                }
+            }
                 .map { it.get() }
                 .filter { !it.isDir && !it.isDeleteMarker }
-                .map { MinioObject(this.name, it.objectName().split("/"), it.size(), it.lastModified().toInstant()) }
+                .map { MinioObject(name, it.objectName().split("/"), it.size(), it.lastModified().toInstant()) }
         }
 
-        override fun deleteObject(name: String): Mono<Void> = Mono.defer {
-            client.removeObject(
-                RemoveObjectArgs.builder()
-                    .bucket(this.name)
-                    .`object`(name)
-                    .build(),
-            ).toValueMono().then()
+        override suspend fun deleteObject(name: String) {
+            client.removeObject(RemoveObjectArgs.builder().bucket(this.name).`object`(name).build()).await()
         }
     }
 
@@ -160,32 +155,22 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         override val size: Long,
         override val lastModified: Instant,
     ) : S3Object {
-        override fun getStream(): Mono<InputStream> = Mono.usingWhen(
-            Mono.defer {
-                client.getObject(
-                    GetObjectArgs.builder()
-                        .bucket(bucket)
-                        .`object`(path.joinToString("/"))
-                        .build(),
-                ).toValueMono()
-            },
-            { it.toValueMono() },
-            {
-                Mono.fromRunnable<InputStream> { it.close() }
-                    .subscribeOn(Schedulers.boundedElastic())
-            },
-        )
+        override suspend fun getStream(): InputStream =
+            client.getObject(GetObjectArgs.builder().bucket(bucket).`object`(path.joinToString("/")).build()).await()
 
-        override fun getDownloadUrl(expiration: Duration): Mono<URL> = Mono.defer {
-            client.getPresignedObjectUrl(
-                GetPresignedObjectUrlArgs.builder()
-                    .method(Method.GET)
-                    .bucket(bucket)
-                    .`object`(path.joinToString("/"))
-                    .expiry(expiration.toSeconds().toInt())
-                    .build(),
-            ).toValueMono().map(::URL)
-        }
+        override suspend fun getDownloadUrl(expiration: kotlin.time.Duration): URL =
+            withContext(ImperiumScope.IO.coroutineContext) {
+                URL(
+                    client.getPresignedObjectUrl(
+                        GetPresignedObjectUrlArgs.builder()
+                            .method(Method.GET)
+                            .bucket(bucket)
+                            .`object`(path.joinToString("/"))
+                            .expiry(expiration.inWholeSeconds.toInt())
+                            .build(),
+                    ),
+                )
+            }
     }
 
     companion object {

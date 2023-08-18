@@ -25,7 +25,9 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.misc.ExitStatus
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.GenericContainer
@@ -33,7 +35,6 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import reactor.test.StepVerifier
 import java.time.Duration
 
 // TODO Add more tests + cleanup
@@ -50,27 +51,24 @@ class MinioStorageTest {
     }
 
     @Test
-    fun `test bucket methods`() {
-        StepVerifier.create(storage.getBucket("test"))
-            .verifyComplete()
+    fun `test bucket methods`() = runTest {
+        Assertions.assertNull(storage.getBucket("test"))
 
-        StepVerifier.create(storage.getBucket("test", create = true))
-            .expectNextMatches { it.name == "test" }
-            .verifyComplete()
+        val bucket1 = storage.getBucket("test", create = true)
+        Assertions.assertNotNull(bucket1)
+        Assertions.assertEquals("test", bucket1!!.name)
 
-        StepVerifier.create(storage.getBucket("test"))
-            .expectNextMatches { it.name == "test" }
-            .verifyComplete()
+        val bucket2 = storage.getBucket("test")
+        Assertions.assertNotNull(bucket2)
+        Assertions.assertEquals("test", bucket2!!.name)
 
-        StepVerifier.create(storage.listBuckets())
-            .expectNextMatches { it.name == "test" }
-            .verifyComplete()
+        val buckets = storage.listBuckets()
+        Assertions.assertEquals(1, buckets.size)
+        Assertions.assertEquals("test", buckets[0].name)
 
-        StepVerifier.create(storage.deleteBucket("test"))
-            .verifyComplete()
+        storage.deleteBucket("test")
 
-        StepVerifier.create(storage.listBuckets())
-            .verifyComplete()
+        Assertions.assertTrue(storage.listBuckets().isEmpty())
     }
 
     @AfterEach

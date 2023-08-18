@@ -17,25 +17,24 @@
  */
 package com.xpdustry.imperium.common.storage
 
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.net.URL
-import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration
 
 interface Storage {
-    fun getBucket(name: String, create: Boolean = false): Mono<Bucket>
-    fun listBuckets(): Flux<Bucket>
-    fun deleteBucket(name: String): Mono<Void>
+    suspend fun getBucket(name: String, create: Boolean = false): Bucket?
+    suspend fun listBuckets(): List<Bucket>
+    suspend fun deleteBucket(name: String)
 }
 
 interface Bucket {
     val name: String
-    fun getObject(name: String): Mono<S3Object>
-    fun putObject(name: String, stream: InputStream): Mono<Void>
-    fun listObjects(prefix: String = "", recursive: Boolean = false): Flux<S3Object>
-    fun deleteObject(name: String): Mono<Void>
+    suspend fun getObject(name: String): S3Object?
+    suspend fun putObject(name: String, stream: InputStream)
+    suspend fun listObjects(prefix: String = "", recursive: Boolean = false): Flow<S3Object>
+    suspend fun deleteObject(name: String)
 }
 
 interface S3Object {
@@ -43,6 +42,6 @@ interface S3Object {
     val path: List<String>
     val size: Long
     val lastModified: Instant
-    fun getStream(): Mono<InputStream>
-    fun getDownloadUrl(expiration: Duration): Mono<URL>
+    suspend fun getStream(): InputStream
+    suspend fun getDownloadUrl(expiration: Duration): URL
 }
