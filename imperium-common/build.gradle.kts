@@ -5,6 +5,7 @@ plugins {
 
 dependencies {
     api(libs.mongodb.driver.reactive)
+    api(libs.mongodb.driver.kotlin.coroutine)
     api(libs.reactor.core)
     api(libs.guava)
     api(libs.gson)
@@ -18,5 +19,11 @@ dependencies {
     api(libs.kryo)
     api(libs.rabbitmq.client)
     api(libs.minio)
+
+    api(libs.kotlinx.coroutines.core)
+    api(libs.kotlinx.coroutines.jdk8)
+    api(libs.kotlinx.coroutines.reactor)
+
     testApi(libs.slf4j.simple)
+    testApi(libs.kotlinx.coroutines.test)
 }

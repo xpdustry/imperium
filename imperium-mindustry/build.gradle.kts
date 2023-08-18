@@ -29,6 +29,7 @@ repositories {
 dependencies {
     api(projects.imperiumCommon) {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib")
+        exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
         exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
         exclude("org.jetbrains.kotlin", "kotlin-reflect")
         exclude("org.slf4j")
@@ -83,7 +84,7 @@ val downloadKotlinRuntime = tasks.register<GithubArtifactDownload>("downloadKotl
     user.set("xpdustry")
     repo.set("kotlin-runtime")
     name.set("kotlin-runtime.jar")
-    version.set(libs.versions.kotlin.map { "v3.0.0-k.$it" })
+    version.set(libs.versions.kotlin.runtime.zip(libs.versions.kotlin.core) { runtime, core -> "v$runtime-k.$core" })
 }
 
 val downloadDistributorCore = tasks.register<GithubArtifactDownload>("downloadDistributor") {

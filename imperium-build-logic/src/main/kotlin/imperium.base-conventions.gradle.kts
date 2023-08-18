@@ -12,14 +12,14 @@ repositories {
 
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
-    coreLibrariesVersion = libs.versions.kotlin.get()
+    coreLibrariesVersion = libs.versions.kotlin.core.get()
     target {
         compilations.configureEach {
             kotlinOptions {
                 javaParameters = true // Needed for commands
                 jvmTarget = libs.versions.java.get()
                 // The kotlin version of libs is in the format x.y.z, but apiVersion needs to be in the format x.y
-                apiVersion = libs.versions.kotlin.get().split(".").take(2).joinToString(".")
+                apiVersion = libs.versions.kotlin.core.get().split(".").take(2).joinToString(".")
             }
         }
     }

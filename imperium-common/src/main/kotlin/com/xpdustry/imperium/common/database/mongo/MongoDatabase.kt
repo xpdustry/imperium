@@ -91,7 +91,6 @@ class MongoDatabase(private val config: ImperiumConfig) : Database, ImperiumAppl
             }
             .codecRegistry(
                 CodecRegistries.fromProviders(
-                    MongoClientSettings.getDefaultCodecRegistry(),
                     PojoCodecProvider.builder()
                         .register(Account::class.java)
                         .register(Account.Friend::class.java)
@@ -115,6 +114,7 @@ class MongoDatabase(private val config: ImperiumConfig) : Database, ImperiumAppl
                         HashCodec(),
                     ),
                     InetAddressCodecProvider(),
+                    MongoClientSettings.getDefaultCodecRegistry(),
                 ),
             )
             .build()
