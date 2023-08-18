@@ -34,17 +34,13 @@ import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
 import io.minio.http.HttpUtils
 import io.minio.http.Method
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.io.InputStream
 import java.net.URL
 import java.time.Instant
+import java.util.concurrent.CompletionException
 import java.util.concurrent.TimeUnit
 
 class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplication.Listener {
@@ -108,11 +104,18 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
                     .build(),
             ).await()
             MinioObject(this.name, name.split("/"), stats.size(), stats.lastModified().toInstant())
-        } catch (e: ErrorResponseException) {
-            if (e.errorResponse().code() != "NoSuchKey") {
+        } catch (e: CompletionException) {
+            // For some reason, the real exception is wrapped withing multiple CompletionException
+            var exception: Throwable = e
+            while (exception is CompletionException && exception.cause != null) {
+                exception = exception.cause!!
+            }
+            if (exception is ErrorResponseException && exception.errorResponse().code() != "NoSuchKey") {
                 throw e
             }
             null
+        } catch (e: Exception) {
+            throw e
         }
 
         override suspend fun putObject(name: String, stream: InputStream) {
@@ -125,20 +128,15 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
             ).await()
         }
 
-        override suspend fun listObjects(prefix: String, recursive: Boolean): Flow<S3Object> = withContext(ImperiumScope.IO.coroutineContext) {
-            flow {
-                client.listObjects(
-                    ListObjectsArgs.builder()
-                        .bucket(name)
-                        .prefix(prefix)
-                        .recursive(recursive)
-                        .build(),
-                ).forEach {
-                    launch {
-                        emit(it)
-                    }
-                }
-            }
+        // TODO: Objects are fetched lazily by the first call, use more appropriate result type
+        override suspend fun listObjects(prefix: String, recursive: Boolean): List<S3Object> = withContext(ImperiumScope.IO.coroutineContext) {
+            client.listObjects(
+                ListObjectsArgs.builder()
+                    .bucket(name)
+                    .prefix(prefix)
+                    .recursive(recursive)
+                    .build(),
+            )
                 .map { it.get() }
                 .filter { !it.isDir && !it.isDeleteMarker }
                 .map { MinioObject(name, it.objectName().split("/"), it.size(), it.lastModified().toInstant()) }

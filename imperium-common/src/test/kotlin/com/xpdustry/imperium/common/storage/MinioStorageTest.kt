@@ -71,6 +71,27 @@ class MinioStorageTest {
         Assertions.assertTrue(storage.listBuckets().isEmpty())
     }
 
+    @Test
+    fun `test object methods`() = runTest {
+        val bucket = storage.getBucket("test", create = true)!!
+        val object1 = bucket.getObject("test")
+        Assertions.assertNull(object1)
+
+        bucket.putObject("test", "test".byteInputStream())
+
+        val object2 = bucket.getObject("test")!!
+        Assertions.assertEquals("test", object2.name)
+        Assertions.assertEquals("test", object2.getStream().bufferedReader().readText())
+
+        val objects = bucket.listObjects()
+        Assertions.assertEquals(1, objects.size)
+        Assertions.assertEquals("test", objects[0].name)
+
+        bucket.deleteObject("test")
+
+        Assertions.assertTrue(bucket.listObjects().toList().isEmpty())
+    }
+
     @AfterEach
     fun exit() {
         application.exit(ExitStatus.EXIT)

@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.storage
 
-import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
 import java.net.URL
 import java.time.Instant
@@ -33,7 +32,7 @@ interface Bucket {
     val name: String
     suspend fun getObject(name: String): S3Object?
     suspend fun putObject(name: String, stream: InputStream)
-    suspend fun listObjects(prefix: String = "", recursive: Boolean = false): Flow<S3Object>
+    suspend fun listObjects(prefix: String = "", recursive: Boolean = false): List<S3Object>
     suspend fun deleteObject(name: String)
 }
 
