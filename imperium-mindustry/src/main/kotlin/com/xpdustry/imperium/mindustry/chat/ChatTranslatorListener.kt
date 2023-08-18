@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.translator
+package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.Strings
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -25,14 +25,13 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.translator.TranslatorResult
-import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Players
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.game.EventType.PlayerJoin
 
-class TranslatorListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val translator: Translator = instances.get()
     private val pipeline: ChatMessagePipeline = instances.get()
     private val config = instances.get<ImperiumConfig>()

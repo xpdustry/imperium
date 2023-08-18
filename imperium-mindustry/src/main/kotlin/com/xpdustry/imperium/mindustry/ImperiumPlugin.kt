@@ -28,11 +28,11 @@ import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
+import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
 import com.xpdustry.imperium.mindustry.moderation.ReportCommand
-import com.xpdustry.imperium.mindustry.translator.TranslatorListener
 import com.xpdustry.imperium.mindustry.verification.VerificationListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
@@ -64,7 +64,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         // Listeners
         application.register(ConventionListener::class)
         application.register(VerificationListener::class)
-        application.register(TranslatorListener::class)
+        application.register(ChatTranslatorListener::class)
         application.register(AccountListener::class)
         application.register(AccountCommand::class)
         application.register(ChatMessageListener::class)
