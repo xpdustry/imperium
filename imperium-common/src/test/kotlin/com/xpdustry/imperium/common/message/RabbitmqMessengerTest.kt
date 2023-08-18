@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.message
 
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
@@ -27,15 +28,19 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.misc.ExitStatus
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.RabbitMQContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import reactor.test.StepVerifier
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class RabbitmqMessengerTest {
@@ -57,12 +62,19 @@ class RabbitmqMessengerTest {
     }
 
     @Test
-    fun test_simple_pubsub() {
+    fun test_simple_pubsub() = runTest {
         val message = TestMessage("Hello World!")
-        StepVerifier.create(messenger1.on(TestMessage::class))
-            .then { messenger2.publish(message).subscribe() }
-            .expectNext(message)
-            .verifyTimeout(Duration.ofSeconds(3L))
+        val deferred = CompletableDeferred<TestMessage>()
+        messenger1.subscribe<TestMessage> {
+            deferred.complete(it)
+        }
+        messenger2.publish(message)
+        val result = withContext(ImperiumScope.MAIN.coroutineContext) {
+            withTimeout(3.seconds) {
+                deferred.await()
+            }
+        }
+        Assertions.assertEquals(message, result)
     }
 
     data class TestMessage(val content: String) : Message

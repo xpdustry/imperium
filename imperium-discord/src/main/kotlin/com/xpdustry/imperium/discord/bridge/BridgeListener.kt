@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.filterAndCast
 import com.xpdustry.imperium.common.misc.switchIfEmpty
 import com.xpdustry.imperium.common.misc.toErrorMono
@@ -35,6 +36,7 @@ import discord4j.core.`object`.entity.channel.TextChannel
 import discord4j.core.spec.MessageCreateSpec
 import discord4j.core.spec.TextChannelCreateSpec
 import discord4j.rest.util.AllowedMentions
+import kotlinx.coroutines.reactor.mono
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -59,19 +61,24 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                         getLiveChatCategory().map { category -> channel.categoryId.getOrNull() == category.id }
                     }
                     .flatMap { channel ->
-                        messenger.publish(
-                            BridgeChatMessage(channel.name, message.author.get().username, message.content),
-                        )
+                        mono {
+                            messenger.publish(
+                                BridgeChatMessage(channel.name, message.author.get().username, message.content),
+                            )
+                        }
                     }
             }
             .subscribe()
 
-        messenger.on(MindustryPlayerMessage.Join::class)
-            .handleMindustryServerMessage()
-        messenger.on(MindustryPlayerMessage.Quit::class)
-            .handleMindustryServerMessage()
-        messenger.on(MindustryPlayerMessage.Chat::class)
-            .handleMindustryServerMessage()
+        messenger.subscribe<MindustryPlayerMessage.Join> {
+            Flux.just(it).handleMindustryServerMessage()
+        }
+        messenger.subscribe<MindustryPlayerMessage.Quit> {
+            Flux.just(it).handleMindustryServerMessage()
+        }
+        messenger.subscribe<MindustryPlayerMessage.Chat> {
+            Flux.just(it).handleMindustryServerMessage()
+        }
     }
 
     private fun getLiveChatCategory(): Mono<Category> = discord.getMainGuild().flatMap { guild ->

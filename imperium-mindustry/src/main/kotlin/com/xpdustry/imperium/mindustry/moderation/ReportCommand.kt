@@ -44,6 +44,7 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.ArcCollections
+import kotlinx.coroutines.reactor.mono
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import reactor.core.publisher.Mono
@@ -88,15 +89,17 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
                     return@MenuOption
                 }
                 view.closeAll()
-                messenger.publish(
-                    ReportMessage(
-                        config.server.name,
-                        view.viewer.playerInfo,
-                        view.state[REPORT_PLAYER]!!.playerInfo,
-                        view.state[REPORT_REASON]!!,
-                        view.state[REPORT_DETAIL],
-                    ),
-                )
+                mono {
+                    messenger.publish(
+                        ReportMessage(
+                            config.server.name,
+                            view.viewer.playerInfo,
+                            view.state[REPORT_PLAYER]!!.playerInfo,
+                            view.state[REPORT_REASON]!!,
+                            view.state[REPORT_DETAIL],
+                        ),
+                    )
+                }
                     .publishOn(MindustryScheduler)
                     .doOnError {
                         logger.error("An error occurred while sending a report", it)

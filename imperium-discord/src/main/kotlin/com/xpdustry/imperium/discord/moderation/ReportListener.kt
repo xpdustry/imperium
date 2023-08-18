@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.switchIfEmpty
 import com.xpdustry.imperium.common.misc.toErrorMono
@@ -40,7 +41,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
-        messenger.on(ReportMessage::class).flatMap { report ->
+        messenger.subscribe<ReportMessage> { report ->
             getNotificationChannel().flatMap { channel ->
                 channel.createMessage(
                     EmbedCreateSpec.builder()
@@ -69,8 +70,8 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                         .build(),
                 )
             }
+                .subscribe()
         }
-            .subscribe()
     }
 
     private fun getNotificationChannel(): Mono<TextChannel> = discord.getMainGuild().flatMap { guild ->

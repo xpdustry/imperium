@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.bridge.PlayerInfo
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LimitedList
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.command.Command
@@ -39,7 +40,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         // TODO Implement player join history
-        messenger.on(MindustryPlayerMessage.Join::class).subscribe {
+        messenger.subscribe<MindustryPlayerMessage.Join> {
             history.computeIfAbsent(it.serverName) { LimitedList(20) }.add(PlayerJoinEntry(it.player))
         }
     }
