@@ -24,14 +24,15 @@ import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.VpnAddressDetector
-import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
-import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.core.Version
 import mindustry.game.EventType.ConnectPacketEvent
@@ -197,14 +198,12 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     }
 
     // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
-    mono {
-        pipeline.pump(VerificationContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
-    }
-        .publishOn(MindustryScheduler)
-        .subscribe {
-            if (it is VerificationResult.Failure) {
-                con.kick(it.reason, it.time.toMillis())
-                return@subscribe
+    ImperiumScope.MAIN.launch {
+        val result = pipeline.pump(VerificationContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
+        runMindustryThread {
+            if (result is VerificationResult.Failure) {
+                con.kick(result.reason, result.time.toMillis())
+                return@runMindustryThread
             }
 
             // The postponed info is now saved
@@ -233,7 +232,7 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
             } catch (error: Throwable) {
                 con.kick(KickReason.nameEmpty)
                 Log.err(error)
-                return@subscribe
+                return@runMindustryThread
             }
 
             con.player = player
@@ -245,4 +244,5 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
 
             Events.fire(PlayerConnect(player))
         }
+    }
 }

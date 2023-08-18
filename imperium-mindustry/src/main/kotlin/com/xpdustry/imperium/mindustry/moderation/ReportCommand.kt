@@ -19,6 +19,7 @@ package com.xpdustry.imperium.mindustry.moderation
 
 import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -26,11 +27,9 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.RateLimiter
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.logger
-import com.xpdustry.imperium.common.misc.then
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.moderation.ReportMessage
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
 import com.xpdustry.imperium.mindustry.misc.playerInfo
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
@@ -44,10 +43,9 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.ArcCollections
-import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.launch
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import reactor.core.publisher.Mono
 import java.net.InetAddress
 import java.time.Duration
 import java.util.function.Function
@@ -89,29 +87,25 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
                     return@MenuOption
                 }
                 view.closeAll()
-                mono {
-                    messenger.publish(
-                        ReportMessage(
-                            config.server.name,
-                            view.viewer.playerInfo,
-                            view.state[REPORT_PLAYER]!!.playerInfo,
-                            view.state[REPORT_REASON]!!,
-                            view.state[REPORT_DETAIL],
-                        ),
-                    )
-                }
-                    .publishOn(MindustryScheduler)
-                    .doOnError {
-                        logger.error("An error occurred while sending a report", it)
+                ImperiumScope.MAIN.launch {
+                    try {
+                        messenger.publish(
+                            ReportMessage(
+                                config.server.name,
+                                view.viewer.playerInfo,
+                                view.state[REPORT_PLAYER]!!.playerInfo,
+                                view.state[REPORT_REASON]!!,
+                                view.state[REPORT_DETAIL],
+                            ),
+                        )
+                        view.viewer.sendMessage("[green]Your report has been sent, thank you for your contribution.")
+                    } catch (e: Exception) {
+                        logger.error("An error occurred while sending a report", e)
                         view.viewer.sendMessage(
                             "[scarlet]An error occurred while sending your report, please try again later.",
                         )
                     }
-                    .then {
-                        view.viewer.sendMessage("[green]Your report has been sent, thank you for your contribution.")
-                        Mono.empty<Void>()
-                    }
-                    .subscribe()
+                }
             },
             MenuOption("[orange]No") { it.back(2) },
             MenuOption("[red]Abort") { it.closeAll() },

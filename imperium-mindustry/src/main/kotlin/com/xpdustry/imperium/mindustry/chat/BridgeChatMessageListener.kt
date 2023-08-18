@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.chat
 
-import arc.Core
 import arc.util.Strings
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -43,11 +42,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     override fun onImperiumInit() {
         messenger.subscribe<BridgeChatMessage> {
             if (it.serverName != config.server.name) return@subscribe
-            Core.app.post {
-                Call.sendMessage(
-                    "[coral][[[white]${Iconc.discord}[]][[[orange]${it.senderName}[coral]]:[white] ${it.message}",
-                )
-            }
+            Call.sendMessage(
+                "[coral][[[white]${Iconc.discord}[]][[[orange]${it.senderName}[coral]]:[white] ${it.message}",
+            )
         }
     }
 
