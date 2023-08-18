@@ -25,16 +25,14 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
-import com.xpdustry.imperium.common.misc.switchIfEmpty
-import com.xpdustry.imperium.common.misc.toErrorMono
-import com.xpdustry.imperium.common.misc.toValueMono
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.util.Locale
 
-// So clean!
 class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Translator, ImperiumApplication.Listener {
     private val translator: com.deepl.api.Translator?
     private val cache: Cache<TranslatorKey, String>
@@ -57,49 +55,56 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
             .build()
     }
 
-    override fun onImperiumInit() {
-        sourceLanguages = fetchLanguages(LanguageType.Source).block()!!
-        targetLanguages = fetchLanguages(LanguageType.Target).block()!!
+    override fun onImperiumInit() = runBlocking(ImperiumScope.MAIN.coroutineContext) {
+        sourceLanguages = fetchLanguages(LanguageType.Source)
+        targetLanguages = fetchLanguages(LanguageType.Target)
     }
 
-    override fun translate(text: String, source: Locale, target: Locale): Mono<String> {
+    override suspend fun translate(text: String, source: Locale, target: Locale): TranslatorResult {
         if (source.language == "router" || target.language == "router") {
-            return "router".toValueMono()
+            return TranslatorResult.Success("router")
         }
 
         if (text.isBlank()) {
-            return text.toValueMono()
+            return TranslatorResult.Success(text)
         }
 
         val sourceLocale = findClosestLanguage(LanguageType.Source, source)
-            ?: return UnsupportedLocaleException(source).toErrorMono()
+            ?: return TranslatorResult.UnsupportedLanguage(source)
         val targetLocale = findClosestLanguage(LanguageType.Target, target)
-            ?: return UnsupportedLocaleException(target).toErrorMono()
+            ?: return TranslatorResult.UnsupportedLanguage(target)
 
         if (sourceLocale.language == targetLocale.language) {
-            return text.toValueMono()
+            return TranslatorResult.Success(text)
         }
 
         val key = TranslatorKey(text, sourceLocale, targetLocale)
 
-        return cache.getIfPresent(key).toValueMono().switchIfEmpty {
-            fetchRateLimited()
-                .filter { limited -> limited.not() }
-                .map {
-                    translator!!.translateText(
-                        key.text,
-                        key.source.language,
-                        key.target.toLanguageTag(),
-                        DEFAULT_OPTIONS,
-                    ).text
-                }
-                .doOnNext { cache.put(key, it) }
+        val cached = cache.getIfPresent(key)
+        if (cached != null) {
+            return TranslatorResult.Success(cached)
+        }
+
+        if (fetchRateLimited()) {
+            return TranslatorResult.RateLimited
+        }
+
+        return withContext(ImperiumScope.MAIN.coroutineContext) {
+            val result = try {
+                translator!!
+                    .translateText(key.text, key.source.language, key.target.toLanguageTag(), DEFAULT_OPTIONS)
+                    .text
+            } catch (e: Exception) {
+                return@withContext TranslatorResult.Failure(e)
+            }
+
+            cache.put(key, result)
+            TranslatorResult.Success(result)
         }
     }
 
-    override fun isSupportedLanguage(locale: Locale): Boolean {
-        return findClosestLanguage(LanguageType.Source, locale) != null
-    }
+    override fun isSupportedLanguage(locale: Locale): Boolean =
+        findClosestLanguage(LanguageType.Source, locale) != null
 
     private fun findClosestLanguage(type: LanguageType, locale: Locale): Locale? {
         val languages = when (type) {
@@ -116,11 +121,11 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         }
     }
 
-    private fun fetchLanguages(type: LanguageType): Mono<List<Locale>> = Mono.fromSupplier {
+    private suspend fun fetchLanguages(type: LanguageType) = withContext(ImperiumScope.MAIN.coroutineContext) {
         translator?.getLanguages(type)?.map { Locale.forLanguageTag(it.code) } ?: emptyList()
     }
 
-    private fun fetchRateLimited(): Mono<Boolean> = Mono.fromSupplier {
+    private suspend fun fetchRateLimited() = withContext(ImperiumScope.MAIN.coroutineContext) {
         translator?.usage?.character?.limitReached() ?: true
     }
 

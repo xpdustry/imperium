@@ -15,18 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.translator
+package com.xpdustry.imperium.common.async
 
-import java.util.Locale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 
-interface Translator {
-    suspend fun translate(text: String, source: Locale, target: Locale): TranslatorResult
-    fun isSupportedLanguage(locale: Locale): Boolean
-}
-
-sealed interface TranslatorResult {
-    data class Success(val text: String) : TranslatorResult
-    data class Failure(val exception: Exception) : TranslatorResult
-    data class UnsupportedLanguage(val locale: Locale) : TranslatorResult
-    data object RateLimited : TranslatorResult
+object ImperiumScope {
+    val MAIN = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    val IO = CoroutineScope(Dispatchers.IO + SupervisorJob())
 }
