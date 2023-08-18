@@ -18,23 +18,22 @@
 package com.xpdustry.imperium.mindustry.verification
 
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toValueMono
 import com.xpdustry.imperium.common.network.VpnAddressDetector
 import com.xpdustry.imperium.mindustry.processing.Processor
+import kotlinx.coroutines.reactor.mono
 import reactor.core.publisher.Mono
 
 class VpnVerification(private val provider: VpnAddressDetector) : Processor<VerificationContext, VerificationResult> {
-    override fun process(context: VerificationContext): Mono<VerificationResult> =
-        // TODO: Improve error message
-        provider.isVpnAddress(context.address)
-            .map { vpn ->
-                if (vpn) VerificationResult.Success else VerificationResult.Failure("VPN detected")
-            }
-            .switchIfEmpty(VerificationResult.Success.toValueMono())
-            .onErrorResume {
-                logger.error("Failed to verify the vpn usage for player {} ({})", context.name, context.uuid, it)
-                VerificationResult.Success.toValueMono()
-            }
+    override fun process(context: VerificationContext): Mono<VerificationResult> = mono {
+        val result = provider.isVpnAddress(context.address)
+        if (result is VpnAddressDetector.Result.Success) {
+            return@mono if (result.vpn) VerificationResult.Success else VerificationResult.Failure("VPN detected")
+        }
+        if (result is VpnAddressDetector.Result.Failure) {
+            logger.error("Failed to verify the vpn usage for player {} ({})", context.name, context.uuid, result.exception)
+        }
+        VerificationResult.Success
+    }
 
     companion object {
         private val logger by LoggerDelegate()

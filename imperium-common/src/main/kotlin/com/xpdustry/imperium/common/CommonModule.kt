@@ -26,8 +26,10 @@ import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
+import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.IpHubVpnAddressDetector
+import com.xpdustry.imperium.common.network.SimpleCoroutineHttpClient
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnAddressDetector
 import com.xpdustry.imperium.common.service.AccountService
@@ -57,7 +59,7 @@ fun commonModule() = module("common") {
     }
 
     single<VpnAddressDetector> {
-        IpHubVpnAddressDetector(get())
+        IpHubVpnAddressDetector(get(), get())
     }
 
     single<Messenger> {
@@ -66,6 +68,10 @@ fun commonModule() = module("common") {
 
     single<Storage> {
         MinioStorage(get())
+    }
+
+    single<CoroutineHttpClient> {
+        SimpleCoroutineHttpClient(get("scheduler"))
     }
 
     single {

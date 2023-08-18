@@ -17,9 +17,13 @@
  */
 package com.xpdustry.imperium.common.network
 
-import reactor.core.publisher.Mono
 import java.net.InetAddress
 
 interface VpnAddressDetector {
-    fun isVpnAddress(address: InetAddress): Mono<Boolean>
+    suspend fun isVpnAddress(address: InetAddress): Result
+    sealed interface Result {
+        data class Success(val vpn: Boolean) : Result
+        data class Failure(val exception: Exception) : Result
+        data object RateLimited : Result
+    }
 }

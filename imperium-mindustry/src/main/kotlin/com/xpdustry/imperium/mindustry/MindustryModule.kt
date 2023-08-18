@@ -36,6 +36,7 @@ import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.verification.SimpleVerificationPipeline
 import com.xpdustry.imperium.mindustry.verification.VerificationPipeline
+import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.Vars
 import mindustry.core.Version
@@ -44,6 +45,7 @@ import mindustry.gen.Groups
 import mindustry.net.Administration
 import java.net.InetAddress
 import java.nio.file.Path
+import java.util.concurrent.Executor
 import java.util.function.Supplier
 
 fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
@@ -84,6 +86,10 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
 
     single<ImperiumPluginCommandManager>("server") {
         plugin.serverCommandManager
+    }
+
+    single<Executor>("scheduler") {
+        Executor { runnable -> DistributorProvider.get().pluginScheduler.scheduleAsync(plugin).execute(runnable) }
     }
 
     single<ServerConfig.Mindustry> {

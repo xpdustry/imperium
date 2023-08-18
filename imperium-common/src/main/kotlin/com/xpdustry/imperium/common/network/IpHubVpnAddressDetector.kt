@@ -21,61 +21,47 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
-import com.xpdustry.imperium.common.misc.toErrorMono
-import com.xpdustry.imperium.common.misc.toValueMono
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.net.InetAddress
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
 import java.net.http.HttpResponse
-import java.time.Duration
 
-class IpHubVpnAddressDetector(config: ImperiumConfig) : VpnAddressDetector {
+class IpHubVpnAddressDetector(config: ImperiumConfig, private val http: CoroutineHttpClient) : VpnAddressDetector {
 
     private val token: String? = (config.network.antiVpn as? NetworkConfig.AntiVPN.IpHub)?.token?.value
     private val gson = Gson()
-    private val http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3L)).build()
 
-    override fun isVpnAddress(address: InetAddress): Mono<Boolean> {
+    override suspend fun isVpnAddress(address: InetAddress): VpnAddressDetector.Result {
         if (token == null) {
-            return Mono.empty()
+            return VpnAddressDetector.Result.RateLimited
         }
 
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
-            return false.toValueMono()
+            return VpnAddressDetector.Result.Success(false)
         }
 
-        return Mono.fromSupplier {
-            http.send(
-                HttpRequest.newBuilder()
-                    .uri(
-                        URIBuilder("https://v2.api.iphub.info/ip/${address.hostAddress}")
-                            .addParameter("key", token)
-                            .build(),
-                    )
-                    .timeout(Duration.ofSeconds(3L))
-                    .GET()
-                    .build(),
+        val response = try {
+            http.get(
+                URIBuilder("https://v2.api.iphub.info/ip/${address.hostAddress}").addParameter("key", token).build(),
                 HttpResponse.BodyHandlers.ofString(),
             )
+        } catch (e: Exception) {
+            return VpnAddressDetector.Result.Failure(e)
         }
-            .subscribeOn(Schedulers.boundedElastic())
-            .flatMap {
-                if (it.statusCode() == 429) {
-                    return@flatMap Mono.empty()
-                }
 
-                if (it.statusCode() != 200) {
-                    return@flatMap IllegalStateException("Unexpected status code: " + it.statusCode()).toErrorMono()
-                }
+        if (response.statusCode() == 429) {
+            return VpnAddressDetector.Result.RateLimited
+        }
 
-                // https://iphub.info/api
-                // block: 0 - Residential or business IP (i.e. safe IP)
-                // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
-                // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
-                val json = gson.fromJson(it.body(), JsonObject::class.java)
-                return@flatMap (json["block"].asInt != 1).toValueMono()
-            }
+        if (response.statusCode() != 200) {
+            return VpnAddressDetector.Result.Failure(
+                IllegalStateException("Unexpected status code: ${response.statusCode()}"),
+            )
+        }
+
+        // https://iphub.info/api
+        // block: 0 - Residential or business IP (i.e. safe IP)
+        // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
+        // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
+        val json = gson.fromJson(response.body(), JsonObject::class.java)
+        return VpnAddressDetector.Result.Success(json["block"].asInt != 1)
     }
 }
