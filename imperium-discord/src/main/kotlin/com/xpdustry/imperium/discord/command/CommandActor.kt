@@ -17,35 +17,7 @@
  */
 package com.xpdustry.imperium.discord.command
 
-import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
-import discord4j.core.`object`.entity.Message
-import discord4j.core.`object`.entity.User
-import discord4j.core.spec.EmbedCreateSpec
-import discord4j.core.spec.InteractionFollowupCreateSpec
-import reactor.core.publisher.Mono
+import org.javacord.api.interaction.SlashCommandInteraction
+import org.javacord.api.interaction.callback.InteractionOriginalResponseUpdater
 
-data class CommandActor(val event: ChatInputInteractionEvent) {
-    val name: String get() = event.interaction.user.username
-    val user: User get() = event.interaction.user
-
-    fun reply(message: String, ephemeral: Boolean = false): Mono<Message> =
-        event.createFollowup(
-            InteractionFollowupCreateSpec.builder()
-                .content(message)
-                .ephemeral(ephemeral)
-                .build(),
-        )
-
-    fun reply(block: InteractionFollowupCreateSpec.Builder.() -> Unit): Mono<Message> {
-        val builder = InteractionFollowupCreateSpec.builder()
-        builder.block()
-        return event.createFollowup(builder.build())
-    }
-}
-
-// TODO Implement DSL ?
-fun InteractionFollowupCreateSpec.Builder.addEmbed(block: EmbedCreateSpec.Builder.() -> Unit): InteractionFollowupCreateSpec.Builder {
-    val builder = EmbedCreateSpec.builder()
-    builder.block()
-    return addEmbed(builder.build())
-}
+data class CommandActor(val updater: InteractionOriginalResponseUpdater, val interaction: SlashCommandInteraction)

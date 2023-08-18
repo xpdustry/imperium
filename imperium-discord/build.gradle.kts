@@ -6,12 +6,14 @@ plugins {
 }
 
 dependencies {
+    implementation(projects.imperiumCommon)
+    runtimeOnly(kotlin("stdlib"))
+    implementation(libs.javacord.api)
+    runtimeOnly(libs.javacord.core)
+    runtimeOnly(libs.log4j.to.slf4j)
+    runtimeOnly(libs.slf4j.simple)
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
-    api(projects.imperiumCommon)
-    api(libs.discord4j.core)
-    runtimeOnly(kotlin("stdlib"))
-    runtimeOnly(libs.slf4j.simple)
 }
 
 project.afterEvaluate {
@@ -46,7 +48,9 @@ tasks.shadowJar {
     minimize {
         exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
         exclude(dependency("org.slf4j:slf4j-.*:.*"))
-        exclude(dependency("com.discord4j:discord4j-.*:.*"))
+        exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
+        exclude(dependency("org.javacord:javacord-core:.*"))
+        exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
     }
 }
 

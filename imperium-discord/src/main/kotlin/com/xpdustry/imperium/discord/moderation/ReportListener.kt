@@ -24,15 +24,11 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.capitalize
-import com.xpdustry.imperium.common.misc.switchIfEmpty
-import com.xpdustry.imperium.common.misc.toErrorMono
 import com.xpdustry.imperium.common.moderation.ReportMessage
-import com.xpdustry.imperium.discord.misc.toSnowflake
 import com.xpdustry.imperium.discord.service.DiscordService
-import discord4j.core.`object`.entity.channel.TextChannel
-import discord4j.core.spec.EmbedCreateFields
-import discord4j.core.spec.EmbedCreateSpec
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.future.await
+import org.javacord.api.entity.channel.ServerTextChannel
+import org.javacord.api.entity.message.embed.EmbedBuilder
 
 // TODO Sanitize player names... Mmmh... Sanitize strings in general with an extension function?
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -42,42 +38,17 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
     override fun onImperiumInit() {
         messenger.subscribe<ReportMessage> { report ->
-            getNotificationChannel().flatMap { channel ->
-                channel.createMessage(
-                    EmbedCreateSpec.builder()
-                        .title("Report from ${report.serverName}")
-                        .addField(
-                            EmbedCreateFields.Field.of(
-                                "Sender",
-                                "${report.sender.name} / `${report.sender.uuid}`",
-                                false,
-                            ),
-                        )
-                        .addField(
-                            EmbedCreateFields.Field.of(
-                                "Target",
-                                "${report.target.name} / `${report.target.uuid}`",
-                                false,
-                            ),
-                        )
-                        .addField(
-                            EmbedCreateFields.Field.of(
-                                "Reason",
-                                "${report.reason.name.lowercase().capitalize()} (${report.detail ?: "No detail"})",
-                                false,
-                            ),
-                        )
-                        .build(),
-                )
-            }
-                .subscribe()
+            getNotificationChannel().sendMessage(
+                EmbedBuilder()
+                    .setTitle("Report from ${report.serverName}")
+                    .addField("Sender", "${report.sender.name} / `${report.sender.uuid}`", false)
+                    .addField("Target", "${report.target.name} / `${report.target.uuid}`", false)
+                    .addField("Reason", "${report.reason.name.lowercase().capitalize()} (${report.detail ?: "No detail"})", false),
+            ).await()
         }
     }
 
-    private fun getNotificationChannel(): Mono<TextChannel> = discord.getMainGuild().flatMap { guild ->
-        guild.channels.filter { it is TextChannel && it.id == config.channels.notifications.toSnowflake() }
-            .next()
-            .cast(TextChannel::class.java)
-            .switchIfEmpty { RuntimeException("The notifications channel is not found").toErrorMono() }
-    }
+    private fun getNotificationChannel(): ServerTextChannel = discord.getMainServer()
+        .getTextChannelById(config.channels.notifications)
+        .orElseThrow { RuntimeException("The notifications channel is not found") }
 }

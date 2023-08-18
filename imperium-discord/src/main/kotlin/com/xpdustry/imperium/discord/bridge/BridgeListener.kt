@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.discord.bridge
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -25,21 +26,13 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
-import com.xpdustry.imperium.common.misc.filterAndCast
-import com.xpdustry.imperium.common.misc.switchIfEmpty
-import com.xpdustry.imperium.common.misc.toErrorMono
-import com.xpdustry.imperium.discord.misc.toSnowflake
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.service.DiscordService
-import discord4j.core.event.domain.message.MessageCreateEvent
-import discord4j.core.`object`.entity.channel.Category
-import discord4j.core.`object`.entity.channel.TextChannel
-import discord4j.core.spec.MessageCreateSpec
-import discord4j.core.spec.TextChannelCreateSpec
-import discord4j.rest.util.AllowedMentions
-import kotlinx.coroutines.reactor.mono
-import reactor.core.Disposable
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import org.javacord.api.entity.channel.ChannelCategory
+import org.javacord.api.entity.message.MessageBuilder
+import org.javacord.api.entity.message.mention.AllowedMentionsBuilder
 import kotlin.jvm.optionals.getOrNull
 
 // TODO Discord4j is so ugly, add extensions methods when the codebase will be a little bigger
@@ -49,77 +42,57 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
-        discord.gateway.on(MessageCreateEvent::class.java)
-            .filter { it.message.author.isPresent && !it.message.author.get().isBot }
-            .filterWhen { event ->
-                discord.getMainGuild().map { it.id == event.guildId.getOrNull() }
+        discord.getMainServer().addMessageCreateListener {
+            if (it.message.author.isBotUser) return@addMessageCreateListener
+            val channel = it.channel.asServerTextChannel().getOrNull() ?: return@addMessageCreateListener
+            if (channel.category.getOrNull()?.id == config.categories.liveChat) {
+                ImperiumScope.MAIN.launch {
+                    messenger.publish(BridgeChatMessage(channel.name, it.message.author.name, it.message.content))
+                }
             }
-            .map(MessageCreateEvent::getMessage)
-            .flatMap { message ->
-                message.channel.filterAndCast(TextChannel::class)
-                    .filterWhen { channel ->
-                        getLiveChatCategory().map { category -> channel.categoryId.getOrNull() == category.id }
-                    }
-                    .flatMap { channel ->
-                        mono {
-                            messenger.publish(
-                                BridgeChatMessage(channel.name, message.author.get().username, message.content),
-                            )
-                        }
-                    }
-            }
-            .subscribe()
+        }
 
-        messenger.subscribe<MindustryPlayerMessage.Join> {
-            Flux.just(it).handleMindustryServerMessage()
-        }
-        messenger.subscribe<MindustryPlayerMessage.Quit> {
-            Flux.just(it).handleMindustryServerMessage()
-        }
-        messenger.subscribe<MindustryPlayerMessage.Chat> {
-            Flux.just(it).handleMindustryServerMessage()
-        }
+        messenger.subscribe<MindustryPlayerMessage.Join>(::handleMindustryServerMessage)
+        messenger.subscribe<MindustryPlayerMessage.Quit>(::handleMindustryServerMessage)
+        messenger.subscribe<MindustryPlayerMessage.Chat>(::handleMindustryServerMessage)
     }
 
-    private fun getLiveChatCategory(): Mono<Category> = discord.getMainGuild().flatMap { guild ->
-        guild.channels.filter { it is Category && it.id == config.categories.liveChat.toSnowflake() }
-            .next()
-            .cast(Category::class.java)
-            .switchIfEmpty { RuntimeException("The live chat category is not found").toErrorMono() }
-    }
+    private fun getLiveChatCategory(): ChannelCategory =
+        discord.getMainServer().getChannelCategoryById(config.categories.liveChat).get()
 
-    private fun <M : MindustryPlayerMessage> Flux<M>.handleMindustryServerMessage(): Disposable = flatMap { message ->
-        discord.getMainGuild().flatMap { guild ->
-            guild.channels.filterAndCast(TextChannel::class)
-                .filter { it.name == message.serverName }
-                .filterWhen { channel ->
-                    getLiveChatCategory().map { channel.categoryId.getOrNull() == it.id }
-                }
-                .next()
-                .switchIfEmpty {
-                    getLiveChatCategory().flatMap { category ->
-                        guild.createTextChannel(
-                            TextChannelCreateSpec.builder()
-                                .name(message.serverName)
-                                .parentId(category.id)
-                                .build(),
-                        )
-                    }
-                }
+    private suspend fun handleMindustryServerMessage(message: MindustryPlayerMessage) {
+        val channel = getLiveChatCategory().channels.find { it.name == message.serverName }
+            ?: discord.getMainServer().createTextChannelBuilder()
+                .setCategory(getLiveChatCategory())
+                .setName(message.serverName)
+                .create()
+                .await()
+
+        val text = channel.asServerTextChannel().getOrNull()
+        if (text == null) {
+            logger.error("Channel ${channel.name} (${channel.id}) is not a text channel")
+            return
         }
-            .flatMap {
-                it.createMessage(
-                    MessageCreateSpec.builder()
-                        .content(message.toDiscordMessage())
-                        .allowedMentions(AllowedMentions.suppressAll())
-                        .build(),
-                )
-            }
-    }.subscribe()
+
+        MessageBuilder()
+            .append(message.toDiscordMessage())
+            .setAllowedMentions(NO_MENTIONS)
+            .send(text)
+            .await()
+    }
 
     private fun MindustryPlayerMessage.toDiscordMessage(): String = when (this) {
         is MindustryPlayerMessage.Join -> ":green_square: **${player.name}** has joined the server."
         is MindustryPlayerMessage.Quit -> ":red_square: **${player.name}** has left the server."
         is MindustryPlayerMessage.Chat -> ":blue_square: **${player.name}**: $message"
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
+        private val NO_MENTIONS = AllowedMentionsBuilder()
+            .setMentionEveryoneAndHere(false)
+            .setMentionRoles(false)
+            .setMentionUsers(false)
+            .build()
     }
 }

@@ -40,8 +40,14 @@ import arc.util.io.Reads
 import arc.util.serialization.Base64Coder
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.withContext
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.core.ContentLoader
@@ -62,7 +68,6 @@ import mindustry.world.Tile
 import mindustry.world.WorldContext
 import mindustry.world.blocks.environment.OreBlock
 import mindustry.world.blocks.legacy.LegacyBlock
-import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import java.awt.Graphics2D
 import java.awt.geom.AffineTransform
@@ -119,7 +124,11 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         Vars.state = GameState()
         Core.atlas = TextureAtlas()
 
-        val data = TextureAtlasData(Fi(directory.resolve("sprites/sprites.aatls").toFile()), Fi(directory.resolve("sprites").toFile()), false)
+        val data = TextureAtlasData(
+            Fi(directory.resolve("sprites/sprites.aatls").toFile()),
+            Fi(directory.resolve("sprites").toFile()),
+            false,
+        )
 
         Files.walk(directory.resolve("raw-sprites"))
             .filter { it.extension == "png" }
@@ -268,11 +277,17 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         }
     }
 
-    override fun getSchematic(stream: InputStream): Mono<Schematic> =
-        Mono.fromCallable { getSchematic0(stream) }
-    override fun getSchematic(string: String): Mono<Schematic> =
-        Mono.fromCallable { getSchematic0(ByteArrayInputStream(Base64Coder.decode(string))) }
-    private fun getSchematic0(stream: InputStream): Schematic {
+    override suspend fun getSchematic(stream: InputStream): Result<Schematic> =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            getSchematic0(stream)
+        }
+
+    override suspend fun getSchematic(string: String): Result<Schematic> =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            getSchematic0(ByteArrayInputStream(Base64Coder.decode(string)))
+        }
+
+    private fun getSchematic0(stream: InputStream): Result<Schematic> = runCatching {
         val header = byteArrayOf('m'.code.toByte(), 's'.code.toByte(), 'c'.code.toByte(), 'h'.code.toByte())
         for (b in header) {
             if (stream.read() != b.toInt()) {
@@ -320,155 +335,158 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
                 }
             }
 
-            return Schematic(tiles, map, width.toInt(), height.toInt())
+            Schematic(tiles, map, width.toInt(), height.toInt())
         }
     }
 
-    override fun getSchematicPreview(schematic: Schematic): Mono<BufferedImage> = Mono.fromCallable {
-        if (schematic.width > 64 || schematic.height > 64) {
-            throw IOException("Schematic cannot be larger than 64x64.")
+    override suspend fun getSchematicPreview(schematic: Schematic): Result<BufferedImage> =
+        withContext(SCHEMATIC_PREVIEW_SCOPE.coroutineContext) {
+            runCatching {
+                if (schematic.width > 64 || schematic.height > 64) {
+                    throw IOException("Schematic cannot be larger than 64x64.")
+                }
+
+                val image = BufferedImage(schematic.width * 32, schematic.height * 32, BufferedImage.TYPE_INT_ARGB)
+
+                Draw.reset()
+                val requests = schematic.tiles.map {
+                    BuildPlan(
+                        it.x.toInt(),
+                        it.y.toInt(),
+                        it.rotation.toInt(),
+                        it.block,
+                        it.config,
+                    )
+                }
+
+                currentGraphics = image.createGraphics()
+                currentImage = image
+
+                requests.each {
+                    it.animScale = 1f
+                    it.worldContext = false
+                    it.block.drawPlanRegion(it, requests)
+                    Draw.reset()
+                    it.block.drawPlanConfigTop(it, requests)
+                }
+
+                image
+            }
         }
 
-        val image = BufferedImage(schematic.width * 32, schematic.height * 32, BufferedImage.TYPE_INT_ARGB)
-
-        Draw.reset()
-        val requests = schematic.tiles.map {
-            BuildPlan(
-                it.x.toInt(),
-                it.y.toInt(),
-                it.rotation.toInt(),
-                it.block,
-                it.config,
-            )
-        }
-
-        currentGraphics = image.createGraphics()
-        currentImage = image
-
-        requests.each {
-            it.animScale = 1f
-            it.worldContext = false
-            it.block.drawPlanRegion(it, requests)
-            Draw.reset()
-            it.block.drawPlanConfigTop(it, requests)
-        }
-
-        image
-    }
-        .subscribeOn(schematicScheduler)
-
-    override fun getMapPreview(stream: InputStream): Mono<MapPreview> = Mono.fromCallable {
-        val counter = CounterInputStream(InflaterInputStream(stream))
-        try {
-            DataInputStream(counter).use { stream ->
-                SaveIO.readHeader(stream)
-                val version = stream.readInt()
-                val ver = SaveIO.getSaveWriter(version)
-                val metaOut = arrayOf<StringMap?>(null)
-                ver.region("meta", stream, counter) { metaOut[0] = ver.readStringMap(it) }
-                val meta = metaOut[0]!!
-                val name: String? = meta["name"]
-                val author = meta["author"]
-                val description = meta["description"]
-                val width = meta.getInt("width")
-                val height = meta.getInt("height")
-                val floors = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-                val walls = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
-                val fGraphics = floors.createGraphics()
-                val jColor = java.awt.Color(0, 0, 0, 64)
-                val black = 255
-                val tile: CachedTile = object : CachedTile() {
-                    override fun setBlock(type: Block) {
-                        super.setBlock(type)
-                        val c = MapIO.colorFor(block(), Blocks.air, Blocks.air, team())
-                        if (c != black && c != 0) {
-                            walls.setRGB(x.toInt(), floors.height - 1 - y, conv(c))
-                            fGraphics.color = jColor
-                            fGraphics.drawRect(x.toInt(), floors.height - 1 - y + 1, 1, 1)
+    override suspend fun getMapPreview(stream: InputStream): Result<MapPreview> = runCatching {
+        withContext(MAP_PREVIEW_SCOPE.coroutineContext) {
+            val counter = CounterInputStream(InflaterInputStream(stream))
+            try {
+                DataInputStream(counter).use { stream ->
+                    SaveIO.readHeader(stream)
+                    val version = stream.readInt()
+                    val ver = SaveIO.getSaveWriter(version)
+                    val metaOut = arrayOf<StringMap?>(null)
+                    ver.region("meta", stream, counter) { metaOut[0] = ver.readStringMap(it) }
+                    val meta = metaOut[0]!!
+                    val name: String? = meta["name"]
+                    val author = meta["author"]
+                    val description = meta["description"]
+                    val width = meta.getInt("width")
+                    val height = meta.getInt("height")
+                    val floors = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                    val walls = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                    val fGraphics = floors.createGraphics()
+                    val jColor = java.awt.Color(0, 0, 0, 64)
+                    val black = 255
+                    val tile: CachedTile = object : CachedTile() {
+                        override fun setBlock(type: Block) {
+                            super.setBlock(type)
+                            val c = MapIO.colorFor(block(), Blocks.air, Blocks.air, team())
+                            if (c != black && c != 0) {
+                                walls.setRGB(x.toInt(), floors.height - 1 - y, conv(c))
+                                fGraphics.color = jColor
+                                fGraphics.drawRect(x.toInt(), floors.height - 1 - y + 1, 1, 1)
+                            }
                         }
                     }
-                }
-                ver.region("content", stream, counter) { ver.readContentHeader(it) }
-                ver.region("preview_map", stream, counter) {
-                    ver.readMap(
-                        it,
-                        object : WorldContext {
-                            override fun resize(width: Int, height: Int) = Unit
-                            override fun isGenerating(): Boolean = false
+                    ver.region("content", stream, counter) { ver.readContentHeader(it) }
+                    ver.region("preview_map", stream, counter) {
+                        ver.readMap(
+                            it,
+                            object : WorldContext {
+                                override fun resize(width: Int, height: Int) = Unit
+                                override fun isGenerating(): Boolean = false
 
-                            override fun begin() {
-                                Vars.world.isGenerating = true
-                            }
+                                override fun begin() {
+                                    Vars.world.isGenerating = true
+                                }
 
-                            override fun end() {
-                                Vars.world.isGenerating = false
-                            }
+                                override fun end() {
+                                    Vars.world.isGenerating = false
+                                }
 
-                            override fun onReadBuilding() {
-                                // read team colors
-                                if (tile.build != null) {
-                                    val c = tile.build.team.color.argb8888()
-                                    val size = tile.block().size
-                                    val offsetx = -(size - 1) / 2
-                                    val offsety = -(size - 1) / 2
-                                    for (dx in 0 until size) {
-                                        for (dy in 0 until size) {
-                                            val drawx = tile.x + dx + offsetx
-                                            val drawy = tile.y + dy + offsety
-                                            walls.setRGB(drawx, floors.height - 1 - drawy, c)
+                                override fun onReadBuilding() {
+                                    // read team colors
+                                    if (tile.build != null) {
+                                        val c = tile.build.team.color.argb8888()
+                                        val size = tile.block().size
+                                        val offsetx = -(size - 1) / 2
+                                        val offsety = -(size - 1) / 2
+                                        for (dx in 0 until size) {
+                                            for (dy in 0 until size) {
+                                                val drawx = tile.x + dx + offsetx
+                                                val drawy = tile.y + dy + offsety
+                                                walls.setRGB(drawx, floors.height - 1 - drawy, c)
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                            override fun tile(index: Int): Tile {
-                                tile.x = (index % width).toShort()
-                                tile.y = (index / width).toShort()
-                                return tile
-                            }
-
-                            override fun create(x: Int, y: Int, floorID: Int, overlayID: Int, wallID: Int): Tile {
-                                if (overlayID != 0) {
-                                    floors.setRGB(
-                                        x,
-                                        floors.height - 1 - y,
-                                        conv(
-                                            MapIO.colorFor(
-                                                Blocks.air,
-                                                Blocks.air,
-                                                Vars.content.block(overlayID),
-                                                Team.derelict,
-                                            ),
-                                        ),
-                                    )
-                                } else {
-                                    floors.setRGB(
-                                        x,
-                                        floors.height - 1 - y,
-                                        conv(
-                                            MapIO.colorFor(
-                                                Blocks.air,
-                                                Vars.content.block(floorID),
-                                                Blocks.air,
-                                                Team.derelict,
-                                            ),
-                                        ),
-                                    )
+                                override fun tile(index: Int): Tile {
+                                    tile.x = (index % width).toShort()
+                                    tile.y = (index / width).toShort()
+                                    return tile
                                 }
-                                return tile
-                            }
-                        },
-                    )
+
+                                override fun create(x: Int, y: Int, floorID: Int, overlayID: Int, wallID: Int): Tile {
+                                    if (overlayID != 0) {
+                                        floors.setRGB(
+                                            x,
+                                            floors.height - 1 - y,
+                                            conv(
+                                                MapIO.colorFor(
+                                                    Blocks.air,
+                                                    Blocks.air,
+                                                    Vars.content.block(overlayID),
+                                                    Team.derelict,
+                                                ),
+                                            ),
+                                        )
+                                    } else {
+                                        floors.setRGB(
+                                            x,
+                                            floors.height - 1 - y,
+                                            conv(
+                                                MapIO.colorFor(
+                                                    Blocks.air,
+                                                    Vars.content.block(floorID),
+                                                    Blocks.air,
+                                                    Team.derelict,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                    return tile
+                                }
+                            },
+                        )
+                    }
+                    fGraphics.drawImage(walls, 0, 0, null)
+                    fGraphics.dispose()
+                    MapPreview(name, description, author, width, height, meta.associate { it.key to it.value }, floors)
                 }
-                fGraphics.drawImage(walls, 0, 0, null)
-                fGraphics.dispose()
-                MapPreview(name, description, author, width, height, meta.associate { it.key to it.value }, floors)
+            } finally {
+                Vars.content.setTemporaryMapper(null)
             }
-        } finally {
-            Vars.content.setTemporaryMapper(null)
         }
     }
-        .subscribeOn(mapScheduler)
 
     private fun getImage(name: String): BufferedImage = regions[
         name, {
@@ -499,7 +517,10 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         return Color(rgba).argb8888()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     companion object {
         private val logger by LoggerDelegate()
+        private val SCHEMATIC_PREVIEW_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+        private val MAP_PREVIEW_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
     }
 }

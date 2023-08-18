@@ -28,7 +28,8 @@ import com.xpdustry.imperium.common.misc.LimitedList
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.command.Command
 import com.xpdustry.imperium.discord.command.CommandActor
-import com.xpdustry.imperium.discord.command.addEmbed
+import kotlinx.coroutines.future.await
+import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.time.Instant
 import java.util.Queue
 
@@ -46,12 +47,12 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command("list")
-    fun onServerList(actor: CommandActor) = actor.reply {
-        addEmbed {
-            title("Server List")
-            description(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName })
-        }
-    }
+    suspend fun onServerList(actor: CommandActor) =
+        actor.updater.addEmbed(
+            EmbedBuilder()
+                .setTitle("Server List")
+                .setDescription(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName }),
+        ).update().await()
 
     data class PlayerJoinEntry(val player: PlayerInfo, val timestamp: Instant = Instant.now())
 }

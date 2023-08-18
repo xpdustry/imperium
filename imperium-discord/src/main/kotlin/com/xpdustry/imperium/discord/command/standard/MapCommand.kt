@@ -26,5 +26,5 @@ import com.xpdustry.imperium.discord.command.CommandActor
 @Command("map")
 class MapCommand(private val database: Database, private val storage: Storage) : ImperiumApplication.Listener {
     @Command("submit")
-    fun onMapCommand(actor: CommandActor) = actor.reply("Map!")
+    fun onMapCommand(actor: CommandActor) = actor.updater.setContent("Map!").update()
 }

@@ -18,22 +18,26 @@
 package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.service.DiscordService
-import discord4j.core.event.domain.interaction.ChatInputInteractionEvent
-import discord4j.core.`object`.command.ApplicationCommandInteractionOptionValue
-import discord4j.core.`object`.command.ApplicationCommandOption
-import discord4j.core.`object`.entity.Attachment
-import discord4j.core.`object`.entity.User
-import discord4j.core.`object`.entity.channel.Channel
-import discord4j.discordjson.json.ApplicationCommandOptionData
-import discord4j.discordjson.json.ApplicationCommandRequest
-import discord4j.discordjson.json.ImmutableApplicationCommandOptionData
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import org.javacord.api.entity.Attachment
+import org.javacord.api.entity.channel.ServerChannel
+import org.javacord.api.entity.user.User
+import org.javacord.api.interaction.SlashCommandBuilder
+import org.javacord.api.interaction.SlashCommandInteractionOption
+import org.javacord.api.interaction.SlashCommandOption
+import org.javacord.api.interaction.SlashCommandOptionBuilder
+import org.javacord.api.interaction.SlashCommandOptionType
 import reactor.core.publisher.Mono
 import java.util.function.Consumer
+import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
+import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 
@@ -49,32 +53,20 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         registerHandler(Int::class, INT_TYPE_HANDLER)
         registerHandler(Boolean::class, BOOLEAN_TYPE_HANDLER)
         registerHandler(User::class, USER_TYPE_HANDLER)
-        registerHandler(Channel::class, CHANNEL_TYPE_HANDLER)
+        registerHandler(ServerChannel::class, CHANNEL_TYPE_HANDLER)
         registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
     }
 
     override fun onImperiumInit() {
         containers.forEach(::register0)
         compile()
-        discord.gateway
-            .on(ChatInputInteractionEvent::class.java)
-            .flatMap { it.deferReply().withEphemeral(true).thenReturn(it) }
-            .flatMap { event ->
-                var node = tree.resolve(listOf(event.commandName))
-                var options = event.options
-                while (options.size == 1 &&
-                    (
-                        options[0].type == ApplicationCommandOption.Type.SUB_COMMAND ||
-                            options[0].type == ApplicationCommandOption.Type.SUB_COMMAND_GROUP
-                        )
-                ) {
-                    node = node.resolve(listOf(options[0].name))
-                    options = options[0].options
-                }
-
+        discord.api.addSlashCommandCreateListener {
+            ImperiumScope.MAIN.launch {
+                val updater = it.slashCommandInteraction.respondLater(true).await()
+                val node = tree.resolve(it.slashCommandInteraction.fullCommandName.split(" "))
                 val command = node.edge!!
-                val actor = CommandActor(event)
-                Mono.fromCallable {
+                val actor = CommandActor(updater, it.slashCommandInteraction)
+                val arguments = try {
                     command.function.parameters.associateWith { parameter ->
                         if (parameter.index == 0) {
                             return@associateWith command.container
@@ -85,32 +77,31 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                         }
 
                         val argument = command.arguments.find { it.name == parameter.name!! }!!
-                        val option = options.find { it.name == parameter.name!! }
-                        if (option == null || option.value.isEmpty) {
-                            if (argument.optional) {
-                                return@associateWith null
-                            }
+                        val option = it.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
+                            ?.let { argument.handler.parse(it) }
+
+                        if (option == null && !argument.optional) {
                             throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
                         }
 
-                        argument.handler.parse(option.value.get())
+                        option
                     }
+                } catch (e: Exception) {
+                    logger.error("Error while parsing arguments for command ${node.fullName}", it)
+                    updater.setContent(":warning: **An unexpected error occurred while parsing your command.**")
+                        .update().await()
+                    return@launch
                 }
-                    .onErrorResume {
-                        logger.error("Error while parsing arguments for command ${node.fullName}", it)
-                        actor.reply(":warning: **An unexpected error occurred while parsing your command.**")
-                            .then(Mono.empty())
-                    }
-                    .flatMap { arguments ->
-                        Mono.defer { command.function.callBy(arguments).then() }
-                            .onErrorResume {
-                                logger.error("Error while executing command ${node.fullName}", it)
-                                actor.reply(":warning: **An unexpected error occurred while executing your command.**")
-                                    .then()
-                            }
-                    }
+
+                try {
+                    command.function.callSuspendBy(arguments)
+                } catch (e: Exception) {
+                    logger.error("Error while executing command ${node.fullName}", it)
+                    updater.setContent(":warning: **An unexpected error occurred while executing your command.**")
+                        .update().await()
+                }
             }
-            .subscribe()
+        }
     }
 
     override fun register(container: Any) {
@@ -125,8 +116,8 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         for (function in container::class.memberFunctions) {
             val local = function.findAnnotation<Command>()?.apply(Command::validate) ?: continue
 
-            if (function.returnType.classifier != Mono::class) {
-                throw IllegalArgumentException("$function must return a Mono")
+            if (!function.isSuspend) {
+                throw IllegalArgumentException("$function must be suspend")
             }
 
             val arguments = mutableListOf<CommandEdge.Argument>()
@@ -172,11 +163,11 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
     }
 
     private fun compile() {
-        val compiled = mutableListOf<ApplicationCommandRequest>()
+        val compiled = mutableSetOf<SlashCommandBuilder>()
         for (entry in tree.children) {
-            val builder = ApplicationCommandRequest.builder()
-                .name(entry.key)
-                .description("No description.")
+            val builder = SlashCommandBuilder()
+                .setName(entry.key)
+                .setDescription("No description.")
 
             for (child in entry.value.children.values) {
                 compile(builder::addOption, child)
@@ -186,30 +177,27 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 compile(builder::addOption, entry.value.edge!!)
             }
 
-            compiled.add(builder.build())
+            compiled.add(builder)
         }
 
-        discord.gateway.restClient.applicationService.bulkOverwriteGuildApplicationCommand(
-            discord.gateway.restClient.applicationId.block()!!,
-            discord.getMainGuild().block()!!.id.asLong(),
-            compiled,
-        )
-            .collectList()
-            .block()
+        discord.api.bulkOverwriteServerApplicationCommands(discord.getMainServer(), compiled).join()
     }
 
-    private fun compile(options: Consumer<ApplicationCommandOptionData>, node: CommandNode) {
-        val builder = ApplicationCommandOptionData.builder()
-            .name(node.name)
-            .description("No description.")
-            .type(
-                when (node.type) {
-                    CommandNode.Type.COMMAND -> 0
-                    CommandNode.Type.SUB_COMMAND_GROUP -> ApplicationCommandOption.Type.SUB_COMMAND_GROUP.value
-                    CommandNode.Type.SUB_COMMAND -> ApplicationCommandOption.Type.SUB_COMMAND.value
-                    CommandNode.Type.ROOT -> throw IllegalStateException("Root node cannot be compiled.")
-                },
-            )
+    private fun compile(options: Consumer<SlashCommandOption>, node: CommandNode) {
+        val builder = SlashCommandOptionBuilder()
+            .setName(node.name)
+            .setDescription("No description.")
+
+        val type = when (node.type) {
+            CommandNode.Type.COMMAND -> null
+            CommandNode.Type.SUB_COMMAND_GROUP -> SlashCommandOptionType.SUB_COMMAND_GROUP
+            CommandNode.Type.SUB_COMMAND -> SlashCommandOptionType.SUB_COMMAND
+            CommandNode.Type.ROOT -> throw IllegalStateException("Root node cannot be compiled.")
+        }
+
+        if (type != null) {
+            builder.setType(type)
+        }
 
         for (child in node.children.values) {
             compile(builder::addOption, child)
@@ -222,14 +210,14 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         options.accept(builder.build())
     }
 
-    private fun compile(options: Consumer<ApplicationCommandOptionData>, edge: CommandEdge) {
+    private fun compile(options: Consumer<SlashCommandOption>, edge: CommandEdge) {
         for (parameter in edge.arguments) {
             options.accept(
-                ApplicationCommandOptionData.builder()
-                    .name(parameter.name)
-                    .description("No description.")
-                    .required(!parameter.optional)
-                    .type(parameter.handler.type.value)
+                SlashCommandOptionBuilder()
+                    .setName(parameter.name)
+                    .setDescription("No description.")
+                    .setRequired(!parameter.optional)
+                    .setType(parameter.handler.type)
                     .build(),
             )
         }
@@ -292,35 +280,35 @@ private data class CommandEdge(val container: Any, val function: KFunction<Mono<
     data class Argument(val name: String, val optional: Boolean, val handler: TypeHandler<*>)
 }
 
-private abstract class TypeHandler<T : Any>(val type: ApplicationCommandOption.Type) {
-    abstract fun parse(option: ApplicationCommandInteractionOptionValue): T
-    open fun apply(builder: ImmutableApplicationCommandOptionData.Builder, annotation: KAnnotatedElement) = Unit
+private abstract class TypeHandler<T : Any>(val type: SlashCommandOptionType) {
+    abstract fun parse(option: SlashCommandInteractionOption): T?
+    open fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) = Unit
 }
 
-private val STRING_TYPE_HANDLER = object : TypeHandler<String>(ApplicationCommandOption.Type.STRING) {
-    override fun parse(option: ApplicationCommandInteractionOptionValue): String = option.asString()
+private val STRING_TYPE_HANDLER = object : TypeHandler<String>(SlashCommandOptionType.STRING) {
+    override fun parse(option: SlashCommandInteractionOption) = option.stringValue.getOrNull()
 }
 
-private val INT_TYPE_HANDLER = object : TypeHandler<Int>(ApplicationCommandOption.Type.INTEGER) {
-    override fun parse(option: ApplicationCommandInteractionOptionValue): Int = option.asLong().toInt()
-    override fun apply(builder: ImmutableApplicationCommandOptionData.Builder, annotation: KAnnotatedElement) {
-        builder.maxValue(Int.MAX_VALUE.toDouble())
-        builder.minValue(Int.MIN_VALUE.toDouble())
+private val INT_TYPE_HANDLER = object : TypeHandler<Int>(SlashCommandOptionType.LONG) {
+    override fun parse(option: SlashCommandInteractionOption) = option.longValue.getOrNull()?.toInt()
+    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+        builder.setLongMinValue(Int.MAX_VALUE.toLong())
+        builder.setLongMaxValue(Int.MIN_VALUE.toLong())
     }
 }
 
-private val BOOLEAN_TYPE_HANDLER = object : TypeHandler<Boolean>(ApplicationCommandOption.Type.BOOLEAN) {
-    override fun parse(option: ApplicationCommandInteractionOptionValue): Boolean = option.asBoolean()
+private val BOOLEAN_TYPE_HANDLER = object : TypeHandler<Boolean>(SlashCommandOptionType.BOOLEAN) {
+    override fun parse(option: SlashCommandInteractionOption) = option.booleanValue.getOrNull()
 }
 
-private val USER_TYPE_HANDLER = object : TypeHandler<User>(ApplicationCommandOption.Type.USER) {
-    override fun parse(option: ApplicationCommandInteractionOptionValue): User = option.asUser().block()!!
+private val USER_TYPE_HANDLER = object : TypeHandler<User>(SlashCommandOptionType.USER) {
+    override fun parse(option: SlashCommandInteractionOption) = option.userValue.getOrNull()
 }
 
-private val CHANNEL_TYPE_HANDLER = object : TypeHandler<Channel>(ApplicationCommandOption.Type.CHANNEL) {
-    override fun parse(option: ApplicationCommandInteractionOptionValue): Channel = option.asChannel().block()!!
+private val CHANNEL_TYPE_HANDLER = object : TypeHandler<ServerChannel>(SlashCommandOptionType.CHANNEL) {
+    override fun parse(option: SlashCommandInteractionOption) = option.channelValue.getOrNull()
 }
 
-private val ATTACHMENT_TYPE_HANDLER = object : TypeHandler<Attachment>(ApplicationCommandOption.Type.ATTACHMENT) {
-    override fun parse(option: ApplicationCommandInteractionOptionValue): Attachment = option.asAttachment()
+private val ATTACHMENT_TYPE_HANDLER = object : TypeHandler<Attachment>(SlashCommandOptionType.ATTACHMENT) {
+    override fun parse(option: SlashCommandInteractionOption) = option.attachmentValue.getOrNull()
 }

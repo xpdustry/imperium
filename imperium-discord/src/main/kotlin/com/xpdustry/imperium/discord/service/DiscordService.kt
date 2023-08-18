@@ -19,34 +19,40 @@ package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.misc.switchIfEmpty
-import com.xpdustry.imperium.common.misc.toErrorMono
-import discord4j.core.DiscordClient
-import discord4j.core.GatewayDiscordClient
-import discord4j.core.`object`.entity.Guild
-import reactor.core.publisher.Mono
+import org.javacord.api.DiscordApi
+import org.javacord.api.DiscordApiBuilder
+import org.javacord.api.entity.intent.Intent
+import org.javacord.api.entity.server.Server
+import java.util.concurrent.TimeUnit
 
 interface DiscordService {
-    val gateway: GatewayDiscordClient
-    fun getMainGuild(): Mono<Guild>
+    val api: DiscordApi
+    fun getMainServer(): Server
 }
 
 class SimpleDiscordService(private val config: ServerConfig.Discord) : DiscordService, ImperiumApplication.Listener {
-    override lateinit var gateway: GatewayDiscordClient
+    override lateinit var api: DiscordApi
 
     override fun onImperiumInit() {
-        gateway = DiscordClient.builder(config.token.value)
-            .build()
-            .gateway()
+        api = DiscordApiBuilder()
+            .setToken(config.token.value)
+            .setUserCacheEnabled(true)
+            .addIntents(
+                Intent.MESSAGE_CONTENT,
+                Intent.GUILDS,
+                Intent.GUILD_MEMBERS,
+                Intent.GUILD_MESSAGES,
+                Intent.GUILD_MESSAGE_REACTIONS,
+                Intent.DIRECT_MESSAGES,
+            )
             .login()
-            .block()!!
+            .orTimeout(15L, TimeUnit.SECONDS)
+            .join()
     }
 
-    override fun getMainGuild(): Mono<Guild> = gateway.guilds.next().switchIfEmpty {
-        IllegalStateException("Main guild not found").toErrorMono()
-    }
+    override fun getMainServer(): Server = api.servers.first()
 
     override fun onImperiumExit() {
-        gateway.logout().block()
+        api.disconnect().orTimeout(15L, TimeUnit.SECONDS).join()
     }
 }
