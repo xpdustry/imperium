@@ -25,6 +25,7 @@ import com.google.common.cache.RemovalNotification
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -34,7 +35,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 import kotlin.random.Random
@@ -44,6 +44,7 @@ class SimpleDiscovery(
     private val messenger: Messenger,
     private val metadata: ImperiumMetadata,
     private val mindustryServerProvider: Supplier<MindustryServerInfo?>,
+    private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
 
     override val servers: List<ServerInfo> get() = this._servers.asMap().values.toList()
@@ -59,11 +60,16 @@ class SimpleDiscovery(
         logger.debug("Starting discovery as {}", metadata.identifier)
 
         messenger.subscribe<DiscoveryMessage> {
+            if (it.info.serverName == config.server.name) {
+                logger.warn("Received discovery message from another server with the same name.")
+                return@subscribe
+            }
+
             if (it.type === DiscoveryMessage.Type.DISCOVER) {
                 logger.trace("Received discovery message from {}", it.info.metadata.identifier)
-                this._servers.put(it.info.metadata.identifier, it.info)
+                this._servers.put(it.info.metadata.identifier.toString(), it.info)
             } else if (it.type === DiscoveryMessage.Type.UN_DISCOVER) {
-                this._servers.invalidate(it.info.metadata.identifier)
+                this._servers.invalidate(it.info.metadata.identifier.toString())
                 logger.debug("Undiscovered server {}", it.info.metadata.identifier)
             } else {
                 logger.warn("Received unknown discovery message type {}", it.type)
@@ -84,9 +90,9 @@ class SimpleDiscovery(
     }
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
-        logger.trace("Sending {} discovery message", type.name.lowercase(Locale.ROOT))
+        logger.trace("Sending {} discovery message", type.name)
         try {
-            messenger.publish(DiscoveryMessage(ServerInfo(metadata, mindustryServerProvider.get()), type))
+            messenger.publish(DiscoveryMessage(ServerInfo(config.server.name, metadata, mindustryServerProvider.get()), type))
         } catch (e: Exception) {
             logger.error("Failed to send discovery message (type: {})", type, e)
         }

@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.network
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 
 data class ServerInfo(
+    val serverName: String,
     val metadata: ImperiumMetadata,
     val mindustry: MindustryServerInfo?,
 )

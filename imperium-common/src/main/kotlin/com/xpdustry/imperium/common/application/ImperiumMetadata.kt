@@ -21,8 +21,7 @@ import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.util.UUID
 
 data class ImperiumMetadata(
-    val name: String = "unknown",
     val platform: ImperiumPlatform = ImperiumPlatform.UNKNOWN,
     val version: ImperiumVersion = ImperiumVersion(1, 1, 1),
-    val identifier: String = "$name-${UUID.randomUUID()}",
+    val identifier: UUID = UUID.randomUUID(),
 )

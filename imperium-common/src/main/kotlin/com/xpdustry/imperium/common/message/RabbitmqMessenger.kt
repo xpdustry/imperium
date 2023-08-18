@@ -84,7 +84,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
             }
         }
 
-        connection = factory.newConnection(metadata.identifier)
+        connection = factory.newConnection(metadata.identifier.toString())
         channel = connection.createChannel()
         channel.exchangeDeclare(IMPERIUM_EXCHANGE, BuiltinExchangeType.DIRECT, false, true, null)
     }
@@ -146,7 +146,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
             val sender = properties.headers[SENDER_HEADER]?.toString()
             if (sender == null) {
                 logger.warn("Received message without sender header from $envelope of type ${type.jvmName}")
-            } else if (sender == metadata.identifier) {
+            } else if (sender == metadata.identifier.toString()) {
                 return
             } else if (body.isEmpty()) {
                 logger.warn("Received empty message from $sender of type ${type.jvmName}")
