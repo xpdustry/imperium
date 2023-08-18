@@ -17,12 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.verification
 
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toValueFlux
-import com.xpdustry.imperium.common.misc.toValueMono
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import java.time.Duration
 
@@ -34,24 +33,28 @@ data class VerificationContext(
 )
 
 sealed interface VerificationResult {
-    object Success : VerificationResult
+    data object Success : VerificationResult
     data class Failure(val reason: String, val time: Duration = Duration.ZERO) : VerificationResult
 }
 
 interface VerificationPipeline : ProcessorPipeline<VerificationContext, VerificationResult>
 
 class SimpleVerificationPipeline : VerificationPipeline, AbstractProcessorPipeline<VerificationContext, VerificationResult>() {
-    override fun build(context: VerificationContext): Mono<VerificationResult> =
-        processors.toValueFlux()
-            .flatMapSequential {
-                Mono.defer { it.process(context) }
-                    .onErrorResume { error ->
-                        logger.error("Error while verifying player ${context.name}", error)
-                        VerificationResult.Success.toValueMono()
-                    }
+    override suspend fun pump(context: VerificationContext) = withContext(ImperiumScope.MAIN.coroutineContext) {
+        for (processor in processors) {
+            val result = try {
+                processor.process(context)
+            } catch (error: Exception) {
+                logger.error("Error while verifying player ${context.name}", error)
+                VerificationResult.Success
             }
-            .takeUntil { it is VerificationResult.Failure }
-            .last(VerificationResult.Success)
+            if (result is VerificationResult.Failure) {
+                return@withContext result
+            }
+        }
+
+        VerificationResult.Success
+    }
 
     companion object {
         private val logger by LoggerDelegate()

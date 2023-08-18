@@ -20,12 +20,12 @@ package com.xpdustry.imperium.mindustry.verification
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.misc.toValueMono
 import com.xpdustry.imperium.mindustry.processing.Processor
-import reactor.core.publisher.Mono
+import kotlinx.coroutines.reactor.awaitSingle
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 
 class PunishmentVerification(private val database: Database) : Processor<VerificationContext, VerificationResult> {
-    override fun process(context: VerificationContext): Mono<VerificationResult> =
+    override suspend fun process(context: VerificationContext): VerificationResult =
         database.punishments
             .findAllByTargetAddress(context.address)
             .filter { it.expired.not() }
@@ -47,6 +47,7 @@ class PunishmentVerification(private val database: Database) : Processor<Verific
                 )
             }
             .switchIfEmpty(VerificationResult.Success.toValueMono())
+            .awaitSingle()
 }
 
 private fun formatDuration(duration: Duration?): String = when {

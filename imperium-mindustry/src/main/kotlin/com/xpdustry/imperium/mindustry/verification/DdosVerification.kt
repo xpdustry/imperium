@@ -21,24 +21,22 @@ import com.google.common.net.InetAddresses
 import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toErrorMono
-import com.xpdustry.imperium.common.misc.toValueMono
+import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.mindustry.processing.Processor
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 import java.io.IOException
-import java.io.InputStreamReader
 import java.net.InetAddress
 import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
-import java.time.Duration
-import java.util.stream.Collectors
+import java.net.http.HttpResponse.BodyHandlers
+import kotlin.time.Duration.Companion.seconds
 
 private val PROVIDERS = listOf<AddressProvider>(
     AzureAddressProvider(),
@@ -48,35 +46,37 @@ private val PROVIDERS = listOf<AddressProvider>(
     OracleCloudAddressProvider(),
 )
 
-class DdosVerification : Processor<VerificationContext, VerificationResult> {
+class DdosVerification(private val http: CoroutineHttpClient) : Processor<VerificationContext, VerificationResult> {
 
-    private val addresses = Mono.fromRunnable<Void> {
-        logger.info("Fetching addresses from {} cloud providers", PROVIDERS.size)
+    private val addresses: Deferred<Set<InetAddress>> = ImperiumScope.MAIN.async(start = CoroutineStart.LAZY) {
+        fetchAddresses()
     }
-        .thenMany(Flux.fromIterable(PROVIDERS))
-        .parallel()
-        .runOn(Schedulers.parallel())
-        .flatMap { provider ->
-            provider.fetchAddresses()
-                .onErrorResume { error ->
-                    logger.error("Failed to fetch addresses for cloud provider '{}'", provider.name, error)
-                    emptyList<InetAddress>().toValueMono()
-                }
-                .doOnNext { result ->
-                    logger.debug("Found {} addresses for cloud provider '{}'", result.size, provider.name)
-                }
-        }
-        .flatMap { Flux.fromIterable(it) }
-        .sequential()
-        .collect(Collectors.toUnmodifiableSet())
-        .cache(Duration.ofDays(1L))
 
-    override fun process(context: VerificationContext): Mono<VerificationResult> = addresses.map {
-        if (it.contains(context.address)) {
+    override suspend fun process(context: VerificationContext): VerificationResult {
+        return if (addresses.await().contains(context.address)) {
             VerificationResult.Failure("You address has been marked by our anti-VPN system. Please disable it.")
         } else {
             VerificationResult.Success
         }
+    }
+
+    private suspend fun fetchAddresses(): Set<InetAddress> = withContext(ImperiumScope.IO.coroutineContext) {
+        logger.info("Fetching addresses from {} cloud providers", PROVIDERS.size)
+        PROVIDERS
+            .map { provider ->
+                async {
+                    try {
+                        val result = provider.fetchAddresses(http)
+                        logger.debug("Found {} addresses for cloud provider '{}'", result.size, provider.name)
+                        result
+                    } catch (e: Exception) {
+                        logger.error("Failed to fetch addresses for cloud provider '{}'", provider.name, e)
+                        emptyList()
+                    }
+                }
+            }
+            .awaitAll()
+            .flatMapTo(mutableSetOf()) { it }
     }
 
     companion object {
@@ -86,44 +86,29 @@ class DdosVerification : Processor<VerificationContext, VerificationResult> {
 
 private interface AddressProvider {
     val name: String
-    fun fetchAddresses(): Mono<List<InetAddress>>
+    suspend fun fetchAddresses(http: CoroutineHttpClient): List<InetAddress>
 }
 
 private abstract class JsonAddressProvider protected constructor(override val name: String) : AddressProvider {
 
-    override fun fetchAddresses(): Mono<List<InetAddress>> = fetchUri()
-        .map {
-            HTTP.send(
-                HttpRequest.newBuilder()
-                    .uri(it)
-                    .timeout(Duration.ofSeconds(10L))
-                    .GET()
-                    .build(),
-                HttpResponse.BodyHandlers.ofInputStream(),
-            )
-        }
-        .flatMap {
-            if (it.statusCode() != 200) {
-                return@flatMap IOException(
-                    "Failed to download '$name' public addresses file (status-code: ${it.statusCode()}, url: ${it.uri()}).",
-                ).toErrorMono()
-            }
-            InputStreamReader(it.body(), StandardCharsets.UTF_8).use { reader ->
-                extractAddresses(GSON.fromJson(reader, JsonObject::class.java)).toValueMono()
-            }
-        }
-        .subscribeOn(Schedulers.boundedElastic())
+    override suspend fun fetchAddresses(http: CoroutineHttpClient): List<InetAddress> {
+        val response = http.get(fetchUri(), BodyHandlers.ofInputStream(), timeout = 10.seconds)
 
-    protected abstract fun fetchUri(): Mono<URI>
+        if (response.statusCode() != 200) {
+            throw IOException("Failed to download '$name' public addresses file (status-code: ${response.statusCode()}, uri: ${response.uri()}).")
+        }
+
+        return response.body().reader().use { reader ->
+            extractAddresses(GSON.fromJson(reader, JsonObject::class.java))
+        }
+    }
+
+    protected abstract suspend fun fetchUri(): URI
 
     protected abstract fun extractAddresses(json: JsonObject): List<InetAddress>
 
     companion object {
         private val GSON = Gson()
-        private val HTTP = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(5L))
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build()
     }
 }
 
@@ -133,8 +118,8 @@ private fun toInetAddressWithoutMask(string: String): InetAddress {
 
 private class AzureAddressProvider : JsonAddressProvider("Azure") {
 
-    // This goofy aaah hacky code 💀
-    override fun fetchUri(): Mono<URI> = Mono.fromCallable {
+    // This goofy aah hacky code 💀
+    override suspend fun fetchUri(): URI = withContext(Dispatchers.IO) {
         Jsoup.connect(AZURE_PUBLIC_ADDRESSES_DOWNLOAD_LINK)
             .get()
             .select("a[href*=download.microsoft.com]")
@@ -148,9 +133,7 @@ private class AzureAddressProvider : JsonAddressProvider("Azure") {
         .map(JsonElement::getAsJsonObject)
         .filter { it["name"].asString == "AzureCloud" }
         .map { it["properties"].asJsonObject["addressPrefixes"].asJsonArray }
-        .flatMap { array ->
-            array.asList().map { toInetAddressWithoutMask(it.asString) }
-        }
+        .flatMap { array -> array.asList().map { toInetAddressWithoutMask(it.asString) } }
 
     companion object {
         private const val AZURE_PUBLIC_ADDRESSES_DOWNLOAD_LINK =
@@ -159,21 +142,18 @@ private class AzureAddressProvider : JsonAddressProvider("Azure") {
 }
 
 private class GithubActionsAddressProvider : JsonAddressProvider("Github Actions") {
-
-    override fun fetchUri(): Mono<URI> = Mono.just(GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK)
+    override suspend fun fetchUri(): URI = GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> =
         json["actions"].asJsonArray.asList().map { toInetAddressWithoutMask(it.asString) }
 
     companion object {
-        private val GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK =
-            URI.create("https://api.github.com/meta")
+        private val GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK = URI("https://api.github.com/meta")
     }
 }
 
 private class AmazonWebServicesAddressProvider : JsonAddressProvider("Amazon Web Services") {
-
-    override fun fetchUri(): Mono<URI> = Mono.just(AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK)
+    override suspend fun fetchUri(): URI = AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> {
         val addresses = mutableSetOf<InetAddress>()
@@ -182,37 +162,32 @@ private class AmazonWebServicesAddressProvider : JsonAddressProvider("Amazon Web
         return addresses.toList()
     }
 
-    private fun parsePrefix(json: JsonObject, name: String, element: String): Collection<InetAddress> {
-        return json[name].asJsonArray.map { toInetAddressWithoutMask(it.asJsonObject[element].asString) }
-    }
+    private fun parsePrefix(json: JsonObject, name: String, element: String): Collection<InetAddress> =
+        json[name].asJsonArray.map { toInetAddressWithoutMask(it.asJsonObject[element].asString) }
 
     companion object {
         private val AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK =
-            URI.create("https://ip-ranges.amazonaws.com/ip-ranges.json")
+            URI("https://ip-ranges.amazonaws.com/ip-ranges.json")
     }
 }
 
 private class GoogleCloudAddressProvider : JsonAddressProvider("Google Cloud") {
-
-    override fun fetchUri(): Mono<URI> = Mono.just(GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK)
+    override suspend fun fetchUri(): URI = GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> =
         json["prefixes"].asJsonArray.map { extractAddress(it.asJsonObject) }
 
     private fun extractAddress(json: JsonObject) =
-        toInetAddressWithoutMask(
-            if (json.has("ipv4Prefix")) json["ipv4Prefix"].asString else json["ipv6Prefix"].asString,
-        )
+        toInetAddressWithoutMask(if (json.has("ipv4Prefix")) json["ipv4Prefix"].asString else json["ipv6Prefix"].asString)
 
     companion object {
         private val GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK =
-            URI.create("https://www.gstatic.com/ipranges/cloud.json")
+            URI("https://www.gstatic.com/ipranges/cloud.json")
     }
 }
 
 private class OracleCloudAddressProvider : JsonAddressProvider("Oracle Cloud") {
-
-    override fun fetchUri(): Mono<URI> = Mono.just(ORACLE_CLOUD_ADDRESSES_DOWNLOAD_LINK)
+    override suspend fun fetchUri(): URI = ORACLE_CLOUD_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> = json["regions"].asJsonArray
         .flatMap { it.asJsonObject["cidrs"].asJsonArray }
@@ -220,6 +195,6 @@ private class OracleCloudAddressProvider : JsonAddressProvider("Oracle Cloud") {
 
     companion object {
         private val ORACLE_CLOUD_ADDRESSES_DOWNLOAD_LINK =
-            URI.create("https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json")
+            URI("https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json")
     }
 }

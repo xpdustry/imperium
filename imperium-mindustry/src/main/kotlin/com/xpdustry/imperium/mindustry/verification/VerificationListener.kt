@@ -27,9 +27,11 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.VpnAddressDetector
 import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
 import fr.xpdustry.distributor.api.util.Priority
+import kotlinx.coroutines.reactor.mono
 import mindustry.Vars
 import mindustry.core.Version
 import mindustry.game.EventType.ConnectPacketEvent
@@ -48,9 +50,10 @@ class VerificationListener(instances: InstanceManager) : ImperiumApplication.Lis
     private val pipeline: VerificationPipeline = instances.get()
     private val database: Database = instances.get()
     private val provider: VpnAddressDetector = instances.get()
+    private val http = instances.get<CoroutineHttpClient>()
 
     override fun onImperiumInit() {
-        pipeline.register("ddos", Priority.HIGH, DdosVerification())
+        pipeline.register("ddos", Priority.HIGH, DdosVerification(http))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientVerification())
         pipeline.register("punishment", Priority.NORMAL, PunishmentVerification(database))
         pipeline.register("vpn", Priority.LOW, VpnVerification(provider))
@@ -194,8 +197,9 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     }
 
     // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
-    pipeline
-        .build(VerificationContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
+    mono {
+        pipeline.pump(VerificationContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
+    }
         .publishOn(MindustryScheduler)
         .subscribe {
             if (it is VerificationResult.Failure) {

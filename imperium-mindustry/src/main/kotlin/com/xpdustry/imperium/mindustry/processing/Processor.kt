@@ -17,8 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.processing
 
-import reactor.core.publisher.Mono
-
 fun interface Processor<I : Any, O : Any> {
-    fun process(context: I): Mono<O>
+    suspend fun process(context: I): O
 }

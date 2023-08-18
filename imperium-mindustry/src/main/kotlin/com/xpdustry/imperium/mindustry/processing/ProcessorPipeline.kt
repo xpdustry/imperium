@@ -18,9 +18,8 @@
 package com.xpdustry.imperium.mindustry.processing
 
 import fr.xpdustry.distributor.api.util.Priority
-import reactor.core.publisher.Mono
 
 interface ProcessorPipeline<I : Any, O : Any> {
     fun register(name: String, priority: Priority = Priority.NORMAL, processor: Processor<I, O>)
-    fun build(context: I): Mono<O>
+    suspend fun pump(context: I): O
 }

@@ -17,42 +17,40 @@
  */
 package com.xpdustry.imperium.mindustry.placeholder
 
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toValueFlux
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.withContext
 import mindustry.gen.Player
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 
 data class PlaceholderContext(val player: Player, val message: String)
 
 interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String>
 
 class SimplePlaceholderManager : PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
-    override fun build(context: PlaceholderContext): Mono<String> =
-        PLACEHOLDER_REGEX.findAll(context.message)
-            .map { it.groupValues[1] }
-            .toSet()
-            .toValueFlux()
-            .parallel()
-            .runOn(Schedulers.parallel())
-            .flatMap { placeholder ->
-                val parts = placeholder.split("_", limit = 2)
-                val processor = processor(parts[0])
-                    ?: return@flatMap Mono.empty()
-                val query = parts.getOrNull(1) ?: ""
-                return@flatMap Mono.defer { processor.process(PlaceholderContext(context.player, query)) }
-                    .onErrorResume { error ->
+    override suspend fun pump(context: PlaceholderContext): String = withContext(ImperiumScope.MAIN.coroutineContext) {
+        PLACEHOLDER_REGEX.findAll(context.message).map { it.groupValues[1] }.toSet()
+            .map { placeholder ->
+                async {
+                    val parts = placeholder.split("_", limit = 2)
+                    val processor = processor(parts[0])
+                        ?: return@async null
+                    val query = parts.getOrNull(1) ?: ""
+                    try {
+                        placeholder to processor.process(PlaceholderContext(context.player, query))
+                    } catch (error: Exception) {
                         logger.error("Failed to process placeholder '{}'", placeholder, error)
-                        Mono.empty()
+                        null
                     }
-                    .map { placeholder to it }
+                }
             }
-            .sequential()
-            .reduce(context.message) { message, result ->
-                message.replace("%${result.first}%", result.second)
-            }
+            .awaitAll()
+            .filterNotNull()
+            .fold(context.message) { message, result -> message.replace("%${result.first}%", result.second) }
+    }
 
     companion object {
         private val logger by LoggerDelegate()

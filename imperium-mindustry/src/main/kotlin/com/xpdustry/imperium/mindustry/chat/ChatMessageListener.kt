@@ -30,6 +30,7 @@ import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
+import kotlinx.coroutines.reactor.mono
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
 import mindustry.gen.Groups
@@ -60,7 +61,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
                 Groups.player.each { target ->
                     if (target.team() != it.sender.player.team()) return@each
-                    pipeline.build(ChatMessageContext(it.sender.player, target, normalized))
+                    mono {
+                        pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
+                    }
                         .publishOn(MindustryScheduler)
                         .subscribe { result ->
                             target.sendMessage(
@@ -83,7 +86,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val normalized: String = Vars.netServer.admins.filterMessage(it.sender.player, it.get("message"))
                     ?: return@handler
 
-                pipeline.build(ChatMessageContext(it.sender.player, target, normalized))
+                mono {
+                    pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
+                }
                     .publishOn(MindustryScheduler)
                     .subscribe { result ->
                         target.sendMessage(
@@ -141,8 +146,9 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
 
     // The null target represents the server, for logging and event purposes
     (Groups.player.toList() + listOf(null)).forEach { target ->
-        pipeline
-            .build(ChatMessageContext(sender, target, filtered))
+        mono {
+            pipeline.pump(ChatMessageContext(sender, target, filtered))
+        }
             .publishOn(MindustryScheduler)
             .subscribe { result ->
                 target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))

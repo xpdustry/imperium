@@ -30,6 +30,7 @@ import com.xpdustry.imperium.mindustry.verification.VerificationPipeline
 import com.xpdustry.imperium.mindustry.verification.VerificationResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
+import kotlinx.coroutines.reactor.awaitSingle
 import mindustry.game.EventType
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -46,7 +47,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         pipeline.register("account", Priority.LOWEST) {
-            service.refresh(PlayerIdentity(it.uuid, it.usid, it.address)).thenReturn(VerificationResult.Success)
+            service.refresh(PlayerIdentity(it.uuid, it.usid, it.address)).thenReturn(VerificationResult.Success).awaitSingle()
         }
     }
 

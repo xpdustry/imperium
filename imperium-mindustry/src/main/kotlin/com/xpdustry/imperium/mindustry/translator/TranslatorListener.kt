@@ -29,7 +29,6 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Players
 import fr.xpdustry.distributor.api.util.Priority
-import kotlinx.coroutines.reactor.mono
 import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.game.EventType.PlayerJoin
 
@@ -40,27 +39,25 @@ class TranslatorListener(instances: InstanceManager) : ImperiumApplication.Liste
 
     override fun onImperiumInit() {
         pipeline.register("translator", Priority.LOW) { context ->
-            mono {
-                val sourceLocale = Players.getLocale(context.sender)
-                val targetLocale = context.target?.let(Players::getLocale) ?: config.language
-                val rawMessage = Strings.stripColors(context.message)
+            val sourceLocale = Players.getLocale(context.sender)
+            val targetLocale = context.target?.let(Players::getLocale) ?: config.language
+            val rawMessage = Strings.stripColors(context.message)
 
-                val result = withTimeoutOrNull(3000L) {
-                    translator.translate(rawMessage, sourceLocale, targetLocale)
-                }
-
-                when (result) {
-                    is TranslatorResult.UnsupportedLanguage -> logger.debug("Warning: The locale {} is not supported by the chat translator", result.locale)
-                    is TranslatorResult.Failure -> logger.error("Failed to translate the message '{}' from {} to {}", rawMessage, sourceLocale, targetLocale, result.exception)
-                    is TranslatorResult.RateLimited -> logger.debug("Warning: The chat translator is rate limited")
-                    null -> logger.error("Failed to translate the message '{}' from {} to {} due to timeout", rawMessage, sourceLocale, targetLocale)
-                    is TranslatorResult.Success -> {
-                        return@mono if (rawMessage == result.text) rawMessage else "${context.message} [lightgray](${result.text})"
-                    }
-                }
-
-                context.message
+            val result = withTimeoutOrNull(3000L) {
+                translator.translate(rawMessage, sourceLocale, targetLocale)
             }
+
+            when (result) {
+                is TranslatorResult.UnsupportedLanguage -> logger.debug("Warning: The locale {} is not supported by the chat translator", result.locale)
+                is TranslatorResult.Failure -> logger.error("Failed to translate the message '{}' from {} to {}", rawMessage, sourceLocale, targetLocale, result.exception)
+                is TranslatorResult.RateLimited -> logger.debug("Warning: The chat translator is rate limited")
+                null -> logger.error("Failed to translate the message '{}' from {} to {} due to timeout", rawMessage, sourceLocale, targetLocale)
+                is TranslatorResult.Success -> {
+                    return@register if (rawMessage == result.text) rawMessage else "${context.message} [lightgray](${result.text})"
+                }
+            }
+
+            context.message
         }
     }
 

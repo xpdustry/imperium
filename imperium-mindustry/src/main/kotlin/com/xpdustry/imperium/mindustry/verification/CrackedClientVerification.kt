@@ -17,9 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.verification
 
-import com.xpdustry.imperium.common.misc.toValueMono
 import com.xpdustry.imperium.mindustry.processing.Processor
-import reactor.core.publisher.Mono
 
 private val CRACKED_CLIENT_USERNAMES = setOf(
     "valve",
@@ -34,7 +32,7 @@ private val CRACKED_CLIENT_USERNAMES = setOf(
 
 // Go figure why but some people are using cracked clients on a free game... Incredible.
 class CrackedClientVerification : Processor<VerificationContext, VerificationResult> {
-    override fun process(context: VerificationContext): Mono<VerificationResult> {
+    override suspend fun process(context: VerificationContext): VerificationResult {
         if (context.name.lowercase() in CRACKED_CLIENT_USERNAMES) {
             return VerificationResult.Failure(
                 """
@@ -43,8 +41,7 @@ class CrackedClientVerification : Processor<VerificationContext, VerificationRes
                 [red]Please, get a legit copy of the game.
                 """.trimIndent(),
             )
-                .toValueMono()
         }
-        return VerificationResult.Success.toValueMono()
+        return VerificationResult.Success
     }
 }

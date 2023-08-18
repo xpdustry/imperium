@@ -21,7 +21,6 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
 import mindustry.gen.Player
-import reactor.core.publisher.Mono
 
 data class ChatMessageContext(
     val sender: Player,
@@ -32,19 +31,18 @@ data class ChatMessageContext(
 interface ChatMessagePipeline : ProcessorPipeline<ChatMessageContext, String>
 
 class SimpleChatMessagePipeline : ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>() {
-    override fun build(context: ChatMessageContext): Mono<String> = build0(context, 0)
-    private fun build0(context: ChatMessageContext, index: Int): Mono<String> {
-        if (index >= processors.size) {
-            return Mono.just(context.message)
-        }
-        return Mono.defer { processors[index].process(context) }
-            .onErrorResume { error ->
+    override suspend fun pump(context: ChatMessageContext): String {
+        var result = context.message
+        for (processor in processors) {
+            result = try {
+                processor.process(context.copy(message = result))
+            } catch (error: Throwable) {
                 logger.error("Error while processing chat message for player ${context.sender.name()}", error)
-                Mono.empty()
+                result
             }
-            .flatMap {
-                if (it.isEmpty()) Mono.empty() else build0(context.copy(message = it), index.inc())
-            }
+            if (result.isEmpty()) break
+        }
+        return result
     }
 
     companion object {
