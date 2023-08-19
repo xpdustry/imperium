@@ -60,12 +60,12 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
     override fun onImperiumInit() {
         containers.forEach(::register0)
         compile()
-        discord.api.addSlashCommandCreateListener {
+        discord.api.addSlashCommandCreateListener { event ->
             ImperiumScope.MAIN.launch {
-                val updater = it.slashCommandInteraction.respondLater(true).await()
-                val node = tree.resolve(it.slashCommandInteraction.fullCommandName.split(" "))
+                val updater = event.slashCommandInteraction.respondLater(true).await()
+                val node = tree.resolve(event.slashCommandInteraction.fullCommandName.split(" "))
                 val command = node.edge!!
-                val actor = CommandActor(updater, it.slashCommandInteraction)
+                val actor = CommandActor(updater, event.slashCommandInteraction)
                 val arguments = try {
                     command.function.parameters.associateWith { parameter ->
                         if (parameter.index == 0) {
@@ -77,7 +77,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                         }
 
                         val argument = command.arguments.find { it.name == parameter.name!! }!!
-                        val option = it.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
+                        val option = event.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
                             ?.let { argument.handler.parse(it) }
 
                         if (option == null && !argument.optional) {
@@ -87,7 +87,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                         option
                     }
                 } catch (e: Exception) {
-                    logger.error("Error while parsing arguments for command ${node.fullName}", it)
+                    logger.error("Error while parsing arguments for command ${node.fullName}", e)
                     updater.setContent(":warning: **An unexpected error occurred while parsing your command.**")
                         .update().await()
                     return@launch
@@ -96,7 +96,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 try {
                     command.function.callSuspendBy(arguments)
                 } catch (e: Exception) {
-                    logger.error("Error while executing command ${node.fullName}", it)
+                    logger.error("Error while executing command ${node.fullName}", e)
                     updater.setContent(":warning: **An unexpected error occurred while executing your command.**")
                         .update().await()
                 }

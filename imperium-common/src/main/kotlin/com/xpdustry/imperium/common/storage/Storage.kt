@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.common.storage
 
 import java.io.InputStream
-import java.net.URL
+import java.net.URI
 import java.time.Instant
 import kotlin.time.Duration
 
@@ -42,5 +42,5 @@ interface S3Object {
     val size: Long
     val lastModified: Instant
     suspend fun getStream(): InputStream
-    suspend fun getDownloadUrl(expiration: Duration): URL
+    suspend fun getDownloadUrl(expiration: Duration): URI
 }

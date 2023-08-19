@@ -38,7 +38,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import java.io.InputStream
-import java.net.URL
+import java.net.URI
 import java.time.Instant
 import java.util.concurrent.CompletionException
 import java.util.concurrent.TimeUnit
@@ -156,9 +156,9 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         override suspend fun getStream(): InputStream =
             client.getObject(GetObjectArgs.builder().bucket(bucket).`object`(path.joinToString("/")).build()).await()
 
-        override suspend fun getDownloadUrl(expiration: kotlin.time.Duration): URL =
+        override suspend fun getDownloadUrl(expiration: kotlin.time.Duration): URI =
             withContext(ImperiumScope.IO.coroutineContext) {
-                URL(
+                URI(
                     client.getPresignedObjectUrl(
                         GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)

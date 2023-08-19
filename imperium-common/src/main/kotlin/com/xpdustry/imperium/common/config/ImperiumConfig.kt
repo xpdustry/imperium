@@ -93,11 +93,16 @@ sealed interface ServerConfig {
 
     data class Discord(
         val token: HiddenString,
+        val roles: Roles,
         val categories: Categories,
         val channels: Channels,
         val mindustryVersion: String = "145",
     ) : ServerConfig {
         override val name: String = "discord"
+
+        data class Roles(
+            val admin: Long,
+        )
 
         data class Categories(
             val liveChat: Long,
@@ -105,6 +110,7 @@ sealed interface ServerConfig {
 
         data class Channels(
             val notifications: Long,
+            val maps: Long,
         )
     }
 }
