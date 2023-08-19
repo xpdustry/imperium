@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.database.Database
+import com.xpdustry.imperium.common.database.MindustryMap
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
@@ -31,6 +32,7 @@ import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
 import org.javacord.api.entity.message.MessageBuilder
@@ -54,8 +56,11 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         discord.getMainServer().addButtonClickListener { event ->
-            if (event.buttonInteraction.customId != "map-submission:reject:1") return@addButtonClickListener
-            ImperiumScope.MAIN.launch { onMapRejected(event.buttonInteraction) }
+            if (event.buttonInteraction.customId == "map-submission:rejected:1") {
+                ImperiumScope.MAIN.launch { onMapRejected(event.buttonInteraction) }
+            } else if (event.buttonInteraction.customId == "map-submission:approved:1") {
+                ImperiumScope.MAIN.launch { onMapApproved(event.buttonInteraction) }
+            }
         }
     }
 
@@ -78,6 +83,11 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
+        if (database.maps.findMapByName(preview.name).awaitSingleOrNull() != null) {
+            actor.updater.setContent("A map with that name already exists!").update().await()
+            return
+        }
+
         val channel = discord.getMainServer().getTextChannelById(config.channels.maps).getOrNull()
             ?: throw IllegalStateException("Map submission channel not found")
 
@@ -97,8 +107,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             )
             .addComponents(
                 ActionRow.of(
-                    Button.primary("map-submission:approve:1", "Approve"),
-                    Button.danger("map-submission:reject:1", "Reject"),
+                    Button.primary("map-submission:approved:1", "Approve"),
+                    Button.danger("map-submission:rejected:1", "Reject"),
                 ),
             )
             .send(channel)
@@ -146,7 +156,71 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         updater.setContent("Map submission rejected!").update().await()
     }
 
-    private suspend fun onMapApproved(interaction: ButtonInteraction) = Unit
+    private suspend fun onMapApproved(interaction: ButtonInteraction) {
+        val embed = interaction.message.embeds.first()
+        val name = embed.getFieldValue("Name")!!
+        val attachment = interaction.message.attachments.first()
+        val updater = interaction.respondLater(true).await()
+
+        if (database.maps.findMapByName(name).awaitSingleOrNull() != null) {
+            interaction.createImmediateResponder()
+                .setContent("A map with that name already exists!")
+                .respond()
+                .await()
+            return
+        }
+
+        if (!attachment.fileName.endsWith(".msav")) {
+            interaction.createImmediateResponder()
+                .setContent("Invalid map file!")
+                .respond()
+                .await()
+            return
+        }
+
+        val response = http.get(attachment.url.toURI(), BodyHandlers.ofInputStream())
+        if (response.statusCode() != 200) {
+            interaction.createImmediateResponder()
+                .setContent("Unable to fetch map file!")
+                .respond()
+                .await()
+            return
+        }
+
+        val size = embed.getFieldValue("Size")!!
+        val entry = MindustryMap(
+            name = name,
+            description = embed.getFieldValue("Description")!!,
+            author = embed.getFieldValue("Author")!!,
+            width = size.substringBefore("x").trim().toInt(),
+            height = size.substringAfter("x").trim().toInt(),
+        )
+
+        database.maps.save(entry).awaitSingleOrNull()
+        storage.getBucket("imperium-maps")!!.putObject("pool/${entry.id}.msav", response.body())
+
+        interaction.message.createUpdater()
+            .removeAllEmbeds()
+            .addEmbed(
+                interaction.message.embeds.first().replaceFields("Status" to "Approved").setColor(Color.GREEN),
+            )
+            .removeAllComponents()
+            .applyChanges()
+            .await()
+
+        interaction.message.embeds.first().getFieldValue("Submitter")
+            ?.let { discord.api.getUserById(MENTION_TAG_REGEX.find(it)!!.groupValues[1].toLong()) }
+            ?.await()
+            ?.sendMessage(
+                EmbedBuilder()
+                    .setColor(Color.GREEN)
+                    .setTitle("Congratulations!")
+                    .setDescription("Your [map submission](${interaction.message.link}) has been approved by ${interaction.user.mentionTag}."),
+            )
+            ?.await()
+
+        updater.setContent("Map submission approved!").update().await()
+    }
 
     private fun Embed.replaceFields(vararg replacements: Pair<String, String>): EmbedBuilder {
         val map = replacements.toMap()
@@ -156,6 +230,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
         return builder
     }
+
+    private fun Embed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
 
     companion object {
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")

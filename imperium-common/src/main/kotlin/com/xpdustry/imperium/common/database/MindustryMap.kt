@@ -16,6 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 package com.xpdustry.imperium.common.database
+
 import org.bson.types.ObjectId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -26,11 +27,11 @@ data class MindustryMap(
     var name: String,
     var description: String,
     var author: String,
-    var version: String,
     var width: Int,
     var height: Int,
-    var playtime: Duration,
-    var games: Int,
+    var playtime: Duration = Duration.ZERO,
+    var games: Int = 0,
+    val servers: MutableSet<String> = mutableSetOf(),
 ) : Entity<ObjectId>
 
 data class Rating(

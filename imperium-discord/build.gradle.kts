@@ -51,6 +51,7 @@ tasks.shadowJar {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
         exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
+        exclude(dependency("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:.*"))
     }
 }
 
