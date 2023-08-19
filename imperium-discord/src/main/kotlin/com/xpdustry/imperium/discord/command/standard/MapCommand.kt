@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.discord.command.standard
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -29,11 +30,16 @@ import com.xpdustry.imperium.discord.command.CommandActor
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 import org.javacord.api.entity.Attachment
+import org.javacord.api.entity.channel.AutoArchiveDuration
 import org.javacord.api.entity.message.MessageBuilder
 import org.javacord.api.entity.message.component.ActionRow
 import org.javacord.api.entity.message.component.Button
+import org.javacord.api.entity.message.embed.Embed
 import org.javacord.api.entity.message.embed.EmbedBuilder
+import org.javacord.api.interaction.ButtonInteraction
+import java.awt.Color
 import java.net.http.HttpResponse.BodyHandlers
 import kotlin.jvm.optionals.getOrNull
 
@@ -47,6 +53,10 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val http = instances.get<CoroutineHttpClient>()
 
     override fun onImperiumInit() {
+        discord.getMainServer().addButtonClickListener { event ->
+            if (event.buttonInteraction.customId != "map-submission:reject:1") return@addButtonClickListener
+            ImperiumScope.MAIN.launch { onMapRejected(event.buttonInteraction) }
+        }
     }
 
     @Command("submit")
@@ -72,15 +82,16 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             ?: throw IllegalStateException("Map submission channel not found")
 
         val message = MessageBuilder()
-            .addAttachment(map.url, "${map.fileName}.msav")
+            .addAttachment(map.url, map.fileName)
             .addEmbed(
                 EmbedBuilder()
+                    .setColor(MINDUSTRY_COLOR)
                     .setTitle("Map Submission")
-                    .addField("Name", preview.name, true)
-                    .addField("Author", preview.author ?: "Unknown", true)
-                    .addField("Description", preview.description ?: "Unknown", true)
-                    .addField("Size", "${preview.width} x ${preview.height}", true)
-                    .addField("Submitter", actor.interaction.user.mentionTag, true)
+                    .addField("Name", preview.name)
+                    .addField("Author", preview.author ?: "Unknown")
+                    .addField("Description", preview.description ?: "Unknown")
+                    .addField("Size", "${preview.width} x ${preview.height}")
+                    .addField("Submitter", actor.interaction.user.mentionTag)
                     .addField("Status", "Pending review", true)
                     .setImage(preview.image),
             )
@@ -92,6 +103,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             )
             .send(channel)
             .await()
+
+        message.createThread("Comments for ${preview.name}", AutoArchiveDuration.THREE_DAYS).await()
 
         actor.updater.addEmbed(
             EmbedBuilder()
@@ -107,4 +120,45 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command("info")
     suspend fun onInfoCommand(actor: CommandActor) = Unit
+
+    private suspend fun onMapRejected(interaction: ButtonInteraction) {
+        val updater = interaction.respondLater(true).await()
+        interaction.message.createUpdater()
+            .removeAllEmbeds()
+            .addEmbed(
+                interaction.message.embeds.first().replaceFields("Status" to "Rejected").setColor(Color.RED),
+            )
+            .removeAllComponents()
+            .applyChanges()
+            .await()
+
+        interaction.message.embeds.first().fields.find { it.name == "Submitter" }?.value
+            ?.let { discord.api.getUserById(MENTION_TAG_REGEX.find(it)!!.groupValues[1].toLong()) }
+            ?.await()
+            ?.sendMessage(
+                EmbedBuilder()
+                    .setColor(Color.RED)
+                    .setTitle("Oh no!")
+                    .setDescription("Your [map submission](${interaction.message.link}) has been rejected by ${interaction.user.mentionTag}."),
+            )
+            ?.await()
+
+        updater.setContent("Map submission rejected!").update().await()
+    }
+
+    private suspend fun onMapApproved(interaction: ButtonInteraction) = Unit
+
+    private fun Embed.replaceFields(vararg replacements: Pair<String, String>): EmbedBuilder {
+        val map = replacements.toMap()
+        val builder = toBuilder().removeAllFields()
+        fields.forEach {
+            builder.addField(it.name, map.getOrDefault(it.name, it.value), it.isInline)
+        }
+        return builder
+    }
+
+    companion object {
+        private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")
+        private val MINDUSTRY_COLOR = Color(0xffd37f)
+    }
 }
