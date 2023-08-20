@@ -39,6 +39,7 @@ import com.xpdustry.imperium.common.misc.then
 import com.xpdustry.imperium.common.misc.toBase64
 import com.xpdustry.imperium.common.misc.toErrorMono
 import com.xpdustry.imperium.common.misc.toValueMono
+import kotlinx.coroutines.reactor.mono
 import reactor.core.publisher.Mono
 import reactor.util.function.Tuple2
 import java.net.InetAddress
@@ -72,43 +73,57 @@ class SimpleAccountService(private val database: Database) : AccountService {
                 if (missingUsrRequirements.isNotEmpty()) {
                     return@switchIfEmpty AccountException.InvalidUsername(missingUsrRequirements).toErrorMono()
                 }
-                GenericSaltyHashFunction.create(password, PASSWORD_PARAMS).flatMap {
-                    database.accounts.save(Account(normalized, it))
+                mono {
+                    GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
                 }
+                    .flatMap {
+                        database.accounts.save(Account(normalized, it))
+                    }
             }
     }
 
     override fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): Mono<Void> =
         checkRateLimit("migrate", identity)
             .then { findLegacyAccountByUsername(oldUsername.normalize()) }
-            .filterWhen { GenericSaltyHashFunction.equals(password, it.password) }
+            .filterWhen {
+                mono {
+                    GenericSaltyHashFunction.equals(password, it.password)
+                }
+            }
             .switchIfEmpty { AccountException.WrongPassword().toErrorMono() }
             .flatMap { legacy ->
                 val missing = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(newUsername.normalize())
                 if (missing.isNotEmpty()) {
                     return@flatMap AccountException.InvalidUsername(missing).toErrorMono()
                 }
-                GenericSaltyHashFunction.create(password, PASSWORD_PARAMS).flatMap { hash ->
-                    database.accounts.save(
-                        Account(
-                            username = newUsername.normalize(),
-                            password = hash,
-                            playtime = legacy.playtime,
-                            rank = legacy.rank,
-                            games = legacy.games,
-                            achievements = legacy.achievements
-                                .map { it.name.lowercase() }
-                                .associateWithTo(mutableMapOf()) { Achievement.Progression(completed = true) },
-                        ),
-                    )
+                mono {
+                    GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
                 }
+                    .flatMap { hash ->
+                        database.accounts.save(
+                            Account(
+                                username = newUsername.normalize(),
+                                password = hash,
+                                playtime = legacy.playtime,
+                                rank = legacy.rank,
+                                games = legacy.games,
+                                achievements = legacy.achievements
+                                    .map { it.name.lowercase() }
+                                    .associateWithTo(mutableMapOf()) { Achievement.Progression(completed = true) },
+                            ),
+                        )
+                    }
             }
 
     override fun login(username: String, password: CharArray, identity: PlayerIdentity): Mono<Void> =
         checkRateLimit("login", identity)
             .then { database.accounts.findByUsername(username.normalize()) }
             .switchIfEmpty { AccountException.NotRegistered().toErrorMono() }
-            .filterWhen { GenericSaltyHashFunction.equals(password, it.password) }
+            .filterWhen {
+                mono {
+                    GenericSaltyHashFunction.equals(password, it.password)
+                }
+            }
             .switchIfEmpty { AccountException.WrongPassword().toErrorMono() }
             .flatMap { account ->
                 createSessionToken(identity).flatMap { token ->
@@ -136,14 +151,20 @@ class SimpleAccountService(private val database: Database) : AccountService {
         checkRateLimit("changePassword", identity)
             .then { findAccountByIdentity(identity) }
             .switchIfEmpty { AccountException.NotLogged().toErrorMono() }
-            .filterWhen { GenericSaltyHashFunction.equals(oldPassword, it.password) }
+            .filterWhen {
+                mono {
+                    GenericSaltyHashFunction.equals(oldPassword, it.password)
+                }
+            }
             .switchIfEmpty { AccountException.WrongPassword().toErrorMono() }
             .flatMap { account ->
                 val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(newPassword)
                 if (missing.isNotEmpty()) {
                     return@flatMap AccountException.InvalidPassword(missing).toErrorMono()
                 }
-                GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS).flatMap {
+                mono {
+                    GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS)
+                }.flatMap {
                     account.password = it
                     database.accounts.save(account)
                 }
@@ -160,12 +181,16 @@ class SimpleAccountService(private val database: Database) : AccountService {
         }
 
     private fun findLegacyAccountByUsername(username: String): Mono<LegacyAccount> =
-        ShaHashFunction.create(username.toCharArray(), ShaType.SHA256)
+        mono {
+            ShaHashFunction.create(username.toCharArray(), ShaType.SHA256)
+        }
             .flatMap { hash -> database.legacyAccounts.findById(hash.hash.toBase64()) }
 
     @VisibleForTesting
     internal fun createSessionToken(identity: PlayerIdentity): Mono<String> =
-        Argon2HashFunction.create(identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toCharArray())
+        mono {
+            Argon2HashFunction.create(identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toCharArray())
+        }
             .map { Base64.getEncoder().encodeToString(it.hash) }
 
     private fun String.normalize(): String = trim().lowercase()

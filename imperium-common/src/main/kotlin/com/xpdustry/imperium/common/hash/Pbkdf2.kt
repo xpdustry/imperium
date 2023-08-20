@@ -22,8 +22,8 @@ import com.password4j.PBKDF2Function
 import com.password4j.Password
 import com.password4j.SecureString
 import com.password4j.types.Hmac
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
+import com.xpdustry.imperium.common.async.ImperiumScope
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, val saltLength: Int) : HashParams {
@@ -63,28 +63,26 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
 
 object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
 
-    override fun create(chars: CharArray, params: PBKDF2Params): Mono<Hash> =
+    override suspend fun create(chars: CharArray, params: PBKDF2Params): Hash =
         create0(Password.hash(SecureString(chars)).addRandomSalt(params.saltLength), params)
 
-    override fun create(bytes: ByteArray, params: PBKDF2Params): Mono<Hash> =
+    override suspend fun create(bytes: ByteArray, params: PBKDF2Params): Hash =
         create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
 
-    override fun create(chars: CharArray, params: PBKDF2Params, salt: CharArray): Mono<Hash> =
+    override suspend fun create(chars: CharArray, params: PBKDF2Params, salt: CharArray): Hash =
         create0(Password.hash(SecureString(chars)).addSalt(salt.concatToString()), params)
 
-    override fun create(chars: CharArray, params: PBKDF2Params, salt: ByteArray): Mono<Hash> =
+    override suspend fun create(chars: CharArray, params: PBKDF2Params, salt: ByteArray): Hash =
         create0(Password.hash(SecureString(chars)).addSalt(salt), params)
 
-    override fun create(bytes: ByteArray, params: PBKDF2Params, salt: ByteArray): Mono<Hash> =
+    override suspend fun create(bytes: ByteArray, params: PBKDF2Params, salt: ByteArray): Hash =
         create0(Password.hash(bytes).addSalt(salt), params)
 
-    private fun create0(builder: HashBuilder, params: PBKDF2Params): Mono<Hash> {
-        return Mono.fromSupplier {
-            builder.with(PBKDF2Function.getInstance(params.hmac.toP4J(), params.iterations, params.length))
+    private suspend fun create0(builder: HashBuilder, params: PBKDF2Params): Hash =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            val result = builder.with(PBKDF2Function.getInstance(params.hmac.toP4J(), params.iterations, params.length))
+            Hash(result.bytes, result.saltBytes, params)
         }
-            .subscribeOn(Schedulers.boundedElastic())
-            .map { Hash(it.bytes, it.saltBytes, params) }
-    }
 
     private fun PBKDF2Params.Hmac.toP4J() = when (this) {
         PBKDF2Params.Hmac.SHA1 -> Hmac.SHA1

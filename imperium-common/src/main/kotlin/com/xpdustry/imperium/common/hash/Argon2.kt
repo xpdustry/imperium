@@ -22,8 +22,8 @@ import com.password4j.HashBuilder
 import com.password4j.Password
 import com.password4j.SecureString
 import com.password4j.types.Argon2
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
+import com.xpdustry.imperium.common.async.ImperiumScope
+import kotlinx.coroutines.withContext
 import java.util.Locale
 
 data class Argon2Params(
@@ -80,24 +80,24 @@ data class Argon2Params(
 
 object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
 
-    override fun create(chars: CharArray, params: Argon2Params): Mono<Hash> =
+    override suspend fun create(chars: CharArray, params: Argon2Params): Hash =
         create0(Password.hash(SecureString(chars)).addRandomSalt(params.saltLength), params)
 
-    override fun create(bytes: ByteArray, params: Argon2Params): Mono<Hash> =
+    override suspend fun create(bytes: ByteArray, params: Argon2Params): Hash =
         create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
 
-    override fun create(chars: CharArray, params: Argon2Params, salt: CharArray): Mono<Hash> =
+    override suspend fun create(chars: CharArray, params: Argon2Params, salt: CharArray): Hash =
         create0(Password.hash(SecureString(chars)).addSalt(salt.concatToString()), params)
 
-    override fun create(chars: CharArray, params: Argon2Params, salt: ByteArray): Mono<Hash> =
+    override suspend fun create(chars: CharArray, params: Argon2Params, salt: ByteArray): Hash =
         create0(Password.hash(SecureString(chars)).addSalt(salt), params)
 
-    override fun create(bytes: ByteArray, params: Argon2Params, salt: ByteArray): Mono<Hash> =
+    override suspend fun create(bytes: ByteArray, params: Argon2Params, salt: ByteArray): Hash =
         create0(Password.hash(bytes).addSalt(salt), params)
 
-    private fun create0(builder: HashBuilder, params: Argon2Params): Mono<Hash> {
-        return Mono.fromSupplier {
-            builder.with(
+    private suspend fun create0(builder: HashBuilder, params: Argon2Params): Hash =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            val result = builder.with(
                 Argon2Function.getInstance(
                     params.memory,
                     params.iterations,
@@ -107,10 +107,8 @@ object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
                     params.version.toP4J(),
                 ),
             )
+            Hash(result.bytes, result.saltBytes, params)
         }
-            .map { Hash(it.bytes, it.saltBytes, params) }
-            .subscribeOn(Schedulers.boundedElastic())
-    }
 
     private fun Argon2Params.Type.toP4J() = when (this) {
         Argon2Params.Type.ID -> Argon2.ID
