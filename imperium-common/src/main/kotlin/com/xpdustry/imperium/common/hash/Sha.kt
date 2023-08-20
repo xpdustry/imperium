@@ -19,8 +19,8 @@ package com.xpdustry.imperium.common.hash
 
 import com.google.common.hash.Hashing
 import com.password4j.SecureString
-import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
+import com.xpdustry.imperium.common.async.ImperiumScope
+import kotlinx.coroutines.withContext
 
 enum class ShaType(val length: Int) : HashParams {
     SHA256(256),
@@ -37,7 +37,7 @@ enum class ShaType(val length: Int) : HashParams {
             }
 
             val length = str.substring("sha/".length).toInt()
-            return values().find { it.length == length }
+            return entries.find { it.length == length }
                 ?: throw IllegalArgumentException("Unknown sha length: $length")
         }
     }
@@ -45,19 +45,15 @@ enum class ShaType(val length: Int) : HashParams {
 
 object ShaHashFunction : HashFunction<ShaType> {
 
-    override fun create(bytes: ByteArray, params: ShaType): Mono<Hash> {
-        return Mono.fromCallable {
+    override suspend fun create(bytes: ByteArray, params: ShaType): Hash =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
             Hash(getHashFunction(params).hashBytes(bytes).asBytes(), ByteArray(0), params)
         }
-            .subscribeOn(Schedulers.boundedElastic())
-    }
 
-    override fun create(chars: CharArray, params: ShaType): Mono<Hash> {
-        return Mono.fromCallable {
+    override suspend fun create(chars: CharArray, params: ShaType): Hash =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
             Hash(getHashFunction(params).hashString(SecureString(chars), Charsets.UTF_8).asBytes(), ByteArray(0), params)
         }
-            .subscribeOn(Schedulers.boundedElastic())
-    }
 
     private fun getHashFunction(params: ShaType) = when (params) {
         ShaType.SHA256 -> Hashing.sha256()
