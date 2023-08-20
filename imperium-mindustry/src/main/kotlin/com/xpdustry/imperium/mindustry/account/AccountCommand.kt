@@ -20,16 +20,15 @@ package com.xpdustry.imperium.mindustry.account
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.database.AccountManager
+import com.xpdustry.imperium.common.database.AccountOperationResult
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.doOnEmpty
 import com.xpdustry.imperium.common.misc.logger
-import com.xpdustry.imperium.common.misc.toErrorMono
-import com.xpdustry.imperium.common.service.AccountException
-import com.xpdustry.imperium.common.service.AccountService
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
@@ -37,8 +36,10 @@ import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.launch
 import mindustry.gen.Player
-import reactor.core.publisher.Mono
+import kotlin.coroutines.CoroutineContext
 
 // TODO
 //  - Replace sequential interfaces with a proper form interface
@@ -53,30 +54,35 @@ private val OLD_PASSWORD = stateKey<String>("old_password")
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val plugin: MindustryPlugin = instances.get()
-    private val service: AccountService = instances.get()
+    private val manager: AccountManager = instances.get()
     private val clientCommandManager: ImperiumPluginCommandManager = instances.get("client")
 
     override fun onImperiumInit() {
-        val loginInterface = createLoginInterface(plugin, service)
+        val loginInterface = createLoginInterface(plugin, manager)
         clientCommandManager.buildAndRegister("login") {
             commandDescription("Login to your account")
             argument(StringArgument.optional("username", StringArgument.StringMode.GREEDY))
             handler { ctx ->
-                service.findAccountByIdentity(ctx.sender.player.identity)
-                    .publishOn(MindustryScheduler)
-                    .doOnEmpty { loginInterface.open(ctx.sender.player) }
-                    .onAccountErrorResume(ctx.sender.player)
-                    .subscribe { ctx.sender.player.showInfoMessage("You are already logged in!") }
+                ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(ctx.sender.player)) {
+                    val account = manager.findAccountByIdentity(ctx.sender.player.identity)
+                    if (account == null) {
+                        runMindustryThread {
+                            loginInterface.open(ctx.sender.player)
+                        }
+                    } else {
+                        ctx.sender.player.showInfoMessage("You are already logged in!")
+                    }
+                }
             }
         }
 
-        val registerInterface = createRegisterInterface(plugin, service)
+        val registerInterface = createRegisterInterface(plugin, manager)
         clientCommandManager.buildAndRegister("register") {
             commandDescription("Register your account")
             handler { ctx -> registerInterface.open(ctx.sender.player) }
         }
 
-        val migrateInterface = createMigrateInterface(plugin, service)
+        val migrateInterface = createMigrateInterface(plugin, manager)
         clientCommandManager.buildAndRegister("migrate") {
             commandDescription("Migrate your CN account")
             handler { ctx -> migrateInterface.open(ctx.sender.player) }
@@ -85,20 +91,18 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         clientCommandManager.buildAndRegister("logout") {
             commandDescription("Logout from your account")
             handler { ctx ->
-                service.logout(ctx.sender.player.identity)
-                    .publishOn(MindustryScheduler)
-                    .onAccountErrorResume(ctx.sender.player)
-                    .subscribe { logged ->
-                        if (logged) {
-                            ctx.sender.sendMessage("You have been logged out!")
-                        } else {
-                            ctx.sender.sendMessage("You are not logged in!")
-                        }
+                ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(ctx.sender.player)) {
+                    if (manager.findAccountByIdentity(ctx.sender.player.identity) == null) {
+                        ctx.sender.sendMessage("You are not logged in!")
+                    } else {
+                        manager.logout(ctx.sender.player.identity)
+                        ctx.sender.sendMessage("You have been logged out!")
                     }
+                }
             }
         }
 
-        val changePasswordInterface = createPasswordChangeInterface(plugin, service)
+        val changePasswordInterface = createPasswordChangeInterface(plugin, manager)
         clientCommandManager.buildAndRegister("change-password") {
             commandDescription("Change your password")
             handler { ctx -> changePasswordInterface.open(ctx.sender.player) }
@@ -106,7 +110,17 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     }
 }
 
-private fun createLoginInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+private class PlayerCoroutineExceptionHandler(private val player: Player, private val view: View? = null) : CoroutineExceptionHandler {
+    constructor(view: View) : this(view.viewer, view)
+    override val key: CoroutineContext.Key<*> = CoroutineExceptionHandler
+    override fun handleException(context: CoroutineContext, exception: Throwable) {
+        logger.error("An error occurred in a account interface", exception)
+        view?.closeAll()
+        player.showInfoMessage("[red]A critical error occurred in the server, please report this to the server owners.")
+    }
+}
+
+private fun createLoginInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
     val usernameInterface = TextInputInterface.create(plugin)
     val passwordInterface = TextInputInterface.create(plugin)
 
@@ -128,27 +142,27 @@ private fun createLoginInterface(plugin: MindustryPlugin, service: AccountServic
         pane.inputAction = BiAction { _, value ->
             view.close()
             view.state[PASSWORD] = value
-            service.login(view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)
-                .publishOn(MindustryScheduler)
-                .doOnSuccess { view.viewer.sendMessage("You have been logged in!") }
-                .onErrorResume { error ->
-                    // According to log, it's better to not let the client know if the username is incorrect
-                    if (error is AccountException.WrongPassword || error is AccountException.NotRegistered) {
+            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
+                when (val result = manager.login(view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
+                    is AccountOperationResult.Success -> {
+                        view.viewer.sendMessage("You have been logged in!")
+                    }
+                    is AccountOperationResult.WrongPassword, AccountOperationResult.NotRegistered -> {
                         view.open()
                         view.viewer.showInfoMessage("The username or password is incorrect!")
-                        return@onErrorResume Mono.empty()
                     }
-                    error.toErrorMono()
+                    else -> {
+                        handleAccountResult(result, view)
+                    }
                 }
-                .onAccountErrorResume(view)
-                .subscribe()
+            }
         }
     }
 
     return usernameInterface
 }
 
-private fun createRegisterInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+private fun createRegisterInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
     val usernameInterface = TextInputInterface.create(plugin)
     val initialPasswordInterface = TextInputInterface.create(plugin)
     val confirmPasswordInterface = TextInputInterface.create(plugin)
@@ -185,18 +199,23 @@ private fun createRegisterInterface(plugin: MindustryPlugin, service: AccountSer
                 view.viewer.showInfoMessage("[red]Passwords do not match")
                 return@BiAction
             }
-            service.register(view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)
-                .publishOn(MindustryScheduler)
-                .doOnSuccess { view.viewer.sendMessage("Your account have been created! You can do /login now.") }
-                .onAccountErrorResume(view)
-                .subscribe()
+            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
+                when (val result = manager.register(view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
+                    is AccountOperationResult.Success -> {
+                        view.viewer.sendMessage("Your account have been created! You can do /login now.")
+                    }
+                    else -> {
+                        handleAccountResult(result, view)
+                    }
+                }
+            }
         }
     }
 
     return usernameInterface
 }
 
-fun createMigrateInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+fun createMigrateInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
     val oldUsernameInterface = TextInputInterface.create(plugin)
     val oldPasswordInterface = TextInputInterface.create(plugin)
     val newUsernameInterface = TextInputInterface.create(plugin)
@@ -230,18 +249,23 @@ fun createMigrateInterface(plugin: MindustryPlugin, service: AccountService): In
         pane.inputAction = BiAction { _, value ->
             view.close()
             view.state[USERNAME] = value
-            service.migrate(view.state[OLD_USERNAME]!!, value, view.state[PASSWORD]!!.toCharArray(), view.viewer.identity)
-                .publishOn(MindustryScheduler)
-                .doOnSuccess { view.viewer.sendMessage("Your account have been migrated! You can do /login now.") }
-                .onAccountErrorResume(view)
-                .subscribe()
+            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
+                when (val result = manager.migrate(view.state[OLD_USERNAME]!!, value, view.state[PASSWORD]!!.toCharArray(), view.viewer.identity)) {
+                    is AccountOperationResult.Success -> {
+                        view.viewer.sendMessage("Your account have been migrated! You can do /login now.")
+                    }
+                    else -> {
+                        handleAccountResult(result, view)
+                    }
+                }
+            }
         }
     }
 
     return oldUsernameInterface
 }
 
-private fun createPasswordChangeInterface(plugin: MindustryPlugin, service: AccountService): Interface {
+private fun createPasswordChangeInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
     val oldPasswordInterface = TextInputInterface.create(plugin)
     val newPasswordInterface = TextInputInterface.create(plugin)
     val confirmPasswordInterface = TextInputInterface.create(plugin)
@@ -278,46 +302,36 @@ private fun createPasswordChangeInterface(plugin: MindustryPlugin, service: Acco
                 view.viewer.showInfoMessage("[red]Passwords do not match")
                 return@BiAction
             }
-            service.changePassword(view.state[OLD_PASSWORD]!!.toCharArray(), value.toCharArray(), view.viewer.identity)
-                .publishOn(MindustryScheduler)
-                .doOnSuccess { view.viewer.showInfoMessage("Your password have been changed!") }
-                .onAccountErrorResume(view)
-                .subscribe()
+            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
+                when (val result = manager.changePassword(view.state[OLD_PASSWORD]!!.toCharArray(), value.toCharArray(), view.viewer.identity)) {
+                    is AccountOperationResult.Success -> {
+                        view.viewer.sendMessage("Your password have been changed!")
+                    }
+                    else -> {
+                        handleAccountResult(result, view)
+                    }
+                }
+            }
         }
     }
 
     return oldPasswordInterface
 }
 
-private fun <T> Mono<T>.onAccountErrorResume(player: Player) = onAccountErrorResume0(player, null)
-private fun <T> Mono<T>.onAccountErrorResume(view: View) = onAccountErrorResume0(view.viewer, view)
-
-private fun <T> Mono<T>.onAccountErrorResume0(player: Player, view: View?) = onErrorResume { error ->
-    if (error !is AccountException) {
-        logger.error("An error occurred in a account interface", error)
-        return@onErrorResume Mono.fromRunnable {
-            view?.closeAll()
-            player.showInfoMessage(
-                "[red]A critical error occurred in the server, please report this to the server owners.",
-            )
-        }
-    }
-    val message = when (error) {
-        is AccountException.AlreadyRegistered -> "This account is already registered!"
-        is AccountException.NotRegistered -> "You are not registered!"
-        is AccountException.NotLogged -> "You are not logged in! Use /login to login."
-        is AccountException.WrongPassword -> "Wrong password!"
-        is AccountException.InvalidPassword ->
-            "The password does not meet the requirements:\n - ${error.missing.joinToString("\n - ")}"
-        is AccountException.InvalidUsername ->
-            "The username does not meet the requirements:\n - ${error.missing.joinToString("\n - ")}"
-        is AccountException.RateLimit ->
+private suspend fun handleAccountResult(result: AccountOperationResult, view: View) = runMindustryThread {
+    val message = when (result) {
+        is AccountOperationResult.Success -> "Success!"
+        is AccountOperationResult.AlreadyRegistered -> "This account is already registered!"
+        is AccountOperationResult.NotRegistered -> "You are not registered!"
+        is AccountOperationResult.NotLogged -> "You are not logged in! Use /login to login."
+        is AccountOperationResult.WrongPassword -> "Wrong password!"
+        is AccountOperationResult.InvalidPassword ->
+            "The password does not meet the requirements:\n - ${result.missing.joinToString("\n - ")}"
+        is AccountOperationResult.InvalidUsername ->
+            "The username does not meet the requirements:\n - ${result.missing.joinToString("\n - ")}"
+        is AccountOperationResult.RateLimit ->
             "You have made too many attempts, please try again later."
     }
-
-    Mono.fromRunnable<T> {
-        view?.open()
-        player.showInfoMessage("[red]$message")
-    }
-        .subscribeOn(MindustryScheduler)
+    view.open()
+    view.viewer.showInfoMessage("[red]$message")
 }

@@ -20,7 +20,6 @@ package com.xpdustry.imperium.common.database
 interface Database {
     val users: UserManager
     val punishments: PunishmentManager
-    val accounts: AccountManager
     val legacyAccounts: LegacyAccountManager
     val maps: MindustryMapManager
     val mapRatings: MindustryMapRatingManager

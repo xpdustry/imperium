@@ -21,6 +21,8 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
 import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.database.mongo.MongoDatabase
+import com.xpdustry.imperium.common.database.mongo.MongoProvider
+import com.xpdustry.imperium.common.database.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -32,8 +34,6 @@ import com.xpdustry.imperium.common.network.IpHubVpnAddressDetector
 import com.xpdustry.imperium.common.network.SimpleCoroutineHttpClient
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnAddressDetector
-import com.xpdustry.imperium.common.service.AccountService
-import com.xpdustry.imperium.common.service.SimpleAccountService
 import com.xpdustry.imperium.common.storage.MinioStorage
 import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator
@@ -44,10 +44,6 @@ fun commonModule() = module("common") {
 
     single<Database> {
         MongoDatabase(get())
-    }
-
-    single<AccountService> {
-        SimpleAccountService(get())
     }
 
     single<Translator> {
@@ -72,6 +68,10 @@ fun commonModule() = module("common") {
 
     single<CoroutineHttpClient> {
         SimpleCoroutineHttpClient(get("scheduler"))
+    }
+
+    single<MongoProvider> {
+        SimpleMongoProvider(get())
     }
 
     single {

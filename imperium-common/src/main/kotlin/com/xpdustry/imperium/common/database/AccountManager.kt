@@ -17,10 +17,31 @@
  */
 package com.xpdustry.imperium.common.database
 
-import org.bson.types.ObjectId
-import reactor.core.publisher.Mono
+import com.xpdustry.imperium.common.misc.PasswordRequirement
+import com.xpdustry.imperium.common.misc.UsernameRequirement
+import java.net.InetAddress
 
-interface AccountManager : EntityManager<ObjectId, Account> {
-    fun findByUsername(username: String): Mono<Account>
-    fun findBySessionToken(token: String): Mono<Account>
+interface AccountManager {
+    suspend fun findAccountByIdentity(identity: PlayerIdentity): Account?
+    suspend fun findByUsername(username: String): Account?
+    suspend fun updateByIdentity(identity: PlayerIdentity, updater: (Account) -> Unit)
+    suspend fun register(username: String, password: CharArray, identity: PlayerIdentity, allowReservedUsernames: Boolean = false): AccountOperationResult
+    suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
+    suspend fun login(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
+    suspend fun logout(identity: PlayerIdentity, all: Boolean = false)
+    suspend fun refresh(identity: PlayerIdentity)
+    suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: PlayerIdentity): AccountOperationResult
+}
+
+data class PlayerIdentity(val uuid: String, val usid: String, val address: InetAddress)
+
+sealed interface AccountOperationResult {
+    data object Success : AccountOperationResult
+    data object AlreadyRegistered : AccountOperationResult
+    data object NotRegistered : AccountOperationResult
+    data object NotLogged : AccountOperationResult
+    data object WrongPassword : AccountOperationResult
+    data object RateLimit : AccountOperationResult
+    data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountOperationResult
+    data class InvalidUsername(val missing: List<UsernameRequirement>) : AccountOperationResult
 }
