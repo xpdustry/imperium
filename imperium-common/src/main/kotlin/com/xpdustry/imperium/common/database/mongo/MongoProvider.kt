@@ -23,35 +23,25 @@ import com.mongodb.ServerAddress
 import com.mongodb.ServerApi
 import com.mongodb.ServerApiVersion
 import com.mongodb.connection.SslSettings
-import com.mongodb.reactivestreams.client.MongoClients
+import com.mongodb.kotlin.client.coroutine.MongoClient
+import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.database.Account
-import com.xpdustry.imperium.common.database.Achievement
 import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.database.LegacyAccount
-import com.xpdustry.imperium.common.database.Punishment
-import com.xpdustry.imperium.common.database.User
-import com.xpdustry.imperium.common.misc.toValueFlux
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.bson.codecs.configuration.CodecRegistries
-import org.bson.codecs.pojo.Conventions
-import org.bson.codecs.pojo.PojoCodecProvider
-import java.time.Duration
 import kotlin.reflect.KClass
-import com.mongodb.kotlin.client.coroutine.MongoClient as CoroutineMongoClient
-import com.mongodb.kotlin.client.coroutine.MongoDatabase as CoroutineMongoDatabase
-import com.mongodb.reactivestreams.client.MongoCollection as StreamMongoCollection
 
 internal interface MongoProvider {
     fun <E : Entity<I>, I : Any> getCollection(name: String, klass: KClass<E>): MongoEntityCollection<E, I>
-    fun <E : Entity<I>, I : Any> getCollectionLegacy(name: String, klass: KClass<E>): StreamMongoCollection<E> = TODO()
 }
 
 internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoProvider, ImperiumApplication.Listener {
 
-    private lateinit var client: CoroutineMongoClient
-    private lateinit var database: CoroutineMongoDatabase
+    private lateinit var client: MongoClient
+    private lateinit var database: MongoDatabase
 
     override fun onImperiumInit() {
         if (config.database !is DatabaseConfig.Mongo) {
@@ -85,43 +75,19 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
             }
             .codecRegistry(
                 CodecRegistries.fromProviders(
-                    PojoCodecProvider.builder()
-                        .register(Account::class.java)
-                        .register(Account.Friend::class.java)
-                        .register(Account.Session::class.java)
-                        .register(LegacyAccount::class.java)
-                        .register(User::class.java)
-                        .register(Punishment::class.java)
-                        .register(Achievement.Progression::class.java)
-                        .conventions(
-                            listOf(
-                                Conventions.CLASS_AND_PROPERTY_CONVENTION,
-                                Conventions.ANNOTATION_CONVENTION,
-                                Conventions.SET_PRIVATE_FIELDS_CONVENTION,
-                                SnakeCaseConvention,
-                                ConstructorFreeInstanciationConvention,
-                            ),
-                        )
-                        .build(),
-                    CodecRegistries.fromCodecs(
-                        DurationCodec(),
-                        HashCodec(),
-                    ),
+                    CodecRegistries.fromCodecs(DurationCodec(), HashCodec()),
                     InetAddressCodecProvider(),
                     MongoClientSettings.getDefaultCodecRegistry(),
                 ),
             )
             .build()
 
-        client = CoroutineMongoClient(MongoClients.create(settings))
+        client = MongoClient.create(settings)
 
-        // Check if client is correctly authenticated
         try {
-            client.listDatabaseNames().toValueFlux()
-                .collectList()
-                .block(Duration.ofSeconds(5L))
+            runBlocking { client.listDatabaseNames().toList() }
         } catch (e: Exception) {
-            throw RuntimeException("Failed to authenticate to MongoDB", e)
+            throw RuntimeException("Failed to connect to the mongo database", e)
         }
 
         database = client.getDatabase(config.database.database)

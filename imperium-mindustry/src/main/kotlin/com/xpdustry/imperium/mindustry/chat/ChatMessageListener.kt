@@ -24,13 +24,14 @@ import arc.util.Time
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import com.xpdustry.imperium.mindustry.misc.MindustryScheduler
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
-import kotlinx.coroutines.reactor.mono
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
 import mindustry.gen.Groups
@@ -61,17 +62,16 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
                 Groups.player.each { target ->
                     if (target.team() != it.sender.player.team()) return@each
-                    mono {
-                        pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
-                    }
-                        .publishOn(MindustryScheduler)
-                        .subscribe { result ->
+                    ImperiumScope.MAIN.launch {
+                        val result = pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
+                        runMindustryThread {
                             target.sendMessage(
                                 "[#${sender.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender, result)}",
                                 sender,
                                 result,
                             )
                         }
+                    }
                 }
             }
         }
@@ -86,17 +86,16 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val normalized: String = Vars.netServer.admins.filterMessage(it.sender.player, it.get("message"))
                     ?: return@handler
 
-                mono {
-                    pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
-                }
-                    .publishOn(MindustryScheduler)
-                    .subscribe { result ->
+                ImperiumScope.MAIN.launch {
+                    val result = pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
+                    runMindustryThread {
                         target.sendMessage(
                             "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender, result)}",
                             sender,
                             result,
                         )
                     }
+                }
             }
         }
     }
@@ -146,16 +145,15 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
 
     // The null target represents the server, for logging and event purposes
     (Groups.player.toList() + listOf(null)).forEach { target ->
-        mono {
-            pipeline.pump(ChatMessageContext(sender, target, filtered))
-        }
-            .publishOn(MindustryScheduler)
-            .subscribe { result ->
+        ImperiumScope.MAIN.launch {
+            val result = pipeline.pump(ChatMessageContext(sender, target, filtered))
+            runMindustryThread {
                 target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
                 if (target == null) {
                     Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw${Strings.stripColors(result)}")
                     DistributorProvider.get().eventBus.post(ProcessedPlayerChatEvent(sender, result))
                 }
             }
+        }
     }
 }

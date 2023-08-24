@@ -19,9 +19,15 @@ package com.xpdustry.imperium.common
 
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
-import com.xpdustry.imperium.common.database.Database
-import com.xpdustry.imperium.common.database.mongo.MongoDatabase
+import com.xpdustry.imperium.common.database.AccountManager
+import com.xpdustry.imperium.common.database.MindustryMapManager
+import com.xpdustry.imperium.common.database.PunishmentManager
+import com.xpdustry.imperium.common.database.UserManager
+import com.xpdustry.imperium.common.database.mongo.MongoAccountManager
+import com.xpdustry.imperium.common.database.mongo.MongoMindustryMapManager
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
+import com.xpdustry.imperium.common.database.mongo.MongoPunishmentManager
+import com.xpdustry.imperium.common.database.mongo.MongoUserManager
 import com.xpdustry.imperium.common.database.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
@@ -41,10 +47,6 @@ import com.xpdustry.imperium.common.translator.Translator
 
 fun commonModule() = module("common") {
     single(ImperiumConfigFactory())
-
-    single<Database> {
-        MongoDatabase(get())
-    }
 
     single<Translator> {
         DeeplTranslator(get(), get())
@@ -70,11 +72,27 @@ fun commonModule() = module("common") {
         SimpleCoroutineHttpClient(get("scheduler"))
     }
 
+    single {
+        ImperiumMetadata()
+    }
+
     single<MongoProvider> {
         SimpleMongoProvider(get())
     }
 
-    single {
-        ImperiumMetadata()
+    single<AccountManager> {
+        MongoAccountManager(get())
+    }
+
+    single<MindustryMapManager> {
+        MongoMindustryMapManager(get(), get())
+    }
+
+    single<PunishmentManager> {
+        MongoPunishmentManager(get())
+    }
+
+    single<UserManager> {
+        MongoUserManager(get())
     }
 }

@@ -24,7 +24,7 @@ typealias MindustryUUID = String
 typealias MindustryUSID = String
 
 data class User(
-    override val id: MindustryUUID,
+    override val _id: MindustryUUID,
     val names: MutableSet<String> = mutableSetOf(),
     val addresses: MutableSet<InetAddress> = mutableSetOf(),
     var lastName: String? = null,

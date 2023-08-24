@@ -32,7 +32,6 @@ dependencies {
     testImplementation(kotlin("reflect"))
 
     testImplementation(libs.junit.api)
-    testImplementation(libs.reactor.test)
     testRuntimeOnly(libs.junit.engine)
 
     testImplementation(libs.testcontainers)

@@ -17,11 +17,10 @@
  */
 package com.xpdustry.imperium.common.database
 
-import org.bson.types.ObjectId
-import reactor.core.publisher.Flux
+import kotlinx.coroutines.flow.Flow
 import java.net.InetAddress
 
-interface PunishmentManager : EntityManager<ObjectId, Punishment> {
-    fun findAllByTargetAddress(target: InetAddress): Flux<Punishment>
-    fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment>
+interface PunishmentManager {
+    suspend fun findAllByTargetAddress(target: InetAddress): Flow<Punishment>
+    suspend fun findAllByTargetUuid(target: MindustryUUID): Flow<Punishment>
 }

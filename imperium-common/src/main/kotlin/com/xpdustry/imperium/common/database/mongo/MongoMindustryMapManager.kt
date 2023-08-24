@@ -20,69 +20,73 @@ package com.xpdustry.imperium.common.database.mongo
 import com.mongodb.client.model.Accumulators
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
-import com.mongodb.client.model.IndexOptions
-import com.mongodb.client.model.Indexes
 import com.mongodb.client.model.Projections
-import com.mongodb.reactivestreams.client.MongoCollection
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.MindustryMap
 import com.xpdustry.imperium.common.database.MindustryMapManager
-import com.xpdustry.imperium.common.database.MindustryMapRatingManager
 import com.xpdustry.imperium.common.database.MindustryUUID
 import com.xpdustry.imperium.common.database.Rating
-import com.xpdustry.imperium.common.misc.toValueFlux
-import com.xpdustry.imperium.common.misc.toValueMono
+import com.xpdustry.imperium.common.storage.Storage
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import org.bson.BsonDocument
 import org.bson.types.ObjectId
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import java.io.InputStream
 import kotlin.math.roundToInt
 
-class MongoMindustryMapManager(collection: MongoCollection<MindustryMap>) : MongoEntityManager<MindustryMap, ObjectId>(collection), MindustryMapManager {
-    init {
-        collection.createIndex(Indexes.text("name"), IndexOptions().unique(true)).toValueMono().block()
+internal class MongoMindustryMapManager(
+    private val mongo: MongoProvider,
+    private val storage: Storage,
+) : MindustryMapManager, ImperiumApplication.Listener {
+
+    private lateinit var maps: MongoEntityCollection<MindustryMap, ObjectId>
+    private lateinit var ratings: MongoEntityCollection<Rating, ObjectId>
+
+    override fun onImperiumInit() {
+        maps = mongo.getCollection("maps", MindustryMap::class)
+        ratings = mongo.getCollection("map_ratings", Rating::class)
     }
 
-    override fun findMapByName(name: String): Mono<MindustryMap> = collection.find(Filters.eq("name", name)).first().toValueMono()
-    override fun searchMaps(name: String): Flux<MindustryMap> = collection.find(Filters.text(name))
-        .projection(Projections.metaTextScore("score"))
-        .sort(Projections.metaTextScore("score"))
-        .toValueFlux()
-}
+    override suspend fun findMapByName(name: String): MindustryMap? =
+        maps.find(Filters.eq("name", name)).firstOrNull()
 
-class MongoMindustryMapRatingManager(collection: MongoCollection<Rating>) : MongoEntityManager<Rating, ObjectId>(collection), MindustryMapRatingManager {
-    init {
-        collection.createIndex(Indexes.ascending("map", "player"), IndexOptions().unique(true)).toValueMono().block()
-    }
+    override suspend fun searchMaps(name: String): Flow<MindustryMap> =
+        maps.find(Filters.text(name))
+            .projection(Projections.metaTextScore("score"))
+            .sort(Projections.metaTextScore("score"))
 
-    override fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Mono<Rating> =
-        collection.find(Filters.and(Filters.eq("map", map), Filters.eq("player", player))).first().toValueMono()
+    override suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating? =
+        ratings.find(Filters.and(Filters.eq("map", map), Filters.eq("player", player))).firstOrNull()
 
-    override fun computeScoreAverageByMap(map: ObjectId): Mono<Double> =
-        collection.aggregate(
-            listOf(
-                Aggregates.match(Filters.eq("map", map)),
-                Aggregates.group("\$map", Accumulators.avg("average", "\$score")),
-            ),
-            BsonDocument::class.java,
+    override suspend fun computeAverageScoreByMap(map: ObjectId): Double =
+        ratings.aggregate(
+            Aggregates.match(Filters.eq("map", map)),
+            Aggregates.group("\$map", Accumulators.avg("average", "\$score")),
+            result = BsonDocument::class,
         )
-            .toValueMono()
             .map { it.getDouble("average").value }
+            .first()
 
-    override fun computeDifficultyAverageByMap(map: ObjectId): Mono<Rating.Difficulty> =
-        collection.aggregate(
-            listOf(
-                Aggregates.match(Filters.eq("map", map)),
-                Aggregates.group("\$difficulty", Accumulators.sum("count", 1)),
-            ),
-            BsonDocument::class.java,
+    override suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty {
+        val difficulties = ratings.aggregate(
+            Aggregates.match(Filters.eq("map", map)),
+            Aggregates.group("\$difficulty", Accumulators.sum("count", 1)),
+            result = BsonDocument::class,
         )
-            .toValueFlux()
-            .collectMap({ Rating.Difficulty.valueOf(it.getString("_id").value) }, { it.getInt32("count").value })
-            .map { difficulties ->
-                if (difficulties.isEmpty()) {
-                    return@map Rating.Difficulty.NORMAL
-                }
-                val average = difficulties.entries.sumOf { it.value * it.key.ordinal }.toDouble() / difficulties.values.sum().toDouble()
-                return@map Rating.Difficulty.entries[average.roundToInt()]
-            }
+            .toList()
+            .associateBy({ Rating.Difficulty.valueOf(it.getString("_id").value) }, { it.getInt32("count").value })
+        if (difficulties.isEmpty()) {
+            return Rating.Difficulty.NORMAL
+        }
+        val average = difficulties.entries.sumOf { it.value * it.key.ordinal }.toDouble() / difficulties.values.sum().toDouble()
+        return Rating.Difficulty.entries[average.roundToInt()]
+    }
+
+    override suspend fun uploadMap(map: MindustryMap, stream: InputStream) {
+        maps.insert(map)
+        storage.getBucket("imperium-maps", create = true)!!.putObject("pool/${map._id}.msav", stream)
+    }
 }

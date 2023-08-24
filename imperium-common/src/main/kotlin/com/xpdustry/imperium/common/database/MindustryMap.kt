@@ -18,12 +18,10 @@
 package com.xpdustry.imperium.common.database
 
 import org.bson.types.ObjectId
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.time.Duration
 
 data class MindustryMap(
-    override val id: ObjectId = ObjectId(),
+    override val _id: ObjectId = ObjectId(),
     var name: String,
     var description: String,
     var author: String,
@@ -35,7 +33,7 @@ data class MindustryMap(
 ) : Entity<ObjectId>
 
 data class Rating(
-    override val id: ObjectId = ObjectId(),
+    override val _id: ObjectId = ObjectId(),
     var map: ObjectId,
     var player: MindustryUUID,
     var score: Int,
@@ -44,15 +42,4 @@ data class Rating(
     enum class Difficulty {
         EASY, NORMAL, HARD, EXPERT
     }
-}
-
-interface MindustryMapManager : EntityManager<ObjectId, MindustryMap> {
-    fun findMapByName(name: String): Mono<MindustryMap>
-    fun searchMaps(name: String): Flux<MindustryMap>
-}
-
-interface MindustryMapRatingManager : EntityManager<ObjectId, Rating> {
-    fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Mono<Rating>
-    fun computeScoreAverageByMap(map: ObjectId): Mono<Double>
-    fun computeDifficultyAverageByMap(map: ObjectId): Mono<Rating.Difficulty>
 }

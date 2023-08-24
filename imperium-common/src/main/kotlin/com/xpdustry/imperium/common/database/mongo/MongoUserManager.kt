@@ -17,8 +17,36 @@
  */
 package com.xpdustry.imperium.common.database.mongo
 
-import com.mongodb.reactivestreams.client.MongoCollection
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.database.MindustryUUID
 import com.xpdustry.imperium.common.database.User
 import com.xpdustry.imperium.common.database.UserManager
 
-class MongoUserManager(collection: MongoCollection<User>) : MongoEntityManager<User, String>(collection), UserManager
+internal class MongoUserManager(private val mongo: MongoProvider) : UserManager, ImperiumApplication.Listener {
+
+    private lateinit var users: MongoEntityCollection<User, String>
+
+    override fun onImperiumInit() {
+        users = mongo.getCollection("users", User::class)
+    }
+
+    override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User = users.findById(uuid) ?: User(uuid)
+
+    override suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit) {
+        var created = false
+        var user = users.findById(uuid)
+
+        if (user == null) {
+            created = true
+            user = User(uuid)
+        }
+
+        updater(user)
+
+        if (created) {
+            users.insert(user)
+        } else {
+            users.update(user)
+        }
+    }
+}

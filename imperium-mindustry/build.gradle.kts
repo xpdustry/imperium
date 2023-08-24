@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.internal.RelocationUtil
 import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
 import fr.xpdustry.toxopid.dsl.mindustryDependencies
 import fr.xpdustry.toxopid.task.GithubArtifactDownload
@@ -54,8 +53,9 @@ tasks.shadowJar {
         fun removeRelocator(pattern: String) =
             relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith(pattern) }
 
-        RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.imperium.shadow")
-        removeRelocator("com.xpdustry.imperium.common")
+        // Disable relocation, KOTLIN IS NOT SUPPORTED CORRECTLY, THIS IS VERY ANNOYING
+        // RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.imperium.shadow")
+        // removeRelocator("com.xpdustry.imperium.common")
     }
 
     doFirst {

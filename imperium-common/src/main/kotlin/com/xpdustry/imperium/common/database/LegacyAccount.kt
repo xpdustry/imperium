@@ -23,7 +23,7 @@ import java.time.Duration
 typealias HashedUsername = String
 
 data class LegacyAccount(
-    override val id: HashedUsername,
+    override val _id: HashedUsername,
     var password: Hash,
     var rank: Account.Rank = Account.Rank.NORMAL,
     var games: Int = 0,

@@ -20,9 +20,10 @@ package com.xpdustry.imperium.common.database.mongo
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.IndexOptions
 import com.mongodb.client.model.ReplaceOneModel
+import com.mongodb.kotlin.client.coroutine.AggregateFlow
+import com.mongodb.kotlin.client.coroutine.FindFlow
 import com.mongodb.kotlin.client.coroutine.MongoCollection
 import com.xpdustry.imperium.common.database.Entity
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import org.bson.conversions.Bson
 import kotlin.reflect.KClass
@@ -37,24 +38,24 @@ internal class MongoEntityCollection<E : Entity<I>, I : Any>(private val collect
     }
 
     suspend fun update(entity: E) {
-        collection.replaceOne(Filters.eq(ID_FIELD, entity.id), entity)
+        collection.replaceOne(Filters.eq(ID_FIELD, entity._id), entity)
     }
 
     suspend fun updateAll(entities: Iterable<E>) {
-        collection.bulkWrite(entities.map { ReplaceOneModel(Filters.eq(ID_FIELD, it.id), it) })
+        collection.bulkWrite(entities.map { ReplaceOneModel(Filters.eq(ID_FIELD, it._id), it) })
     }
 
-    fun find(filters: Bson): Flow<E> =
+    fun find(filters: Bson): FindFlow<E> =
         collection.find(filters)
 
-    fun findAll(): Flow<E> =
+    fun findAll(): FindFlow<E> =
         collection.find()
 
     suspend fun findById(id: I): E? =
         collection.find(Filters.eq(ID_FIELD, id)).firstOrNull()
 
     suspend fun exists(entity: E): Boolean =
-        collection.countDocuments(Filters.eq(ID_FIELD, entity.id)) > 0
+        collection.countDocuments(Filters.eq(ID_FIELD, entity._id)) > 0
 
     suspend fun count(filters: Bson): Long =
         collection.countDocuments(filters)
@@ -71,14 +72,14 @@ internal class MongoEntityCollection<E : Entity<I>, I : Any>(private val collect
     }
 
     suspend fun deleteAll(entities: Iterable<E>) {
-        collection.deleteMany(Filters.`in`(ID_FIELD, entities.map(Entity<I>::id)))
+        collection.deleteMany(Filters.`in`(ID_FIELD, entities.map(Entity<I>::_id)))
     }
 
     suspend fun index(indexes: Bson, options: IndexOptions.() -> Unit) {
         collection.createIndex(indexes, IndexOptions().apply(options))
     }
 
-    fun <R : Any> aggregate(vararg pipeline: Bson, result: KClass<R>): Flow<R> =
+    fun <R : Any> aggregate(vararg pipeline: Bson, result: KClass<R>): AggregateFlow<R> =
         collection.aggregate(pipeline.toList(), result.java)
 
     companion object {

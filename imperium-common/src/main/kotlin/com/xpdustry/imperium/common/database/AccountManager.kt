@@ -25,7 +25,7 @@ interface AccountManager {
     suspend fun findAccountByIdentity(identity: PlayerIdentity): Account?
     suspend fun findByUsername(username: String): Account?
     suspend fun updateByIdentity(identity: PlayerIdentity, updater: (Account) -> Unit)
-    suspend fun register(username: String, password: CharArray, identity: PlayerIdentity, allowReservedUsernames: Boolean = false): AccountOperationResult
+    suspend fun register(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
     suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
     suspend fun login(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
     suspend fun logout(identity: PlayerIdentity, all: Boolean = false)

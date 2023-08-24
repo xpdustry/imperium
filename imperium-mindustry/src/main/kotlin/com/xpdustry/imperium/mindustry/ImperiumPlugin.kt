@@ -36,14 +36,9 @@ import com.xpdustry.imperium.mindustry.moderation.ReportCommand
 import com.xpdustry.imperium.mindustry.verification.VerificationListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
-import reactor.core.publisher.Hooks
 import kotlin.system.exitProcess
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
-    init {
-        Hooks.onOperatorDebug()
-    }
-
     internal val serverCommandManager = ImperiumPluginCommandManager(this)
     internal val clientCommandManager = ImperiumPluginCommandManager(this)
     private val application = MindustryImperiumApplication(this)

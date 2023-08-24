@@ -35,7 +35,7 @@ data class Account(
     val achievements: MutableMap<String, Achievement.Progression> = mutableMapOf(),
     var playtime: Duration = Duration.ZERO,
     var games: Int = 0,
-    override val id: ObjectId = ObjectId(),
+    override val _id: ObjectId = ObjectId(),
 ) : Entity<ObjectId> {
 
     @get:BsonIgnore

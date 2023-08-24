@@ -25,7 +25,7 @@ import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.database.Database
+import com.xpdustry.imperium.common.database.PunishmentManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
@@ -49,15 +49,15 @@ import java.io.DataOutputStream
 
 class VerificationListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline: VerificationPipeline = instances.get()
-    private val database: Database = instances.get()
-    private val provider: VpnAddressDetector = instances.get()
+    private val vpn: VpnAddressDetector = instances.get()
+    private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<CoroutineHttpClient>()
 
     override fun onImperiumInit() {
         pipeline.register("ddos", Priority.HIGH, DdosVerification(http))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientVerification())
-        pipeline.register("punishment", Priority.NORMAL, PunishmentVerification(database))
-        pipeline.register("vpn", Priority.LOW, VpnVerification(provider))
+        pipeline.register("punishment", Priority.NORMAL, PunishmentVerification(punishments))
+        pipeline.register("vpn", Priority.LOW, VpnVerification(vpn))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
             interceptPlayerConnection(con, packet, pipeline)

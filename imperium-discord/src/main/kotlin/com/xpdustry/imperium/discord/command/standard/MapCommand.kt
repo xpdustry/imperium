@@ -20,19 +20,17 @@ package com.xpdustry.imperium.discord.command.standard
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.database.MindustryMap
+import com.xpdustry.imperium.common.database.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
-import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.discord.command.Command
 import com.xpdustry.imperium.discord.command.CommandActor
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
 import org.javacord.api.entity.message.MessageBuilder
@@ -48,8 +46,7 @@ import kotlin.jvm.optionals.getOrNull
 @Command("map")
 class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
-    private val database = instances.get<Database>()
-    private val storage = instances.get<Storage>()
+    private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
     private val http = instances.get<CoroutineHttpClient>()
@@ -83,7 +80,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        if (database.maps.findMapByName(preview.name).awaitSingleOrNull() != null) {
+        if (maps.findMapByName(preview.name) != null) {
             actor.updater.setContent("A map with that name already exists!").update().await()
             return
         }
@@ -162,28 +159,25 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         val attachment = interaction.message.attachments.first()
         val updater = interaction.respondLater(true).await()
 
-        if (database.maps.findMapByName(name).awaitSingleOrNull() != null) {
-            interaction.createImmediateResponder()
+        if (maps.findMapByName(name) != null) {
+            updater
                 .setContent("A map with that name already exists!")
-                .respond()
-                .await()
+                .update()
             return
         }
 
         if (!attachment.fileName.endsWith(".msav")) {
-            interaction.createImmediateResponder()
+            updater
                 .setContent("Invalid map file!")
-                .respond()
-                .await()
+                .update()
             return
         }
 
         val response = http.get(attachment.url.toURI(), BodyHandlers.ofInputStream())
         if (response.statusCode() != 200) {
-            interaction.createImmediateResponder()
+            updater
                 .setContent("Unable to fetch map file!")
-                .respond()
-                .await()
+                .update()
             return
         }
 
@@ -196,8 +190,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             height = size.substringAfter("x").trim().toInt(),
         )
 
-        database.maps.save(entry).awaitSingleOrNull()
-        storage.getBucket("imperium-maps")!!.putObject("pool/${entry.id}.msav", response.body())
+        maps.uploadMap(entry, response.body())
 
         interaction.message.createUpdater()
             .removeAllEmbeds()

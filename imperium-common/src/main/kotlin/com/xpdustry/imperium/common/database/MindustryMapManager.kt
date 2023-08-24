@@ -17,10 +17,15 @@
  */
 package com.xpdustry.imperium.common.database
 
-interface Database {
-    val users: UserManager
-    val punishments: PunishmentManager
-    val legacyAccounts: LegacyAccountManager
-    val maps: MindustryMapManager
-    val mapRatings: MindustryMapRatingManager
+import kotlinx.coroutines.flow.Flow
+import org.bson.types.ObjectId
+import java.io.InputStream
+
+interface MindustryMapManager {
+    suspend fun findMapByName(name: String): MindustryMap?
+    suspend fun searchMaps(name: String): Flow<MindustryMap>
+    suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
+    suspend fun computeAverageScoreByMap(map: ObjectId): Double
+    suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty
+    suspend fun uploadMap(map: MindustryMap, stream: InputStream)
 }

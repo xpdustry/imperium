@@ -37,7 +37,7 @@ class HashCodec : Codec<Hash> {
         writer.writeEndDocument()
     }
 
-    // TODO: Handle unordered fields
+    // TODO: Handle unordered fields (Use BsonDocumentCodec or smt)
     override fun decode(reader: BsonReader, decoderContext: DecoderContext): Hash {
         reader.readStartDocument()
         val hash = reader.readBinaryData("hash").data

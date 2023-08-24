@@ -18,18 +18,25 @@
 package com.xpdustry.imperium.common.database.mongo
 
 import com.mongodb.client.model.Filters
-import com.mongodb.reactivestreams.client.MongoCollection
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.MindustryUUID
 import com.xpdustry.imperium.common.database.Punishment
 import com.xpdustry.imperium.common.database.PunishmentManager
-import com.xpdustry.imperium.common.misc.toValueFlux
+import kotlinx.coroutines.flow.Flow
 import org.bson.types.ObjectId
-import reactor.core.publisher.Flux
 import java.net.InetAddress
 
-class MongoPunishmentManager(collection: MongoCollection<Punishment>) : MongoEntityManager<Punishment, ObjectId>(collection), PunishmentManager {
-    override fun findAllByTargetAddress(target: InetAddress): Flux<Punishment> =
-        collection.find(Filters.eq("target_address", target)).toValueFlux()
-    override fun findAllByTargetUuid(target: MindustryUUID): Flux<Punishment> =
-        collection.find(Filters.eq("target_uuid", target)).toValueFlux()
+internal class MongoPunishmentManager(private val mongo: MongoProvider) : PunishmentManager, ImperiumApplication.Listener {
+
+    private lateinit var punishments: MongoEntityCollection<Punishment, ObjectId>
+
+    override fun onImperiumInit() {
+        punishments = mongo.getCollection("punishments", Punishment::class)
+    }
+
+    override suspend fun findAllByTargetAddress(target: InetAddress): Flow<Punishment> =
+        punishments.find(Filters.eq("targetAddress", target))
+
+    override suspend fun findAllByTargetUuid(target: MindustryUUID): Flow<Punishment> =
+        punishments.find(Filters.eq("targetUuid", target))
 }

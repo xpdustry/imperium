@@ -15,45 +15,41 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.model
+package com.xpdustry.imperium.common.database.mongo
 
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.database.AccountException
-import com.xpdustry.imperium.common.database.AccountService
-import com.xpdustry.imperium.common.database.Database
+import com.xpdustry.imperium.common.database.AccountManager
+import com.xpdustry.imperium.common.database.AccountOperationResult
 import com.xpdustry.imperium.common.database.PlayerIdentity
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.misc.ExitStatus
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import reactor.test.StepVerifier
 import java.net.InetAddress
 import java.util.Base64
 import kotlin.random.Random
 
 // TODO: Finish writing tests
 @Testcontainers
-class AccountServiceTest {
+class MongoAccountManagerTest {
     private lateinit var application: SimpleImperiumApplication
-    private lateinit var database: Database
-    private lateinit var service: SimpleAccountService
+    private lateinit var manager: MongoAccountManager
 
     @BeforeEach
     fun init() {
-        application = SimpleImperiumApplication(MODULE)
-
-        database = application.instances.get<Database>()
-        service = application.instances.get<AccountService>() as SimpleAccountService
-
+        application = SimpleImperiumApplication(createModule())
+        manager = application.instances.get<AccountManager>() as MongoAccountManager
         application.init()
     }
 
@@ -63,48 +59,52 @@ class AccountServiceTest {
     }
 
     @Test
-    fun `test simple registration`() {
+    fun `test simple registration`() = runTest {
         val username = randomUsername()
         val identity = randomPlayerIdentity()
 
-        StepVerifier.create(service.register(username, INVALID_PASSWORD, identity))
-            .expectError(AccountException.InvalidPassword::class.java)
-            .verify()
+        Assertions.assertInstanceOf(
+            AccountOperationResult.InvalidPassword::class.java,
+            manager.register(username, INVALID_PASSWORD, identity),
+        )
 
-        StepVerifier.create(service.register(username, TEST_PASSWORD_1, identity))
-            .verifyComplete()
+        Assertions.assertEquals(
+            AccountOperationResult.Success,
+            manager.register(username, TEST_PASSWORD_1, identity),
+        )
 
-        StepVerifier.create(service.register(username, TEST_PASSWORD_1, identity))
-            .expectError(AccountException.AlreadyRegistered::class.java)
-            .verify()
+        Assertions.assertEquals(
+            AccountOperationResult.AlreadyRegistered,
+            manager.register(username, TEST_PASSWORD_1, identity),
+        )
 
-        StepVerifier.create(database.accounts.findByUsername(username))
-            .expectNextMatches { it.username == username }
-            .verifyComplete()
+        val account = manager.findByUsername(username)
+        Assertions.assertNotNull(account)
+        Assertions.assertEquals(username, account!!.username)
     }
 
     @Test
-    fun `test simple login`() {
+    fun `test simple login`() = runTest {
         val username = randomUsername()
         val identity = randomPlayerIdentity()
 
-        StepVerifier.create(service.login(username, TEST_PASSWORD_1, identity))
-            .expectError(AccountException.NotRegistered::class.java)
-            .verify()
+        Assertions.assertEquals(
+            AccountOperationResult.NotRegistered,
+            manager.login(username, TEST_PASSWORD_1, identity),
+        )
 
-        StepVerifier.create(service.register(username, TEST_PASSWORD_1, identity))
-            .verifyComplete()
+        manager.register(username, TEST_PASSWORD_1, identity)
 
-        StepVerifier.create(service.login(username, TEST_PASSWORD_2, identity))
-            .expectError(AccountException.WrongPassword::class.java)
-            .verify()
+        Assertions.assertEquals(
+            AccountOperationResult.WrongPassword,
+            manager.login(username, TEST_PASSWORD_2, identity),
+        )
 
-        StepVerifier.create(service.login(username, TEST_PASSWORD_1, identity))
-            .verifyComplete()
+        manager.login(username, TEST_PASSWORD_1, identity)
 
-        StepVerifier.create(database.accounts.findByUsername(username))
-            .expectNextMatches { it.sessions.contains(service.createSessionToken(identity).block()) }
-            .verifyComplete()
+        val account = manager.findByUsername(username)
+        Assertions.assertNotNull(account)
+        Assertions.assertTrue(account!!.sessions.contains(manager.createSessionToken(identity)))
     }
 
     private fun randomPlayerIdentity(): PlayerIdentity {
@@ -127,6 +127,13 @@ class AccountServiceTest {
         return String(chars)
     }
 
+    private fun createModule() = module("account-test") {
+        include(com.xpdustry.imperium.common.commonModule())
+        single<ImperiumConfig> {
+            ImperiumConfig(database = DatabaseConfig.Mongo(port = MONGO_CONTAINER.firstMappedPort))
+        }
+    }
+
     companion object {
         @Container
         private val MONGO_CONTAINER = MongoDBContainer(DockerImageName.parse("mongo:6"))
@@ -134,12 +141,5 @@ class AccountServiceTest {
         private val TEST_PASSWORD_1 = "ABc123!#".toCharArray()
         private val TEST_PASSWORD_2 = "123ABc!#".toCharArray()
         private val INVALID_PASSWORD = "1234".toCharArray()
-
-        private val MODULE = module("account-test") {
-            include(com.xpdustry.imperium.common.commonModule())
-            single<ImperiumConfig> {
-                ImperiumConfig(database = DatabaseConfig.Mongo(port = MONGO_CONTAINER.getMappedPort(27017)))
-            }
-        }
     }
 }

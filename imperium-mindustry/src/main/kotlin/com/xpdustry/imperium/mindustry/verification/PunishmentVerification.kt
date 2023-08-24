@@ -17,37 +17,36 @@
  */
 package com.xpdustry.imperium.mindustry.verification
 
-import com.xpdustry.imperium.common.database.Database
-import com.xpdustry.imperium.common.misc.toValueMono
+import com.xpdustry.imperium.common.database.Punishment
+import com.xpdustry.imperium.common.database.PunishmentManager
 import com.xpdustry.imperium.mindustry.processing.Processor
-import kotlinx.coroutines.reactor.awaitSingle
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.toList
 import java.time.Duration
-import java.time.temporal.ChronoUnit
 
-class PunishmentVerification(private val database: Database) : Processor<VerificationContext, VerificationResult> {
-    override suspend fun process(context: VerificationContext): VerificationResult =
-        database.punishments
+class PunishmentVerification(private val punishments: PunishmentManager) : Processor<VerificationContext, VerificationResult> {
+    override suspend fun process(context: VerificationContext): VerificationResult {
+        val punishment = punishments
             .findAllByTargetAddress(context.address)
             .filter { it.expired.not() }
-            .sort { a, b ->
-                val aDuration = a.duration ?: ChronoUnit.FOREVER.duration
-                val bDuration = b.duration ?: ChronoUnit.FOREVER.duration
-                bDuration.compareTo(aDuration)
-            }
-            .next()
-            .map<VerificationResult> {
-                VerificationResult.Failure(
-                    """
-                        [red]Oh no! You are currently banned from Chaotic Neutral!
-                        [accent]Reason:[white] ${it.reason}
-                        [accent]Duration:[white] ${formatDuration(it.duration)}
+            .toList()
+            .sortedWith(Comparator.comparing(Punishment::type).thenComparing(Punishment::duration))
+            .firstOrNull()
 
-                        [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
-                    """.trimIndent(),
-                )
-            }
-            .switchIfEmpty(VerificationResult.Success.toValueMono())
-            .awaitSingle()
+        return if (punishment == null) {
+            VerificationResult.Success
+        } else {
+            VerificationResult.Failure(
+                """
+                    [red]Oh no! You are currently banned from Chaotic Neutral!
+                    [accent]Reason:[white] ${punishment.reason}
+                    [accent]Duration:[white] ${formatDuration(punishment.duration)}
+
+                    [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
+                """.trimIndent(),
+            )
+        }
+    }
 }
 
 private fun formatDuration(duration: Duration?): String = when {

@@ -17,14 +17,7 @@
  */
 package com.xpdustry.imperium.common.database
 
-import com.xpdustry.imperium.common.misc.switchIfEmpty
-import com.xpdustry.imperium.common.misc.toValueMono
-import reactor.core.publisher.Mono
-import java.util.function.Consumer
-
-interface UserManager : EntityManager<String, User> {
-    fun findByIdOrCreate(id: String): Mono<User> =
-        findById(id).switchIfEmpty { User(id).toValueMono() }
-    fun updateOrCreate(id: String, updater: Consumer<User>): Mono<Void> =
-        findByIdOrCreate(id).doOnNext(updater).flatMap(::save)
+interface UserManager {
+    suspend fun findByUuidOrCreate(uuid: MindustryUUID): User
+    suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
 }

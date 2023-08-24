@@ -22,6 +22,9 @@ import fr.xpdustry.distributor.api.util.Priority
 
 abstract class AbstractProcessorPipeline<I : Any, O : Any> : ProcessorPipeline<I, O> {
 
+    // TODO Use pipeline name
+    private val logger by LoggerDelegate()
+
     protected val processors: List<Processor<I, O>>
         get() = _processors.map { it.processor }
 
@@ -44,8 +47,4 @@ abstract class AbstractProcessorPipeline<I : Any, O : Any> : ProcessorPipeline<I
         val name: String,
         val priority: Priority,
     )
-
-    companion object {
-        private val logger by LoggerDelegate()
-    }
 }

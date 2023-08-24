@@ -30,7 +30,6 @@ import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
-import reactor.core.scheduler.Schedulers
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.function.Supplier
@@ -60,7 +59,7 @@ fun discordModule() = module("discord") {
     }
 
     single<Executor>("scheduler") {
-        Executor { runnable -> Schedulers.boundedElastic().schedule(runnable) }
+        Executor { get<DiscordService>().api.threadPool.executorService.execute(it) }
     }
 
     single<ServerConfig.Discord> {

@@ -46,7 +46,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Base64
 
-private class MongoAccountManager(private val mongo: MongoProvider) : AccountManager, ImperiumApplication.Listener {
+internal class MongoAccountManager(private val mongo: MongoProvider) : AccountManager, ImperiumApplication.Listener {
 
     private val limiter = RateLimiter<AccountRateLimitKey>(5, Duration.ofMinutes(5L))
     private lateinit var accounts: MongoEntityCollection<Account, ObjectId>
@@ -72,7 +72,7 @@ private class MongoAccountManager(private val mongo: MongoProvider) : AccountMan
         }
     }
 
-    override suspend fun register(username: String, password: CharArray, identity: PlayerIdentity, allowReservedUsernames: Boolean): AccountOperationResult {
+    override suspend fun register(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult {
         if (isRateLimited("register", identity)) {
             return AccountOperationResult.RateLimit
         }
@@ -93,7 +93,6 @@ private class MongoAccountManager(private val mongo: MongoProvider) : AccountMan
         }
 
         val missingUsrRequirements = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(normalizedUsername)
-            .filter { allowReservedUsernames && it !is UsernameRequirement.Reserved }
         if (missingUsrRequirements.isNotEmpty()) {
             return AccountOperationResult.InvalidUsername(missingUsrRequirements)
         }
@@ -139,7 +138,7 @@ private class MongoAccountManager(private val mongo: MongoProvider) : AccountMan
             ),
         )
 
-        legacyAccounts.deleteById(legacy.id)
+        legacyAccounts.deleteById(legacy._id)
 
         return AccountOperationResult.Success
     }

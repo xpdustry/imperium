@@ -21,8 +21,9 @@ import org.bson.types.ObjectId
 import java.time.Instant
 
 interface Entity<I> {
-    val id: I
+    @Suppress("PropertyName")
+    val _id: I
 }
 
 val Entity<ObjectId>.timestamp: Instant
-    get() = id.date.toInstant()
+    get() = _id.date.toInstant()

@@ -20,8 +20,8 @@ package com.xpdustry.imperium.mindustry.account
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.database.AccountManager
-import com.xpdustry.imperium.common.database.Database
 import com.xpdustry.imperium.common.database.PlayerIdentity
+import com.xpdustry.imperium.common.database.UserManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
@@ -38,16 +38,16 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val manager: AccountManager = instances.get()
     private val pipeline: VerificationPipeline = instances.get()
-    private val database: Database = instances.get()
+    private val accounts = instances.get<AccountManager>()
+    private val users = instances.get<UserManager>()
     private val playtime = ConcurrentHashMap<Player, Long>()
 
     override fun onImperiumInit() {
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         pipeline.register("account", Priority.LOWEST) {
-            manager.refresh(PlayerIdentity(it.uuid, it.usid, it.address))
+            accounts.refresh(PlayerIdentity(it.uuid, it.usid, it.address))
             VerificationResult.Success
         }
     }
@@ -55,22 +55,24 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
-        database.users.updateOrCreate(event.player.uuid()) { user ->
-            val address = event.player.ip().toInetAddress()
-            val name = event.player.plainName()
-            user.timesJoined += 1
-            user.lastName = name
-            user.names += name
-            user.lastAddress = address
-            user.addresses += address
-        }.subscribe()
+        ImperiumScope.MAIN.launch {
+            users.updateOrCreateByUuid(event.player.uuid()) { user ->
+                val address = event.player.ip().toInetAddress()
+                val name = event.player.plainName()
+                user.timesJoined += 1
+                user.lastName = name
+                user.names += name
+                user.lastAddress = address
+                user.addresses += address
+            }
+        }
     }
 
     @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {
         Groups.player.forEach { player ->
             ImperiumScope.MAIN.launch {
-                manager.updateByIdentity(player.identity) { account ->
+                accounts.updateByIdentity(player.identity) { account ->
                     account.games++
                 }
             }
@@ -80,7 +82,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) = ImperiumScope.MAIN.launch {
         val now = System.currentTimeMillis()
-        manager.updateByIdentity(event.player.identity) { account ->
+        accounts.updateByIdentity(event.player.identity) { account ->
             account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
         }
     }

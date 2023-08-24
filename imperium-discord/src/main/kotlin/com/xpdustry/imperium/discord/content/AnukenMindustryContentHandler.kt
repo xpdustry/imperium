@@ -68,7 +68,6 @@ import mindustry.world.Tile
 import mindustry.world.WorldContext
 import mindustry.world.blocks.environment.OreBlock
 import mindustry.world.blocks.legacy.LegacyBlock
-import reactor.core.scheduler.Schedulers
 import java.awt.Graphics2D
 import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
@@ -103,9 +102,6 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
     private val regions = CacheBuilder.newBuilder()
         .expireAfterAccess(Duration.of(1L, ChronoUnit.MINUTES))
         .build<String, BufferedImage>()
-
-    private val schematicScheduler = Schedulers.newSingle("mindustry-schematic-preview")
-    private val mapScheduler = Schedulers.newSingle("mindustry-map-preview")
 
     override fun onImperiumInit() {
         Version.enabled = false
@@ -205,11 +201,6 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         Vars.world = object : World() {
             override fun tile(x: Int, y: Int): Tile = Tile(x, y)
         }
-    }
-
-    override fun onImperiumExit() {
-        schematicScheduler.dispose()
-        mapScheduler.dispose()
     }
 
     private fun downloadAssets() {

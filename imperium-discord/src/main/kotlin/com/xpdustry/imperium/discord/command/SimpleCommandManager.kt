@@ -31,7 +31,6 @@ import org.javacord.api.interaction.SlashCommandInteractionOption
 import org.javacord.api.interaction.SlashCommandOption
 import org.javacord.api.interaction.SlashCommandOptionBuilder
 import org.javacord.api.interaction.SlashCommandOptionType
-import reactor.core.publisher.Mono
 import java.util.function.Consumer
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KAnnotatedElement
@@ -154,7 +153,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 path = base + local.path.toList(),
                 edge = CommandEdge(
                     container,
-                    function as KFunction<Mono<*>>,
+                    function,
                     function.findAnnotation<Permission>()?.rank ?: permission ?: Rank.EVERYONE,
                     arguments,
                 ),
@@ -276,7 +275,7 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
     }
 }
 
-private data class CommandEdge(val container: Any, val function: KFunction<Mono<*>>, val permission: Rank, val arguments: List<Argument>) {
+private data class CommandEdge(val container: Any, val function: KFunction<*>, val permission: Rank, val arguments: List<Argument>) {
     data class Argument(val name: String, val optional: Boolean, val handler: TypeHandler<*>)
 }
 
