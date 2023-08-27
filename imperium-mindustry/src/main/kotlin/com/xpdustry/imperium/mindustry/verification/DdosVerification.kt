@@ -27,7 +27,6 @@ import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.mindustry.processing.Processor
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
@@ -119,7 +118,7 @@ private fun toInetAddressWithoutMask(string: String): InetAddress {
 private class AzureAddressProvider : JsonAddressProvider("Azure") {
 
     // This goofy aah hacky code 💀
-    override suspend fun fetchUri(): URI = withContext(Dispatchers.IO) {
+    override suspend fun fetchUri(): URI = withContext(ImperiumScope.IO.coroutineContext) {
         Jsoup.connect(AZURE_PUBLIC_ADDRESSES_DOWNLOAD_LINK)
             .get()
             .select("a[href*=download.microsoft.com]")
