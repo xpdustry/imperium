@@ -15,21 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command
+package com.xpdustry.imperium.discord.interaction.button
 
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class Command(vararg val path: String)
-
-val Command.name: String
-    get() = path[0]
-
-fun Command.validate() {
-    if (path.isEmpty()) {
-        throw IllegalArgumentException("Command name cannot be empty")
-    }
-    if (path.any { !it.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$")) }) {
-        throw IllegalArgumentException("Command name must be alphanumeric and start with a letter")
-    }
-}
+annotation class InteractionButton(val name: String, val version: Int = 1)

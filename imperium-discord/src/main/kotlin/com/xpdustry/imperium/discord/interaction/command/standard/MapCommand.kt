@@ -15,22 +15,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command.standard
+package com.xpdustry.imperium.discord.interaction.command.standard
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.database.MindustryMap
 import com.xpdustry.imperium.common.database.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
-import com.xpdustry.imperium.discord.command.Command
-import com.xpdustry.imperium.discord.command.CommandActor
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
+import com.xpdustry.imperium.discord.interaction.InteractionActor
+import com.xpdustry.imperium.discord.interaction.button.InteractionButton
+import com.xpdustry.imperium.discord.interaction.command.Command
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
 import org.javacord.api.entity.message.MessageBuilder
@@ -38,7 +37,6 @@ import org.javacord.api.entity.message.component.ActionRow
 import org.javacord.api.entity.message.component.Button
 import org.javacord.api.entity.message.embed.Embed
 import org.javacord.api.entity.message.embed.EmbedBuilder
-import org.javacord.api.interaction.ButtonInteraction
 import java.awt.Color
 import java.net.http.HttpResponse.BodyHandlers
 import kotlin.jvm.optionals.getOrNull
@@ -51,37 +49,27 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val http = instances.get<CoroutineHttpClient>()
 
-    override fun onImperiumInit() {
-        discord.getMainServer().addButtonClickListener { event ->
-            if (event.buttonInteraction.customId == "map-submission:rejected:1") {
-                ImperiumScope.MAIN.launch { onMapRejected(event.buttonInteraction) }
-            } else if (event.buttonInteraction.customId == "map-submission:approved:1") {
-                ImperiumScope.MAIN.launch { onMapApproved(event.buttonInteraction) }
-            }
-        }
-    }
-
     @Command("submit")
-    suspend fun onSubmitCommand(actor: CommandActor, map: Attachment) {
+    suspend fun onSubmitCommand(actor: InteractionActor, map: Attachment) {
         if (!map.fileName.endsWith(".msav")) {
-            actor.updater.setContent("Invalid map file!").update().await()
+            actor.respond("Invalid map file!")
             return
         }
 
         val response = http.get(map.url.toURI(), BodyHandlers.ofInputStream())
         if (response.statusCode() != 200) {
-            actor.updater.setContent("Unable to fetch map file!").update().await()
+            actor.respond("Unable to fetch map file!")
             return
         }
 
         val preview = content.getMapPreview(response.body()).getOrThrow()
         if (preview.name == null) {
-            actor.updater.setContent("The map does not have a name!").update().await()
+            actor.respond("The map does not have a name!")
             return
         }
 
         if (maps.findMapByName(preview.name) != null) {
-            actor.updater.setContent("A map with that name already exists!").update().await()
+            actor.respond("A map with the name ${preview.name} already exists!")
             return
         }
 
@@ -98,14 +86,14 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .addField("Author", preview.author ?: "Unknown")
                     .addField("Description", preview.description ?: "Unknown")
                     .addField("Size", "${preview.width} x ${preview.height}")
-                    .addField("Submitter", actor.interaction.user.mentionTag)
+                    .addField("Submitter", actor.user.mentionTag)
                     .addField("Status", "Pending review", true)
                     .setImage(preview.image),
             )
             .addComponents(
                 ActionRow.of(
-                    Button.primary("map-submission:approved:1", "Approve"),
-                    Button.danger("map-submission:rejected:1", "Reject"),
+                    Button.primary("map-submission-approved:1", "Approve"),
+                    Button.danger("map-submission-rejected:1", "Reject"),
                 ),
             )
             .send(channel)
@@ -113,71 +101,65 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
         message.createThread("Comments for ${preview.name}", AutoArchiveDuration.THREE_DAYS).await()
 
-        actor.updater.addEmbed(
+        actor.respond(
             EmbedBuilder()
                 .setDescription("Your map has been submitted for review. Check the status [here](${message.link})."),
-        ).update().await()
+        )
     }
 
     @Command("list")
-    suspend fun onListCommand(actor: CommandActor) = Unit
+    suspend fun onListCommand(actor: InteractionActor) = Unit
 
     @Command("update")
-    suspend fun onUpdateCommand(actor: CommandActor) = Unit
+    suspend fun onUpdateCommand(actor: InteractionActor) = Unit
 
     @Command("info")
-    suspend fun onInfoCommand(actor: CommandActor) = Unit
+    suspend fun onInfoCommand(actor: InteractionActor) = Unit
 
-    private suspend fun onMapRejected(interaction: ButtonInteraction) {
-        val updater = interaction.respondLater(true).await()
-        interaction.message.createUpdater()
+    @InteractionButton("map-submission-rejected")
+    private suspend fun onMapRejected(actor: InteractionActor.Button) {
+        actor.message.createUpdater()
             .removeAllEmbeds()
             .addEmbed(
-                interaction.message.embeds.first().replaceFields("Status" to "Rejected").setColor(Color.RED),
+                actor.message.embeds.first().replaceFields("Status" to "Rejected").setColor(Color.RED),
             )
             .removeAllComponents()
             .applyChanges()
             .await()
 
-        interaction.message.embeds.first().fields.find { it.name == "Submitter" }?.value
+        actor.message.embeds.first().fields.find { it.name == "Submitter" }?.value
             ?.let { discord.api.getUserById(MENTION_TAG_REGEX.find(it)!!.groupValues[1].toLong()) }
             ?.await()
             ?.sendMessage(
                 EmbedBuilder()
                     .setColor(Color.RED)
                     .setTitle("Oh no!")
-                    .setDescription("Your [map submission](${interaction.message.link}) has been rejected by ${interaction.user.mentionTag}."),
+                    .setDescription("Your [map submission](${actor.message.link}) has been rejected by ${actor.user.mentionTag}."),
             )
             ?.await()
 
-        updater.setContent("Map submission rejected!").update().await()
+        actor.respond("Map submission rejected!")
     }
 
-    private suspend fun onMapApproved(interaction: ButtonInteraction) {
-        val embed = interaction.message.embeds.first()
+    @InteractionButton("map-submission-approved")
+    private suspend fun onMapApproved(actor: InteractionActor.Button) {
+        val embed = actor.message.embeds.first()
         val name = embed.getFieldValue("Name")!!
-        val attachment = interaction.message.attachments.first()
-        val updater = interaction.respondLater(true).await()
+        val attachment = actor.message.attachments.first()
 
         if (maps.findMapByName(name) != null) {
-            updater
-                .setContent("A map with that name already exists!")
-                .update()
+            actor.respond("A map with that name already exists!")
             return
         }
 
         if (!attachment.fileName.endsWith(".msav")) {
-            updater
-                .setContent("Invalid map file!")
-                .update()
+            actor.respond("Invalid map file!")
             return
         }
 
         val response = http.get(attachment.url.toURI(), BodyHandlers.ofInputStream())
         if (response.statusCode() != 200) {
-            updater
-                .setContent("Unable to fetch map file!")
-                .update()
+            actor.respond("Unable to fetch map file!")
             return
         }
 
@@ -192,27 +174,27 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
         maps.uploadMap(entry, response.body())
 
-        interaction.message.createUpdater()
+        actor.message.createUpdater()
             .removeAllEmbeds()
             .addEmbed(
-                interaction.message.embeds.first().replaceFields("Status" to "Approved").setColor(Color.GREEN),
+                actor.message.embeds.first().replaceFields("Status" to "Approved").setColor(Color.GREEN),
             )
             .removeAllComponents()
             .applyChanges()
             .await()
 
-        interaction.message.embeds.first().getFieldValue("Submitter")
+        actor.message.embeds.first().getFieldValue("Submitter")
             ?.let { discord.api.getUserById(MENTION_TAG_REGEX.find(it)!!.groupValues[1].toLong()) }
             ?.await()
             ?.sendMessage(
                 EmbedBuilder()
                     .setColor(Color.GREEN)
                     .setTitle("Congratulations!")
-                    .setDescription("Your [map submission](${interaction.message.link}) has been approved by ${interaction.user.mentionTag}."),
+                    .setDescription("Your [map submission](${actor.message.link}) has been approved by ${actor.user.mentionTag}."),
             )
             ?.await()
 
-        updater.setContent("Map submission approved!").update().await()
+        actor.respond("Map submission approved!")
     }
 
     private fun Embed.replaceFields(vararg replacements: Pair<String, String>): EmbedBuilder {

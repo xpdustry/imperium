@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command.standard
+package com.xpdustry.imperium.discord.interaction.command.standard
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
@@ -26,9 +26,8 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LimitedList
 import com.xpdustry.imperium.common.network.Discovery
-import com.xpdustry.imperium.discord.command.Command
-import com.xpdustry.imperium.discord.command.CommandActor
-import kotlinx.coroutines.future.await
+import com.xpdustry.imperium.discord.interaction.InteractionActor
+import com.xpdustry.imperium.discord.interaction.command.Command
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.time.Instant
 import java.util.Queue
@@ -47,12 +46,12 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command("list")
-    suspend fun onServerList(actor: CommandActor) =
-        actor.updater.addEmbed(
+    suspend fun onServerList(actor: InteractionActor) =
+        actor.respond(
             EmbedBuilder()
                 .setTitle("Server List")
                 .setDescription(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName }),
-        ).update().await()
+        )
 
     data class PlayerJoinEntry(val player: PlayerInfo, val timestamp: Instant = Instant.now())
 }

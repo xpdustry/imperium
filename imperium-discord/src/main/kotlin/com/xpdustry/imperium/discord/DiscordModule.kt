@@ -24,10 +24,12 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.network.MindustryServerInfo
-import com.xpdustry.imperium.discord.command.CommandManager
-import com.xpdustry.imperium.discord.command.SimpleCommandManager
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
+import com.xpdustry.imperium.discord.interaction.button.ButtonManager
+import com.xpdustry.imperium.discord.interaction.button.SimpleButtonManager
+import com.xpdustry.imperium.discord.interaction.command.CommandManager
+import com.xpdustry.imperium.discord.interaction.command.SimpleCommandManager
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
@@ -48,6 +50,10 @@ fun discordModule() = module("discord") {
 
     single<CommandManager> {
         SimpleCommandManager(get())
+    }
+
+    single<ButtonManager> {
+        SimpleButtonManager(get())
     }
 
     single<Supplier<MindustryServerInfo?>> {

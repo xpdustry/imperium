@@ -15,11 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command
+package com.xpdustry.imperium.discord.interaction.command
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.discord.interaction.InteractionActor
+import com.xpdustry.imperium.discord.interaction.Permission
+import com.xpdustry.imperium.discord.interaction.Rank
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -35,6 +38,7 @@ import java.util.function.Consumer
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
+import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
@@ -61,17 +65,17 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         compile()
         discord.api.addSlashCommandCreateListener { event ->
             ImperiumScope.MAIN.launch {
-                val updater = event.slashCommandInteraction.respondLater(true).await()
+                val responder = event.slashCommandInteraction.respondLater(true).await()
                 val node = tree.resolve(event.slashCommandInteraction.fullCommandName.split(" "))
                 val command = node.edge!!
-                val actor = CommandActor(updater, event.slashCommandInteraction)
+                val actor = InteractionActor.Slash(event)
                 val arguments = try {
                     command.function.parameters.associateWith { parameter ->
                         if (parameter.index == 0) {
                             return@associateWith command.container
                         }
 
-                        if (parameter.type.classifier == CommandActor::class) {
+                        if (isSupportedActor(parameter.type.classifier!!)) {
                             return@associateWith actor
                         }
 
@@ -87,7 +91,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                     }
                 } catch (e: Exception) {
                     logger.error("Error while parsing arguments for command ${node.fullName}", e)
-                    updater.setContent(":warning: **An unexpected error occurred while parsing your command.**")
+                    responder.setContent(":warning: **An unexpected error occurred while parsing your command.**")
                         .update().await()
                     return@launch
                 }
@@ -96,7 +100,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                     command.function.callSuspendBy(arguments)
                 } catch (e: Exception) {
                     logger.error("Error while executing command ${node.fullName}", e)
-                    updater.setContent(":warning: **An unexpected error occurred while executing your command.**")
+                    responder.setContent(":warning: **An unexpected error occurred while executing your command.**")
                         .update().await()
                 }
             }
@@ -128,8 +132,8 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 }
 
                 if (parameter.index == 1) {
-                    if (parameter.type.classifier != CommandActor::class) {
-                        throw IllegalArgumentException("First parameter must be of type CommandActor")
+                    if (!isSupportedActor(parameter.type.classifier!!)) {
+                        throw IllegalArgumentException("First parameter is not a InteractionActor")
                     }
                     continue
                 }
@@ -148,7 +152,6 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 arguments += CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
             }
 
-            @Suppress("UNCHECKED_CAST")
             tree.resolve(
                 path = base + local.path.toList(),
                 edge = CommandEdge(
@@ -225,6 +228,9 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
     private fun <T : Any> registerHandler(klass: KClass<T>, handler: TypeHandler<T>) {
         handlers[klass] = handler
     }
+
+    private fun isSupportedActor(classifier: KClassifier) =
+        classifier == InteractionActor::class || classifier == InteractionActor.Slash::class
 
     companion object {
         private val logger by LoggerDelegate()

@@ -22,10 +22,11 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.bridge.BridgeListener
-import com.xpdustry.imperium.discord.command.CommandManager
-import com.xpdustry.imperium.discord.command.standard.MapCommand
-import com.xpdustry.imperium.discord.command.standard.PingCommand
-import com.xpdustry.imperium.discord.command.standard.ServerCommand
+import com.xpdustry.imperium.discord.interaction.button.ButtonManager
+import com.xpdustry.imperium.discord.interaction.command.CommandManager
+import com.xpdustry.imperium.discord.interaction.command.standard.MapCommand
+import com.xpdustry.imperium.discord.interaction.command.standard.PingCommand
+import com.xpdustry.imperium.discord.interaction.command.standard.ServerCommand
 import com.xpdustry.imperium.discord.moderation.ReportListener
 import java.util.Scanner
 import kotlin.system.exitProcess
@@ -48,8 +49,10 @@ fun main() {
     application.register(MapCommand::class)
 
     val commands = application.instances.get<CommandManager>()
+    val buttons = application.instances.get<ButtonManager>()
     for (listener in application.listeners) {
         commands.register(listener)
+        buttons.register(listener)
     }
 
     application.init()

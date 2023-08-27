@@ -15,17 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command.standard
+package com.xpdustry.imperium.discord.interaction.button
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.discord.command.Command
-import com.xpdustry.imperium.discord.command.CommandActor
-import kotlinx.coroutines.future.await
-
-class PingCommand : ImperiumApplication.Listener {
-    @Command("ping")
-    suspend fun onPingCommand(actor: CommandActor) =
-        actor.updater.setContent(
-            "pong with **${actor.interaction.api.measureRestLatency().await().toMillis()}** milliseconds of latency!",
-        ).update().await()
+interface ButtonManager {
+    fun register(container: Any)
 }
