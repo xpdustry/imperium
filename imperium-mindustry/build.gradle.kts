@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.relocation.SimpleRelocator
 import fr.xpdustry.toxopid.dsl.mindustryDependencies
 import fr.xpdustry.toxopid.task.GithubArtifactDownload
 import fr.xpdustry.toxopid.task.MindustryExec
@@ -48,15 +47,13 @@ tasks.shadowJar {
     archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
 
+    // Disable relocation, KOTLIN IS NOT SUPPORTED CORRECTLY, THIS IS VERY ANNOYING
+    /*
     doFirst {
-        @Suppress("SpellCheckingInspection")
-        fun removeRelocator(pattern: String) =
-            relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith(pattern) }
-
-        // Disable relocation, KOTLIN IS NOT SUPPORTED CORRECTLY, THIS IS VERY ANNOYING
-        // RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.imperium.shadow")
-        // removeRelocator("com.xpdustry.imperium.common")
+        RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.imperium.shadow")
+        relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith("com.xpdustry.imperium.common") }
     }
+     */
 
     doFirst {
         val temp = temporaryDir.resolve("plugin.json")
