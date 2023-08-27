@@ -31,6 +31,7 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
     // TODO This should be hidden, but I need to process the instances for the commands for the discord bot
     val listeners = arrayListOf<ImperiumApplication.Listener>()
+    private val initialized = arrayListOf<ImperiumApplication.Listener>()
 
     fun register(listener: ImperiumApplication.Listener) = synchronized(listeners) {
         if (listeners.contains(listener)) {
@@ -62,7 +63,10 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
     override fun init() {
         try {
-            listeners.forEach(ImperiumApplication.Listener::onImperiumInit)
+            for (listener in listeners) {
+                listener.onImperiumInit()
+                initialized += listener
+            }
             logger.info("Imperium has successfully init.")
         } catch (e: Exception) {
             logger.error("Imperium failed to init.", e)
@@ -71,13 +75,11 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
     }
 
     override fun exit(status: ExitStatus) {
-        if (status != ExitStatus.INIT_FAILURE) {
-            listeners.reversed().forEach {
-                try {
-                    it.onImperiumExit()
-                } catch (e: Exception) {
-                    logger.error("Error while exiting listener {}", it::class.simpleName, e)
-                }
+        initialized.reversed().forEach {
+            try {
+                it.onImperiumExit()
+            } catch (e: Exception) {
+                logger.error("Error while exiting listener {}", it::class.simpleName, e)
             }
         }
         logger.info("Imperium has exit with status: {}", status)

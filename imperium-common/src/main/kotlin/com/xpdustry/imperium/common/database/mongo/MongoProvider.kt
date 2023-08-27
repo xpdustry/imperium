@@ -29,9 +29,10 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.Entity
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.bson.codecs.configuration.CodecRegistries
+import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
 internal interface MongoProvider {
@@ -51,6 +52,7 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
             .applicationName("imperium-${config.server.name}")
             .applyToClusterSettings { cluster ->
                 cluster.hosts(listOf(ServerAddress(config.database.host, config.database.port)))
+                cluster.serverSelectionTimeout(5, TimeUnit.SECONDS)
             }
             .also { settings ->
                 if (config.database.username.isBlank()) {
@@ -85,7 +87,7 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
         client = MongoClient.create(settings)
 
         try {
-            runBlocking { client.listDatabaseNames().toList() }
+            runBlocking { client.listDatabaseNames().collect() }
         } catch (e: Exception) {
             throw RuntimeException("Failed to connect to the mongo database", e)
         }
