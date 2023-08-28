@@ -68,7 +68,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     override suspend fun updateByIdentity(identity: PlayerIdentity, updater: (Account) -> Unit) {
         findAccountByIdentity(identity)?.let {
             updater(it)
-            accounts.update(it)
+            accounts.save(it)
         }
     }
 
@@ -97,7 +97,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
             return AccountOperationResult.InvalidUsername(missingUsrRequirements)
         }
 
-        accounts.insert(
+        accounts.save(
             Account(
                 username = normalizedUsername,
                 password = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS),
@@ -120,12 +120,16 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         }
 
         val normalizedUsername = newUsername.normalizeUsername()
+        if (findByUsername(normalizedUsername) != null) {
+            return AccountOperationResult.AlreadyRegistered
+        }
+
         val missing = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(normalizedUsername)
         if (missing.isNotEmpty()) {
             return AccountOperationResult.InvalidUsername(missing)
         }
 
-        accounts.insert(
+        accounts.save(
             Account(
                 username = normalizedUsername,
                 password = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS),
@@ -158,7 +162,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         val now = Instant.now()
         account.sessions.values.removeIf { it.expiration.isBefore(now) }
         account.sessions[createSessionToken(identity)] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
-        accounts.update(account)
+        accounts.save(account)
 
         return AccountOperationResult.Success
     }
@@ -166,13 +170,13 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     override suspend fun logout(identity: PlayerIdentity, all: Boolean) {
         val account = findAccountByIdentity(identity) ?: return
         if (all) account.sessions.clear() else account.sessions.remove(createSessionToken(identity))
-        accounts.update(account)
+        accounts.save(account)
     }
 
     override suspend fun refresh(identity: PlayerIdentity) {
         val account = findAccountByIdentity(identity) ?: return
         account.sessions[createSessionToken(identity)] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
-        accounts.update(account)
+        accounts.save(account)
     }
 
     override suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: PlayerIdentity): AccountOperationResult {
@@ -193,7 +197,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         }
 
         account.password = GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS)
-        accounts.update(account)
+        accounts.save(account)
 
         return AccountOperationResult.Success
     }

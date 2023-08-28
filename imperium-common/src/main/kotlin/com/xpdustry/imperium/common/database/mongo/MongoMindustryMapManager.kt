@@ -20,7 +20,9 @@ package com.xpdustry.imperium.common.database.mongo
 import com.mongodb.client.model.Accumulators
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Indexes
 import com.mongodb.client.model.Projections
+import com.mongodb.client.model.TextSearchOptions
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.MindustryMap
 import com.xpdustry.imperium.common.database.MindustryMapManager
@@ -32,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.bson.BsonDocument
 import org.bson.types.ObjectId
 import java.io.InputStream
@@ -48,13 +51,18 @@ internal class MongoMindustryMapManager(
     override fun onImperiumInit() {
         maps = mongo.getCollection("maps", MindustryMap::class)
         ratings = mongo.getCollection("map_ratings", Rating::class)
+        runBlocking {
+            maps.index(Indexes.compoundIndex(Indexes.ascending("name"), Indexes.text("name"))) {
+                name("name_index").version(1).unique(true).defaultLanguage("english")
+            }
+        }
     }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         maps.find(Filters.eq("name", name)).firstOrNull()
 
     override suspend fun searchMaps(name: String): Flow<MindustryMap> =
-        maps.find(Filters.text(name))
+        maps.find(Filters.text(name, TextSearchOptions().caseSensitive(false)))
             .projection(Projections.metaTextScore("score"))
             .sort(Projections.metaTextScore("score"))
 
@@ -85,8 +93,8 @@ internal class MongoMindustryMapManager(
         return Rating.Difficulty.entries[average.roundToInt()]
     }
 
-    override suspend fun uploadMap(map: MindustryMap, stream: InputStream) {
-        maps.insert(map)
+    override suspend fun saveMap(map: MindustryMap, stream: InputStream) {
+        maps.save(map)
         storage.getBucket("imperium-maps", create = true)!!.putObject("pool/${map._id}.msav", stream)
     }
 }

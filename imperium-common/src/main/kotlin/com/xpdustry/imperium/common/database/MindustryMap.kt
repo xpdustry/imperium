@@ -23,8 +23,8 @@ import java.time.Duration
 data class MindustryMap(
     override val _id: ObjectId = ObjectId(),
     var name: String,
-    var description: String,
-    var author: String,
+    var description: String?,
+    var author: String?,
     var width: Int,
     var height: Int,
     var playtime: Duration = Duration.ZERO,

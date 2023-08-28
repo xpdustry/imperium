@@ -25,15 +25,15 @@ interface MindustryContentHandler {
     suspend fun getSchematic(stream: InputStream): Result<Schematic>
     suspend fun getSchematic(string: String): Result<Schematic>
     suspend fun getSchematicPreview(schematic: Schematic): Result<BufferedImage>
-    suspend fun getMapPreview(stream: InputStream): Result<MapPreview>
+    suspend fun getMapMetadata(stream: InputStream): Result<MapMetadata>
+    suspend fun getMapMetadataWithPreview(stream: InputStream): Result<Pair<MapMetadata, BufferedImage>>
 }
 
-data class MapPreview(
-    val name: String?,
+data class MapMetadata(
+    val name: String,
     val description: String?,
     val author: String?,
     val width: Int,
     val height: Int,
     val tags: Map<String, String>,
-    val image: BufferedImage,
 )

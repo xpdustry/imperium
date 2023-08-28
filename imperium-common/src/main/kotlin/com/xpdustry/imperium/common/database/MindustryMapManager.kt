@@ -27,5 +27,5 @@ interface MindustryMapManager {
     suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
     suspend fun computeAverageScoreByMap(map: ObjectId): Double
     suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty
-    suspend fun uploadMap(map: MindustryMap, stream: InputStream)
+    suspend fun saveMap(map: MindustryMap, stream: InputStream)
 }

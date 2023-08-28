@@ -44,19 +44,8 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
 
         discord.getMainServer().addButtonClickListener { event ->
             ImperiumScope.MAIN.launch {
-                val parts = event.buttonInteraction.customId.split(":", limit = 3)
-                if (parts.size < 2) {
-                    logger.error("Invalid button id ${event.buttonInteraction.customId}")
-                    event.buttonInteraction.createImmediateResponder()
-                        .setContent("This button is no longer valid")
-                        .setFlags(MessageFlag.EPHEMERAL)
-                        .respond()
-                        .await()
-                    return@launch
-                }
-
-                val handler = handlers[parts[0]]
-                if (handler == null || handler.version != parts[1].toIntOrNull()) {
+                val handler = handlers[event.buttonInteraction.customId]
+                if (handler == null) {
                     event.buttonInteraction.createImmediateResponder()
                         .setContent("This button is no longer valid")
                         .setFlags(MessageFlag.EPHEMERAL)
@@ -73,7 +62,7 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
                     return@launch
                 }
 
-                val actor = InteractionActor.Button(event, parts.getOrNull(2))
+                val actor = InteractionActor.Button(event)
                 try {
                     handler.function.callSuspend(handler.container, actor)
                 } catch (e: Exception) {
@@ -95,12 +84,8 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
         for (function in container::class.memberFunctions) {
             val button = function.findAnnotation<InteractionButton>() ?: continue
 
-            if (!button.name.all { it.isLetterOrDigit() || it == '-' }) {
+            if (!button.name.all { it.isLetterOrDigit() || it == '-' || it == ':' }) {
                 throw IllegalArgumentException("$function button name must be alphanumeric")
-            }
-
-            if (button.version < 1) {
-                throw IllegalArgumentException("$function button version must be at least 1")
             }
 
             if (!function.isSuspend) {
@@ -117,7 +102,6 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
 
             function.isAccessible = true
             handlers[button.name] = ButtonHandler(
-                button.version,
                 container,
                 button.permission,
                 function,
@@ -132,5 +116,5 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
         private val logger by LoggerDelegate()
     }
 
-    private data class ButtonHandler(val version: Int, val container: Any, val permission: Permission, val function: KFunction<*>)
+    private data class ButtonHandler(val container: Any, val permission: Permission, val function: KFunction<*>)
 }

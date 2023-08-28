@@ -61,7 +61,7 @@ sealed class InteractionActor {
         override val interaction: SlashCommandInteraction get() = event.slashCommandInteraction
     }
 
-    class Button(private val event: ButtonClickEvent, val payload: String?) : InteractionActor() {
+    class Button(private val event: ButtonClickEvent) : InteractionActor() {
         val message: Message get() = event.buttonInteraction.message
         override var interaction: ButtonInteraction = event.buttonInteraction
     }

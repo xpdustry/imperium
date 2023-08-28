@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.database.mongo
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.IndexOptions
 import com.mongodb.client.model.ReplaceOneModel
+import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.kotlin.client.coroutine.AggregateFlow
 import com.mongodb.kotlin.client.coroutine.FindFlow
 import com.mongodb.kotlin.client.coroutine.MongoCollection
@@ -29,20 +30,12 @@ import org.bson.conversions.Bson
 import kotlin.reflect.KClass
 
 internal class MongoEntityCollection<E : Entity<I>, I : Any>(private val collection: MongoCollection<E>) {
-    suspend fun insert(entity: E) {
-        collection.insertOne(entity)
+    suspend fun save(entity: E) {
+        collection.replaceOne(Filters.eq(ID_FIELD, entity._id), entity, ReplaceOptions().upsert(true))
     }
 
-    suspend fun insertAll(entities: Iterable<E>) {
-        collection.insertMany(entities.toList())
-    }
-
-    suspend fun update(entity: E) {
-        collection.replaceOne(Filters.eq(ID_FIELD, entity._id), entity)
-    }
-
-    suspend fun updateAll(entities: Iterable<E>) {
-        collection.bulkWrite(entities.map { ReplaceOneModel(Filters.eq(ID_FIELD, it._id), it) })
+    suspend fun saveAll(entities: Iterable<E>) {
+        collection.bulkWrite(entities.map { ReplaceOneModel(Filters.eq(ID_FIELD, it._id), it, ReplaceOptions().upsert(true)) })
     }
 
     fun find(filters: Bson): FindFlow<E> =
