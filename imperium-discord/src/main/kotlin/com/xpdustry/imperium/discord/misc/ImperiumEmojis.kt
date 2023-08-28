@@ -25,6 +25,7 @@ import java.util.Optional
 object ImperiumEmojis {
     val CHECK_MARK: Emoji = UnicodeEmoji("✔️")
     val CROSS_MARK: Emoji = UnicodeEmoji("❌")
+    val DOWN_ARROW: Emoji = UnicodeEmoji("⬇️")
     val PENCIL: Emoji = UnicodeEmoji("✏️")
     val INBOX_TRAY: Emoji = UnicodeEmoji("📥")
     val WASTE_BASKET: Emoji = UnicodeEmoji("🗑️")

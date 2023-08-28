@@ -32,7 +32,7 @@ fun Command.validate() {
     if (path.isEmpty()) {
         throw IllegalArgumentException("Command name cannot be empty")
     }
-    if (path.any { !it.matches(Regex("^[a-zA-Z][a-zA-Z0-9]*$")) }) {
+    if (path.any { !it.matches(Regex("^[a-zA-Z](-?[a-zA-Z0-9])*$")) }) {
         throw IllegalArgumentException("Command name must be alphanumeric and start with a letter")
     }
 }

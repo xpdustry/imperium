@@ -28,11 +28,16 @@ import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.interaction.button.InteractionButton
 import com.xpdustry.imperium.discord.interaction.command.Command
+import com.xpdustry.imperium.discord.interaction.command.Min
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.discord.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.service.DiscordService
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.future.await
+import org.bson.types.ObjectId
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
 import org.javacord.api.entity.message.MessageBuilder
@@ -42,6 +47,7 @@ import org.javacord.api.entity.message.embed.Embed
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.awt.Color
 import kotlin.jvm.optionals.getOrNull
+import kotlin.time.Duration.Companion.hours
 
 class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
@@ -167,6 +173,111 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             ?.await()
     }
 
+    @Command("map", "list", ephemeral = false)
+    private suspend fun onMapList(actor: InteractionActor, @Min(1) page: Int = 1, server: String? = null) {
+        val result = maps.findMaps(server).drop((page - 1) * 10).take(11).toCollection(mutableListOf())
+        val hasMore = result.size > 11
+        if (hasMore) {
+            result.removeLast()
+        }
+        val embed = EmbedBuilder().setColor(MINDUSTRY_ACCENT_COLOR).setTitle("Map list result")
+
+        if (result.isEmpty()) {
+            embed.setDescription("No maps found")
+        } else {
+            embed.setDescription(
+                buildString {
+                    append(result.joinToString("\n") { "- ${it.name} / `${it._id}`" })
+                    if (hasMore) {
+                        append("\n\n...and more")
+                    }
+                },
+            )
+        }
+
+        actor.respond(embed)
+    }
+
+    @Command("map", "info", ephemeral = false)
+    private suspend fun onMapInfo(actor: InteractionActor, id: String) {
+        if (!ObjectId.isValid(id)) {
+            actor.respond("Invalid map id")
+            return
+        }
+
+        val map = maps.findMapById(ObjectId(id))
+        if (map == null) {
+            actor.respond("Unknown map id")
+            return
+        }
+
+        actor.respond {
+            addEmbed(
+                EmbedBuilder()
+                    .setColor(MINDUSTRY_ACCENT_COLOR)
+                    .setTitle(map.name)
+                    .addField("Author", map.author ?: "Unknown")
+                    .addField("Identifier", "${map._id}")
+                    .addField("Description", map.description ?: "Unknown")
+                    .addField("Size", "${map.width} x ${map.height}")
+                    .addField("Score", "%.2f / 5".format(maps.computeAverageScoreByMap(map._id)))
+                    .addField("Difficulty", maps.computeAverageDifficultyByMap(map._id).name.lowercase())
+                    .addField("Servers", if (map.servers.isEmpty()) "`none`" else map.servers.joinToString(", "))
+                    .setImage(
+                        content.getMapMetadataWithPreview(
+                            maps.getMapObject(map._id)!!.getStream(),
+                        ).getOrThrow().second,
+                    ),
+            )
+            addComponents(
+                ActionRow.of(Button.primary(MAP_DOWNLOAD_BUTTON, "Download", ImperiumEmojis.DOWN_ARROW)),
+            )
+        }
+    }
+
+    @InteractionButton(MAP_DOWNLOAD_BUTTON)
+    private suspend fun onMapDownload(actor: InteractionActor.Button) {
+        val url = actor.message.embeds.first().getFieldValue("Identifier")
+            ?.let { maps.getMapObject(ObjectId(it)) }
+            ?.getDownloadUrl(1.hours)
+
+        if (url == null) {
+            actor.respond("Failed to get download url")
+            return
+        }
+
+        actor.respond("Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
+    }
+
+    @Command("map", "set-servers", permission = Permission.ADMINISTRATOR)
+    private suspend fun onMapServersChange(actor: InteractionActor, id: String, servers: String? = null) {
+        if (!ObjectId.isValid(id)) {
+            actor.respond("Invalid map id")
+            return
+        }
+
+        val oid = ObjectId(id)
+        if (maps.findMapById(oid) == null) {
+            actor.respond("Unknown map id")
+            return
+        }
+
+        val list = servers?.split(",")?.map { it.trim() } ?: emptyList()
+        for (server in list) {
+            if (!server.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
+                actor.respond("**$server** is an invalid server name")
+                return
+            }
+        }
+
+        maps.updateMapById(oid) {
+            this.servers.clear()
+            this.servers.addAll(list)
+        }
+
+        actor.respond("Map servers updated to $list!")
+    }
+
     private fun Embed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
 
     companion object {
@@ -174,5 +285,6 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
         private const val MAP_UPDATE_BUTTON = "map-submission-update:1"
+        private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
     }
 }

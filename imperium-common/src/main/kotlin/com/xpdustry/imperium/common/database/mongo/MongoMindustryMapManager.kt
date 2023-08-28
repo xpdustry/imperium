@@ -21,13 +21,13 @@ import com.mongodb.client.model.Accumulators
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Indexes
-import com.mongodb.client.model.Projections
-import com.mongodb.client.model.TextSearchOptions
+import com.mongodb.client.model.Sorts
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.MindustryMap
 import com.xpdustry.imperium.common.database.MindustryMapManager
 import com.xpdustry.imperium.common.database.MindustryUUID
 import com.xpdustry.imperium.common.database.Rating
+import com.xpdustry.imperium.common.storage.S3Object
 import com.xpdustry.imperium.common.storage.Storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -52,33 +52,43 @@ internal class MongoMindustryMapManager(
         maps = mongo.getCollection("maps", MindustryMap::class)
         ratings = mongo.getCollection("map_ratings", Rating::class)
         runBlocking {
-            maps.index(Indexes.compoundIndex(Indexes.ascending("name"), Indexes.text("name"))) {
-                name("name_index").version(1).unique(true).defaultLanguage("english")
+            maps.index(Indexes.compoundIndex(Indexes.descending("name"))) {
+                name("name_index").version(1).unique(true)
             }
         }
     }
 
+    override suspend fun findMapById(id: ObjectId): MindustryMap? =
+        maps.findById(id)
+
     override suspend fun findMapByName(name: String): MindustryMap? =
         maps.find(Filters.eq("name", name)).firstOrNull()
 
-    override suspend fun searchMaps(name: String): Flow<MindustryMap> =
-        maps.find(Filters.text(name, TextSearchOptions().caseSensitive(false)))
-            .projection(Projections.metaTextScore("score"))
-            .sort(Projections.metaTextScore("score"))
+    override suspend fun findMaps(server: String?): Flow<MindustryMap> {
+        return maps.find(if (server == null) Filters.empty() else Filters.`in`(server, "servers"))
+            .sort(Sorts.descending("name"))
+    }
 
     override suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating? =
         ratings.find(Filters.and(Filters.eq("map", map), Filters.eq("player", player))).firstOrNull()
 
-    override suspend fun computeAverageScoreByMap(map: ObjectId): Double =
-        ratings.aggregate(
+    override suspend fun computeAverageScoreByMap(map: ObjectId): Double {
+        if (ratings.count(Filters.eq("map", map)) == 0L) {
+            return 3.0
+        }
+        return ratings.aggregate(
             Aggregates.match(Filters.eq("map", map)),
             Aggregates.group("\$map", Accumulators.avg("average", "\$score")),
             result = BsonDocument::class,
         )
             .map { it.getDouble("average").value }
             .first()
+    }
 
     override suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty {
+        if (ratings.count(Filters.eq("map", map)) == 0L) {
+            return Rating.Difficulty.NORMAL
+        }
         val difficulties = ratings.aggregate(
             Aggregates.match(Filters.eq("map", map)),
             Aggregates.group("\$difficulty", Accumulators.sum("count", 1)),
@@ -96,5 +106,15 @@ internal class MongoMindustryMapManager(
     override suspend fun saveMap(map: MindustryMap, stream: InputStream) {
         maps.save(map)
         storage.getBucket("imperium-maps", create = true)!!.putObject("pool/${map._id}.msav", stream)
+    }
+
+    override suspend fun getMapObject(map: ObjectId): S3Object? =
+        storage.getBucket("imperium-maps", create = true)!!.getObject("pool/$map.msav")
+
+    override suspend fun updateMapById(id: ObjectId, updater: suspend MindustryMap.() -> Unit) {
+        maps.findById(id)?.let {
+            updater(it)
+            maps.save(it)
+        }
     }
 }

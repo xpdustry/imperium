@@ -39,6 +39,7 @@ import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
+import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
@@ -74,25 +75,32 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 }
 
                 val actor = InteractionActor.Slash(event)
-                val arguments = try {
-                    command.function.parameters.associateWith { parameter ->
+                val arguments = mutableMapOf<KParameter, Any>()
+
+                try {
+                    for (parameter in command.function.parameters) {
                         if (parameter.index == 0) {
-                            return@associateWith command.container
+                            arguments[parameter] = command.container
+                            continue
                         }
 
                         if (isSupportedActor(parameter.type.classifier!!)) {
-                            return@associateWith actor
+                            arguments[parameter] = actor
+                            continue
                         }
 
                         val argument = command.arguments.find { it.name == parameter.name!! }!!
                         val option = event.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
                             ?.let { argument.handler.parse(it) }
 
-                        if (option == null && !argument.optional) {
-                            throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
+                        if (option != null) {
+                            arguments[parameter] = option
+                            continue
                         }
 
-                        option
+                        if (!argument.optional) {
+                            throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
+                        }
                     }
                 } catch (e: Exception) {
                     logger.error("Error while parsing arguments for command ${node.fullName}", e)

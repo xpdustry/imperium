@@ -17,15 +17,19 @@
  */
 package com.xpdustry.imperium.common.database
 
+import com.xpdustry.imperium.common.storage.S3Object
 import kotlinx.coroutines.flow.Flow
 import org.bson.types.ObjectId
 import java.io.InputStream
 
 interface MindustryMapManager {
+    suspend fun findMapById(id: ObjectId): MindustryMap?
     suspend fun findMapByName(name: String): MindustryMap?
-    suspend fun searchMaps(name: String): Flow<MindustryMap>
+    suspend fun findMaps(server: String? = null): Flow<MindustryMap>
     suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
     suspend fun computeAverageScoreByMap(map: ObjectId): Double
     suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty
     suspend fun saveMap(map: MindustryMap, stream: InputStream)
+    suspend fun getMapObject(map: ObjectId): S3Object?
+    suspend fun updateMapById(id: ObjectId, updater: suspend MindustryMap.() -> Unit)
 }
