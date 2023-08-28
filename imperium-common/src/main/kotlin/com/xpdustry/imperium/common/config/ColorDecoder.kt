@@ -19,16 +19,12 @@ package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.ConfigFailure
 import com.sksamuel.hoplite.DecoderContext
-import com.sksamuel.hoplite.DoubleNode
-import com.sksamuel.hoplite.LongNode
 import com.sksamuel.hoplite.Node
 import com.sksamuel.hoplite.StringNode
 import com.sksamuel.hoplite.ThrowableFailure
 import com.sksamuel.hoplite.decoder.NonNullableLeafDecoder
-import com.sksamuel.hoplite.decoder.NullHandlingDecoder
 import com.sksamuel.hoplite.decoder.toValidated
 import com.sksamuel.hoplite.fp.invalid
-import com.sksamuel.hoplite.fp.valid
 import java.awt.Color
 import kotlin.reflect.KType
 
@@ -41,16 +37,6 @@ class ColorDecoder : NonNullableLeafDecoder<Color> {
                 else -> ThrowableFailure(it)
             }
         }
-        else -> ConfigFailure.DecodeError(node, type).invalid()
-    }
-}
-
-class HiddenStringDecoder : NullHandlingDecoder<HiddenString> {
-    override fun supports(type: KType) = type.classifier == HiddenString::class
-    override fun safeDecode(node: Node, type: KType, context: DecoderContext) = when (node) {
-        is StringNode -> HiddenString(node.value).valid()
-        is LongNode -> HiddenString(node.value.toString()).valid()
-        is DoubleNode -> HiddenString(node.value.toString()).valid()
         else -> ConfigFailure.DecodeError(node, type).invalid()
     }
 }

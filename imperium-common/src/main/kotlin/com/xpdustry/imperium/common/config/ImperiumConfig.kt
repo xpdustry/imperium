@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common.config
 
+import com.sksamuel.hoplite.Secret
 import java.awt.Color
 import java.time.Duration
 import java.util.Locale
@@ -37,13 +38,13 @@ data class NetworkConfig(
 ) {
     sealed interface AntiVPN {
         data object None : AntiVPN
-        data class IpHub(val token: HiddenString) : AntiVPN
+        data class IpHub(val token: Secret) : AntiVPN
     }
 }
 
 sealed interface TranslatorConfig {
     data object None : TranslatorConfig
-    data class DeepL(val token: HiddenString) : TranslatorConfig
+    data class DeepL(val token: Secret) : TranslatorConfig
 }
 
 sealed interface DatabaseConfig {
@@ -51,7 +52,7 @@ sealed interface DatabaseConfig {
         val host: String = "localhost",
         val port: Int = 27017,
         val username: String = "",
-        val password: HiddenString = HiddenString(""),
+        val password: Secret = Secret(""),
         val ssl: Boolean = false,
         val database: String = "imperium",
         val authDatabase: String = "admin",
@@ -63,7 +64,7 @@ sealed interface MessengerConfig {
         val host: String = "localhost",
         val port: Int = 5672,
         val username: String = "guest",
-        val password: HiddenString = HiddenString("guest"),
+        val password: Secret = Secret("guest"),
         val ssl: Boolean = false,
     ) : MessengerConfig
 }
@@ -92,7 +93,7 @@ sealed interface ServerConfig {
     }
 
     data class Discord(
-        val token: HiddenString,
+        val token: Secret,
         val roles: Roles,
         val categories: Categories,
         val channels: Channels,
@@ -122,8 +123,8 @@ sealed interface StorageConfig {
         val host: String = "localhost",
         val port: Int = 9000,
         val secure: Boolean = false,
-        val accessKey: HiddenString = HiddenString("minioadmin"),
-        val secretKey: HiddenString = HiddenString("minioadmin"),
+        val accessKey: Secret = Secret("minioadmin"),
+        val secretKey: Secret = Secret("minioadmin"),
         val bucket: String = "imperium",
     ) : StorageConfig
 }

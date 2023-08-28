@@ -43,7 +43,6 @@ class ImperiumConfigFactory : InstanceFactory<ImperiumConfig> {
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
             .addPathSource(file)
             .addDecoder(ColorDecoder())
-            .addDecoder(HiddenStringDecoder())
             .strict()
             .build()
             .loadConfigOrThrow()
