@@ -35,7 +35,6 @@ import org.javacord.api.entity.message.MessageBuilder
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder
 import kotlin.jvm.optionals.getOrNull
 
-// TODO Discord4j is so ugly, add extensions methods when the codebase will be a little bigger
 class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()

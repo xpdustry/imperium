@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.interaction.InteractionActor
+import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -65,6 +66,13 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
                 }
 
                 val updater = event.buttonInteraction.respondLater(true).await()
+
+                if (!discord.isAllowed(event.buttonInteraction.user, handler.permission)) {
+                    updater.setContent(":warning: **You do not have permission to use this command.**")
+                        .update().await()
+                    return@launch
+                }
+
                 val actor = InteractionActor.Button(event, parts.getOrNull(2))
                 try {
                     handler.function.callSuspend(handler.container, actor)
@@ -108,7 +116,12 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
             }
 
             function.isAccessible = true
-            handlers[button.name] = ButtonHandler(button.version, container, function)
+            handlers[button.name] = ButtonHandler(
+                button.version,
+                container,
+                button.permission,
+                function,
+            )
         }
     }
 
@@ -119,5 +132,5 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
         private val logger by LoggerDelegate()
     }
 
-    private data class ButtonHandler(val version: Int, val container: Any, val function: KFunction<*>)
+    private data class ButtonHandler(val version: Int, val container: Any, val permission: Permission, val function: KFunction<*>)
 }

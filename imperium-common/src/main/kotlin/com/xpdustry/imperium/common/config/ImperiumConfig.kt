@@ -101,7 +101,9 @@ sealed interface ServerConfig {
         override val name: String = "discord"
 
         data class Roles(
-            val admin: Long,
+            val administrator: Long,
+            val moderator: Long,
+            val verified: Long,
         )
 
         data class Categories(

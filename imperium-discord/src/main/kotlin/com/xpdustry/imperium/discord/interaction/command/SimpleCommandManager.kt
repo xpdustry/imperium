@@ -22,7 +22,6 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.Permission
-import com.xpdustry.imperium.discord.interaction.Rank
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -44,8 +43,6 @@ import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 
-// TODO
-//  - Implement permission validation
 class SimpleCommandManager(private val discord: DiscordService) : CommandManager, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
@@ -68,6 +65,13 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 val responder = event.slashCommandInteraction.respondLater(true).await()
                 val node = tree.resolve(event.slashCommandInteraction.fullCommandName.split(" "))
                 val command = node.edge!!
+
+                if (!discord.isAllowed(event.slashCommandInteraction.user, command.permission)) {
+                    responder.setContent(":warning: **You do not have permission to use this command.**")
+                        .update().await()
+                    return@launch
+                }
+
                 val actor = InteractionActor.Slash(event)
                 val arguments = try {
                     command.function.parameters.associateWith { parameter ->
@@ -114,7 +118,6 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
     private fun register0(container: Any) {
         val global = container::class.findAnnotation<Command>()?.apply(Command::validate)
         val base = global?.path?.toList() ?: emptyList()
-        val permission = container::class.findAnnotation<Permission>()?.rank
 
         for (function in container::class.memberFunctions) {
             val local = function.findAnnotation<Command>()?.apply(Command::validate) ?: continue
@@ -157,7 +160,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 edge = CommandEdge(
                     container,
                     function,
-                    function.findAnnotation<Permission>()?.rank ?: permission ?: Rank.EVERYONE,
+                    local.permission.takeIf { it != Permission.EVERYONE } ?: global?.permission ?: Permission.EVERYONE,
                     arguments,
                 ),
             )
@@ -281,7 +284,7 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
     }
 }
 
-private data class CommandEdge(val container: Any, val function: KFunction<*>, val permission: Rank, val arguments: List<Argument>) {
+private data class CommandEdge(val container: Any, val function: KFunction<*>, val permission: Permission, val arguments: List<Argument>) {
     data class Argument(val name: String, val optional: Boolean, val handler: TypeHandler<*>)
 }
 

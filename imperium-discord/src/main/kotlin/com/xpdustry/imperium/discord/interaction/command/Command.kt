@@ -17,10 +17,13 @@
  */
 package com.xpdustry.imperium.discord.interaction.command
 
+import com.xpdustry.imperium.discord.interaction.Permission
+
+// TODO Rename like InteractionButton ?
 @Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class Command(vararg val path: String)
+annotation class Command(vararg val path: String, val permission: Permission = Permission.EVERYONE)
 
 val Command.name: String
     get() = path[0]

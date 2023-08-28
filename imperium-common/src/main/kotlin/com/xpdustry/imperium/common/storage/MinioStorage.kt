@@ -51,7 +51,6 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         if (config.storage !is StorageConfig.Minio) {
             throw IllegalStateException("The current storage configuration is not Minio")
         }
-        // TODO Replace java HttpClient with OkHttp everywhere?
         val timeout = java.time.Duration.ofMinutes(5).toMillis()
         httpClient = HttpUtils.newDefaultHttpClient(timeout, timeout, timeout)
         client = with(config.storage) {

@@ -17,7 +17,9 @@
  */
 package com.xpdustry.imperium.discord.interaction.button
 
+import com.xpdustry.imperium.discord.interaction.Permission
+
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class InteractionButton(val name: String, val version: Int = 1)
+annotation class InteractionButton(val name: String, val version: Int = 1, val permission: Permission = Permission.EVERYONE)

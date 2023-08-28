@@ -17,11 +17,6 @@
  */
 package com.xpdustry.imperium.discord.interaction
 
-@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class Permission(val rank: Rank)
-
-enum class Rank {
+enum class Permission {
     EVERYONE, VERIFIED, MODERATOR, ADMINISTRATOR, OWNER,
 }

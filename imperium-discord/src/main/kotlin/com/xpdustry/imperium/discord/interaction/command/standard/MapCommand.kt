@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.interaction.InteractionActor
+import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.interaction.button.InteractionButton
 import com.xpdustry.imperium.discord.interaction.command.Command
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -116,7 +117,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command("info")
     suspend fun onInfoCommand(actor: InteractionActor) = Unit
 
-    @InteractionButton("map-submission-rejected")
+    @InteractionButton("map-submission-rejected", permission = Permission.ADMINISTRATOR)
     private suspend fun onMapRejected(actor: InteractionActor.Button) {
         actor.message.createUpdater()
             .removeAllEmbeds()
@@ -141,7 +142,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("Map submission rejected!")
     }
 
-    @InteractionButton("map-submission-approved")
+    @InteractionButton("map-submission-approved", permission = Permission.ADMINISTRATOR)
     private suspend fun onMapApproved(actor: InteractionActor.Button) {
         val embed = actor.message.embeds.first()
         val name = embed.getFieldValue("Name")!!
