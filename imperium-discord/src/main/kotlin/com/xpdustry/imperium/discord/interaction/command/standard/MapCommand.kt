@@ -23,13 +23,14 @@ import com.xpdustry.imperium.common.database.MindustryMap
 import com.xpdustry.imperium.common.database.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.interaction.button.InteractionButton
 import com.xpdustry.imperium.discord.interaction.command.Command
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
+import com.xpdustry.imperium.discord.misc.MINDUSTRY_ACCENT_COLOR
+import com.xpdustry.imperium.discord.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import org.javacord.api.entity.Attachment
@@ -40,9 +41,6 @@ import org.javacord.api.entity.message.component.Button
 import org.javacord.api.entity.message.embed.Embed
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.awt.Color
-import java.io.InputStream
-import java.net.URL
-import java.net.http.HttpResponse.BodyHandlers
 import kotlin.jvm.optionals.getOrNull
 
 class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -50,7 +48,6 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
-    private val http = instances.get<CoroutineHttpClient>()
 
     @Command("map", "submit")
     suspend fun onSubmitCommand(actor: InteractionActor, map: Attachment, notes: String? = null) {
@@ -59,7 +56,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val (meta, preview) = content.getMapMetadataWithPreview(getStreamFromURL(map.url)).getOrThrow()
+        val (meta, preview) = content.getMapMetadataWithPreview(map.asInputStream()).getOrThrow()
         val channel = discord.getMainServer().getTextChannelById(config.channels.maps).getOrNull()
             ?: throw IllegalStateException("Map submission channel not found")
 
@@ -67,12 +64,12 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .addAttachment(map.url, map.fileName)
             .addEmbed(
                 EmbedBuilder()
-                    .setColor(MINDUSTRY_COLOR)
+                    .setColor(MINDUSTRY_ACCENT_COLOR)
                     .setTitle("Map Submission")
                     .addField("Submitter", actor.user.mentionTag)
-                    .addField("Name", meta.name)
-                    .addField("Author", meta.author ?: "Unknown")
-                    .addField("Description", meta.description ?: "Unknown")
+                    .addField("Name", meta.name.stripMindustryColors())
+                    .addField("Author", meta.author?.stripMindustryColors() ?: "Unknown")
+                    .addField("Description", meta.description?.stripMindustryColors() ?: "Unknown")
                     .addField("Size", "${preview.width} x ${preview.height}")
                     .apply { if (notes != null) addField("Notes", notes) }
                     .setImage(preview),
@@ -87,10 +84,11 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .send(channel)
             .await()
 
-        message.createThread("Comments for ${meta.name}", AutoArchiveDuration.THREE_DAYS).await()
+        message.createThread("Comments for ${meta.name.stripMindustryColors()}", AutoArchiveDuration.THREE_DAYS).await()
 
         actor.respond(
             EmbedBuilder()
+                .setColor(MINDUSTRY_ACCENT_COLOR)
                 .setDescription("Your map has been submitted for review. Check the status [here](${message.link})."),
         )
     }
@@ -103,44 +101,44 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @InteractionButton(MAP_UPLOAD_BUTTON, permission = Permission.ADMINISTRATOR)
     private suspend fun onMapUpload(actor: InteractionActor.Button) {
-        val url = actor.message.attachments.first().url
-        val meta = content.getMapMetadata(getStreamFromURL(url)).getOrThrow()
+        val attachment = actor.message.attachments.first()
+        val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
 
-        if (maps.findMapByName(meta.name) != null) {
+        if (maps.findMapByName(meta.name.stripMindustryColors()) != null) {
             actor.respond("A map with that name already exists!")
             return
         }
 
         val map = MindustryMap(
-            name = meta.name,
-            description = meta.description,
-            author = meta.author,
+            name = meta.name.stripMindustryColors(),
+            description = meta.description?.stripMindustryColors(),
+            author = meta.author?.stripMindustryColors(),
             width = meta.width,
             height = meta.height,
         )
 
-        maps.saveMap(map, getStreamFromURL(url))
+        maps.saveMap(map, attachment.asInputStream())
         updateSubmissionEmbed(actor, Color.GREEN, "uploaded")
         actor.respond("Map submission uploaded!")
     }
 
     @InteractionButton(MAP_UPDATE_BUTTON, permission = Permission.ADMINISTRATOR)
     private suspend fun onMapUpdate(actor: InteractionActor.Button) {
-        val url = actor.message.attachments.first().url
-        val meta = content.getMapMetadata(getStreamFromURL(url)).getOrThrow()
+        val attachment = actor.message.attachments.first()
+        val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
 
-        val map = maps.findMapByName(meta.name)
+        val map = maps.findMapByName(meta.name.stripMindustryColors())
         if (map == null) {
             actor.respond("A map with that name does not exist!")
             return
         }
 
-        map.description = meta.description
-        map.author = meta.author
+        map.description = meta.description?.stripMindustryColors()
+        map.author = meta.author?.stripMindustryColors()
         map.width = meta.width
         map.height = meta.height
 
-        maps.saveMap(map, getStreamFromURL(url))
+        maps.saveMap(map, attachment.asInputStream())
         updateSubmissionEmbed(actor, Color.YELLOW, "updated")
         actor.respond("Map submission updated!")
     }
@@ -171,17 +169,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private fun Embed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
 
-    private suspend fun getStreamFromURL(url: URL): InputStream {
-        val response = http.get(url.toURI(), BodyHandlers.ofInputStream())
-        if (response.statusCode() != 200) {
-            error("Unable to fetch map file at $url!")
-        }
-        return response.body()
-    }
-
     companion object {
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")
-        private val MINDUSTRY_COLOR = Color(0xffd37f)
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
         private const val MAP_UPDATE_BUTTON = "map-submission-update:1"
