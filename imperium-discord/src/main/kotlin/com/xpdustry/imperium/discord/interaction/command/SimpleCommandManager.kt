@@ -42,6 +42,7 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
+import kotlin.reflect.jvm.isAccessible
 
 class SimpleCommandManager(private val discord: DiscordService) : CommandManager, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
@@ -62,9 +63,9 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         compile()
         discord.api.addSlashCommandCreateListener { event ->
             ImperiumScope.MAIN.launch {
-                val responder = event.slashCommandInteraction.respondLater(true).await()
                 val node = tree.resolve(event.slashCommandInteraction.fullCommandName.split(" "))
                 val command = node.edge!!
+                val responder = event.slashCommandInteraction.respondLater(command.ephemeral).await()
 
                 if (!discord.isAllowed(event.slashCommandInteraction.user, command.permission)) {
                     responder.setContent(":warning: **You do not have permission to use this command.**")
@@ -116,11 +117,8 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
     }
 
     private fun register0(container: Any) {
-        val global = container::class.findAnnotation<Command>()?.apply(Command::validate)
-        val base = global?.path?.toList() ?: emptyList()
-
         for (function in container::class.memberFunctions) {
-            val local = function.findAnnotation<Command>()?.apply(Command::validate) ?: continue
+            val command = function.findAnnotation<Command>()?.apply(Command::validate) ?: continue
 
             if (!function.isSuspend) {
                 throw IllegalArgumentException("$function must be suspend")
@@ -155,13 +153,15 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                 arguments += CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
             }
 
+            function.isAccessible = true
             tree.resolve(
-                path = base + local.path.toList(),
+                path = command.path.toList(),
                 edge = CommandEdge(
                     container,
                     function,
-                    local.permission.takeIf { it != Permission.EVERYONE } ?: global?.permission ?: Permission.EVERYONE,
+                    command.permission,
                     arguments,
+                    command.ephemeral,
                 ),
             )
         }
@@ -284,7 +284,13 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
     }
 }
 
-private data class CommandEdge(val container: Any, val function: KFunction<*>, val permission: Permission, val arguments: List<Argument>) {
+private data class CommandEdge(
+    val container: Any,
+    val function: KFunction<*>,
+    val permission: Permission,
+    val arguments: List<Argument>,
+    val ephemeral: Boolean,
+) {
     data class Argument(val name: String, val optional: Boolean, val handler: TypeHandler<*>)
 }
 

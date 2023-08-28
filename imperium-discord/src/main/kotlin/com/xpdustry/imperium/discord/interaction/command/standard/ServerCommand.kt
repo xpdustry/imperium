@@ -32,7 +32,6 @@ import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.time.Instant
 import java.util.Queue
 
-@Command("server")
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
     private val messenger = instances.get<Messenger>()
@@ -45,7 +44,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @Command("list")
+    @Command("server", "list", ephemeral = false)
     suspend fun onServerList(actor: InteractionActor) =
         actor.respond(
             EmbedBuilder()

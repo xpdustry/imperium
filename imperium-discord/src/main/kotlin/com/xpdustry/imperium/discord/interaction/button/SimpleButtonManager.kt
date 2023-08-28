@@ -54,7 +54,7 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
                     return@launch
                 }
 
-                val updater = event.buttonInteraction.respondLater(true).await()
+                val updater = event.buttonInteraction.respondLater(handler.ephemeral).await()
 
                 if (!discord.isAllowed(event.buttonInteraction.user, handler.permission)) {
                     updater.setContent(":warning: **You do not have permission to use this command.**")
@@ -105,6 +105,7 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
                 container,
                 button.permission,
                 function,
+                button.ephemeral,
             )
         }
     }
@@ -116,5 +117,10 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
         private val logger by LoggerDelegate()
     }
 
-    private data class ButtonHandler(val container: Any, val permission: Permission, val function: KFunction<*>)
+    private data class ButtonHandler(
+        val container: Any,
+        val permission: Permission,
+        val function: KFunction<*>,
+        val ephemeral: Boolean,
+    )
 }

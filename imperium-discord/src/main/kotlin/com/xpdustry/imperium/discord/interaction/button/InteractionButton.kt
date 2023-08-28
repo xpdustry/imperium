@@ -22,4 +22,4 @@ import com.xpdustry.imperium.discord.interaction.Permission
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class InteractionButton(val name: String, val permission: Permission = Permission.EVERYONE)
+annotation class InteractionButton(val name: String, val permission: Permission = Permission.EVERYONE, val ephemeral: Boolean = true)

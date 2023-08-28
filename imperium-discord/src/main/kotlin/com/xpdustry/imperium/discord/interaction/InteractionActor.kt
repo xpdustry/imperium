@@ -21,7 +21,6 @@ import kotlinx.coroutines.future.await
 import org.javacord.api.DiscordApi
 import org.javacord.api.entity.channel.TextChannel
 import org.javacord.api.entity.message.Message
-import org.javacord.api.entity.message.MessageFlag
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import org.javacord.api.entity.user.User
 import org.javacord.api.event.interaction.ButtonClickEvent
@@ -42,17 +41,15 @@ sealed class InteractionActor {
             .send()
             .await()
 
-    suspend fun respond(message: String, ephemeral: Boolean = true): Message =
+    suspend fun respond(message: String): Message =
         interaction.createFollowupMessageBuilder()
             .setContent(message)
-            .apply { if (ephemeral) setFlags(MessageFlag.EPHEMERAL) }
             .send()
             .await()
 
-    suspend fun respond(embed: EmbedBuilder, ephemeral: Boolean = true): Message =
+    suspend fun respond(embed: EmbedBuilder): Message =
         interaction.createFollowupMessageBuilder()
             .addEmbed(embed)
-            .apply { if (ephemeral) setFlags(MessageFlag.EPHEMERAL) }
             .send()
             .await()
 

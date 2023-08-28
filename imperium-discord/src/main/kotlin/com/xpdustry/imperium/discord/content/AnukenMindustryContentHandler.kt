@@ -276,7 +276,13 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
 
     override suspend fun getSchematic(string: String): Result<Schematic> =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            getSchematic0(ByteArrayInputStream(Base64Coder.decode(string)))
+            getSchematic0(
+                try {
+                    ByteArrayInputStream(Base64Coder.decode(string))
+                } catch (e: Exception) {
+                    return@withContext Result.failure(e)
+                },
+            )
         }
 
     private fun getSchematic0(stream: InputStream): Result<Schematic> = runCatching {

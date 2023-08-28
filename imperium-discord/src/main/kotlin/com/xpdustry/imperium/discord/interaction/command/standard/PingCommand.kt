@@ -23,7 +23,7 @@ import com.xpdustry.imperium.discord.interaction.command.Command
 import kotlinx.coroutines.future.await
 
 class PingCommand : ImperiumApplication.Listener {
-    @Command("ping")
+    @Command("ping", ephemeral = false)
     suspend fun onPingCommand(actor: InteractionActor) =
         actor.respond("pong with **${actor.discord.measureRestLatency().await().toMillis()}** milliseconds of latency!")
 }

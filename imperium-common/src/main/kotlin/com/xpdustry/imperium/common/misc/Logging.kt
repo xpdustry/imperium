@@ -25,6 +25,7 @@ import kotlin.reflect.full.companionObject
 
 inline fun <reified T : Any> logger(): Logger = LoggerFactory.getLogger(T::class.java)
 
+// TODO Rename to logger() ?
 // https://www.baeldung.com/kotlin/logging
 class LoggerDelegate<in R : Any> : ReadOnlyProperty<R, Logger> {
     override fun getValue(thisRef: R, property: KProperty<*>): Logger =

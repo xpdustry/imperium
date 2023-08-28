@@ -45,7 +45,6 @@ import java.net.URL
 import java.net.http.HttpResponse.BodyHandlers
 import kotlin.jvm.optionals.getOrNull
 
-@Command("map")
 class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
     private val maps = instances.get<MindustryMapManager>()
@@ -53,7 +52,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val http = instances.get<CoroutineHttpClient>()
 
-    @Command("submit")
+    @Command("map", "submit")
     suspend fun onSubmitCommand(actor: InteractionActor, map: Attachment, notes: String? = null) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")
