@@ -134,20 +134,20 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
 
                 if (parameter.index == 1) {
                     if (!isSupportedActor(parameter.type.classifier!!)) {
-                        throw IllegalArgumentException("First parameter is not a InteractionActor")
+                        throw IllegalArgumentException("$function first parameter is not a InteractionActor")
                     }
                     continue
                 }
 
                 val optional = parameter.isOptional || parameter.type.isMarkedNullable
                 if (wasOptional && !optional) {
-                    throw IllegalArgumentException("Optional parameters must be at the end of the parameter list.")
+                    throw IllegalArgumentException("$function optional parameters must be at the end of the parameter list.")
                 }
                 wasOptional = optional
 
                 val classifier = parameter.type.classifier
                 if (classifier !is KClass<*> || classifier !in handlers) {
-                    throw IllegalArgumentException("Unsupported parameter type $classifier")
+                    throw IllegalArgumentException("$function has unsupported parameter type $classifier")
                 }
 
                 arguments += CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
@@ -301,13 +301,17 @@ private abstract class TypeHandler<T : Any>(val type: SlashCommandOptionType) {
 
 private val STRING_TYPE_HANDLER = object : TypeHandler<String>(SlashCommandOptionType.STRING) {
     override fun parse(option: SlashCommandInteractionOption) = option.stringValue.getOrNull()
+    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+        annotation.findAnnotation<Min>()?.value?.let { builder.setMinLength(it) }
+        annotation.findAnnotation<Max>()?.value?.let { builder.setMaxLength(it) }
+    }
 }
 
 private val INT_TYPE_HANDLER = object : TypeHandler<Int>(SlashCommandOptionType.LONG) {
     override fun parse(option: SlashCommandInteractionOption) = option.longValue.getOrNull()?.toInt()
     override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
-        builder.setLongMinValue(Int.MAX_VALUE.toLong())
-        builder.setLongMaxValue(Int.MIN_VALUE.toLong())
+        builder.setLongMinValue(annotation.findAnnotation<Min>()?.value ?: Int.MAX_VALUE.toLong())
+        builder.setLongMaxValue(annotation.findAnnotation<Max>()?.value ?: Int.MIN_VALUE.toLong())
     }
 }
 
