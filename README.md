@@ -19,8 +19,10 @@ Then you can compile the project with `./gradlew build` or specific modules with
 
 ## Testing
 
-For local testing, you will need a mongo database and a rabbitmq server,
-fortunately for you a docker-compose file is provided. You will simply have to run `docker-compose up -d` once.
+For local testing, you will need a mongo database, a rabbitmq server and a S3 server.
+Fortunately for you, a docker-compose file is provided with everything.
+You will simply have to run `docker-compose up -d` once.
+
 - To access the web front-end of these services, see the comments in the docker-compose file.
 - The mongo express container fails to start with the other containers sometimes. If this happens,
   just restart it with the command `docker-compose restart mongo-express`.
@@ -47,13 +49,19 @@ Then create the base configuration file named `config.yaml` in the directory `im
 with the following content:
 ```yaml
 server:
-  token: "Your discord bot token"
+  token: "your discord bot token"
   categories:
-    live-chat: (some channel id)
+    live-chat: "some channel id"
   channels:
-    notifications: (some channel id)
+    notifications: "some channel id"
+    maps: "some channel id"
+  roles:
+    administrator: "some role id"
+    moderator: "some role id"
+    verified: "some role id"
 ```
 
 Then you can start the discord bot by running `./gradlew imperium-discord:runImperiumDiscord`.
 
-> If it's the first time you run it, it will automatically download mindustry assets from GitHub, this might take less than 2 minutes.
+> If it's the first time you run it, it will automatically download mindustry assets from GitHub,
+> this might take less than 2 minutes. (Or more if you have potato internet `;-;`)
