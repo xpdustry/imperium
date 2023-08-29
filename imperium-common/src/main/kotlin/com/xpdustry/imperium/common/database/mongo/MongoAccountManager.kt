@@ -57,7 +57,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         legacyAccounts = mongo.getCollection("legacy_accounts", LegacyAccount::class)
     }
 
-    override suspend fun findAccountByIdentity(identity: PlayerIdentity): Account? {
+    override suspend fun findByIdentity(identity: PlayerIdentity): Account? {
         val token = createSessionToken(identity)
         return accounts.find(Filters.gt("sessions.$token.expiration", Instant.now())).firstOrNull()
     }
@@ -65,8 +65,15 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     override suspend fun findByUsername(username: String): Account? =
         accounts.find(Filters.eq("username", username)).firstOrNull()
 
-    override suspend fun updateByIdentity(identity: PlayerIdentity, updater: (Account) -> Unit) {
-        findAccountByIdentity(identity)?.let {
+    override suspend fun updateByIdentity(identity: PlayerIdentity, updater: suspend (Account) -> Unit) {
+        findByIdentity(identity)?.let {
+            updater(it)
+            accounts.save(it)
+        }
+    }
+
+    override suspend fun updateById(id: ObjectId, updater: suspend (Account) -> Unit) {
+        accounts.findById(id)?.let {
             updater(it)
             accounts.save(it)
         }
@@ -133,6 +140,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
             Account(
                 username = normalizedUsername,
                 password = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS),
+                verified = legacy.rank > Account.Rank.NORMAL,
                 playtime = legacy.playtime,
                 rank = legacy.rank,
                 games = legacy.games,
@@ -168,13 +176,13 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     }
 
     override suspend fun logout(identity: PlayerIdentity, all: Boolean) {
-        val account = findAccountByIdentity(identity) ?: return
+        val account = findByIdentity(identity) ?: return
         if (all) account.sessions.clear() else account.sessions.remove(createSessionToken(identity))
         accounts.save(account)
     }
 
     override suspend fun refresh(identity: PlayerIdentity) {
-        val account = findAccountByIdentity(identity) ?: return
+        val account = findByIdentity(identity) ?: return
         account.sessions[createSessionToken(identity)] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
         accounts.save(account)
     }
@@ -184,7 +192,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
             return AccountOperationResult.RateLimit
         }
 
-        val account = findAccountByIdentity(identity)
+        val account = findByIdentity(identity)
             ?: return AccountOperationResult.NotLogged
 
         if (!GenericSaltyHashFunction.equals(oldPassword, account.password)) {

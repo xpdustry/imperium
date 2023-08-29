@@ -20,7 +20,10 @@ package com.xpdustry.imperium.common.misc
 import com.google.common.cache.CacheBuilder
 import java.time.Duration
 
-class RateLimiter<T : Any>(val limit: Int, val period: Duration) {
+// TODO
+//  - Use kotlin Duration
+//  - Behavior is not consistent in terms of limit, fix this
+class RateLimiter<T : Any>(private val limit: Int, period: Duration) {
     private val cache = CacheBuilder.newBuilder()
         .expireAfterWrite(period)
         .build<T, Int>()

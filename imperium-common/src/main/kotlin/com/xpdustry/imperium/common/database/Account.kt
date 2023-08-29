@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.common.database
 
 import com.xpdustry.imperium.common.hash.Hash
-import org.bson.codecs.pojo.annotations.BsonIgnore
 import org.bson.types.ObjectId
 import java.time.Duration
 import java.time.Instant
@@ -27,9 +26,7 @@ data class Account(
     var username: String,
     var password: Hash,
     var rank: Rank = Rank.NORMAL,
-    var steam: Long? = null,
-    var discord: Long? = null,
-    var legacy: Boolean = false,
+    var verified: Boolean = false,
     val sessions: MutableMap<String, Session> = mutableMapOf(),
     val friends: MutableMap<String, Friend> = mutableMapOf(),
     val achievements: MutableMap<String, Achievement.Progression> = mutableMapOf(),
@@ -37,10 +34,6 @@ data class Account(
     var games: Int = 0,
     override val _id: ObjectId = ObjectId(),
 ) : Entity<ObjectId> {
-
-    @get:BsonIgnore
-    val verified: Boolean get() = steam != null || discord != null
-
     fun progress(achievement: Achievement) {
         if (completed(achievement)) return
         val progression = achievements.getOrPut(achievement.name.lowercase(), Achievement::Progression)

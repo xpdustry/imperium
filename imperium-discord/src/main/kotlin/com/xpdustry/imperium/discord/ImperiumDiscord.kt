@@ -29,6 +29,7 @@ import com.xpdustry.imperium.discord.interaction.command.standard.PingCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.SchematicCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.ServerCommand
 import com.xpdustry.imperium.discord.moderation.ReportListener
+import com.xpdustry.imperium.discord.verification.VerifyListener
 import java.util.Scanner
 import kotlin.system.exitProcess
 
@@ -49,6 +50,7 @@ fun main() {
     application.register(ReportListener::class)
     application.register(MapCommand::class)
     application.register(SchematicCommand::class)
+    application.register(VerifyListener::class)
 
     val commands = application.instances.get<CommandManager>()
     val buttons = application.instances.get<ButtonManager>()

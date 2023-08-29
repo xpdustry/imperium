@@ -41,12 +41,12 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
-        discord.getMainServer().addMessageCreateListener {
-            if (it.message.author.isBotUser) return@addMessageCreateListener
-            val channel = it.channel.asServerTextChannel().getOrNull() ?: return@addMessageCreateListener
+        discord.getMainServer().addMessageCreateListener { event ->
+            if (event.message.author.isBotUser || event.message.content.isBlank()) return@addMessageCreateListener
+            val channel = event.channel.asServerTextChannel().getOrNull() ?: return@addMessageCreateListener
             if (channel.category.getOrNull()?.id == config.categories.liveChat) {
                 ImperiumScope.MAIN.launch {
-                    messenger.publish(BridgeChatMessage(channel.name, it.message.author.name, it.message.content))
+                    messenger.publish(BridgeChatMessage(channel.name, event.message.author.name, event.message.content))
                 }
             }
         }

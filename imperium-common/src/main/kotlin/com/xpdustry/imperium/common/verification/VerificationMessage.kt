@@ -15,21 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.verification
 
-import java.net.InetAddress
-import java.time.Instant
+import com.xpdustry.imperium.common.database.MindustryUUID
+import com.xpdustry.imperium.common.message.Message
+import org.bson.types.ObjectId
 
-typealias MindustryUUID = String
-typealias MindustryUSID = String
-
-data class User(
-    override val _id: MindustryUUID,
-    val names: MutableSet<String> = mutableSetOf(),
-    val addresses: MutableSet<InetAddress> = mutableSetOf(),
-    var lastName: String? = null,
-    var lastAddress: InetAddress? = null,
-    var timesJoined: Int = 0,
-    var firstJoin: Instant = Instant.now(),
-    var lastJoin: Instant = Instant.now(),
-) : Entity<MindustryUUID>
+// TODO Better package name
+data class VerificationMessage(val account: ObjectId, val uuid: MindustryUUID, val code: Int, val response: Boolean = false) : Message

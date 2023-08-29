@@ -56,7 +56,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     override fun onLoad() {
-        // Listeners
+        application.instances.createSingletons()
         application.register(ConventionListener::class)
         application.register(VerificationListener::class)
         application.register(ChatTranslatorListener::class)
@@ -67,7 +67,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(BridgeChatMessageListener::class)
         application.register(ReportCommand::class)
 
-        application.instances.createSingletons()
         application.init()
     }
 

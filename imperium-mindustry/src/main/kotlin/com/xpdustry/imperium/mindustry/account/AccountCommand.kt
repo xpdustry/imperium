@@ -19,13 +19,17 @@ package com.xpdustry.imperium.mindustry.account
 
 import cloud.commandframework.arguments.standard.StringArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
+import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.database.AccountManager
 import com.xpdustry.imperium.common.database.AccountOperationResult
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.common.verification.VerificationMessage
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -38,8 +42,14 @@ import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
+import mindustry.gen.Groups
 import mindustry.gen.Player
+import org.bson.types.ObjectId
 import kotlin.coroutines.CoroutineContext
+import kotlin.random.Random
+import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
 
 // TODO
 //  - Replace sequential interfaces with a proper form interface
@@ -56,6 +66,10 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val plugin: MindustryPlugin = instances.get()
     private val manager: AccountManager = instances.get()
     private val clientCommandManager: ImperiumPluginCommandManager = instances.get("client")
+    private val messenger = instances.get<Messenger>()
+    private val pending = CacheBuilder.newBuilder()
+        .expireAfterWrite(10.minutes.toJavaDuration())
+        .build<ObjectId, Int>()
 
     override fun onImperiumInit() {
         val loginInterface = createLoginInterface(plugin, manager)
@@ -64,7 +78,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             argument(StringArgument.optional("username", StringArgument.StringMode.GREEDY))
             handler { ctx ->
                 ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(ctx.sender.player)) {
-                    val account = manager.findAccountByIdentity(ctx.sender.player.identity)
+                    val account = manager.findByIdentity(ctx.sender.player.identity)
                     if (account == null) {
                         runMindustryThread {
                             loginInterface.open(ctx.sender.player)
@@ -92,7 +106,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             commandDescription("Logout from your account")
             handler { ctx ->
                 ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(ctx.sender.player)) {
-                    if (manager.findAccountByIdentity(ctx.sender.player.identity) == null) {
+                    if (manager.findByIdentity(ctx.sender.player.identity) == null) {
                         ctx.sender.sendMessage("You are not logged in!")
                     } else {
                         manager.logout(ctx.sender.player.identity)
@@ -106,6 +120,62 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         clientCommandManager.buildAndRegister("change-password") {
             commandDescription("Change your password")
             handler { ctx -> changePasswordInterface.open(ctx.sender.player) }
+        }
+
+        messenger.subscribe<VerificationMessage> { message ->
+            if (message.response && pending.getIfPresent(message.account) == message.code) {
+                pending.invalidate(message.account)
+                ImperiumScope.MAIN.launch {
+                    manager.updateById(message.account) { account ->
+                        account.verified = true
+                    }
+                    runMindustryThread {
+                        Groups.player.find { it.uuid() == message.uuid }
+                            ?.showInfoMessage("You have been verified!")
+                    }
+                }
+            }
+        }
+
+        clientCommandManager.buildAndRegister("verify") {
+            commandDescription("Verify yourself with discord.")
+            handler { ctx ->
+                ImperiumScope.MAIN.launch {
+                    val account = manager.findByIdentity(ctx.sender.player.identity)
+                    if (account == null) {
+                        ctx.sender.sendWarning("You are not logged in!")
+                        return@launch
+                    } else if (account.verified) {
+                        ctx.sender.sendWarning("Your account is already verified.")
+                        return@launch
+                    }
+
+                    var code: Int? = pending.getIfPresent(ctx.sender.player.uuid())
+                    if (code != null) {
+                        ctx.sender.sendWarning(
+                            """
+                            You already have a pending verification.
+                            [lightgray]Remember:
+                            Join our discord server with the [cyan]/discord[] command.
+                            And run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
+                            """.trimIndent(),
+                        )
+                        return@launch
+                    }
+
+                    code = Random.nextInt(1000..9999)
+                    messenger.publish(VerificationMessage(account._id, ctx.sender.player.uuid(), code))
+                    pending.put(account._id, code)
+
+                    ctx.sender.sendMessage(
+                        """
+                        To go forward with the verification process, you need to verify yourself with discord.
+                        Join it using the [cyan]/discord[] command and run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
+                        The code will expire in 10 minutes.
+                        """.trimIndent(),
+                    )
+                }
+            }
         }
     }
 }
