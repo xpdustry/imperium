@@ -35,6 +35,7 @@ import mindustry.game.EventType
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -57,13 +58,12 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         playtime[event.player] = System.currentTimeMillis()
         ImperiumScope.MAIN.launch {
             users.updateOrCreateByUuid(event.player.uuid()) { user ->
-                val address = event.player.ip().toInetAddress()
-                val name = event.player.plainName()
                 user.timesJoined += 1
-                user.lastName = name
-                user.names += name
-                user.lastAddress = address
-                user.addresses += address
+                user.lastName = event.player.plainName()
+                user.names += event.player.plainName()
+                user.lastAddress = event.player.ip().toInetAddress()
+                user.addresses += event.player.ip().toInetAddress()
+                user.lastJoin = Instant.now()
             }
         }
     }

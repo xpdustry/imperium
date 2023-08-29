@@ -31,5 +31,6 @@ data class User(
     var lastAddress: InetAddress? = null,
     var timesJoined: Int = 0,
     var verified: Boolean = false,
-    var timestamp: Instant = Instant.now(),
+    var firstJoin: Instant = Instant.now(),
+    var lastJoin: Instant = Instant.now(),
 ) : Entity<MindustryUUID>
