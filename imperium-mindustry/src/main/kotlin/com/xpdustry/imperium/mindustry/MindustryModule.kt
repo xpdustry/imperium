@@ -32,6 +32,8 @@ import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
+import com.xpdustry.imperium.mindustry.horny.ImageAnalyzer
+import com.xpdustry.imperium.mindustry.horny.TestImageAnalyzer
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.verification.SimpleVerificationPipeline
@@ -95,6 +97,10 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
     single<ServerConfig.Mindustry> {
         get<ImperiumConfig>().server as? ServerConfig.Mindustry
             ?: error("The current server configuration is not Mindustry")
+    }
+
+    single<ImageAnalyzer> {
+        TestImageAnalyzer()
     }
 }
 
