@@ -32,8 +32,9 @@ import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
-import com.xpdustry.imperium.mindustry.horny.ImageAnalyzer
-import com.xpdustry.imperium.mindustry.horny.TestImageAnalyzer
+import com.xpdustry.imperium.mindustry.horny.GoogleUnsafeImageAnalyzer
+import com.xpdustry.imperium.mindustry.horny.NoopUnsafeImageAnalyzer
+import com.xpdustry.imperium.mindustry.horny.UnsafeImageAnalyzer
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.verification.SimpleVerificationPipeline
@@ -49,6 +50,7 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.function.Supplier
+import kotlin.io.path.exists
 
 fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
     include(commonModule())
@@ -99,8 +101,9 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
             ?: error("The current server configuration is not Mindustry")
     }
 
-    single<ImageAnalyzer> {
-        TestImageAnalyzer()
+    single<UnsafeImageAnalyzer> {
+        val file = get<Path>("directory").resolve("google-credentials.json")
+        if (file.exists()) GoogleUnsafeImageAnalyzer(file) else NoopUnsafeImageAnalyzer
     }
 }
 

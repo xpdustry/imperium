@@ -50,7 +50,7 @@ import java.util.concurrent.PriorityBlockingQueue
 import kotlin.time.Duration.Companion.seconds
 
 class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val analyzer = instances.get<ImageAnalyzer>()
+    private val analyzer = instances.get<UnsafeImageAnalyzer>()
     private val drawerQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.Drawer>>>()
     private val pixmapQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.PixMap>>>()
     private val displays = BlockClusterManager { onClusterUpdate(drawerQueue, it) }
@@ -74,15 +74,20 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
             queue.remove()
             launch {
                 logger.debug("Processing cluster (${element.value.x}, ${element.value.y})")
-                val image = renderer(element.value)
-                if (analyzer.analyze(image) == ImageAnalyzer.Result.NSFW) {
-                    val author = element.value.blocks
-                        .groupingBy { it.builder }
-                        .eachCount()
-                        .maxBy { it.value }.key
-                    Groups.player.find { it.ip().equals(author.hostAddress) }?.sendMessage(
-                        "You dirty horny bastard, stop sending NSFW images to the server!",
-                    )
+                when (val result = analyzer.analyze(renderer(element.value))) {
+                    is UnsafeImageAnalyzer.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
+                    is UnsafeImageAnalyzer.Result.Success -> {
+                        if (result.confidence >= 80) {
+                            logger.debug("Cluster (${element.value.x}, ${element.value.y}) is NSFW (confidence: ${result.confidence})")
+                            val author = element.value.blocks.groupingBy { it.builder }.eachCount().maxBy { it.value }.key
+                            // TODO Actually punish the player
+                            Groups.player.find { it.ip().equals(author.hostAddress) }?.sendMessage(
+                                "You dirty horny bastard, stop sending NSFW images to the server!",
+                            )
+                        } else {
+                            logger.debug("Cluster (${element.value.x}, ${element.value.y}) is SFW (confidence: ${result.confidence})")
+                        }
+                    }
                 }
             }
         }
@@ -174,11 +179,19 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
             val block = building.block as CanvasBlock
             val pixels = mutableMapOf<Int, Int>()
             val temp = arc.graphics.Color()
-            for (i in 0 until block.canvasSize * block.canvasSize) {
-                val bitOffset = i * block.bitsPerPixel
-                val pal = getByte(block, config, bitOffset)
-                temp.set(block.palette[pal])
-                pixels[i] = temp.rgb888()
+
+            if (config != null) {
+                for (i in 0 until block.canvasSize * block.canvasSize) {
+                    val bitOffset = i * block.bitsPerPixel
+                    val pal = getByte(block, config, bitOffset)
+                    temp.set(block.palette[pal])
+                    pixels[i] = temp.rgb888()
+                }
+            } else {
+                val color = temp.set(block.palette[0]).rgb888()
+                for (i in 0 until block.canvasSize * block.canvasSize) {
+                    pixels[i] = color
+                }
             }
 
             canvases.addElement(

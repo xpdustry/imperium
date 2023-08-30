@@ -66,7 +66,9 @@ tasks.shadowJar {
     }
 
     mergeServiceFiles()
-    minimize()
+    minimize {
+        exclude(dependency("com.google.cloud:google-cloud-vision:.*"))
+    }
 }
 
 tasks.register("getArtifactPath") {
