@@ -31,6 +31,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
+import com.xpdustry.imperium.mindustry.horny.HornyDetectionListener
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
 import com.xpdustry.imperium.mindustry.moderation.ReportCommand
 import com.xpdustry.imperium.mindustry.verification.VerificationListener
@@ -66,6 +67,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(HistoryCommand::class)
         application.register(BridgeChatMessageListener::class)
         application.register(ReportCommand::class)
+        application.register(HornyDetectionListener::class)
 
         application.init()
     }

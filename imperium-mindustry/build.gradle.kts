@@ -38,6 +38,7 @@ dependencies {
     compileOnly(libs.distributor.kotlin)
 
     implementation(libs.jsoup)
+    implementation(libs.google.cloud.vision)
 
     testImplementation(libs.distributor.api)
     testImplementation(libs.distributor.kotlin)

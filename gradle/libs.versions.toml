@@ -27,6 +27,7 @@ jsoup = "1.16.1"
 minio = "8.5.4"
 javacord = "3.8.0"
 log4j-to-slf4j = "2.20.0"
+google-cloud-vision = "3.13.0"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -66,6 +67,7 @@ kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-j
 javacord-api = { module = "org.javacord:javacord-api", version.ref = "javacord" }
 javacord-core = { module = "org.javacord:javacord-core", version.ref = "javacord" }
 log4j-to-slf4j = { module = "org.apache.logging.log4j:log4j-to-slf4j", version.ref = "log4j-to-slf4j" }
+google-cloud-vision = { module = "com.google.cloud:google-cloud-vision", version.ref = "google-cloud-vision" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
