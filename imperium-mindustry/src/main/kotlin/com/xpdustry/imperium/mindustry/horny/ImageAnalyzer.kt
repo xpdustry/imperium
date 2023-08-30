@@ -26,32 +26,37 @@ import com.google.cloud.vision.v1.ImageAnnotatorSettings
 import com.google.protobuf.ByteString
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.SecurityConfig
 import kotlinx.coroutines.withContext
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.nio.file.Path
 import javax.imageio.ImageIO
 import kotlin.io.path.inputStream
+import kotlin.math.roundToInt
 
-interface UnsafeImageAnalyzer {
+interface ImageAnalyzer {
     suspend fun analyze(image: BufferedImage): Result
     sealed interface Result {
-        data class Success(val confidence: Int) : Result
+        data class Success(val unsafe: Boolean, val confidence: Int) : Result
         data class Failure(val message: String) : Result
     }
 }
 
-internal object NoopUnsafeImageAnalyzer : UnsafeImageAnalyzer {
-    override suspend fun analyze(image: BufferedImage) = UnsafeImageAnalyzer.Result.Success(0)
+internal object NoopImageAnalyzer : ImageAnalyzer {
+    override suspend fun analyze(image: BufferedImage) = ImageAnalyzer.Result.Success(false, 0)
 }
 
-internal class GoogleUnsafeImageAnalyzer(private val file: Path) : UnsafeImageAnalyzer, ImperiumApplication.Listener {
+internal class GoogleImageAnalyzer(
+    private val file: Path,
+    private val config: SecurityConfig.ImageAnalysis.Google,
+) : ImageAnalyzer, ImperiumApplication.Listener {
     private lateinit var client: ImageAnnotatorClient
 
     override fun onImperiumInit() {
         val oldClassloader = Thread.currentThread().getContextClassLoader()
         try {
-            Thread.currentThread().setContextClassLoader(GoogleUnsafeImageAnalyzer::class.java.getClassLoader())
+            Thread.currentThread().setContextClassLoader(GoogleImageAnalyzer::class.java.getClassLoader())
             client = ImageAnnotatorClient.create(
                 ImageAnnotatorSettings.newBuilder()
                     .setCredentialsProvider { GoogleCredentials.fromStream(file.inputStream()) }
@@ -62,10 +67,11 @@ internal class GoogleUnsafeImageAnalyzer(private val file: Path) : UnsafeImageAn
         }
     }
 
-    override suspend fun analyze(image: BufferedImage): UnsafeImageAnalyzer.Result =
+    override suspend fun analyze(image: BufferedImage): ImageAnalyzer.Result =
         withContext(ImperiumScope.IO.coroutineContext) {
             val bytes = ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }
                 .let { ByteString.copyFrom(it.toByteArray()) }
+
             val result = client.batchAnnotateImages(
                 listOf(
                     AnnotateImageRequest.newBuilder()
@@ -76,20 +82,22 @@ internal class GoogleUnsafeImageAnalyzer(private val file: Path) : UnsafeImageAn
             )
 
             if (result.responsesList.isEmpty()) {
-                return@withContext UnsafeImageAnalyzer.Result.Failure("No response")
+                return@withContext ImageAnalyzer.Result.Failure("No response")
             } else if (result.responsesList.size > 1) {
-                return@withContext UnsafeImageAnalyzer.Result.Failure("Too many responses")
+                return@withContext ImageAnalyzer.Result.Failure("Too many responses")
             }
 
             val response = result.responsesList[0]
             if (response.hasError()) {
-                return@withContext UnsafeImageAnalyzer.Result.Failure(response.error.message)
+                return@withContext ImageAnalyzer.Result.Failure(response.error.message)
             }
 
-            // Values are on a scale of 5, so we multiply them by a given weight around 20
-            val adult = response.safeSearchAnnotation.adult.ordinal * 20
-            val violence = response.safeSearchAnnotation.violence.ordinal * 20
-            val racy = response.safeSearchAnnotation.racy.ordinal * 15 // Racy is the horny stuff but not explicit
-            UnsafeImageAnalyzer.Result.Success(maxOf(adult, violence, racy))
+            val max = maxOf(
+                response.safeSearchAnnotation.adult.ordinal * config.adultWeight,
+                response.safeSearchAnnotation.violence.ordinal * config.violenceWeight,
+                response.safeSearchAnnotation.racy.ordinal * config.racyWeight,
+            )
+
+            ImageAnalyzer.Result.Success(max >= 5 * config.threshold, (max * 20).roundToInt())
         }
 }

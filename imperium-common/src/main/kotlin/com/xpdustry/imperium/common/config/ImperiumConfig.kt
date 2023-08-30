@@ -30,6 +30,7 @@ data class ImperiumConfig(
     val server: ServerConfig = ServerConfig.None,
     val language: Locale = Locale.ENGLISH,
     val storage: StorageConfig = StorageConfig.Minio(),
+    val security: SecurityConfig = SecurityConfig(),
 )
 
 data class NetworkConfig(
@@ -127,4 +128,18 @@ sealed interface StorageConfig {
         val secretKey: Secret = Secret("minioadmin"),
         val bucket: String = "imperium",
     ) : StorageConfig
+}
+
+data class SecurityConfig(
+    val imageAnalysis: ImageAnalysis = ImageAnalysis.None,
+) {
+    sealed interface ImageAnalysis {
+        data object None : ImageAnalysis
+        data class Google(
+            val threshold: Float = 0.8F,
+            val adultWeight: Float = 1F,
+            val racyWeight: Float = 1F,
+            val violenceWeight: Float = 1F,
+        ) : ImageAnalysis
+    }
 }

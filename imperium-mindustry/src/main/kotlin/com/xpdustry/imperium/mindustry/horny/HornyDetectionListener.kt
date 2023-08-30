@@ -50,7 +50,7 @@ import java.util.concurrent.PriorityBlockingQueue
 import kotlin.time.Duration.Companion.seconds
 
 class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val analyzer = instances.get<UnsafeImageAnalyzer>()
+    private val analyzer = instances.get<ImageAnalyzer>()
     private val drawerQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.Drawer>>>()
     private val pixmapQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.PixMap>>>()
     private val displays = BlockClusterManager { onClusterUpdate(drawerQueue, it) }
@@ -75,9 +75,9 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
             launch {
                 logger.debug("Processing cluster (${element.value.x}, ${element.value.y})")
                 when (val result = analyzer.analyze(renderer(element.value))) {
-                    is UnsafeImageAnalyzer.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
-                    is UnsafeImageAnalyzer.Result.Success -> {
-                        if (result.confidence >= 80) {
+                    is ImageAnalyzer.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
+                    is ImageAnalyzer.Result.Success -> {
+                        if (result.unsafe) {
                             logger.debug("Cluster (${element.value.x}, ${element.value.y}) is NSFW (confidence: ${result.confidence})")
                             val author = element.value.blocks.groupingBy { it.builder }.eachCount().maxBy { it.value }.key
                             // TODO Actually punish the player
