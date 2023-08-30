@@ -29,6 +29,7 @@ import com.xpdustry.imperium.mindustry.misc.BlockClusterManager
 import com.xpdustry.imperium.mindustry.misc.Cluster
 import com.xpdustry.imperium.mindustry.misc.ClusterBlock
 import fr.xpdustry.distributor.api.event.EventHandler
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -44,13 +45,14 @@ import java.awt.geom.AffineTransform
 import java.awt.image.AffineTransformOp
 import java.awt.image.BufferedImage
 import java.time.Instant
-import java.util.PriorityQueue
 import java.util.Queue
+import java.util.concurrent.PriorityBlockingQueue
+import kotlin.time.Duration.Companion.seconds
 
 class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val analyzer = instances.get<ImageAnalyzer>()
-    private val drawerQueue = PriorityQueue<DelayedWrapper<Cluster<ImagePayload.Drawer>>>()
-    private val pixmapQueue = PriorityQueue<DelayedWrapper<Cluster<ImagePayload.PixMap>>>()
+    private val drawerQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.Drawer>>>()
+    private val pixmapQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.PixMap>>>()
     private val displays = BlockClusterManager { onClusterUpdate(drawerQueue, it) }
     private val canvases = BlockClusterManager { onClusterUpdate(pixmapQueue, it) }
 
@@ -64,12 +66,14 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
         renderer: (Cluster<T>) -> BufferedImage,
     ) = ImperiumScope.MAIN.launch {
         while (isActive) {
-            val element = queue.element()
-            if (element == null || element.instant < Instant.now()) {
+            delay(1.seconds)
+            val element = queue.peek()
+            if (element == null || element.instant > Instant.now()) {
                 continue
             }
             queue.remove()
             launch {
+                logger.debug("Processing cluster (${element.value.x}, ${element.value.y})")
                 val image = renderer(element.value)
                 if (analyzer.analyze(image) == ImageAnalyzer.Result.NSFW) {
                     val author = element.value.blocks
@@ -88,9 +92,9 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
         val removed = queue.removeIf { it.value.x == cluster.x && it.value.y == it.value.y }
         queue.add(DelayedWrapper(cluster.copy(), Instant.now().plusSeconds(5L)))
         if (removed) {
-            logger.trace("Cluster (${cluster.x}, ${cluster.y}) processing delayed")
+            logger.trace("Delayed cluster (${cluster.x}, ${cluster.y}) processing")
         } else {
-            logger.trace("Cluster (${cluster.x}, ${cluster.y}) scheduled for processing")
+            logger.trace("Scheduled cluster (${cluster.x}, ${cluster.y}) for processing")
         }
     }
 
@@ -157,6 +161,11 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
         }
 
         if (building is CanvasBlock.CanvasBuild) {
+            if (event.breaking) {
+                canvases.removeElement(building.rx, building.ry)
+                return
+            }
+
             val config = event.config
             if (config !is ByteArray?) {
                 return
