@@ -26,8 +26,8 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.mindustry.misc.identity
-import com.xpdustry.imperium.mindustry.verification.VerificationPipeline
-import com.xpdustry.imperium.mindustry.verification.VerificationResult
+import com.xpdustry.imperium.mindustry.security.VerificationPipeline
+import com.xpdustry.imperium.mindustry.security.VerificationResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.launch

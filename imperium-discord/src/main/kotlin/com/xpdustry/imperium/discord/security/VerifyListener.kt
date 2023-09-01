@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.verification
+package com.xpdustry.imperium.discord.security
 
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -24,8 +24,8 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
-import com.xpdustry.imperium.common.misc.RateLimiter
-import com.xpdustry.imperium.common.verification.VerificationMessage
+import com.xpdustry.imperium.common.security.RateLimiter
+import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.command.Command
 import org.bson.types.ObjectId
@@ -33,7 +33,6 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
-// TODO Better package name
 class VerifyListener(instances: InstanceManager) : ImperiumApplication.Listener {
     // TODO There is an issue with the RateLimiter, the real limit is 3
     private val limiter = RateLimiter<Long>(2, Duration.ofMinutes(10))

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.moderation
+package com.xpdustry.imperium.mindustry.security
 
 import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -24,11 +24,11 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.misc.RateLimiter
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.moderation.ReportMessage
+import com.xpdustry.imperium.common.security.RateLimiter
+import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.playerInfo
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage

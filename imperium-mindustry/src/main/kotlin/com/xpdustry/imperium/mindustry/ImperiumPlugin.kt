@@ -31,10 +31,10 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
-import com.xpdustry.imperium.mindustry.horny.HornyDetectionListener
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
-import com.xpdustry.imperium.mindustry.moderation.ReportCommand
-import com.xpdustry.imperium.mindustry.verification.VerificationListener
+import com.xpdustry.imperium.mindustry.security.HornyDetectionListener
+import com.xpdustry.imperium.mindustry.security.ReportCommand
+import com.xpdustry.imperium.mindustry.security.VerificationListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import kotlin.system.exitProcess

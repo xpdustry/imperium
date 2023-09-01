@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.horny
+package com.xpdustry.imperium.mindustry.security
 
 import arc.math.geom.Point2
 import arc.struct.IntSet
@@ -458,7 +458,8 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
             sealed interface Instruction {
                 data class Color(val r: Int, val g: Int, val b: Int, val a: Int) : Instruction
                 data class Rect(val x: Int, val y: Int, val w: Int, val h: Int) : Instruction
-                data class Triangle(val x1: Int, val y1: Int, val x2: Int, val y2: Int, val x3: Int, val y3: Int) : Instruction
+                data class Triangle(val x1: Int, val y1: Int, val x2: Int, val y2: Int, val x3: Int, val y3: Int) :
+                    Instruction
             }
         }
     }

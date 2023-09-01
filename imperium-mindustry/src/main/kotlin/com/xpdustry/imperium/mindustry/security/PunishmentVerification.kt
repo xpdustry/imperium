@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.verification
+package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.common.database.Punishment
 import com.xpdustry.imperium.common.database.PunishmentManager

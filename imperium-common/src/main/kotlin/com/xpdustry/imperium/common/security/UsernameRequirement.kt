@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.misc
+package com.xpdustry.imperium.common.security
 
 fun interface UsernameRequirement {
     fun check(username: String): Boolean
@@ -43,11 +43,10 @@ val DEFAULT_USERNAME_REQUIREMENTS = listOf(
     UsernameRequirement.InvalidSymbol('_'),
     UsernameRequirement.Length(3, 32),
     UsernameRequirement.Reserved(
-        UsernameRequirement::class.java.getResourceAsStream("com/xpdustry/imperium/reserved-usernames.txt")
-            ?.bufferedReader()
-            ?.use { it.readLines() }
-            ?.filter { it.isNotBlank() && !it.startsWith('#') }
-            ?.toSet()
-            ?: emptySet(),
+        UsernameRequirement::class.java.getResourceAsStream("com/xpdustry/imperium/reserved-usernames.txt")!!
+            .bufferedReader()
+            .use { it.readLines() }
+            .filter { it.isNotBlank() && !it.startsWith('#') }
+            .toSet(),
     ),
 )

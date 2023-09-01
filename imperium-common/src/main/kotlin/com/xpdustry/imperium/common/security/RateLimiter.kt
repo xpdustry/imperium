@@ -15,24 +15,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.moderation
+package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.bridge.PlayerInfo
-import com.xpdustry.imperium.common.message.Message
+import com.google.common.cache.CacheBuilder
+import java.time.Duration
 
-data class ReportMessage(
-    val serverName: String,
-    val sender: PlayerInfo,
-    val target: PlayerInfo,
-    val reason: Reason,
-    val detail: String? = null,
-) : Message {
-    enum class Reason {
-        GRIEFING,
-        TOXICITY,
-        CHEATING,
-        SPAMMING,
-        SABOTAGE,
-        CUSTOM,
+// TODO
+//  - Use kotlin Duration
+//  - Behavior is not consistent in terms of limit, fix this
+class RateLimiter<T : Any>(private val limit: Int, period: Duration) {
+    private val cache = CacheBuilder.newBuilder()
+        .expireAfterWrite(period)
+        .build<T, Int>()
+
+    fun increment(key: T) {
+        val attempts = cache.getIfPresent(key) ?: 0
+        cache.put(key, attempts + 1)
+    }
+
+    fun check(key: T): Boolean {
+        val attempts = cache.getIfPresent(key) ?: 0
+        return attempts <= limit
+    }
+
+    fun checkAndIncrement(key: T): Boolean {
+        val check = check(key)
+        increment(key)
+        return check
     }
 }

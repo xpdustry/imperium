@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.common.database
 
-import com.xpdustry.imperium.common.misc.PasswordRequirement
-import com.xpdustry.imperium.common.misc.UsernameRequirement
+import com.xpdustry.imperium.common.security.PasswordRequirement
+import com.xpdustry.imperium.common.security.UsernameRequirement
 import org.bson.types.ObjectId
 import java.net.InetAddress
 

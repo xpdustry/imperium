@@ -28,8 +28,8 @@ import com.xpdustry.imperium.discord.interaction.command.standard.MapCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.PingCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.SchematicCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.ServerCommand
-import com.xpdustry.imperium.discord.moderation.ReportListener
-import com.xpdustry.imperium.discord.verification.VerifyListener
+import com.xpdustry.imperium.discord.security.ReportListener
+import com.xpdustry.imperium.discord.security.VerifyListener
 import java.util.Scanner
 import kotlin.system.exitProcess
 

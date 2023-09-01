@@ -15,11 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.verification
+package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.database.MindustryUUID
 import com.xpdustry.imperium.common.message.Message
 import org.bson.types.ObjectId
 
-// TODO Better package name
 data class VerificationMessage(val account: ObjectId, val uuid: MindustryUUID, val code: Int, val response: Boolean = false) : Message
