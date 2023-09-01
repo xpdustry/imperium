@@ -184,7 +184,7 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
     }
 
     private fun <T : ImagePayload> onClusterEvent(queue: Queue<DelayedWrapper<Cluster<T>>>, cluster: Cluster<T>, event: BlockClusterManager.Event) {
-        val removed = queue.removeIf { it.value.x == cluster.x && it.value.y == it.value.y }
+        val removed = queue.removeIf { it.value.x == cluster.x && it.value.y == cluster.y }
         if (event != BlockClusterManager.Event.REMOVE) {
             queue.add(DelayedWrapper(cluster.copy(), Instant.now().plusSeconds(5L)))
             if (removed) {
