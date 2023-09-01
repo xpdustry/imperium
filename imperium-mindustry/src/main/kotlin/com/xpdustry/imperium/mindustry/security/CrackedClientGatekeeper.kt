@@ -17,23 +17,31 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.network.VpnAddressDetector
 import com.xpdustry.imperium.mindustry.processing.Processor
 
-class VpnVerification(private val provider: VpnAddressDetector) : Processor<VerificationContext, VerificationResult> {
-    override suspend fun process(context: VerificationContext): VerificationResult {
-        val result = provider.isVpnAddress(context.address)
-        if (result is VpnAddressDetector.Result.Success) {
-            return if (result.vpn) VerificationResult.Success else VerificationResult.Failure("VPN detected")
-        }
-        if (result is VpnAddressDetector.Result.Failure) {
-            logger.error("Failed to verify the vpn usage for player {} ({})", context.name, context.uuid, result.exception)
-        }
-        return VerificationResult.Success
-    }
+private val CRACKED_CLIENT_USERNAMES = setOf(
+    "valve",
+    "tuttop",
+    "codex",
+    "igggames",
+    "igg-games.com",
+    "igruhaorg",
+    "freetp.org",
+    "goldberg",
+)
 
-    companion object {
-        private val logger by LoggerDelegate()
+// Go figure why but some people are using cracked clients on a free game... Incredible.
+class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
+    override suspend fun process(context: GatekeeperContext): GatekeeperResult {
+        if (context.name.lowercase() in CRACKED_CLIENT_USERNAMES) {
+            return GatekeeperResult.Failure(
+                """
+                [green]Mindustry is a free and open source game.
+                [white]It is available on [royal]https://anuke.itch.io/mindustry[].
+                [red]Please, get a legit copy of the game.
+                """.trimIndent(),
+            )
+        }
+        return GatekeeperResult.Success
     }
 }

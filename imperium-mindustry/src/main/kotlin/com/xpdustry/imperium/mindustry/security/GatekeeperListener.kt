@@ -47,17 +47,17 @@ import mindustry.net.Packets.KickReason
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
-class VerificationListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline: VerificationPipeline = instances.get()
+class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val pipeline: GatekeeperPipeline = instances.get()
     private val vpn: VpnAddressDetector = instances.get()
     private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<CoroutineHttpClient>()
 
     override fun onImperiumInit() {
-        pipeline.register("ddos", Priority.HIGH, DdosVerification(http))
-        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientVerification())
-        pipeline.register("punishment", Priority.NORMAL, PunishmentVerification(punishments))
-        pipeline.register("vpn", Priority.LOW, VpnVerification(vpn))
+        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http))
+        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
+        pipeline.register("punishment", Priority.NORMAL, PunishmentGatekeeper(punishments))
+        pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
             interceptPlayerConnection(con, packet, pipeline)
@@ -65,7 +65,7 @@ class VerificationListener(instances: InstanceManager) : ImperiumApplication.Lis
     }
 }
 
-private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: VerificationPipeline) {
+private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: GatekeeperPipeline) {
     if (con.kicked) return
 
     // TODO Add steam support
@@ -199,9 +199,9 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
 
     // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
     ImperiumScope.MAIN.launch {
-        val result = pipeline.pump(VerificationContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
+        val result = pipeline.pump(GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
         runMindustryThread {
-            if (result is VerificationResult.Failure) {
+            if (result is GatekeeperResult.Failure) {
                 con.kick(result.reason, result.time.toMillis())
                 return@runMindustryThread
             }

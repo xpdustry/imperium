@@ -26,8 +26,8 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.mindustry.misc.identity
-import com.xpdustry.imperium.mindustry.security.VerificationPipeline
-import com.xpdustry.imperium.mindustry.security.VerificationResult
+import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
+import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.launch
@@ -39,7 +39,7 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline: VerificationPipeline = instances.get()
+    private val pipeline: GatekeeperPipeline = instances.get()
     private val accounts = instances.get<AccountManager>()
     private val users = instances.get<UserManager>()
     private val playtime = ConcurrentHashMap<Player, Long>()
@@ -49,7 +49,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         pipeline.register("account", Priority.LOWEST) {
             accounts.refresh(PlayerIdentity(it.uuid, it.usid, it.address))
-            VerificationResult.Success
+            GatekeeperResult.Success
         }
     }
 

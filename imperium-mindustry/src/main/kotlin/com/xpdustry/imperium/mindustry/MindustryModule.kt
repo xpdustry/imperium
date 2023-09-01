@@ -35,11 +35,11 @@ import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
+import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GoogleImageAnalyzer
 import com.xpdustry.imperium.mindustry.security.ImageAnalyzer
 import com.xpdustry.imperium.mindustry.security.NoopImageAnalyzer
-import com.xpdustry.imperium.mindustry.security.SimpleVerificationPipeline
-import com.xpdustry.imperium.mindustry.security.VerificationPipeline
+import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.Vars
@@ -69,8 +69,8 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
         plugin
     }
 
-    single<VerificationPipeline> {
-        SimpleVerificationPipeline()
+    single<GatekeeperPipeline> {
+        SimpleGatekeeperPipeline()
     }
 
     single<ChatMessagePipeline> {

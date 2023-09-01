@@ -45,17 +45,17 @@ private val PROVIDERS = listOf<AddressProvider>(
     OracleCloudAddressProvider(),
 )
 
-class DdosVerification(private val http: CoroutineHttpClient) : Processor<VerificationContext, VerificationResult> {
+class DdosGatekeeper(private val http: CoroutineHttpClient) : Processor<GatekeeperContext, GatekeeperResult> {
 
     private val addresses: Deferred<Set<InetAddress>> = ImperiumScope.MAIN.async(start = CoroutineStart.LAZY) {
         fetchAddresses()
     }
 
-    override suspend fun process(context: VerificationContext): VerificationResult {
+    override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         return if (addresses.await().contains(context.address)) {
-            VerificationResult.Failure("You address has been marked by our anti-VPN system. Please disable it.")
+            GatekeeperResult.Failure("You address has been marked by our anti-VPN system. Please disable it.")
         } else {
-            VerificationResult.Success
+            GatekeeperResult.Success
         }
     }
 

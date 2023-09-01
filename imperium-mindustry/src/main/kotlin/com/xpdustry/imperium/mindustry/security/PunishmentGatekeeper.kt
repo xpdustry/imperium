@@ -24,8 +24,8 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
 import java.time.Duration
 
-class PunishmentVerification(private val punishments: PunishmentManager) : Processor<VerificationContext, VerificationResult> {
-    override suspend fun process(context: VerificationContext): VerificationResult {
+class PunishmentGatekeeper(private val punishments: PunishmentManager) : Processor<GatekeeperContext, GatekeeperResult> {
+    override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         val punishment = punishments
             .findAllByTargetAddress(context.address)
             .filter { it.expired.not() }
@@ -34,9 +34,9 @@ class PunishmentVerification(private val punishments: PunishmentManager) : Proce
             .firstOrNull()
 
         return if (punishment == null) {
-            VerificationResult.Success
+            GatekeeperResult.Success
         } else {
-            VerificationResult.Failure(
+            GatekeeperResult.Failure(
                 """
                     [red]Oh no! You are currently banned from Chaotic Neutral!
                     [accent]Reason:[white] ${punishment.reason}

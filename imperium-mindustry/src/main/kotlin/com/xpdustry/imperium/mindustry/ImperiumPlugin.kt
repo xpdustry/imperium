@@ -32,9 +32,9 @@ import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
+import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.HornyDetectionListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
-import com.xpdustry.imperium.mindustry.security.VerificationListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import kotlin.system.exitProcess
@@ -59,7 +59,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         application.instances.createSingletons()
         application.register(ConventionListener::class)
-        application.register(VerificationListener::class)
+        application.register(GatekeeperListener::class)
         application.register(ChatTranslatorListener::class)
         application.register(AccountListener::class)
         application.register(AccountCommand::class)

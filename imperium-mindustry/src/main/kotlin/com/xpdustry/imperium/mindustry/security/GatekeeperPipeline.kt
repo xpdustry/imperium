@@ -25,35 +25,35 @@ import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import java.time.Duration
 
-data class VerificationContext(
+data class GatekeeperContext(
     val name: String,
     val uuid: String,
     val usid: String,
     val address: InetAddress,
 )
 
-sealed interface VerificationResult {
-    data object Success : VerificationResult
-    data class Failure(val reason: String, val time: Duration = Duration.ZERO) : VerificationResult
+sealed interface GatekeeperResult {
+    data object Success : GatekeeperResult
+    data class Failure(val reason: String, val time: Duration = Duration.ZERO) : GatekeeperResult
 }
 
-interface VerificationPipeline : ProcessorPipeline<VerificationContext, VerificationResult>
+interface GatekeeperPipeline : ProcessorPipeline<GatekeeperContext, GatekeeperResult>
 
-class SimpleVerificationPipeline : VerificationPipeline, AbstractProcessorPipeline<VerificationContext, VerificationResult>() {
-    override suspend fun pump(context: VerificationContext) = withContext(ImperiumScope.MAIN.coroutineContext) {
+class SimpleGatekeeperPipeline : GatekeeperPipeline, AbstractProcessorPipeline<GatekeeperContext, GatekeeperResult>() {
+    override suspend fun pump(context: GatekeeperContext) = withContext(ImperiumScope.MAIN.coroutineContext) {
         for (processor in processors) {
             val result = try {
                 processor.process(context)
             } catch (error: Exception) {
                 logger.error("Error while verifying player ${context.name}", error)
-                VerificationResult.Success
+                GatekeeperResult.Success
             }
-            if (result is VerificationResult.Failure) {
+            if (result is GatekeeperResult.Failure) {
                 return@withContext result
             }
         }
 
-        VerificationResult.Success
+        GatekeeperResult.Success
     }
 
     companion object {
