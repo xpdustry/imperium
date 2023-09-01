@@ -61,8 +61,8 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
 import kotlin.time.Duration.Companion.seconds
 
-class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val analyzer = instances.get<ImageAnalyzer>()
+class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val analyzer = instances.get<UnsafeImageDetection>()
     private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
     private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
     private val directory = instances.get<Path>("directory").resolve("nsfw-debug")
@@ -165,8 +165,8 @@ class HornyDetectionListener(instances: InstanceManager) : ImperiumApplication.L
                     }
                 }
                 when (val result = analyzer.analyze(image)) {
-                    is ImageAnalyzer.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
-                    is ImageAnalyzer.Result.Success -> {
+                    is UnsafeImageDetection.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
+                    is UnsafeImageDetection.Result.Success -> {
                         if (result.unsafe) {
                             logger.debug("Cluster ({}, {}) is NSFW (confidence: {})", element.value.x, element.value.y, result.confidence)
                             val author = element.value.blocks.groupingBy { it.builder }.eachCount().maxBy { it.value }.key

@@ -33,8 +33,8 @@ import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
-import com.xpdustry.imperium.mindustry.security.HornyDetectionListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
+import com.xpdustry.imperium.mindustry.security.UnsafeImageDetectionListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import kotlin.system.exitProcess
@@ -67,7 +67,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(HistoryCommand::class)
         application.register(BridgeChatMessageListener::class)
         application.register(ReportCommand::class)
-        application.register(HornyDetectionListener::class)
+        application.register(UnsafeImageDetectionListener::class)
 
         application.init()
     }
