@@ -17,4 +17,6 @@
  */
 package com.xpdustry.imperium.common.message
 
-interface Message
+interface Message {
+    annotation class Options(val subject: String = "", val local: Boolean = false)
+}

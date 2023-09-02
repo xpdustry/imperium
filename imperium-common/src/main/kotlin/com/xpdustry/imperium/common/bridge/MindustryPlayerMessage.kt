@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.message.Message
 
+@Message.Options("bridge.player")
 sealed class MindustryPlayerMessage(val serverName: String, val player: PlayerInfo) : Message {
     class Join(serverName: String, player: PlayerInfo) : MindustryPlayerMessage(serverName, player)
     class Quit(serverName: String, player: PlayerInfo) : MindustryPlayerMessage(serverName, player)

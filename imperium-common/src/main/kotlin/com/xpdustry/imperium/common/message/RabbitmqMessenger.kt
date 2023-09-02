@@ -40,7 +40,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.objenesis.strategy.StdInstantiatorStrategy
 import java.net.Inet4Address
@@ -48,11 +48,14 @@ import java.net.Inet6Address
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.isSuperclassOf
+import kotlin.reflect.full.superclasses
 import kotlin.reflect.jvm.jvmName
 
-// TODO The current system does not intercept the subclasses of a message type. We need to fix this.
 class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
 
+    // TODO Use json ?
     private val kryo = Kryo().apply {
         instantiatorStrategy = StdInstantiatorStrategy()
         setRegistrationRequired(false)
@@ -63,6 +66,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         addDefaultSerializer(UUID::class.java, DefaultSerializers.UUIDSerializer())
     }
 
+    private val options = mutableMapOf<KClass<out Message>, NotAnnotationOptions>()
     private val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
 
     private lateinit var connection: Connection
@@ -97,17 +101,21 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         connection.close()
     }
 
-    override suspend fun publish(message: Message) = withContext(ImperiumScope.IO.coroutineContext) {
+    override suspend fun <M : Message> publish(message: M) = withContext(ImperiumScope.IO.coroutineContext) {
         try {
+            if (getOptions(message::class).local) {
+                @Suppress("UNCHECKED_CAST")
+                (flows[message::class]?.inner as MutableSharedFlow<M>?)?.emit(message)
+            }
             channel.basicPublish(
                 IMPERIUM_EXCHANGE,
-                message::class.jvmName,
+                getOptions(message::class).subject,
                 AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier.toString())).build(),
-                Output(MAX_OBJECT_SIZE).also { kryo.writeObject(it, message) }.toBytes(),
+                Output(MAX_OBJECT_SIZE).also { kryo.writeClassAndObject(it, message) }.toBytes(),
             )
             true
         } catch (e: Exception) {
-            logger.error("Failed to publish message of type ${message::class.jvmName}", e)
+            logger.error("Failed to publish ${getOptions(message::class).subject} message", e)
             false
         }
     }
@@ -116,7 +124,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         @Suppress("UNCHECKED_CAST")
         val flow = flows.getOrPut(type) {
             val queue = channel.queueDeclare().queue
-            channel.queueBind(queue, IMPERIUM_EXCHANGE, type.jvmName)
+            channel.queueBind(queue, IMPERIUM_EXCHANGE, getOptions(type).subject)
             FlowWithCTag(
                 MutableSharedFlow<M>(),
                 channel.basicConsume(queue, true, RabbitmqFlowAdapter(type)),
@@ -135,9 +143,35 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
             try {
                 channel.basicCancel(flow.cTag)
             } catch (e: Exception) {
-                logger.warn("Failed to delete queue for type ${type.jvmName}", e)
+                logger.error("Failed to delete queue for ${getOptions(type).subject}", e)
             }
         }
+    }
+
+    private fun getOptions(type: KClass<out Message>): NotAnnotationOptions {
+        var result: NotAnnotationOptions?
+        var parent = type
+
+        while (Message::class.isSuperclassOf(parent)) {
+            result = options[parent]
+            if (result != null) {
+                options[type] = result
+                return result
+            }
+
+            result = parent.findAnnotation<Message.Options>()?.let { NotAnnotationOptions(it.subject, it.local) }
+            if (result != null) {
+                options[type] = result
+                return result
+            }
+
+            @Suppress("UNCHECKED_CAST")
+            parent = parent.superclasses.first() as KClass<out Message>
+        }
+
+        result = NotAnnotationOptions(type.jvmName, false)
+        options[type] = result
+        return result
     }
 
     private data class FlowWithCTag<T : Message>(val inner: MutableSharedFlow<T>, val cTag: String)
@@ -146,29 +180,33 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         override fun handleConsumeOk(consumerTag: String) = Unit
         override fun handleRecoverOk(consumerTag: String) = Unit
         override fun handleCancelOk(consumerTag: String) = Unit
-        override fun handleCancel(consumerTag: String) = logger.error("Consumer for type ${type.jvmName} was been unexpectedly cancelled")
+        override fun handleCancel(consumerTag: String) =
+            logger.error("Consumer for ${getOptions(type).subject} has been unexpectedly cancelled")
         override fun handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) {
-            if (!sig.isInitiatedByApplication) logger.error("Consumer for type ${type.jvmName} was shut down unexpectedly", sig)
+            if (!sig.isInitiatedByApplication) logger.error("Consumer for ${getOptions(type).subject} has been shut down unexpectedly", sig)
         }
         override fun handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: ByteArray) {
             // Have to call toString() because it's wrapped in another object
             val sender = properties.headers[SENDER_HEADER]?.toString()
             if (sender == null) {
-                logger.warn("Received message without sender header from $envelope of type ${type.jvmName}")
+                logger.warn("Received ${getOptions(type).subject} message without sender header from $envelope")
             } else if (sender == metadata.identifier.toString()) {
                 return
             } else if (body.isEmpty()) {
-                logger.warn("Received empty message from $sender of type ${type.jvmName}")
+                logger.warn("Received empty ${getOptions(type).subject} message from $sender")
             } else if (body.size > MAX_OBJECT_SIZE) {
-                logger.warn("Received message from $sender that is too large of type ${type.jvmName}: ${body.size} bytes")
+                logger.warn("Received ${getOptions(type).subject} message from $sender that is too large: ${body.size} bytes")
             } else {
-                ImperiumScope.IO.launch {
+                runBlocking {
                     try {
-                        val message = Input(body).use { input -> kryo.readObject(input, type.java) }
+                        val message = Input(body).use { input -> kryo.readClassAndObject(input) }
+                        if (!type.isInstance(message)) {
+                            return@runBlocking
+                        }
                         @Suppress("UNCHECKED_CAST")
-                        (flows[type]?.inner as MutableSharedFlow<T>?)?.emit(message)
+                        (flows[type]?.inner as MutableSharedFlow<T>?)?.emit(message as T)
                     } catch (e: Exception) {
-                        logger.error("Failed to handle message from $sender of type ${type.jvmName}", e)
+                        logger.error("Failed to handle ${getOptions(type).subject} message from $sender", e)
                     }
                 }
             }
@@ -181,4 +219,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         const val SENDER_HEADER = "Imperium-Sender"
         const val MAX_OBJECT_SIZE = 1024 * 1024
     }
+
+    // Why kotlin... Why forcing constants for annotations...
+    data class NotAnnotationOptions(val subject: String, val local: Boolean)
 }

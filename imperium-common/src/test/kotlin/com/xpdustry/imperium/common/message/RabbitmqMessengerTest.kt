@@ -62,11 +62,13 @@ class RabbitmqMessengerTest {
     }
 
     @Test
-    fun test_simple_pubsub() = runTest {
+    fun `test simple pubsub`() = runTest {
         val message = TestMessage("Hello World!")
         val deferred = CompletableDeferred<TestMessage>()
         messenger1.subscribe<TestMessage> {
-            deferred.complete(it)
+            if (!deferred.complete(it)) {
+                Assertions.fail<Unit>("Received message $it twice")
+            }
         }
         Assertions.assertTrue(messenger2.publish(message))
         val result = withContext(ImperiumScope.MAIN.coroutineContext) {
@@ -77,7 +79,89 @@ class RabbitmqMessengerTest {
         Assertions.assertEquals(message, result)
     }
 
+    @Test
+    fun `test custom subject`() = runTest {
+        val message1 = TestSealedMessage.Number(69)
+        val message2 = TestSealedMessage.Text("Hello World!")
+        val deferred1 = CompletableDeferred<TestSealedMessage.Number>()
+        val deferred2 = CompletableDeferred<TestSealedMessage.Text>()
+
+        messenger1.subscribe<TestSealedMessage> {
+            when (it) {
+                is TestSealedMessage.Number -> {
+                    if (!deferred1.complete(it)) {
+                        Assertions.fail<Unit>("Received message $it twice")
+                    }
+                }
+                is TestSealedMessage.Text -> {
+                    if (!deferred2.complete(it)) {
+                        Assertions.fail<Unit>("Received message $it twice")
+                    }
+                }
+            }
+        }
+
+        Assertions.assertTrue(messenger2.publish(message1))
+        val result = withContext(ImperiumScope.MAIN.coroutineContext) {
+            withTimeout(3.seconds) {
+                deferred1.await()
+            }
+        }
+        Assertions.assertEquals(message1, result)
+
+        Assertions.assertTrue(messenger2.publish(message2))
+        val result2 = withContext(ImperiumScope.MAIN.coroutineContext) {
+            withTimeout(3.seconds) {
+                deferred2.await()
+            }
+        }
+        Assertions.assertEquals(message2, result2)
+    }
+
+    @Test
+    fun `test local publish`() = runTest {
+        val message = LocalTestMessage("Hello World!")
+        val deferred1 = CompletableDeferred<LocalTestMessage>()
+        val deferred2 = CompletableDeferred<LocalTestMessage>()
+
+        messenger1.subscribe<LocalTestMessage> {
+            if (!deferred1.complete(it)) {
+                Assertions.fail<Unit>("Received message $it twice")
+            }
+        }
+
+        messenger2.subscribe<LocalTestMessage> {
+            if (!deferred2.complete(it)) {
+                Assertions.fail<Unit>("Received message $it twice")
+            }
+        }
+
+        Assertions.assertTrue(messenger1.publish(message))
+        val result1 = withContext(ImperiumScope.MAIN.coroutineContext) {
+            withTimeout(3.seconds) {
+                deferred1.await()
+            }
+        }
+        Assertions.assertEquals(message, result1)
+
+        val result2 = withContext(ImperiumScope.MAIN.coroutineContext) {
+            withTimeout(3.seconds) {
+                deferred2.await()
+            }
+        }
+        Assertions.assertEquals(message, result2)
+    }
+
     data class TestMessage(val content: String) : Message
+
+    @Message.Options(subject = "test-subject")
+    sealed interface TestSealedMessage : Message {
+        data class Number(val number: Int) : TestSealedMessage
+        data class Text(val text: String) : TestSealedMessage
+    }
+
+    @Message.Options(local = true)
+    data class LocalTestMessage(val content: String) : Message
 
     companion object {
         @Container

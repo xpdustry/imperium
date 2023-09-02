@@ -51,40 +51,36 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-        messenger.subscribe<MindustryPlayerMessage.Join>(::handleMindustryServerMessage)
-        messenger.subscribe<MindustryPlayerMessage.Quit>(::handleMindustryServerMessage)
-        messenger.subscribe<MindustryPlayerMessage.Chat>(::handleMindustryServerMessage)
+        messenger.subscribe<MindustryPlayerMessage> { message ->
+            val channel = getLiveChatCategory().channels.find { it.name == message.serverName }
+                ?: discord.getMainServer().createTextChannelBuilder()
+                    .setCategory(getLiveChatCategory())
+                    .setName(message.serverName)
+                    .create()
+                    .await()
+
+            val textChannel = channel.asServerTextChannel().getOrNull()
+            if (textChannel == null) {
+                logger.error("Channel ${channel.name} (${channel.id}) is not a text channel")
+                return@subscribe
+            }
+
+            val text = when (message) {
+                is MindustryPlayerMessage.Join -> ":green_square: **${message.player.name}** has joined the server."
+                is MindustryPlayerMessage.Quit -> ":red_square: **${message.player.name}** has left the server."
+                is MindustryPlayerMessage.Chat -> ":blue_square: **${message.player.name}**: $message"
+            }
+
+            MessageBuilder()
+                .setAllowedMentions(NO_MENTIONS)
+                .setContent(text)
+                .send(textChannel)
+                .await()
+        }
     }
 
     private fun getLiveChatCategory(): ChannelCategory =
         discord.getMainServer().getChannelCategoryById(config.categories.liveChat).get()
-
-    private suspend fun handleMindustryServerMessage(message: MindustryPlayerMessage) {
-        val channel = getLiveChatCategory().channels.find { it.name == message.serverName }
-            ?: discord.getMainServer().createTextChannelBuilder()
-                .setCategory(getLiveChatCategory())
-                .setName(message.serverName)
-                .create()
-                .await()
-
-        val text = channel.asServerTextChannel().getOrNull()
-        if (text == null) {
-            logger.error("Channel ${channel.name} (${channel.id}) is not a text channel")
-            return
-        }
-
-        MessageBuilder()
-            .append(message.toDiscordMessage())
-            .setAllowedMentions(NO_MENTIONS)
-            .send(text)
-            .await()
-    }
-
-    private fun MindustryPlayerMessage.toDiscordMessage(): String = when (this) {
-        is MindustryPlayerMessage.Join -> ":green_square: **${player.name}** has joined the server."
-        is MindustryPlayerMessage.Quit -> ":red_square: **${player.name}** has left the server."
-        is MindustryPlayerMessage.Chat -> ":blue_square: **${player.name}**: $message"
-    }
 
     companion object {
         private val logger by LoggerDelegate()
