@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.database
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoCredential
@@ -28,7 +28,6 @@ import com.mongodb.kotlin.client.coroutine.MongoDatabase
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.database.Entity
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.bson.codecs.configuration.CodecRegistries

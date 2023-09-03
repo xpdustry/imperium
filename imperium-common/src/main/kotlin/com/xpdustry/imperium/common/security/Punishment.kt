@@ -18,7 +18,25 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
-import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.database.timestamp
 import org.bson.types.ObjectId
+import java.net.InetAddress
+import java.time.Duration
+import java.time.Instant
 
-data class VerificationMessage(val account: ObjectId, val uuid: MindustryUUID, val code: Int, val response: Boolean = false) : Message
+data class Punishment(
+    var targetAddress: InetAddress,
+    var targetUuid: MindustryUUID? = null,
+    override val _id: ObjectId = ObjectId(),
+    var reason: String = "Unknown",
+    var duration: Duration? = Duration.ofDays(1L),
+    var pardoned: Boolean = false,
+    var type: Type = Type.MUTE,
+) : Entity<ObjectId> {
+    val expired: Boolean get() = duration != null && (pardoned || timestamp.plus(duration).isBefore(Instant.now()))
+    val remaining: Duration get() = duration?.minus(Duration.between(Instant.now(), timestamp)) ?: Duration.ZERO
+    enum class Type {
+        MUTE, KICK, BAN
+    }
+}

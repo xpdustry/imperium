@@ -15,12 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.MindustryUUID
-import com.xpdustry.imperium.common.database.User
-import com.xpdustry.imperium.common.database.UserManager
+import com.xpdustry.imperium.common.database.MongoEntityCollection
+import com.xpdustry.imperium.common.database.MongoProvider
 
 internal class MongoUserManager(private val mongo: MongoProvider) : UserManager, ImperiumApplication.Listener {
 

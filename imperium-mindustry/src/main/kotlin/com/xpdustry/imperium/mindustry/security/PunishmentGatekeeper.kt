@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.database.Punishment
-import com.xpdustry.imperium.common.database.PunishmentManager
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.processing.Processor
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList

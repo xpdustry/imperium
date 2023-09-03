@@ -15,13 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.security
 
 import com.mongodb.client.model.Filters
+import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.MindustryUUID
-import com.xpdustry.imperium.common.database.Punishment
-import com.xpdustry.imperium.common.database.PunishmentManager
+import com.xpdustry.imperium.common.database.MongoEntityCollection
+import com.xpdustry.imperium.common.database.MongoProvider
 import kotlinx.coroutines.flow.Flow
 import org.bson.types.ObjectId
 import java.net.InetAddress

@@ -17,18 +17,16 @@
  */
 package com.xpdustry.imperium.common
 
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.MongoAccountManager
+import com.xpdustry.imperium.common.account.MongoUserManager
+import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
-import com.xpdustry.imperium.common.database.AccountManager
-import com.xpdustry.imperium.common.database.MindustryMapManager
-import com.xpdustry.imperium.common.database.PunishmentManager
-import com.xpdustry.imperium.common.database.UserManager
-import com.xpdustry.imperium.common.database.mongo.MongoAccountManager
-import com.xpdustry.imperium.common.database.mongo.MongoMindustryMapManager
-import com.xpdustry.imperium.common.database.mongo.MongoProvider
-import com.xpdustry.imperium.common.database.mongo.MongoPunishmentManager
-import com.xpdustry.imperium.common.database.mongo.MongoUserManager
-import com.xpdustry.imperium.common.database.mongo.SimpleMongoProvider
+import com.xpdustry.imperium.common.content.MindustryMapManager
+import com.xpdustry.imperium.common.content.MongoMindustryMapManager
+import com.xpdustry.imperium.common.database.MongoProvider
+import com.xpdustry.imperium.common.database.SimpleMongoProvider
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -40,6 +38,8 @@ import com.xpdustry.imperium.common.network.IpHubVpnAddressDetector
 import com.xpdustry.imperium.common.network.SimpleCoroutineHttpClient
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnAddressDetector
+import com.xpdustry.imperium.common.security.MongoPunishmentManager
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.storage.MinioStorage
 import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator

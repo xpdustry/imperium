@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.discord.security
 
 import com.google.common.cache.CacheBuilder
+import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.MindustryUUID
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger

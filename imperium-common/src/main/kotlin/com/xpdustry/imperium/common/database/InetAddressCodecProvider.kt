@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.database
 
 import com.google.common.net.InetAddresses
 import org.bson.BsonReader
@@ -27,7 +27,7 @@ import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
 import java.net.InetAddress
 
-class InetAddressCodecProvider : CodecProvider {
+internal class InetAddressCodecProvider : CodecProvider {
     override fun <T : Any> get(clazz: Class<T>, registry: CodecRegistry): Codec<T>? {
         if (InetAddress::class.java.isAssignableFrom(clazz)) {
             @Suppress("UNCHECKED_CAST")
@@ -35,14 +35,12 @@ class InetAddressCodecProvider : CodecProvider {
         }
         return null
     }
-}
 
-object InetAddressCodec : Codec<InetAddress> {
-    override fun getEncoderClass(): Class<InetAddress> = InetAddress::class.java
-
-    override fun encode(writer: BsonWriter, value: InetAddress, encoderContext: EncoderContext) =
-        writer.writeString(value.hostAddress)
-
-    override fun decode(reader: BsonReader, decoderContext: DecoderContext): InetAddress =
-        InetAddresses.forString(reader.readString())
+    private object InetAddressCodec : Codec<InetAddress> {
+        override fun getEncoderClass(): Class<InetAddress> = InetAddress::class.java
+        override fun encode(writer: BsonWriter, value: InetAddress, encoderContext: EncoderContext) =
+            writer.writeString(value.hostAddress)
+        override fun decode(reader: BsonReader, decoderContext: DecoderContext): InetAddress =
+            InetAddresses.forString(reader.readString())
+    }
 }

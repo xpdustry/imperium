@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.database
 
 import com.xpdustry.imperium.common.hash.Hash
 import com.xpdustry.imperium.common.hash.HashParams
@@ -26,7 +26,7 @@ import org.bson.codecs.Codec
 import org.bson.codecs.DecoderContext
 import org.bson.codecs.EncoderContext
 
-class HashCodec : Codec<Hash> {
+internal class HashCodec : Codec<Hash> {
     override fun getEncoderClass(): Class<Hash> = Hash::class.java
 
     override fun encode(writer: BsonWriter, value: Hash, encoderContext: EncoderContext) {

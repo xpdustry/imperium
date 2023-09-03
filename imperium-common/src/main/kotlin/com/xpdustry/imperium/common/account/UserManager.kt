@@ -15,31 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.account
 
-import org.bson.types.ObjectId
-import java.time.Duration
-
-data class MindustryMap(
-    override val _id: ObjectId = ObjectId(),
-    var name: String,
-    var description: String?,
-    var author: String?,
-    var width: Int,
-    var height: Int,
-    var playtime: Duration = Duration.ZERO,
-    var games: Int = 0,
-    val servers: MutableSet<String> = mutableSetOf(),
-) : Entity<ObjectId>
-
-data class Rating(
-    override val _id: ObjectId = ObjectId(),
-    var map: ObjectId,
-    var player: MindustryUUID,
-    var score: Int,
-    var difficulty: Difficulty,
-) : Entity<ObjectId> {
-    enum class Difficulty {
-        EASY, NORMAL, HARD, EXPERT
-    }
+interface UserManager {
+    suspend fun findByUuidOrCreate(uuid: MindustryUUID): User
+    suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
 }

@@ -25,11 +25,11 @@ import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.database.PunishmentManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.VpnAddressDetector
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.launch

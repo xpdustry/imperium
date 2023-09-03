@@ -15,12 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.account
 
-import kotlinx.coroutines.flow.Flow
-import java.net.InetAddress
+import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.hash.Hash
+import java.time.Duration
 
-interface PunishmentManager {
-    suspend fun findAllByTargetAddress(target: InetAddress): Flow<Punishment>
-    suspend fun findAllByTargetUuid(target: MindustryUUID): Flow<Punishment>
-}
+typealias HashedUsername = String
+
+data class LegacyAccount(
+    override val _id: HashedUsername,
+    var password: Hash,
+    var rank: Account.Rank = Account.Rank.NORMAL,
+    var games: Int = 0,
+    var playtime: Duration = Duration.ZERO,
+    val achievements: MutableSet<Achievement> = mutableSetOf(),
+) : Entity<HashedUsername>

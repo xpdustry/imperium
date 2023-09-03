@@ -17,17 +17,21 @@
  */
 package com.xpdustry.imperium.common.database
 
-enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
-    ACTIVE(7, true),
-    HYPER(30, true),
-    ADDICT(90, true),
-    GAMER(8 * 60),
-    STEAM,
-    DISCORD,
-    DAY(24 * 60),
-    WEEK(7 * 24 * 60),
-    MONTH(30 * 24 * 60),
-    ;
+import org.bson.BsonReader
+import org.bson.BsonWriter
+import org.bson.codecs.Codec
+import org.bson.codecs.DecoderContext
+import org.bson.codecs.EncoderContext
+import java.time.Duration
 
-    data class Progression(var progress: Int = 0, var completed: Boolean = false)
+internal class DurationCodec : Codec<Duration> {
+    override fun getEncoderClass(): Class<Duration> = Duration::class.java
+
+    override fun encode(writer: BsonWriter, value: Duration, encoderContext: EncoderContext) {
+        writer.writeInt64(value.seconds)
+    }
+
+    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Duration {
+        return Duration.ofSeconds(reader.readInt64())
+    }
 }

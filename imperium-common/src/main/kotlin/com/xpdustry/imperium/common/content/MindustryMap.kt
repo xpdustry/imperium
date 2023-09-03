@@ -15,25 +15,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.content
 
+import com.xpdustry.imperium.common.account.MindustryUUID
+import com.xpdustry.imperium.common.database.Entity
 import org.bson.types.ObjectId
-import java.net.InetAddress
 import java.time.Duration
-import java.time.Instant
 
-data class Punishment(
-    var targetAddress: InetAddress,
-    var targetUuid: MindustryUUID? = null,
+data class MindustryMap(
     override val _id: ObjectId = ObjectId(),
-    var reason: String = "Unknown",
-    var duration: Duration? = Duration.ofDays(1L),
-    var pardoned: Boolean = false,
-    var type: Type = Type.MUTE,
+    var name: String,
+    var description: String?,
+    var author: String?,
+    var width: Int,
+    var height: Int,
+    var playtime: Duration = Duration.ZERO,
+    var games: Int = 0,
+    val servers: MutableSet<String> = mutableSetOf(),
+) : Entity<ObjectId>
+
+data class Rating(
+    override val _id: ObjectId = ObjectId(),
+    var map: ObjectId,
+    var player: MindustryUUID,
+    var score: Int,
+    var difficulty: Difficulty,
 ) : Entity<ObjectId> {
-    val expired: Boolean get() = duration != null && (pardoned || timestamp.plus(duration).isBefore(Instant.now()))
-    val remaining: Duration get() = duration?.minus(Duration.between(Instant.now(), timestamp)) ?: Duration.ZERO
-    enum class Type {
-        MUTE, KICK, BAN
+    enum class Difficulty {
+        EASY, NORMAL, HARD, EXPERT
     }
 }

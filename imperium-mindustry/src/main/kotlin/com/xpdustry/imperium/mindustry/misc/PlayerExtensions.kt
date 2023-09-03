@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
+import com.xpdustry.imperium.common.account.PlayerIdentity
 import com.xpdustry.imperium.common.bridge.PlayerInfo
-import com.xpdustry.imperium.common.database.PlayerIdentity
 import com.xpdustry.imperium.common.misc.toInetAddress
 import mindustry.gen.Call
 import mindustry.gen.Player

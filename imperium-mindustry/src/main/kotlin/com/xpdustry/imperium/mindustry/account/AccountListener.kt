@@ -17,11 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.PlayerIdentity
+import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.database.AccountManager
-import com.xpdustry.imperium.common.database.PlayerIdentity
-import com.xpdustry.imperium.common.database.UserManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress

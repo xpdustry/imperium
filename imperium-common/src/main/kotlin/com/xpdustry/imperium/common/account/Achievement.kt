@@ -15,9 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.account
 
-interface UserManager {
-    suspend fun findByUuidOrCreate(uuid: MindustryUUID): User
-    suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
+enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
+    ACTIVE(7, true),
+    HYPER(30, true),
+    ADDICT(90, true),
+    GAMER(8 * 60),
+    STEAM,
+    DISCORD,
+    DAY(24 * 60),
+    WEEK(7 * 24 * 60),
+    MONTH(30 * 24 * 60),
+    ;
+
+    data class Progression(var progress: Int = 0, var completed: Boolean = false)
 }

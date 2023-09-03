@@ -15,18 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.content
 
 import com.mongodb.client.model.Accumulators
 import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Indexes
 import com.mongodb.client.model.Sorts
+import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.MindustryMap
-import com.xpdustry.imperium.common.database.MindustryMapManager
-import com.xpdustry.imperium.common.database.MindustryUUID
-import com.xpdustry.imperium.common.database.Rating
+import com.xpdustry.imperium.common.database.MongoEntityCollection
+import com.xpdustry.imperium.common.database.MongoProvider
 import com.xpdustry.imperium.common.storage.S3Object
 import com.xpdustry.imperium.common.storage.Storage
 import kotlinx.coroutines.flow.Flow

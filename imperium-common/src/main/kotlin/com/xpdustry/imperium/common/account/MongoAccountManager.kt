@@ -15,17 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.account
 
 import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.Account
-import com.xpdustry.imperium.common.database.AccountManager
-import com.xpdustry.imperium.common.database.AccountOperationResult
-import com.xpdustry.imperium.common.database.Achievement
-import com.xpdustry.imperium.common.database.HashedUsername
-import com.xpdustry.imperium.common.database.LegacyAccount
-import com.xpdustry.imperium.common.database.PlayerIdentity
+import com.xpdustry.imperium.common.database.MongoEntityCollection
+import com.xpdustry.imperium.common.database.MongoProvider
 import com.xpdustry.imperium.common.hash.Argon2HashFunction
 import com.xpdustry.imperium.common.hash.Argon2Params
 import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction

@@ -15,14 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.database.AccountManager
-import com.xpdustry.imperium.common.database.AccountOperationResult
-import com.xpdustry.imperium.common.database.PlayerIdentity
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single

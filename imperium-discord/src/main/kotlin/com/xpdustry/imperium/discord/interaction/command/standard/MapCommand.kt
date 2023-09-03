@@ -19,8 +19,8 @@ package com.xpdustry.imperium.discord.interaction.command.standard
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.database.MindustryMap
-import com.xpdustry.imperium.common.database.MindustryMapManager
+import com.xpdustry.imperium.common.content.MindustryMap
+import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
