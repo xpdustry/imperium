@@ -19,8 +19,11 @@ package com.xpdustry.imperium.common.network
 
 import java.net.InetAddress
 
-interface VpnAddressDetector {
-    suspend fun isVpnAddress(address: InetAddress): Result
+interface VpnDetection {
+    suspend fun isVpn(address: InetAddress): Result
+    object Noop : VpnDetection {
+        override suspend fun isVpn(address: InetAddress) = Result.Success(false)
+    }
     sealed interface Result {
         data class Success(val vpn: Boolean) : Result
         data class Failure(val exception: Exception) : Result

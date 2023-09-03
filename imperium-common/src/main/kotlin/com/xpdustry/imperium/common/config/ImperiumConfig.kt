@@ -34,12 +34,12 @@ data class ImperiumConfig(
 )
 
 data class NetworkConfig(
-    val antiVpn: AntiVPN = AntiVPN.None,
+    val vpnDetection: VpnDetectionConfig = VpnDetectionConfig.None,
     val discoveryInterval: Duration = Duration.ofSeconds(5L),
 ) {
-    sealed interface AntiVPN {
-        data object None : AntiVPN
-        data class IpHub(val token: Secret) : AntiVPN
+    sealed interface VpnDetectionConfig {
+        data object None : VpnDetectionConfig
+        data class IPHub(val token: Secret) : VpnDetectionConfig
     }
 }
 

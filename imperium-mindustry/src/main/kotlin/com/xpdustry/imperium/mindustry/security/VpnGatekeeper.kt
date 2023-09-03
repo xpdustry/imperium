@@ -18,16 +18,16 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.network.VpnAddressDetector
+import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.mindustry.processing.Processor
 
-class VpnGatekeeper(private val provider: VpnAddressDetector) : Processor<GatekeeperContext, GatekeeperResult> {
+class VpnGatekeeper(private val provider: VpnDetection) : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
-        val result = provider.isVpnAddress(context.address)
-        if (result is VpnAddressDetector.Result.Success) {
+        val result = provider.isVpn(context.address)
+        if (result is VpnDetection.Result.Success) {
             return if (result.vpn) GatekeeperResult.Success else GatekeeperResult.Failure("VPN detected")
         }
-        if (result is VpnAddressDetector.Result.Failure) {
+        if (result is VpnDetection.Result.Failure) {
             logger.error("Failed to verify the vpn usage for player {} ({})", context.name, context.uuid, result.exception)
         }
         return GatekeeperResult.Success

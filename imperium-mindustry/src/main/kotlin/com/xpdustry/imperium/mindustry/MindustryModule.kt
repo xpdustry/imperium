@@ -36,10 +36,9 @@ import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
-import com.xpdustry.imperium.mindustry.security.GoogleUnsafeImageDetection
-import com.xpdustry.imperium.mindustry.security.NoopUnsafeImageDetection
+import com.xpdustry.imperium.mindustry.security.GoogleImageAnalysis
+import com.xpdustry.imperium.mindustry.security.ImageAnalysis
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
-import com.xpdustry.imperium.mindustry.security.UnsafeImageDetection
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.Vars
@@ -102,15 +101,15 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
             ?: error("The current server configuration is not Mindustry")
     }
 
-    single<UnsafeImageDetection> {
+    single<ImageAnalysis> {
         when (val config = get<ImperiumConfig>().security.imageAnalysis) {
-            is SecurityConfig.ImageAnalysis.None -> NoopUnsafeImageDetection
+            is SecurityConfig.ImageAnalysis.None -> ImageAnalysis.Noop
             is SecurityConfig.ImageAnalysis.Google -> {
                 val file = get<Path>("directory").resolve("google-credentials.json")
                 if (!file.exists()) {
                     error("Google credentials file not found")
                 }
-                GoogleUnsafeImageDetection(file, config)
+                GoogleImageAnalysis(file, config)
             }
         }
     }

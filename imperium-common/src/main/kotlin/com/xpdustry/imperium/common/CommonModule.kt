@@ -22,7 +22,10 @@ import com.xpdustry.imperium.common.account.MongoAccountManager
 import com.xpdustry.imperium.common.account.MongoUserManager
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumMetadata
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
+import com.xpdustry.imperium.common.config.NetworkConfig
+import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MongoMindustryMapManager
 import com.xpdustry.imperium.common.database.MongoProvider
@@ -34,10 +37,10 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.Discovery
-import com.xpdustry.imperium.common.network.IpHubVpnAddressDetector
+import com.xpdustry.imperium.common.network.IPHubVpnDetection
 import com.xpdustry.imperium.common.network.SimpleCoroutineHttpClient
 import com.xpdustry.imperium.common.network.SimpleDiscovery
-import com.xpdustry.imperium.common.network.VpnAddressDetector
+import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.MongoPunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.storage.MinioStorage
@@ -49,15 +52,23 @@ fun commonModule() = module("common") {
     single(ImperiumConfigFactory())
 
     single<Translator> {
-        DeeplTranslator(get(), get())
+        val config = get<ImperiumConfig>().translator
+        when (config) {
+            is TranslatorConfig.None -> Translator.Noop
+            is TranslatorConfig.DeepL -> DeeplTranslator(get(), get())
+        }
     }
 
     single<Discovery> {
         SimpleDiscovery(get(), get(), get(), get())
     }
 
-    single<VpnAddressDetector> {
-        IpHubVpnAddressDetector(get(), get())
+    single<VpnDetection> {
+        val config = get<ImperiumConfig>().network.vpnDetection
+        when (config) {
+            is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
+            is NetworkConfig.VpnDetectionConfig.IPHub -> IPHubVpnDetection(get(), get())
+        }
     }
 
     single<Messenger> {

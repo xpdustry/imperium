@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
-import com.xpdustry.imperium.common.network.VpnAddressDetector
+import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
@@ -49,7 +49,7 @@ import java.io.DataOutputStream
 
 class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline: GatekeeperPipeline = instances.get()
-    private val vpn: VpnAddressDetector = instances.get()
+    private val vpn: VpnDetection = instances.get()
     private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<CoroutineHttpClient>()
 

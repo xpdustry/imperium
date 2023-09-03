@@ -34,21 +34,19 @@ import java.time.Duration
 import java.util.Locale
 
 class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Translator, ImperiumApplication.Listener {
-    private val translator: com.deepl.api.Translator?
+    private val translator: com.deepl.api.Translator
     private val cache: Cache<TranslatorKey, String>
     private lateinit var sourceLanguages: List<Locale>
     private lateinit var targetLanguages: List<Locale>
 
     init {
-        translator = (config.translator as? TranslatorConfig.DeepL)?.token?.let {
-            com.deepl.api.Translator(
-                it.value,
-                TranslatorOptions()
-                    .setTimeout(Duration.ofSeconds(3L))
-                    .setAppInfo("Imperium", metadata.version.toString()),
-            )
+        if (config.translator !is TranslatorConfig.DeepL) {
+            throw IllegalArgumentException("Invalid translator config")
         }
-
+        translator = com.deepl.api.Translator(
+            config.translator.token.value,
+            TranslatorOptions().setTimeout(Duration.ofSeconds(3L)).setAppInfo("Imperium", metadata.version.toString()),
+        )
         cache = CacheBuilder.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(Duration.ofMinutes(5))
@@ -64,7 +62,6 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         if (source.language == "router" || target.language == "router") {
             return TranslatorResult.Success("router")
         }
-
         if (text.isBlank()) {
             return TranslatorResult.Success(text)
         }
@@ -79,7 +76,6 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         }
 
         val key = TranslatorKey(text, sourceLocale, targetLocale)
-
         val cached = cache.getIfPresent(key)
         if (cached != null) {
             return TranslatorResult.Success(cached)
@@ -91,13 +87,11 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
 
         return withContext(ImperiumScope.MAIN.coroutineContext) {
             val result = try {
-                translator!!
-                    .translateText(key.text, key.source.language, key.target.toLanguageTag(), DEFAULT_OPTIONS)
-                    .text
+                translator
+                    .translateText(key.text, key.source.language, key.target.toLanguageTag(), DEFAULT_OPTIONS).text
             } catch (e: Exception) {
                 return@withContext TranslatorResult.Failure(e)
             }
-
             cache.put(key, result)
             TranslatorResult.Success(result)
         }
@@ -122,11 +116,11 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
     }
 
     private suspend fun fetchLanguages(type: LanguageType) = withContext(ImperiumScope.MAIN.coroutineContext) {
-        translator?.getLanguages(type)?.map { Locale.forLanguageTag(it.code) } ?: emptyList()
+        translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
     }
 
     private suspend fun fetchRateLimited() = withContext(ImperiumScope.MAIN.coroutineContext) {
-        translator?.usage?.character?.limitReached() ?: true
+        translator.usage.character!!.limitReached()
     }
 
     data class TranslatorKey(val text: String, val source: Locale, val target: Locale)

@@ -24,18 +24,18 @@ import com.xpdustry.imperium.common.config.NetworkConfig
 import java.net.InetAddress
 import java.net.http.HttpResponse
 
-class IpHubVpnAddressDetector(config: ImperiumConfig, private val http: CoroutineHttpClient) : VpnAddressDetector {
+class IPHubVpnDetection(config: ImperiumConfig, private val http: CoroutineHttpClient) : VpnDetection {
 
-    private val token: String? = (config.network.antiVpn as? NetworkConfig.AntiVPN.IpHub)?.token?.value
+    private val token: String? = (config.network.vpnDetection as? NetworkConfig.VpnDetectionConfig.IPHub)?.token?.value
     private val gson = Gson()
 
-    override suspend fun isVpnAddress(address: InetAddress): VpnAddressDetector.Result {
+    override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
         if (token == null) {
-            return VpnAddressDetector.Result.RateLimited
+            return VpnDetection.Result.RateLimited
         }
 
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
-            return VpnAddressDetector.Result.Success(false)
+            return VpnDetection.Result.Success(false)
         }
 
         val response = try {
@@ -44,15 +44,15 @@ class IpHubVpnAddressDetector(config: ImperiumConfig, private val http: Coroutin
                 HttpResponse.BodyHandlers.ofString(),
             )
         } catch (e: Exception) {
-            return VpnAddressDetector.Result.Failure(e)
+            return VpnDetection.Result.Failure(e)
         }
 
         if (response.statusCode() == 429) {
-            return VpnAddressDetector.Result.RateLimited
+            return VpnDetection.Result.RateLimited
         }
 
         if (response.statusCode() != 200) {
-            return VpnAddressDetector.Result.Failure(
+            return VpnDetection.Result.Failure(
                 IllegalStateException("Unexpected status code: ${response.statusCode()}"),
             )
         }
@@ -62,6 +62,6 @@ class IpHubVpnAddressDetector(config: ImperiumConfig, private val http: Coroutin
         // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
         // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
         val json = gson.fromJson(response.body(), JsonObject::class.java)
-        return VpnAddressDetector.Result.Success(json["block"].asInt != 1)
+        return VpnDetection.Result.Success(json["block"].asInt != 1)
     }
 }

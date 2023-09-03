@@ -35,28 +35,27 @@ import javax.imageio.ImageIO
 import kotlin.io.path.inputStream
 import kotlin.math.roundToInt
 
-interface UnsafeImageDetection {
-    suspend fun analyze(image: BufferedImage): Result
+interface ImageAnalysis {
+    suspend fun isUnsafe(image: BufferedImage): Result
+    object Noop : ImageAnalysis {
+        override suspend fun isUnsafe(image: BufferedImage) = Result.Success(false, 0)
+    }
     sealed interface Result {
-        data class Success(val unsafe: Boolean, val confidence: Int) : Result
+        data class Success(val value: Boolean, val confidence: Int) : Result
         data class Failure(val message: String) : Result
     }
 }
 
-internal object NoopUnsafeImageDetection : UnsafeImageDetection {
-    override suspend fun analyze(image: BufferedImage) = UnsafeImageDetection.Result.Success(false, 0)
-}
-
-internal class GoogleUnsafeImageDetection(
+internal class GoogleImageAnalysis(
     private val file: Path,
     private val config: SecurityConfig.ImageAnalysis.Google,
-) : UnsafeImageDetection, ImperiumApplication.Listener {
+) : ImageAnalysis, ImperiumApplication.Listener {
     private lateinit var client: ImageAnnotatorClient
 
     override fun onImperiumInit() {
         val oldClassloader = Thread.currentThread().getContextClassLoader()
         try {
-            Thread.currentThread().setContextClassLoader(GoogleUnsafeImageDetection::class.java.getClassLoader())
+            Thread.currentThread().setContextClassLoader(GoogleImageAnalysis::class.java.getClassLoader())
             client = ImageAnnotatorClient.create(
                 ImageAnnotatorSettings.newBuilder()
                     .setCredentialsProvider { GoogleCredentials.fromStream(file.inputStream()) }
@@ -67,7 +66,7 @@ internal class GoogleUnsafeImageDetection(
         }
     }
 
-    override suspend fun analyze(image: BufferedImage): UnsafeImageDetection.Result =
+    override suspend fun isUnsafe(image: BufferedImage): ImageAnalysis.Result =
         withContext(ImperiumScope.IO.coroutineContext) {
             val bytes = ByteArrayOutputStream().also { ImageIO.write(image, "png", it) }
                 .let { ByteString.copyFrom(it.toByteArray()) }
@@ -82,14 +81,14 @@ internal class GoogleUnsafeImageDetection(
             )
 
             if (result.responsesList.isEmpty()) {
-                return@withContext UnsafeImageDetection.Result.Failure("No response")
+                return@withContext ImageAnalysis.Result.Failure("No response")
             } else if (result.responsesList.size > 1) {
-                return@withContext UnsafeImageDetection.Result.Failure("Too many responses")
+                return@withContext ImageAnalysis.Result.Failure("Too many responses")
             }
 
             val response = result.responsesList[0]
             if (response.hasError()) {
-                return@withContext UnsafeImageDetection.Result.Failure(response.error.message)
+                return@withContext ImageAnalysis.Result.Failure(response.error.message)
             }
 
             val max = maxOf(
@@ -98,6 +97,6 @@ internal class GoogleUnsafeImageDetection(
                 response.safeSearchAnnotation.racy.ordinal * config.racyWeight,
             )
 
-            UnsafeImageDetection.Result.Success(max >= 5 * config.threshold, (max * 20).roundToInt())
+            ImageAnalysis.Result.Success(max >= 5 * config.threshold, (max * 20).roundToInt())
         }
 }

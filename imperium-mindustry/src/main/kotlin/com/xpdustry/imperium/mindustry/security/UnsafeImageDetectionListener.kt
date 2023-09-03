@@ -62,7 +62,7 @@ import kotlin.io.path.notExists
 import kotlin.time.Duration.Companion.seconds
 
 class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val analyzer = instances.get<UnsafeImageDetection>()
+    private val analyzer = instances.get<ImageAnalysis>()
     private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
     private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
     private val directory = instances.get<Path>("directory").resolve("nsfw-debug")
@@ -164,10 +164,10 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
                         logger.debug("Saved cluster ({}, {}) to {}", element.value.x, element.value.y, file)
                     }
                 }
-                when (val result = analyzer.analyze(image)) {
-                    is UnsafeImageDetection.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
-                    is UnsafeImageDetection.Result.Success -> {
-                        if (result.unsafe) {
+                when (val result = analyzer.isUnsafe(image)) {
+                    is ImageAnalysis.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
+                    is ImageAnalysis.Result.Success -> {
+                        if (result.value) {
                             logger.debug("Cluster ({}, {}) is NSFW (confidence: {})", element.value.x, element.value.y, result.confidence)
                             val author = element.value.blocks.groupingBy { it.builder }.eachCount().maxBy { it.value }.key
                             // TODO Actually punish the player

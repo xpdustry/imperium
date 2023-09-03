@@ -22,6 +22,11 @@ import java.util.Locale
 interface Translator {
     suspend fun translate(text: String, source: Locale, target: Locale): TranslatorResult
     fun isSupportedLanguage(locale: Locale): Boolean
+    object Noop : Translator {
+        override suspend fun translate(text: String, source: Locale, target: Locale) =
+            TranslatorResult.UnsupportedLanguage(target)
+        override fun isSupportedLanguage(locale: Locale) = false
+    }
 }
 
 sealed interface TranslatorResult {
