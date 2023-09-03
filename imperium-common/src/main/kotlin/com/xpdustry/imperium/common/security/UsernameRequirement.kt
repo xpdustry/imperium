@@ -43,7 +43,7 @@ val DEFAULT_USERNAME_REQUIREMENTS = listOf(
     UsernameRequirement.InvalidSymbol('_'),
     UsernameRequirement.Length(3, 32),
     UsernameRequirement.Reserved(
-        UsernameRequirement::class.java.getResourceAsStream("com/xpdustry/imperium/reserved-usernames.txt")!!
+        UsernameRequirement::class.java.getResourceAsStream("/reserved-usernames.txt")!!
             .bufferedReader()
             .use { it.readLines() }
             .filter { it.isNotBlank() && !it.startsWith('#') }
