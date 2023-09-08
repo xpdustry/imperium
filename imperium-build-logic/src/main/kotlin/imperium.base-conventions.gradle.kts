@@ -6,8 +6,8 @@ plugins {
 
 repositories {
     mavenCentral()
-    // anukenJitpack() Jitpack is terribly unreliable, so we use our own mirror
-    xpdustryAnuken()
+    xpdustryReleases()
+    xpdustryMindustry()
 }
 
 kotlin {

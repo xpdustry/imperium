@@ -19,7 +19,6 @@ package com.xpdustry.imperium.mindustry
 
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.SecurityConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
@@ -36,8 +35,6 @@ import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
-import com.xpdustry.imperium.mindustry.security.GoogleImageAnalysis
-import com.xpdustry.imperium.mindustry.security.ImageAnalysis
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -50,7 +47,6 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.function.Supplier
-import kotlin.io.path.exists
 
 fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
     include(commonModule())
@@ -99,19 +95,6 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
     single<ServerConfig.Mindustry> {
         get<ImperiumConfig>().server as? ServerConfig.Mindustry
             ?: error("The current server configuration is not Mindustry")
-    }
-
-    single<ImageAnalysis> {
-        when (val config = get<ImperiumConfig>().security.imageAnalysis) {
-            is SecurityConfig.ImageAnalysis.None -> ImageAnalysis.Noop
-            is SecurityConfig.ImageAnalysis.Google -> {
-                val file = get<Path>("directory").resolve("google-credentials.json")
-                if (!file.exists()) {
-                    error("Google credentials file not found")
-                }
-                GoogleImageAnalysis(file, config)
-            }
-        }
     }
 }
 

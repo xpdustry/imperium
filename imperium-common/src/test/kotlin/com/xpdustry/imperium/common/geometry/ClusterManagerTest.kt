@@ -15,13 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.misc
+package com.xpdustry.imperium.common.geometry
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import java.net.InetAddress
 
-class BlockClusterManagerTest {
+class ClusterManagerTest {
 
     @Test
     fun `test blocks that share a side`() {
@@ -133,6 +132,6 @@ class BlockClusterManagerTest {
         Assertions.assertEquals(1, manager.clusters.size)
     }
 
-    private fun createManager() = BlockClusterManager<Unit> { _, _ -> }
-    private fun createBlock(x: Int, y: Int, size: Int) = ClusterBlock(x, y, size, InetAddress.getLocalHost(), Unit)
+    private fun createManager() = ClusterManager<Unit> { _, _ -> }
+    private fun createBlock(x: Int, y: Int, size: Int) = Cluster.Block(x, y, size, Unit)
 }

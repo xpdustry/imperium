@@ -77,7 +77,7 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
             .codecRegistry(
                 CodecRegistries.fromProviders(
                     CodecRegistries.fromCodecs(DurationCodec(), HashCodec()),
-                    InetAddressCodecProvider(),
+                    InetAddressCodecProvider,
                     MongoClientSettings.getDefaultCodecRegistry(),
                 ),
             )

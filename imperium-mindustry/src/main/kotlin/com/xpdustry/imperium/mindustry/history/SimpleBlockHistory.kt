@@ -32,6 +32,7 @@ import com.xpdustry.imperium.mindustry.history.factory.PAYLOAD_DRIVER_CONFIGURAT
 import com.xpdustry.imperium.mindustry.history.factory.POWER_NODE_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.factory.UNIT_FACTORY_CONFIGURATION_FACTORY
 import fr.xpdustry.distributor.api.event.EventHandler
+import fr.xpdustry.distributor.api.util.Priority
 import mindustry.game.EventType
 import mindustry.gen.Building
 import mindustry.world.Block
@@ -79,7 +80,7 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         return players[uuid] ?: emptyList()
     }
 
-    @EventHandler
+    @EventHandler(priority = Priority.HIGH)
     fun onBlockBuildEndEvent(event: EventType.BlockBuildEndEvent) {
         if (event.unit == null || event.tile.build == null) {
             return
@@ -90,7 +91,7 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         this.addEntry(event.tile.build, block, event.unit, if (event.breaking) HistoryEntry.Type.BREAK else HistoryEntry.Type.PLACE, event.config)
     }
 
-    @EventHandler
+    @EventHandler(priority = Priority.HIGH)
     fun onBlockDestroyBeginEvent(event: EventType.BlockBuildBeginEvent) {
         if (event.unit == null) {
             return
@@ -107,7 +108,7 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         }
     }
 
-    @EventHandler
+    @EventHandler(priority = Priority.HIGH)
     fun onBLockConfigEvent(event: EventType.ConfigEvent) {
         if (event.player == null) {
             return
@@ -115,13 +116,13 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         this.addEntry(event.tile, event.tile.block(), event.player.unit(), HistoryEntry.Type.CONFIGURE, event.value)
     }
 
-    @EventHandler
+    @EventHandler(priority = Priority.HIGH)
     fun onWorldLoadEvent(event: EventType.WorldLoadEvent) {
         positions.clear()
         players.clear()
     }
 
-    @EventHandler
+    @EventHandler(priority = Priority.HIGH)
     fun onBlockRotateEvent(event: EventType.BuildRotateEvent) {
         if (event.unit == null || event.build.rotation == event.previous) {
             return

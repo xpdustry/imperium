@@ -25,11 +25,16 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
 import com.xpdustry.imperium.common.config.NetworkConfig
+import com.xpdustry.imperium.common.config.SecurityConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MongoMindustryMapManager
 import com.xpdustry.imperium.common.database.MongoProvider
 import com.xpdustry.imperium.common.database.SimpleMongoProvider
+import com.xpdustry.imperium.common.image.GoogleImageAnalysis
+import com.xpdustry.imperium.common.image.ImageAnalysis
+import com.xpdustry.imperium.common.image.LogicImageAnalysis
+import com.xpdustry.imperium.common.image.SimpleLogicImageAnalysis
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -47,6 +52,8 @@ import com.xpdustry.imperium.common.storage.MinioStorage
 import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
+import java.nio.file.Path
+import kotlin.io.path.exists
 
 fun commonModule() = module("common") {
     single(ImperiumConfigFactory())
@@ -105,5 +112,22 @@ fun commonModule() = module("common") {
 
     single<UserManager> {
         MongoUserManager(get())
+    }
+
+    single<ImageAnalysis> {
+        when (val config = get<ImperiumConfig>().security.imageAnalysis) {
+            is SecurityConfig.ImageAnalysis.None -> ImageAnalysis.Noop
+            is SecurityConfig.ImageAnalysis.Google -> {
+                val file = get<Path>("directory").resolve("google-credentials.json")
+                if (!file.exists()) {
+                    error("Google credentials file not found")
+                }
+                GoogleImageAnalysis(file, config)
+            }
+        }
+    }
+
+    single<LogicImageAnalysis> {
+        SimpleLogicImageAnalysis(get(), get(), get())
     }
 }

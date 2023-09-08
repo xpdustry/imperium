@@ -15,31 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history
+package com.xpdustry.imperium.common.collection
 
-import mindustry.world.Block
-import java.time.Instant
-
-data class HistoryEntry(
-    val x: Int,
-    val y: Int,
-    val buildX: Int,
-    val buildY: Int,
-    val author: HistoryAuthor,
-    val block: Block,
-    val type: Type,
-    val rotation: Int,
-    val configuration: HistoryConfig? = null,
-    val virtual: Boolean = false,
-    val timestamp: Instant = Instant.now(),
-) {
-
-    enum class Type {
-        PLACING,
-        PLACE,
-        BREAKING,
-        ROTATE,
-        BREAK,
-        CONFIGURE,
+fun <T : Any> List<T>.findMostCommon(): T? {
+    val map = mutableMapOf<T, Int>()
+    for (key in this) {
+        map[key] = (map[key] ?: 0) + 1
     }
+    return map.maxByOrNull { it.value }?.key
 }

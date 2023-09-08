@@ -21,22 +21,28 @@ import arc.math.geom.Point2
 import arc.struct.IntSet
 import cloud.commandframework.arguments.standard.BooleanArgument
 import cloud.commandframework.kotlin.extension.buildAndRegister
+import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.collection.findMostCommon
+import com.xpdustry.imperium.common.geometry.Cluster
+import com.xpdustry.imperium.common.geometry.ClusterManager
+import com.xpdustry.imperium.common.image.LogicImage
+import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.toHexString
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import com.xpdustry.imperium.mindustry.misc.BlockClusterManager
-import com.xpdustry.imperium.mindustry.misc.Cluster
-import com.xpdustry.imperium.mindustry.misc.ClusterBlock
+import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.event.EventHandler
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Building
@@ -49,27 +55,23 @@ import mindustry.world.blocks.logic.CanvasBlock
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.LogicDisplay
 import java.awt.Color
-import java.awt.geom.AffineTransform
-import java.awt.image.AffineTransformOp
-import java.awt.image.BufferedImage
-import java.nio.file.Path
 import java.time.Instant
 import java.util.Queue
 import java.util.concurrent.PriorityBlockingQueue
-import javax.imageio.ImageIO
-import kotlin.io.path.createDirectory
-import kotlin.io.path.notExists
 import kotlin.time.Duration.Companion.seconds
 
-class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val analyzer = instances.get<ImageAnalysis>()
+class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val analyzer = instances.get<LogicImageAnalysis>()
+    private val history = instances.get<BlockHistory>()
     private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
     private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
-    private val directory = instances.get<Path>("directory").resolve("nsfw-debug")
-    private val drawerQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.Drawer>>>()
-    private val pixmapQueue = PriorityBlockingQueue<DelayedWrapper<Cluster<ImagePayload.PixMap>>>()
-    private val displays = BlockClusterManager { cluster, event -> onClusterEvent(drawerQueue, cluster, event) }
-    private val canvases = BlockClusterManager { cluster, event -> onClusterEvent(pixmapQueue, cluster, event) }
+
+    private val drawerQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.Drawer>>>()
+    private val displays = ClusterManager(QueueClusterListener(drawerQueue, ::filterDrawer, ::findDrawerAuthor))
+    private lateinit var drawerJob: Job
+    private val pixmapQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.PixMap>>>()
+    private val canvases = ClusterManager(QueueClusterListener(pixmapQueue, ::filterPixMap, ::findPixMapAuthor))
+    private lateinit var pixmapJob: Job
 
     // TODO Implement delegate property backed by Core.settings so it persists across restarts
     private var debug = false
@@ -78,8 +80,8 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
     private val debugPlayers = mutableSetOf<Player>()
 
     override fun onImperiumInit() {
-        startProcessing(drawerQueue) { cluster -> createImage(cluster, ::createDrawerImage) }
-        startProcessing(pixmapQueue) { cluster -> createImage(cluster, ::createPixMapImage) }
+        drawerJob = startProcessing(drawerQueue)
+        pixmapJob = startProcessing(pixmapQueue)
 
         serverCommandManager.buildAndRegister("image-analysis") {
             literal("save-images")
@@ -123,7 +125,13 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
         }
     }
 
-    private fun renderCluster(player: Player, manager: BlockClusterManager<*>, color: Color) {
+    override fun onImperiumExit() = runBlocking {
+        drawerJob.cancel()
+        pixmapJob.cancel()
+        listOf(drawerJob, pixmapJob).joinAll()
+    }
+
+    private fun renderCluster(player: Player, manager: ClusterManager<*>, color: Color) {
         for ((index, cluster) in manager.clusters.withIndex()) {
             for (block in cluster.blocks) {
                 Call.label(
@@ -140,63 +148,6 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) {
         debugPlayers.remove(event.player)
-    }
-
-    private fun <T : ImagePayload> startProcessing(
-        queue: Queue<DelayedWrapper<Cluster<T>>>,
-        renderer: (Cluster<T>) -> BufferedImage,
-    ) = ImperiumScope.MAIN.launch {
-        while (isActive) {
-            delay(1.seconds)
-            val element = queue.peek()
-            if (element == null || element.instant > Instant.now()) {
-                continue
-            }
-            queue.remove()
-            launch {
-                logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
-                val image = renderer(element.value)
-                if (debug) {
-                    ImperiumScope.IO.launch {
-                        if (directory.notExists()) directory.createDirectory()
-                        val file = directory.resolve("${System.currentTimeMillis()}.png")
-                        ImageIO.write(image, "png", file.toFile())
-                        logger.debug("Saved cluster ({}, {}) to {}", element.value.x, element.value.y, file)
-                    }
-                }
-                when (val result = analyzer.isUnsafe(image)) {
-                    is ImageAnalysis.Result.Failure -> logger.error("Failed to analyze image: ${result.message}")
-                    is ImageAnalysis.Result.Success -> {
-                        if (result.value) {
-                            logger.debug("Cluster ({}, {}) is NSFW (confidence: {})", element.value.x, element.value.y, result.confidence)
-                            val author = element.value.blocks.groupingBy { it.builder }.eachCount().maxBy { it.value }.key
-                            // TODO Actually punish the player
-                            Groups.player.find { it.ip().equals(author.hostAddress) }?.sendMessage(
-                                "You dirty horny bastard, stop sending NSFW images to the server!",
-                            )
-                        } else {
-                            logger.debug("Cluster ({}, {}) is SFW (confidence: {})", element.value.x, element.value.y, result.confidence)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun <T : ImagePayload> onClusterEvent(queue: Queue<DelayedWrapper<Cluster<T>>>, cluster: Cluster<T>, event: BlockClusterManager.Event) {
-        val removed = queue.removeIf { it.value.x == cluster.x && it.value.y == cluster.y }
-        if (event != BlockClusterManager.Event.REMOVE) {
-            queue.add(DelayedWrapper(cluster.copy(), Instant.now().plusSeconds(5L)))
-            if (removed) {
-                logger.trace("Delayed cluster (${cluster.x}, ${cluster.y}) processing")
-            } else {
-                logger.trace("Scheduled cluster (${cluster.x}, ${cluster.y}) for processing")
-            }
-        } else {
-            if (removed) {
-                logger.trace("Removed cluster (${cluster.x}, ${cluster.y}) from queue")
-            }
-        }
     }
 
     @EventHandler
@@ -223,7 +174,7 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
                 return
             }
 
-            val processors = mutableListOf<ImagePayload.Drawer.Processor>()
+            val processors = mutableListOf<LogicImage.Drawer.Processor>()
             val covered = IntSet()
             for (x in (building.tileX() - MAX_RANGE)..(building.tileX() + MAX_RANGE)) {
                 for (y in (building.tileY() - MAX_RANGE)..(building.tileY() + MAX_RANGE)) {
@@ -239,7 +190,7 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
                     }
                     val instructions = readInstructions(build.executor)
                     if (instructions.isNotEmpty()) {
-                        processors += ImagePayload.Drawer.Processor(build.rx, build.ry, instructions)
+                        processors += LogicImage.Drawer.Processor(build.rx, build.ry, instructions)
                     }
                     build.tile.getLinkedTiles {
                         covered.add(Point2.pack(it.x.toInt(), it.y.toInt()))
@@ -252,12 +203,11 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
             }
 
             displays.addElement(
-                ClusterBlock(
+                Cluster.Block(
                     building.rx,
                     building.ry,
                     building.block.size,
-                    event.unit.player.ip().toInetAddress(),
-                    ImagePayload.Drawer(
+                    LogicImage.Drawer(
                         (building.block as LogicDisplay).displaySize,
                         processors,
                     ),
@@ -296,12 +246,11 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
             }
 
             canvases.addElement(
-                ClusterBlock(
+                Cluster.Block(
                     building.rx,
                     building.ry,
                     building.block.size,
-                    event.unit.player.ip().toInetAddress(),
-                    ImagePayload.PixMap(
+                    LogicImage.PixMap(
                         block.canvasSize,
                         pixels,
                     ),
@@ -319,8 +268,8 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
         return result
     }
 
-    private fun readInstructions(executor: LExecutor): List<ImagePayload.Drawer.Instruction> {
-        val instructions = mutableListOf<ImagePayload.Drawer.Instruction>()
+    private fun readInstructions(executor: LExecutor): List<LogicImage.Drawer.Instruction> {
+        val instructions = mutableListOf<LogicImage.Drawer.Instruction>()
         for (instruction in executor.instructions) {
             if (instruction !is LExecutor.DrawI) {
                 continue
@@ -331,14 +280,14 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
                     val g = normalizeColorValue(executor.numi(instruction.y))
                     val b = normalizeColorValue(executor.numi(instruction.p1))
                     val a = normalizeColorValue(executor.numi(instruction.p2))
-                    ImagePayload.Drawer.Instruction.Color(r, g, b, a)
+                    LogicImage.Drawer.Instruction.Color(r, g, b, a)
                 }
                 LogicDisplay.commandRect -> {
                     val x = executor.numi(instruction.x)
                     val y = executor.numi(instruction.y)
                     val w = executor.numi(instruction.p1)
                     val h = executor.numi(instruction.p2)
-                    ImagePayload.Drawer.Instruction.Rect(x, y, w, h)
+                    LogicImage.Drawer.Instruction.Rect(x, y, w, h)
                 }
                 LogicDisplay.commandTriangle -> {
                     val x1 = executor.numi(instruction.x)
@@ -347,7 +296,7 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
                     val y2 = executor.numi(instruction.p2)
                     val x3 = executor.numi(instruction.p3)
                     val y3 = executor.numi(instruction.p4)
-                    ImagePayload.Drawer.Instruction.Triangle(x1, y1, x2, y2, x3, y3)
+                    LogicImage.Drawer.Instruction.Triangle(x1, y1, x2, y2, x3, y3)
                 }
                 else -> continue
             }
@@ -360,111 +309,87 @@ class UnsafeImageDetectionListener(instances: InstanceManager) : ImperiumApplica
         return if (result < 0) result + 256 else result
     }
 
-    private fun <T : ImagePayload> createImage(cluster: Cluster<T>, part: (T) -> BufferedImage): BufferedImage {
-        val image = BufferedImage(cluster.w * RES_PER_BLOCK, cluster.h * RES_PER_BLOCK, BufferedImage.TYPE_INT_ARGB)
-        val graphics = image.graphics
-        graphics.color = Color(0, 0, 0, 0)
-        graphics.fillRect(0, 0, image.width, image.height)
-
-        for (block in cluster.blocks) {
-            graphics.drawImage(
-                part(block.data),
-                (block.x - cluster.x) * RES_PER_BLOCK,
-                (block.y - cluster.y) * RES_PER_BLOCK,
-                block.size * RES_PER_BLOCK,
-                block.size * RES_PER_BLOCK,
-                null,
-            )
-        }
-
-        // Invert y-axis, because mindustry uses bottom-left as origin
-        val inverted = invertYAxis(image)
-        graphics.dispose()
-        return inverted
-    }
-
-    private fun createDrawerImage(payload: ImagePayload.Drawer): BufferedImage {
-        val image = BufferedImage(payload.resolution, payload.resolution, BufferedImage.TYPE_INT_ARGB)
-        val graphics = image.graphics
-        graphics.color = Color(0, 0, 0, 0)
-        graphics.fillRect(0, 0, image.width, image.height)
-
-        for (processor in payload.processors) {
-            for (instruction in processor.instructions) {
-                when (instruction) {
-                    is ImagePayload.Drawer.Instruction.Color -> {
-                        graphics.color = Color(instruction.r, instruction.g, instruction.b, instruction.a)
-                    }
-
-                    is ImagePayload.Drawer.Instruction.Rect -> {
-                        if (instruction.w == 1 && instruction.h == 1) {
-                            image.setRGB(instruction.x, instruction.y, graphics.color.rgb)
-                        } else {
-                            graphics.fillRect(instruction.x, instruction.y, instruction.w, instruction.h)
-                        }
-                    }
-
-                    is ImagePayload.Drawer.Instruction.Triangle -> {
-                        graphics.fillPolygon(
-                            intArrayOf(instruction.x1, instruction.x2, instruction.x3),
-                            intArrayOf(instruction.y1, instruction.y2, instruction.y3),
-                            3,
-                        )
-                    }
+    private fun <T : LogicImage> startProcessing(queue: Queue<Wrapper<Cluster<T>>>) = ImperiumScope.MAIN.launch {
+        while (isActive) {
+            delay(1.seconds)
+            val element = queue.peek()
+            if (element == null || element.instant > Instant.now()) {
+                continue
+            }
+            queue.remove()
+            launch {
+                logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
+                if (analyzer.isUnsafe(element.value.blocks)) {
+                    logger.debug("Cluster ({}, {}) is unsafe", element.value.x, element.value.y)
+                    Groups.player.find { it.uuid() == element.author }?.sendMessage(
+                        "You dirty horny bastard, stop sending NSFW images to the server!",
+                    )
+                } else {
+                    logger.debug("Cluster ({}, {}) is safe", element.value.x, element.value.y)
                 }
             }
         }
-
-        graphics.dispose()
-        return image
     }
 
-    private fun createPixMapImage(payload: ImagePayload.PixMap): BufferedImage {
-        val image = BufferedImage(payload.resolution, payload.resolution, BufferedImage.TYPE_INT_RGB)
-        val graphics = image.graphics
-        graphics.color = Color(0, 0, 0, 0)
-        graphics.fillRect(0, 0, image.width, image.height)
+    private fun filterDrawer(cluster: Cluster<LogicImage.Drawer>): Boolean =
+        cluster.blocks.flatMap { it.data.processors }.flatMap { it.instructions }.size > 128
 
-        for (pixel in payload.pixels) {
-            image.setRGB(pixel.key % payload.resolution, pixel.key / payload.resolution, pixel.value)
-        }
+    private fun filterPixMap(cluster: Cluster<LogicImage.PixMap>): Boolean =
+        cluster.blocks.size >= 9
 
-        val inverted = invertYAxis(image)
-        graphics.dispose()
-        return inverted
-    }
+    private fun findDrawerAuthor(cluster: Cluster<LogicImage.Drawer>): MindustryUUID? =
+        cluster.blocks.flatMap { it.data.processors }
+            .mapNotNull { processor -> history.getLatestPlace(processor.x, processor.y) }
+            .filter { it.block is LogicBlock }
+            .mapNotNull { it.author.uuid }
+            .findMostCommon()
 
-    private fun invertYAxis(image: BufferedImage): BufferedImage {
-        val transform = AffineTransform.getScaleInstance(1.0, -1.0)
-        transform.translate(0.0, -image.getHeight(null).toDouble())
-        val op = AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR)
-        return op.filter(image, null)
-    }
+    private fun findPixMapAuthor(cluster: Cluster<LogicImage.PixMap>): MindustryUUID? =
+        cluster.blocks.mapNotNull { block -> history.getLatestPlace(block.x, block.y) }
+            .filter { it.block is CanvasBlock }
+            .mapNotNull { it.author.uuid }
+            .findMostCommon()
 
     // Goofy ass Mindustry coordinate system
     private val Building.rx: Int get() = tileX() + block.sizeOffset
     private val Building.ry: Int get() = tileY() + block.sizeOffset
 
     companion object {
-        private const val RES_PER_BLOCK = 30
-        private val MAX_RANGE = minOf(32, Vars.content.blocks().maxOf { (it as? LogicBlock)?.range ?: 0F }.toInt() / Vars.tilesize)
+        private const val MAX_RANGE = 32
         private val logger by LoggerDelegate()
     }
 
-    private sealed interface ImagePayload {
-        data class PixMap(val resolution: Int, val pixels: Map<Int, Int>) : ImagePayload
-        data class Drawer(val resolution: Int, val processors: List<Processor>) : ImagePayload {
-            data class Processor(val x: Int, val y: Int, val instructions: List<Instruction>)
-            sealed interface Instruction {
-                data class Color(val r: Int, val g: Int, val b: Int, val a: Int) : Instruction
-                data class Rect(val x: Int, val y: Int, val w: Int, val h: Int) : Instruction
-                data class Triangle(val x1: Int, val y1: Int, val x2: Int, val y2: Int, val x3: Int, val y3: Int) :
-                    Instruction
+    private class QueueClusterListener<T : LogicImage>(
+        private val queue: Queue<Wrapper<Cluster<T>>>,
+        private val clusterFilter: (Cluster<T>) -> Boolean,
+        private val clusterAuthor: (Cluster<T>) -> MindustryUUID?,
+    ) : ClusterManager.Listener<T> {
+        override fun onClusterEvent(cluster: Cluster<T>, event: ClusterManager.Event) {
+            val removed = queue.removeIf { it.value.x == cluster.x && it.value.y == cluster.y }
+            if (event == ClusterManager.Event.NEW || event == ClusterManager.Event.UPDATE) {
+                if (!clusterFilter(cluster)) {
+                    logger.trace("Cluster (${cluster.x}, ${cluster.y}) does not pass the filter")
+                    return
+                }
+                val author = clusterAuthor(cluster)
+                if (author == null) {
+                    logger.trace("Cluster (${cluster.x}, ${cluster.y}) has no author")
+                    return
+                }
+                queue.add(Wrapper(cluster.copy(), Instant.now().plusSeconds(5L), author))
+                return
+            }
+            if (removed) {
+                logger.trace("Removed cluster (${cluster.x}, ${cluster.y}) from queue")
             }
         }
     }
 
-    private data class DelayedWrapper<T : Any>(val value: T, val instant: Instant) : Comparable<DelayedWrapper<T>> {
-        override fun compareTo(other: DelayedWrapper<T>): Int = instant.compareTo(other.instant)
+    internal data class Wrapper<T : Any>(
+        val value: T,
+        val instant: Instant,
+        val author: MindustryUUID,
+    ) : Comparable<Wrapper<T>> {
+        override fun compareTo(other: Wrapper<T>): Int = instant.compareTo(other.instant)
     }
 }

@@ -15,31 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history
+package com.xpdustry.imperium.common.image
 
-import mindustry.world.Block
-import java.time.Instant
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
+import javax.imageio.ImageIO
 
-data class HistoryEntry(
-    val x: Int,
-    val y: Int,
-    val buildX: Int,
-    val buildY: Int,
-    val author: HistoryAuthor,
-    val block: Block,
-    val type: Type,
-    val rotation: Int,
-    val configuration: HistoryConfig? = null,
-    val virtual: Boolean = false,
-    val timestamp: Instant = Instant.now(),
-) {
-
-    enum class Type {
-        PLACING,
-        PLACE,
-        BREAKING,
-        ROTATE,
-        BREAK,
-        CONFIGURE,
-    }
+object MoreImageIO {
+    fun createInputStream(image: BufferedImage, format: String = "png"): InputStream =
+        ByteArrayInputStream(ByteArrayOutputStream().also { ImageIO.write(image, format, it) }.toByteArray())
 }

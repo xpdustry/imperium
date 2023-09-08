@@ -14,16 +14,15 @@ fun RepositoryHandler.xpdustryReleases() {
     }
 }
 
-fun RepositoryHandler.xpdustryAnuken() {
+fun RepositoryHandler.xpdustryMindustry() {
     maven {
-        url = URI.create("https://maven.xpdustry.com/anuken")
-        name = "xpdustry-anuken"
+        url = URI.create("https://maven.xpdustry.com/mindustry")
+        name = "xpdustry-mindustry"
         mavenContent { releasesOnly() }
     }
 }
 
-val Project.libs: LibrariesForLibs
-    get() = the()
+val Project.libs: LibrariesForLibs get() = the()
 
 /** Computes the next CalVer version */
 fun Project.computeNextVersion(): String {

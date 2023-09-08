@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.security
+package com.xpdustry.imperium.common.image
 
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.cloud.vision.v1.AnnotateImageRequest
@@ -41,7 +41,7 @@ interface ImageAnalysis {
         override suspend fun isUnsafe(image: BufferedImage) = Result.Success(false, 0)
     }
     sealed interface Result {
-        data class Success(val value: Boolean, val confidence: Int) : Result
+        data class Success(val unsafe: Boolean, val confidence: Int) : Result
         data class Failure(val message: String) : Result
     }
 }

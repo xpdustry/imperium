@@ -27,7 +27,7 @@ import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
 import java.net.InetAddress
 
-internal class InetAddressCodecProvider : CodecProvider {
+object InetAddressCodecProvider : CodecProvider {
     override fun <T : Any> get(clazz: Class<T>, registry: CodecRegistry): Codec<T>? {
         if (InetAddress::class.java.isAssignableFrom(clazz)) {
             @Suppress("UNCHECKED_CAST")

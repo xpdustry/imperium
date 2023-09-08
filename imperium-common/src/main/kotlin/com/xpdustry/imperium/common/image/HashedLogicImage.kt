@@ -15,31 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history
+package com.xpdustry.imperium.common.image
 
-import mindustry.world.Block
-import java.time.Instant
+import com.xpdustry.imperium.common.database.Entity
+import org.bson.types.ObjectId
 
-data class HistoryEntry(
-    val x: Int,
-    val y: Int,
-    val buildX: Int,
-    val buildY: Int,
-    val author: HistoryAuthor,
-    val block: Block,
-    val type: Type,
-    val rotation: Int,
-    val configuration: HistoryConfig? = null,
-    val virtual: Boolean = false,
-    val timestamp: Instant = Instant.now(),
-) {
-
-    enum class Type {
-        PLACING,
-        PLACE,
-        BREAKING,
-        ROTATE,
-        BREAK,
-        CONFIGURE,
-    }
-}
+data class HashedLogicImage(
+    override val _id: ObjectId = ObjectId(),
+    val unsafe: Boolean,
+    val hashes: Set<String>,
+) : Entity<ObjectId>

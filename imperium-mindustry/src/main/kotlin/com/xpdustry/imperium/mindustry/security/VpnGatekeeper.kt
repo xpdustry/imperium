@@ -25,7 +25,7 @@ class VpnGatekeeper(private val provider: VpnDetection) : Processor<GatekeeperCo
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         val result = provider.isVpn(context.address)
         if (result is VpnDetection.Result.Success) {
-            return if (result.vpn) GatekeeperResult.Success else GatekeeperResult.Failure("VPN detected")
+            return if (result.vpn) GatekeeperResult.Failure("VPN detected") else GatekeeperResult.Success
         }
         if (result is VpnDetection.Result.Failure) {
             logger.error("Failed to verify the vpn usage for player {} ({})", context.name, context.uuid, result.exception)

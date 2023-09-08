@@ -15,16 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.misc
+package com.xpdustry.imperium.common.geometry
 
-import java.net.InetAddress
 import java.util.LinkedList
 
-class BlockClusterManager<T : Any>(private val listener: Listener<T>) {
+class ClusterManager<T : Any>(private val listener: Listener<T>) {
     val clusters: List<Cluster<T>> get() = _clusters
     private val _clusters = mutableListOf<Cluster<T>>()
 
-    fun addElement(block: ClusterBlock<T>) {
+    fun addElement(block: Cluster.Block<T>) {
         val candidates = mutableListOf<Int>()
         for (i in _clusters.indices) {
             if (canBePartOfCluster(_clusters[i], block)) {
@@ -121,7 +120,7 @@ class BlockClusterManager<T : Any>(private val listener: Listener<T>) {
         _clusters.sortWith(compareBy(Cluster<T>::x, Cluster<T>::y))
     }
 
-    private fun canBePartOfCluster(cluster: Cluster<T>, block: ClusterBlock<T>): Boolean = cluster._blocks.any {
+    private fun canBePartOfCluster(cluster: Cluster<T>, block: Cluster.Block<T>): Boolean = cluster._blocks.any {
         val r1 = it.x + it.size + 1
         val l1 = it.x - 1
         val b1 = it.y - 1
@@ -149,7 +148,7 @@ class BlockClusterManager<T : Any>(private val listener: Listener<T>) {
     }
 }
 
-class Cluster<T : Any>(blocks: List<ClusterBlock<T>> = emptyList()) {
+class Cluster<T : Any>(blocks: List<Block<T>> = emptyList()) {
     var x: Int = 0
         private set
     var y: Int = 0
@@ -159,10 +158,10 @@ class Cluster<T : Any>(blocks: List<ClusterBlock<T>> = emptyList()) {
     var h: Int = 0
         private set
 
-    val blocks: List<ClusterBlock<T>> get() = _blocks
+    val blocks: List<Block<T>> get() = _blocks
 
     @Suppress("PropertyName")
-    internal val _blocks: MutableList<ClusterBlock<T>> = blocks.toMutableList()
+    internal val _blocks: MutableList<Block<T>> = blocks.toMutableList()
 
     fun copy() = Cluster<T>().also {
         it.x = x
@@ -177,14 +176,13 @@ class Cluster<T : Any>(blocks: List<ClusterBlock<T>> = emptyList()) {
         y = _blocks.minOf { it.y }
         w = _blocks.maxOf { it.x + it.size } - x
         h = _blocks.maxOf { it.y + it.size } - y
-        _blocks.sortWith(compareBy(ClusterBlock<T>::x, ClusterBlock<T>::y))
+        _blocks.sortWith(compareBy(Block<T>::x, Block<T>::y))
     }
-}
 
-data class ClusterBlock<T : Any>(
-    val x: Int,
-    val y: Int,
-    val size: Int,
-    val builder: InetAddress,
-    val data: T,
-)
+    data class Block<T : Any>(
+        val x: Int,
+        val y: Int,
+        val size: Int,
+        val data: T,
+    )
+}

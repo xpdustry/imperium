@@ -15,31 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history
+package com.xpdustry.imperium.common.image
 
-import mindustry.world.Block
-import java.time.Instant
-
-data class HistoryEntry(
-    val x: Int,
-    val y: Int,
-    val buildX: Int,
-    val buildY: Int,
-    val author: HistoryAuthor,
-    val block: Block,
-    val type: Type,
-    val rotation: Int,
-    val configuration: HistoryConfig? = null,
-    val virtual: Boolean = false,
-    val timestamp: Instant = Instant.now(),
-) {
-
-    enum class Type {
-        PLACING,
-        PLACE,
-        BREAKING,
-        ROTATE,
-        BREAK,
-        CONFIGURE,
+sealed class LogicImage(val resolution: Int) {
+    class PixMap(resolution: Int, val pixels: Map<Int, Int>) : LogicImage(resolution)
+    class Drawer(resolution: Int, val processors: List<Processor>) : LogicImage(resolution) {
+        data class Processor(val x: Int, val y: Int, val instructions: List<Instruction>)
+        sealed interface Instruction {
+            data class Color(val r: Int, val g: Int, val b: Int, val a: Int) : Instruction
+            data class Rect(val x: Int, val y: Int, val w: Int, val h: Int) : Instruction
+            data class Triangle(val x1: Int, val y1: Int, val x2: Int, val y2: Int, val x3: Int, val y3: Int) : Instruction
+        }
     }
 }

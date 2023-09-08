@@ -17,11 +17,6 @@ metadata.version = rootProject.version.toString()
 toxopid {
     compileVersion.set(libs.versions.mindustry.map { "v$it" })
     platforms.add(fr.xpdustry.toxopid.spec.ModPlatform.HEADLESS)
-    useMindustryMirror.set(true)
-}
-
-repositories {
-    xpdustryReleases()
 }
 
 dependencies {
@@ -38,7 +33,6 @@ dependencies {
     compileOnly(libs.distributor.kotlin)
 
     implementation(libs.jsoup)
-    implementation(libs.google.cloud.vision)
 
     testImplementation(libs.distributor.api)
     testImplementation(libs.distributor.kotlin)
