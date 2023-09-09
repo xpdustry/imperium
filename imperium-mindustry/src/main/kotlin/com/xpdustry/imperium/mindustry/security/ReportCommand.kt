@@ -27,10 +27,11 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.security.Ban
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import com.xpdustry.imperium.mindustry.misc.playerInfo
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
@@ -71,7 +72,7 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 }
 
 private val REPORT_PLAYER = stateKey<Player>("report_player")
-private val REPORT_REASON = stateKey<ReportMessage.Reason>("report_reason")
+private val REPORT_REASON = stateKey<Ban.Reason>("report_reason")
 private val REPORT_DETAIL = stateKey<String>("report_detail")
 
 fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config: ImperiumConfig): Interface {
@@ -91,8 +92,8 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
                     val sent = messenger.publish(
                         ReportMessage(
                             config.server.name,
-                            view.viewer.playerInfo,
-                            view.state[REPORT_PLAYER]!!.playerInfo,
+                            view.viewer.identity,
+                            view.state[REPORT_PLAYER]!!.identity,
                             view.state[REPORT_REASON]!!,
                             view.state[REPORT_DETAIL],
                         ),
@@ -129,7 +130,7 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
     reportReasonInterface.addTransformer { _, pane ->
         pane.title = "Report (2/4)"
         pane.content = "Select the reason of your report"
-        for (reason in ReportMessage.Reason.entries) {
+        for (reason in Ban.Reason.entries) {
             pane.options.addRow(
                 MenuOption(reason.name.lowercase().capitalize()) { view ->
                     view.close()

@@ -19,8 +19,6 @@ package com.xpdustry.imperium.common.account
 
 import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.mongo.MongoEntityCollection
-import com.xpdustry.imperium.common.mongo.MongoProvider
 import com.xpdustry.imperium.common.hash.Argon2HashFunction
 import com.xpdustry.imperium.common.hash.Argon2Params
 import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
@@ -28,8 +26,11 @@ import com.xpdustry.imperium.common.hash.PBKDF2Params
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.misc.toBase64
+import com.xpdustry.imperium.common.mongo.MongoEntityCollection
+import com.xpdustry.imperium.common.mongo.MongoProvider
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
@@ -52,7 +53,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         legacyAccounts = mongo.getCollection("legacy_accounts", LegacyAccount::class)
     }
 
-    override suspend fun findByIdentity(identity: PlayerIdentity): Account? {
+    override suspend fun findByIdentity(identity: Identity.Mindustry): Account? {
         val token = createSessionToken(identity)
         return accounts.find(Filters.gt("sessions.$token.expiration", Instant.now())).firstOrNull()
     }
@@ -60,7 +61,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     override suspend fun findByUsername(username: String): Account? =
         accounts.find(Filters.eq("username", username)).firstOrNull()
 
-    override suspend fun updateByIdentity(identity: PlayerIdentity, updater: suspend (Account) -> Unit) {
+    override suspend fun updateByIdentity(identity: Identity.Mindustry, updater: suspend (Account) -> Unit) {
         findByIdentity(identity)?.let {
             updater(it)
             accounts.save(it)
@@ -74,7 +75,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         }
     }
 
-    override suspend fun register(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult {
+    override suspend fun register(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult {
         if (isRateLimited("register", identity)) {
             return AccountOperationResult.RateLimit
         }
@@ -109,7 +110,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         return AccountOperationResult.Success
     }
 
-    override suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult {
+    override suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult {
         if (isRateLimited("migrate", identity)) {
             return AccountOperationResult.RateLimit
         }
@@ -150,7 +151,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         return AccountOperationResult.Success
     }
 
-    override suspend fun login(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult {
+    override suspend fun login(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult {
         if (isRateLimited("login", identity)) {
             return AccountOperationResult.RateLimit
         }
@@ -170,19 +171,19 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         return AccountOperationResult.Success
     }
 
-    override suspend fun logout(identity: PlayerIdentity, all: Boolean) {
+    override suspend fun logout(identity: Identity.Mindustry, all: Boolean) {
         val account = findByIdentity(identity) ?: return
         if (all) account.sessions.clear() else account.sessions.remove(createSessionToken(identity))
         accounts.save(account)
     }
 
-    override suspend fun refresh(identity: PlayerIdentity) {
+    override suspend fun refresh(identity: Identity.Mindustry) {
         val account = findByIdentity(identity) ?: return
         account.sessions[createSessionToken(identity)] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
         accounts.save(account)
     }
 
-    override suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: PlayerIdentity): AccountOperationResult {
+    override suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: Identity.Mindustry): AccountOperationResult {
         if (isRateLimited("changePassword", identity)) {
             return AccountOperationResult.RateLimit
         }
@@ -210,14 +211,14 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         return legacyAccounts.findById(hash.hash.toBase64())
     }
 
-    internal suspend fun createSessionToken(identity: PlayerIdentity): String {
+    internal suspend fun createSessionToken(identity: Identity.Mindustry): String {
         val hash = Argon2HashFunction.create(identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toCharArray())
         return Base64.getEncoder().encodeToString(hash.hash)
     }
 
     private fun String.normalizeUsername(): String = trim().lowercase()
 
-    private fun isRateLimited(operation: String, identity: PlayerIdentity): Boolean =
+    private fun isRateLimited(operation: String, identity: Identity.Mindustry): Boolean =
         !limiter.checkAndIncrement(AccountRateLimitKey(operation, identity.address))
 
     companion object {

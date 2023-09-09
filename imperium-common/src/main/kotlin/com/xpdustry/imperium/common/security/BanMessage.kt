@@ -17,11 +17,8 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.account.MindustryUUID
-import kotlinx.coroutines.flow.Flow
-import java.net.InetAddress
+import com.xpdustry.imperium.common.message.Message
+import org.bson.types.ObjectId
 
-interface PunishmentManager {
-    suspend fun findAllByTargetAddress(target: InetAddress): Flow<Punishment>
-    suspend fun findAllByTargetUuid(target: MindustryUUID): Flow<Punishment>
-}
+@Message.Options(local = true)
+data class BanMessage(val author: Identity?, val id: ObjectId) : Message

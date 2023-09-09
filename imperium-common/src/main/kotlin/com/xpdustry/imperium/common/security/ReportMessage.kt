@@ -17,22 +17,12 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.bridge.PlayerInfo
 import com.xpdustry.imperium.common.message.Message
 
 data class ReportMessage(
     val serverName: String,
-    val sender: PlayerInfo,
-    val target: PlayerInfo,
-    val reason: Reason,
-    val detail: String? = null,
-) : Message {
-    enum class Reason {
-        GRIEFING,
-        TOXICITY,
-        CHEATING,
-        SPAMMING,
-        SABOTAGE,
-        CUSTOM,
-    }
-}
+    val sender: Identity.Mindustry,
+    val target: Identity.Mindustry,
+    val reason: Ban.Reason,
+    val details: String? = null,
+) : Message

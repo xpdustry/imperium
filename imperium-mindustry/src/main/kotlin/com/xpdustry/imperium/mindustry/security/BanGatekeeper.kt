@@ -17,32 +17,33 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.security.Punishment
-import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.Ban
+import com.xpdustry.imperium.common.security.BanManager
 import com.xpdustry.imperium.mindustry.processing.Processor
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.toCollection
 import java.time.Duration
 
-class PunishmentGatekeeper(private val punishments: PunishmentManager) : Processor<GatekeeperContext, GatekeeperResult> {
+// TODO Improve ban message
+class BanGatekeeper(private val bans: BanManager) : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
-        val punishment = punishments
-            .findAllByTargetAddress(context.address)
+        val ban = bans
+            .findAllByTarget(context.address)
             .filter { it.expired.not() }
-            .toList()
-            .sortedWith(Comparator.comparing(Punishment::type).thenComparing(Punishment::duration))
+            .toCollection(mutableListOf())
+            .sortedByDescending(Ban::duration)
             .firstOrNull()
 
-        return if (punishment == null) {
+        return if (ban == null) {
             GatekeeperResult.Success
         } else {
             GatekeeperResult.Failure(
                 """
-                    [red]Oh no! You are currently banned from Chaotic Neutral!
-                    [accent]Reason:[white] ${punishment.reason}
-                    [accent]Duration:[white] ${formatDuration(punishment.duration)}
+                [red]Oh no! You are currently banned from Chaotic Neutral!
+                [accent]Reason:[white] ${ban.reason}
+                [accent]Duration:[white] ${formatDuration(ban.duration)}
 
-                    [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
+                [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
                 """.trimIndent(),
             )
         }

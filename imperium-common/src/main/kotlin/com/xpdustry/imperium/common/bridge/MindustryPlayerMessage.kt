@@ -18,10 +18,11 @@
 package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.security.Identity
 
 @Message.Options("bridge.player")
-sealed class MindustryPlayerMessage(val serverName: String, val player: PlayerInfo) : Message {
-    class Join(serverName: String, player: PlayerInfo) : MindustryPlayerMessage(serverName, player)
-    class Quit(serverName: String, player: PlayerInfo) : MindustryPlayerMessage(serverName, player)
-    class Chat(serverName: String, player: PlayerInfo, val message: String) : MindustryPlayerMessage(serverName, player)
+sealed class MindustryPlayerMessage(val serverName: String, val player: Identity.Mindustry) : Message {
+    class Join(serverName: String, player: Identity.Mindustry) : MindustryPlayerMessage(serverName, player)
+    class Quit(serverName: String, player: Identity.Mindustry) : MindustryPlayerMessage(serverName, player)
+    class Chat(serverName: String, player: Identity.Mindustry, val message: String) : MindustryPlayerMessage(serverName, player)
 }

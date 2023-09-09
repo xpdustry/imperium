@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.mongo.Entity
 import com.xpdustry.imperium.common.mongo.timestamp
 import org.bson.types.ObjectId
@@ -25,18 +24,25 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-data class Punishment(
-    var targetAddress: InetAddress,
-    var targetUuid: MindustryUUID? = null,
+data class Ban(
     override val _id: ObjectId = ObjectId(),
-    var reason: String = "Unknown",
+    var target: InetAddress,
+    var reason: Reason,
+    var details: String? = null,
     var duration: Duration? = Duration.ofDays(1L),
     var pardoned: Boolean = false,
-    var type: Type = Type.MUTE,
 ) : Entity<ObjectId> {
-    val expired: Boolean get() = duration != null && (pardoned || timestamp.plus(duration).isBefore(Instant.now()))
-    val remaining: Duration get() = duration?.minus(Duration.between(Instant.now(), timestamp)) ?: Duration.ZERO
-    enum class Type {
-        MUTE, KICK, BAN
+    val expired: Boolean get() = expiration < Instant.now()
+    val expiration: Instant get() = duration?.let { timestamp.plus(it) } ?: Instant.MAX
+    val permanent: Boolean get() = duration == null
+
+    enum class Reason {
+        GRIEFING,
+        TOXICITY,
+        CHEATING,
+        SPAMMING,
+        SABOTAGE,
+        NSFW,
+        OTHER,
     }
 }

@@ -15,13 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.misc
+package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Identity
-import mindustry.gen.Call
-import mindustry.gen.Player
+import java.net.InetAddress
 
-val Player.identity: Identity.Mindustry get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
-
-fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
+sealed interface Identity {
+    val name: String
+    data class Mindustry(override val name: String, val uuid: String, val usid: String, val address: InetAddress) : Identity
+    data class Discord(override val name: String, val id: Long) : Identity
+}

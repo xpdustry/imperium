@@ -19,13 +19,13 @@ package com.xpdustry.imperium.discord.interaction.command.standard
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
-import com.xpdustry.imperium.common.bridge.PlayerInfo
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LimitedList
 import com.xpdustry.imperium.common.network.Discovery
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.command.Command
 import org.javacord.api.entity.message.embed.EmbedBuilder
@@ -52,5 +52,5 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 .setDescription(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName }),
         )
 
-    data class PlayerJoinEntry(val player: PlayerInfo, val timestamp: Instant = Instant.now())
+    data class PlayerJoinEntry(val player: Identity.Mindustry, val timestamp: Instant = Instant.now())
 }

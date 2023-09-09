@@ -43,7 +43,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                     .setTitle("Report from ${report.serverName}")
                     .addField("Sender", "${report.sender.name} / `${report.sender.uuid}`", false)
                     .addField("Target", "${report.target.name} / `${report.target.uuid}`", false)
-                    .addField("Reason", "${report.reason.name.lowercase().capitalize()} (${report.detail ?: "No detail"})", false),
+                    .addField("Reason", "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})", false),
             ).await()
         }
     }

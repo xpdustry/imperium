@@ -17,25 +17,23 @@
  */
 package com.xpdustry.imperium.common.account
 
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import org.bson.types.ObjectId
-import java.net.InetAddress
 
 interface AccountManager {
-    suspend fun findByIdentity(identity: PlayerIdentity): Account?
+    suspend fun findByIdentity(identity: Identity.Mindustry): Account?
     suspend fun findByUsername(username: String): Account?
-    suspend fun updateByIdentity(identity: PlayerIdentity, updater: suspend (Account) -> Unit)
+    suspend fun updateByIdentity(identity: Identity.Mindustry, updater: suspend (Account) -> Unit)
     suspend fun updateById(id: ObjectId, updater: suspend (Account) -> Unit)
-    suspend fun register(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
-    suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
-    suspend fun login(username: String, password: CharArray, identity: PlayerIdentity): AccountOperationResult
-    suspend fun logout(identity: PlayerIdentity, all: Boolean = false)
-    suspend fun refresh(identity: PlayerIdentity)
-    suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: PlayerIdentity): AccountOperationResult
+    suspend fun register(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult
+    suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult
+    suspend fun login(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult
+    suspend fun logout(identity: Identity.Mindustry, all: Boolean = false)
+    suspend fun refresh(identity: Identity.Mindustry)
+    suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: Identity.Mindustry): AccountOperationResult
 }
-
-data class PlayerIdentity(val uuid: String, val usid: String, val address: InetAddress)
 
 sealed interface AccountOperationResult {
     data object Success : AccountOperationResult

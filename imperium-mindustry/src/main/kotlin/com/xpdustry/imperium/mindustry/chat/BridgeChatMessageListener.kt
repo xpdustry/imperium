@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
-import com.xpdustry.imperium.mindustry.misc.playerInfo
+import com.xpdustry.imperium.mindustry.misc.identity
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
@@ -49,18 +49,18 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) = ImperiumScope.MAIN.launch {
-        messenger.publish(MindustryPlayerMessage.Join(config.server.name, event.player.playerInfo))
+        messenger.publish(MindustryPlayerMessage.Join(config.server.name, event.player.identity))
     }
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) = ImperiumScope.MAIN.launch {
-        messenger.publish(MindustryPlayerMessage.Quit(config.server.name, event.player.playerInfo))
+        messenger.publish(MindustryPlayerMessage.Quit(config.server.name, event.player.identity))
     }
 
     @EventHandler
     fun onPlayerChat(event: ProcessedPlayerChatEvent) = ImperiumScope.MAIN.launch {
         messenger.publish(
-            MindustryPlayerMessage.Chat(config.server.name, event.player.playerInfo, Strings.stripColors(event.message)),
+            MindustryPlayerMessage.Chat(config.server.name, event.player.identity, Strings.stripColors(event.message)),
         )
     }
 }

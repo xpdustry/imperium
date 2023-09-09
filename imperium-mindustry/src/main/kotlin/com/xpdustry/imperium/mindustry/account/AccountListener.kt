@@ -18,13 +18,13 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.PlayerIdentity
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
@@ -48,7 +48,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         pipeline.register("account", Priority.LOWEST) {
-            accounts.refresh(PlayerIdentity(it.uuid, it.usid, it.address))
+            accounts.refresh(Identity.Mindustry(it.name, it.uuid, it.usid, it.address))
             GatekeeperResult.Success
         }
     }

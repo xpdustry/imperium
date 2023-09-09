@@ -29,8 +29,6 @@ import com.xpdustry.imperium.common.config.SecurityConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MongoMindustryMapManager
-import com.xpdustry.imperium.common.mongo.MongoProvider
-import com.xpdustry.imperium.common.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.image.GoogleImageAnalysis
 import com.xpdustry.imperium.common.image.ImageAnalysis
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
@@ -40,14 +38,16 @@ import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
+import com.xpdustry.imperium.common.mongo.MongoProvider
+import com.xpdustry.imperium.common.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.IPHubVpnDetection
 import com.xpdustry.imperium.common.network.SimpleCoroutineHttpClient
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnDetection
-import com.xpdustry.imperium.common.security.MongoPunishmentManager
-import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.BanManager
+import com.xpdustry.imperium.common.security.MongoBanManager
 import com.xpdustry.imperium.common.storage.MinioStorage
 import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator
@@ -106,8 +106,8 @@ fun commonModule() = module("common") {
         MongoMindustryMapManager(get(), get())
     }
 
-    single<PunishmentManager> {
-        MongoPunishmentManager(get())
+    single<BanManager> {
+        MongoBanManager(get(), get())
     }
 
     single<UserManager> {
