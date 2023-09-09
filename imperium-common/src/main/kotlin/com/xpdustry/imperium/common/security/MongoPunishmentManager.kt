@@ -20,8 +20,8 @@ package com.xpdustry.imperium.common.security
 import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.MongoEntityCollection
-import com.xpdustry.imperium.common.database.MongoProvider
+import com.xpdustry.imperium.common.mongo.MongoEntityCollection
+import com.xpdustry.imperium.common.mongo.MongoProvider
 import kotlinx.coroutines.flow.Flow
 import org.bson.types.ObjectId
 import java.net.InetAddress

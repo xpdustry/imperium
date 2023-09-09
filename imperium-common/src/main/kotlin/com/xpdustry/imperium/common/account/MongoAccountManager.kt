@@ -19,8 +19,8 @@ package com.xpdustry.imperium.common.account
 
 import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.database.MongoEntityCollection
-import com.xpdustry.imperium.common.database.MongoProvider
+import com.xpdustry.imperium.common.mongo.MongoEntityCollection
+import com.xpdustry.imperium.common.mongo.MongoProvider
 import com.xpdustry.imperium.common.hash.Argon2HashFunction
 import com.xpdustry.imperium.common.hash.Argon2Params
 import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction

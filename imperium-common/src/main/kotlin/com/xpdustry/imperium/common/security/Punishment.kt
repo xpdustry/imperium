@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
-import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.database.timestamp
+import com.xpdustry.imperium.common.mongo.Entity
+import com.xpdustry.imperium.common.mongo.timestamp
 import org.bson.types.ObjectId
 import java.net.InetAddress
 import java.time.Duration

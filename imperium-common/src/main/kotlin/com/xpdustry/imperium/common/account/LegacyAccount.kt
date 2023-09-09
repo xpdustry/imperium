@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.mongo.Entity
 import com.xpdustry.imperium.common.hash.Hash
 import java.time.Duration
 

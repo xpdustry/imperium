@@ -29,8 +29,8 @@ import com.xpdustry.imperium.common.config.SecurityConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MongoMindustryMapManager
-import com.xpdustry.imperium.common.database.MongoProvider
-import com.xpdustry.imperium.common.database.SimpleMongoProvider
+import com.xpdustry.imperium.common.mongo.MongoProvider
+import com.xpdustry.imperium.common.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.image.GoogleImageAnalysis
 import com.xpdustry.imperium.common.image.ImageAnalysis
 import com.xpdustry.imperium.common.image.LogicImageAnalysis

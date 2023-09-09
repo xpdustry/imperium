@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.account.MindustryUUID
-import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.mongo.Entity
 import org.bson.types.ObjectId
 import java.time.Duration
 

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.mongo
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoCredential
@@ -39,7 +39,6 @@ internal interface MongoProvider {
 }
 
 internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoProvider, ImperiumApplication.Listener {
-
     private lateinit var client: MongoClient
     private lateinit var database: MongoDatabase
 

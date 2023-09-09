@@ -19,8 +19,8 @@ package com.xpdustry.imperium.common.image
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.database.MongoEntityCollection
-import com.xpdustry.imperium.common.database.MongoProvider
+import com.xpdustry.imperium.common.mongo.MongoEntityCollection
+import com.xpdustry.imperium.common.mongo.MongoProvider
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
