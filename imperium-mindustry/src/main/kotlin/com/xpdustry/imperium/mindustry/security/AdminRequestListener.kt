@@ -1,3 +1,20 @@
+/*
+ * Imperium, the software collection powering the Xpdustry network.
+ * Copyright (C) 2023  Xpdustry
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
@@ -7,13 +24,11 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.capitalize
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Ban
 import com.xpdustry.imperium.common.security.BanManager
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.mindustry.misc.identity
-import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -32,6 +47,7 @@ import mindustry.gen.Player
 import mindustry.net.Administration.TraceInfo
 import mindustry.net.NetConnection
 import mindustry.net.Packets.AdminAction
+import kotlin.time.Duration.Companion.hours
 
 private val BAN_PERMANENT = stateKey<Boolean>("permanent_ban")
 private val BAN_REASON = stateKey<Ban.Reason>("ban_reason")
@@ -41,6 +57,7 @@ private val BAN_TARGET = stateKey<Identity.Mindustry>("ban_target")
 class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
     private val bans = instances.get<BanManager>()
+    private lateinit var banInterface: Interface
 
     override fun onImperiumInit() {
         val banConfirmationInterface = MenuInterface.create(plugin)
@@ -56,12 +73,13 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                             view.state[BAN_TARGET]!!.address,
                             view.state[BAN_REASON]!!,
                             view.state[BAN_DETAIL],
-                            null,
+                            if (view.state[BAN_PERMANENT]!!) null else 1.hours,
                         )
                     }
                 },
                 MenuOption("[orange]No") { it.back(2) },
                 MenuOption("[red]Abort") { it.closeAll() },
+            )
         }
 
         val detailsInterface = TextInputInterface.create(plugin)
@@ -80,23 +98,23 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             }
         }
 
-        val reasonInterface = MenuInterface.create(plugin)
-        reasonInterface.addTransformer { view, pane ->
-            pane.title = "Ban (1/3)"
-            val type = if (view.state[BAN_PERMANENT]!!) "permanent" else "temporary"
-            pane.content = "Select reason of the $type ban of ${view.state[BAN_TARGET]!!.name}"
-            for (reason in Ban.Reason.entries) {
-                pane.options.addRow(
-                    MenuOption(reason.name.lowercase().capitalize()) { _ ->
-                        view.close()
-                        view.state[BAN_REASON] = reason
-                        detailsInterface.open(view)
-                    },
-                )
+        banInterface = MenuInterface.create(plugin).apply {
+            addTransformer { view, pane ->
+                pane.title = "Ban (1/3)"
+                val type = if (view.state[BAN_PERMANENT]!!) "permanent" else "temporary"
+                pane.content = "Select reason of the $type ban of ${view.state[BAN_TARGET]!!.name}"
+                for (reason in Ban.Reason.entries) {
+                    pane.options.addRow(
+                        MenuOption(reason.name.lowercase().capitalize()) { _ ->
+                            view.close()
+                            view.state[BAN_REASON] = reason
+                            detailsInterface.open(view)
+                        },
+                    )
+                }
+                pane.options.addRow(MenuOption("[red]Cancel", View::back))
             }
-            pane.options.addRow(MenuOption("[red]Cancel", View::back))
         }
-
 
         Vars.net.handleServer(AdminRequestCallPacket::class.java, ::interceptAdminRequest)
     }
@@ -123,7 +141,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 con.player.plainName(),
                 con.player.uuid(),
                 packet.other.plainName(),
-                packet.other.uuid()
+                packet.other.uuid(),
             )
             return
         }
@@ -148,15 +166,15 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                         stats.timesJoined,
                         stats.timesKicked,
                         stats.ips.toArray(String::class.java),
-                        stats.names.toArray(String::class.java)
-                    )
+                        stats.names.toArray(String::class.java),
+                    ),
                 )
                 logger.info(
                     "{} ({}) has requested trace info of {} ({})",
                     con.player.plainName(),
                     con.player.uuid(),
                     packet.other.plainName(),
-                    packet.other.uuid()
+                    packet.other.uuid(),
                 )
             }
 
@@ -174,7 +192,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                         con.player.uuid(),
                         packet.other.plainName(),
                         packet.other.uuid(),
-                        param.name
+                        param.name,
                     )
                 } else {
                     logger.warn(
@@ -183,7 +201,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                         con.player.uuid(),
                         packet.other.plainName(),
                         packet.other.uuid(),
-                        packet.params
+                        packet.params,
                     )
                 }
             }
@@ -194,12 +212,12 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 con.player.uuid(),
                 packet.action,
                 packet.other.plainName(),
-                packet.other.uuid()
+                packet.other.uuid(),
             )
         }
     }
 
-    private fun punish(player: Player, target: Player, permanent: Boolean) = reasonInput.open(player) {
+    private fun punish(player: Player, target: Player, permanent: Boolean) = banInterface.open(player) {
         it[BAN_PERMANENT] = permanent
         it[BAN_TARGET] = target.identity
     }
@@ -208,4 +226,3 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         private val logger by LoggerDelegate()
     }
 }
-

@@ -28,6 +28,7 @@ import org.bson.types.ObjectId
 import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.toJavaDuration
 
 internal class MongoBanManager(private val mongo: MongoProvider, private val messenger: Messenger) : BanManager, ImperiumApplication.Listener {
@@ -57,11 +58,12 @@ internal class MongoBanManager(private val mongo: MongoProvider, private val mes
 
     private fun getBanDuration(count: Int): Duration {
         return when (count) {
-            0 -> 1.days
-            1 -> 3.days
-            2 -> 7.days
-            3 -> 14.days
-            else -> (30 * (count - 3)).days
+            0 -> 1.hours
+            1 -> 1.days
+            2 -> 3.days
+            3 -> 7.days
+            4 -> 14.days
+            else -> (30 * (count - 4)).days
         }
     }
 }

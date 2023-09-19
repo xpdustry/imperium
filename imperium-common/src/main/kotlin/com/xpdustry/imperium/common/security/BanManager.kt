@@ -24,6 +24,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 
 interface BanManager {
+    // TODO Do not use hardcoded durations but rather configurable presets and a permanent flag (see AdminRequestListener)
     suspend fun punish(sender: Identity?, target: InetAddress, reason: Ban.Reason, details: String? = null, duration: Duration? = 1.days)
     suspend fun findById(id: ObjectId): Ban?
     suspend fun findAllByTarget(target: InetAddress): Flow<Ban>

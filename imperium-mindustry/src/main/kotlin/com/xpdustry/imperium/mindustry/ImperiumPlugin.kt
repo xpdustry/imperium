@@ -32,6 +32,8 @@ import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
+import com.xpdustry.imperium.mindustry.security.AdminRequestListener
+import com.xpdustry.imperium.mindustry.security.BanListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageAnalysisListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
@@ -68,7 +70,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(BridgeChatMessageListener::class)
         application.register(ReportCommand::class)
         application.register(LogicImageAnalysisListener::class)
-
+        application.register(AdminRequestListener::class)
+        application.register(BanListener::class)
         application.init()
     }
 

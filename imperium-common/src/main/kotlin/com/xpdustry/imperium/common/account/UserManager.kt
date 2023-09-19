@@ -19,5 +19,6 @@ package com.xpdustry.imperium.common.account
 
 interface UserManager {
     suspend fun findByUuidOrCreate(uuid: MindustryUUID): User
+    suspend fun findByUuid(uuid: MindustryUUID): User?
     suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
 }

@@ -31,6 +31,8 @@ internal class MongoUserManager(private val mongo: MongoProvider) : UserManager,
 
     override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User = users.findById(uuid) ?: User(uuid)
 
+    override suspend fun findByUuid(uuid: MindustryUUID): User? = users.findById(uuid)
+
     override suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit) {
         val user = users.findById(uuid) ?: User(uuid)
         updater(user)
