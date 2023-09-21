@@ -27,7 +27,6 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Ban
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
@@ -72,7 +71,7 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 }
 
 private val REPORT_PLAYER = stateKey<Player>("report_player")
-private val REPORT_REASON = stateKey<Ban.Reason>("report_reason")
+private val REPORT_REASON = stateKey<ReportMessage.Reason>("report_reason")
 private val REPORT_DETAIL = stateKey<String>("report_detail")
 
 fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config: ImperiumConfig): Interface {
@@ -130,7 +129,7 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
     reportReasonInterface.addTransformer { _, pane ->
         pane.title = "Report (2/4)"
         pane.content = "Select the reason of your report"
-        for (reason in Ban.Reason.entries) {
+        for (reason in ReportMessage.Reason.entries) {
             pane.options.addRow(
                 MenuOption(reason.name.lowercase().capitalize()) { view ->
                     view.close()

@@ -17,6 +17,8 @@ dependencies {
     api(libs.kryo)
     api(libs.rabbitmq.client)
     api(libs.minio)
+    api(libs.snowflake.id)
+    api(libs.base32)
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.jdk8)

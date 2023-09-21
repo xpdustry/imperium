@@ -17,15 +17,12 @@
  */
 package com.xpdustry.imperium.common.security
 
-import kotlinx.coroutines.flow.Flow
-import org.bson.types.ObjectId
-import java.net.InetAddress
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.days
+import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.misc.ImperiumSnowflake
 
-interface BanManager {
-    // TODO Do not use hardcoded durations but rather configurable presets and a permanent flag (see AdminRequestListener)
-    suspend fun punish(sender: Identity?, target: InetAddress, reason: Ban.Reason, details: String? = null, duration: Duration? = 1.days)
-    suspend fun findById(id: ObjectId): Ban?
-    suspend fun findAllByTarget(target: InetAddress): Flow<Ban>
+@Message.Options(local = true)
+data class PunishmentMessage(val author: Identity?, val type: Type, val punishment: ImperiumSnowflake) : Message {
+    enum class Type {
+        CREATE, PARDON
+    }
 }

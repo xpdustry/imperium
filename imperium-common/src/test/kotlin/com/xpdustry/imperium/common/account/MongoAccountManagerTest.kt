@@ -24,7 +24,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.misc.ExitStatus
-import com.xpdustry.imperium.common.security.PlayerIdentity
+import com.xpdustry.imperium.common.security.Identity
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -105,12 +105,13 @@ class MongoAccountManagerTest {
         Assertions.assertTrue(account!!.sessions.contains(manager.createSessionToken(identity)))
     }
 
-    private fun randomPlayerIdentity(): PlayerIdentity {
+    private fun randomPlayerIdentity(): Identity.Mindustry {
         val uuidBytes = ByteArray(16)
         Random.nextBytes(uuidBytes)
         val usidBytes = ByteArray(8)
         Random.nextBytes(usidBytes)
-        return PlayerIdentity(
+        return Identity.Mindustry(
+            Random.nextLong().toString(),
             Base64.getEncoder().encodeToString(uuidBytes),
             Base64.getEncoder().encodeToString(usidBytes),
             InetAddress.getLoopbackAddress(),

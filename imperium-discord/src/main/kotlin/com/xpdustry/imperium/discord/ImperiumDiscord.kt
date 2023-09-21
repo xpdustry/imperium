@@ -25,6 +25,7 @@ import com.xpdustry.imperium.discord.bridge.BridgeListener
 import com.xpdustry.imperium.discord.interaction.button.ButtonManager
 import com.xpdustry.imperium.discord.interaction.command.CommandManager
 import com.xpdustry.imperium.discord.interaction.command.standard.MapCommand
+import com.xpdustry.imperium.discord.interaction.command.standard.ModerationCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.PingCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.SchematicCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.ServerCommand
@@ -51,6 +52,7 @@ fun main() {
     application.register(MapCommand::class)
     application.register(SchematicCommand::class)
     application.register(VerifyListener::class)
+    application.register(ModerationCommand::class)
 
     val commands = application.instances.get<CommandManager>()
     val buttons = application.instances.get<ButtonManager>()

@@ -17,31 +17,33 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.security.Ban
-import com.xpdustry.imperium.common.security.BanManager
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.processing.Processor
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toCollection
 import java.time.Duration
 
 // TODO Improve ban message
-class BanGatekeeper(private val bans: BanManager) : Processor<GatekeeperContext, GatekeeperResult> {
+class PunishmentGatekeeper(private val bans: PunishmentManager) : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
-        val ban = bans
+        val punishment = bans
             .findAllByTarget(context.address)
             .filter { it.expired.not() }
             .toCollection(mutableListOf())
-            .sortedByDescending(Ban::duration)
+            .sortedByDescending(Punishment::duration)
             .firstOrNull()
 
-        return if (ban == null) {
+        return if (punishment == null || (punishment.type != Punishment.Type.KICK && punishment.type != Punishment.Type.BAN)) {
             GatekeeperResult.Success
         } else {
+            val verb = if (punishment.type == Punishment.Type.KICK) "kicked" else "banned"
             GatekeeperResult.Failure(
                 """
-                [red]Oh no! You are currently banned from Chaotic Neutral!
-                [accent]Reason:[white] ${ban.reason}
-                [accent]Duration:[white] ${formatDuration(ban.duration)}
+                [red]Oh no! You are currently $verb from Chaotic Neutral!
+                [accent]Reason:[white] ${punishment.reason}
+                [accent]Duration:[white] ${formatDuration(punishment.duration)}
+                [accent]Expires:[white] ${punishment.expiration}
 
                 [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
                 """.trimIndent(),

@@ -17,8 +17,14 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.message.Message
-import org.bson.types.ObjectId
+import com.xpdustry.imperium.common.misc.ImperiumSnowflake
+import kotlinx.coroutines.flow.Flow
+import java.net.InetAddress
+import java.time.Duration
 
-@Message.Options(local = true)
-data class BanMessage(val author: Identity?, val id: ObjectId) : Message
+interface PunishmentManager {
+    suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?)
+    suspend fun pardon(author: Identity?, id: ImperiumSnowflake, reason: String)
+    suspend fun findById(id: ImperiumSnowflake): Punishment?
+    suspend fun findAllByTarget(target: InetAddress): Flow<Punishment>
+}

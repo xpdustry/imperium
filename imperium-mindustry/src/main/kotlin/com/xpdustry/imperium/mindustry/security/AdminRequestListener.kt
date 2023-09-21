@@ -23,14 +23,12 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.capitalize
-import com.xpdustry.imperium.common.security.Ban
-import com.xpdustry.imperium.common.security.BanManager
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
@@ -43,57 +41,54 @@ import mindustry.game.EventType.AdminRequestEvent
 import mindustry.game.Team
 import mindustry.gen.AdminRequestCallPacket
 import mindustry.gen.Call
-import mindustry.gen.Player
 import mindustry.net.Administration.TraceInfo
 import mindustry.net.NetConnection
+import mindustry.net.Packets
 import mindustry.net.Packets.AdminAction
-import kotlin.time.Duration.Companion.hours
+import java.time.Duration
 
-private val BAN_PERMANENT = stateKey<Boolean>("permanent_ban")
-private val BAN_REASON = stateKey<Ban.Reason>("ban_reason")
-private val BAN_DETAIL = stateKey<String>("ban_detail")
-private val BAN_TARGET = stateKey<Identity.Mindustry>("ban_target")
+private val PUNISHMENT_DURATION = stateKey<Duration>("punishment_duration")
+private val PUNISHMENT_REASON = stateKey<String>("punishment_reason")
+private val PUNISHMENT_TARGET = stateKey<Identity.Mindustry>("punishment_target")
 
 class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
-    private val bans = instances.get<BanManager>()
+    private val bans = instances.get<PunishmentManager>()
     private lateinit var banInterface: Interface
 
     override fun onImperiumInit() {
         val banConfirmationInterface = MenuInterface.create(plugin)
         banConfirmationInterface.addTransformer { view, pane ->
-            val type = if (view.state[BAN_PERMANENT]!!) "permanently" else "temporarily"
-            pane.content = "Are you sure you want to ban [scarlet]$type[] [accent]${view.state[BAN_TARGET]!!.name}[] for [accent]${view.state[BAN_REASON]!!.name.lowercase().capitalize()}[] (details=${view.state[BAN_DETAIL]}) ?"
+            val type = if (view.state[PUNISHMENT_DURATION] == null) "permanently" else "temporarily"
+            pane.content = "Are you sure you want to [scarlet]$type[] ban [accent]${view.state[PUNISHMENT_TARGET]!!.name}[] for [accent]${view.state[PUNISHMENT_REASON]!!}[] ?"
             pane.options.addRow(
                 MenuOption("[green]Yes") { _ ->
                     view.closeAll()
                     ImperiumScope.MAIN.launch {
                         bans.punish(
                             view.viewer.identity,
-                            view.state[BAN_TARGET]!!.address,
-                            view.state[BAN_REASON]!!,
-                            view.state[BAN_DETAIL],
-                            if (view.state[BAN_PERMANENT]!!) null else 1.hours,
+                            Punishment.Target(
+                                view.state[PUNISHMENT_TARGET]!!.address,
+                                view.state[PUNISHMENT_TARGET]!!.uuid,
+                            ),
+                            view.state[PUNISHMENT_REASON]!!,
+                            Punishment.Type.BAN,
+                            view.state[PUNISHMENT_DURATION],
                         )
                     }
                 },
-                MenuOption("[orange]No") { it.back(2) },
-                MenuOption("[red]Abort") { it.closeAll() },
+                MenuOption("[orange]No", View::back),
+                MenuOption("[red]Abort", View::closeAll),
             )
         }
 
         val detailsInterface = TextInputInterface.create(plugin)
         detailsInterface.addTransformer { _, pane ->
             pane.title = "Ban (2/3)"
-            pane.description = "Enter the details of your ban, \nclick on cancel if you don't have any."
+            pane.description = "Enter the reason of your ban."
             pane.inputAction = BiAction { view, input ->
                 view.close()
-                view.state[BAN_DETAIL] = input
-                banConfirmationInterface.open(view)
-            }
-            pane.exitAction = Action { view ->
-                view.close()
-                view.state.remove(BAN_DETAIL)
+                view.state[PUNISHMENT_REASON] = input
                 banConfirmationInterface.open(view)
             }
         }
@@ -101,17 +96,24 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         banInterface = MenuInterface.create(plugin).apply {
             addTransformer { view, pane ->
                 pane.title = "Ban (1/3)"
-                val type = if (view.state[BAN_PERMANENT]!!) "permanent" else "temporary"
-                pane.content = "Select reason of the $type ban of ${view.state[BAN_TARGET]!!.name}"
-                for (reason in Ban.Reason.entries) {
-                    pane.options.addRow(
-                        MenuOption(reason.name.lowercase().capitalize()) { _ ->
-                            view.close()
-                            view.state[BAN_REASON] = reason
-                            detailsInterface.open(view)
-                        },
-                    )
-                }
+                pane.content = "Select duration of the ban of ${view.state[PUNISHMENT_TARGET]!!.name}"
+
+                // TODO Goofy aah function, use proper library to display durations
+                fun addDuration(display: String, duration: Duration?) = pane.options.addRow(
+                    MenuOption(display) { _ ->
+                        view.close()
+                        if (duration != null) view.state[PUNISHMENT_DURATION] = duration
+                        detailsInterface.open(view)
+                    },
+                )
+
+                addDuration("[green]1 hour", Duration.ofHours(1L))
+                addDuration("[green]6 hours", Duration.ofHours(6L))
+                addDuration("[green]1 day", Duration.ofDays(1L))
+                addDuration("[green]3 days", Duration.ofDays(3L))
+                addDuration("[green]1 week", Duration.ofDays(7L))
+                addDuration("[green]1 month", Duration.ofDays(30L))
+                addDuration("[red]Permanent", null)
                 pane.options.addRow(MenuOption("[red]Cancel", View::back))
             }
         }
@@ -178,9 +180,20 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 )
             }
 
-            AdminAction.ban -> punish(con.player, packet.other, true)
+            AdminAction.ban -> banInterface.open(con.player) {
+                it[PUNISHMENT_TARGET] = packet.other.identity
+            }
 
-            AdminAction.kick -> punish(con.player, packet.other, false)
+            AdminAction.kick -> {
+                packet.other.kick(Packets.KickReason.kick, 0L)
+                logger.info(
+                    "{} ({}) has kicked {} ({})",
+                    con.player.plainName(),
+                    con.player.uuid(),
+                    packet.other.plainName(),
+                    packet.other.uuid(),
+                )
+            }
 
             AdminAction.switchTeam -> {
                 val param = packet.params
@@ -215,11 +228,6 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 packet.other.uuid(),
             )
         }
-    }
-
-    private fun punish(player: Player, target: Player, permanent: Boolean) = banInterface.open(player) {
-        it[BAN_PERMANENT] = permanent
-        it[BAN_TARGET] = target.identity
     }
 
     companion object {

@@ -23,6 +23,16 @@ data class ReportMessage(
     val serverName: String,
     val sender: Identity.Mindustry,
     val target: Identity.Mindustry,
-    val reason: Ban.Reason,
+    val reason: Reason,
     val details: String? = null,
-) : Message
+) : Message {
+    enum class Reason {
+        GRIEFING,
+        TOXICITY,
+        CHEATING,
+        SPAMMING,
+        SABOTAGE,
+        NSFW,
+        OTHER,
+    }
+}

@@ -33,9 +33,9 @@ import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
-import com.xpdustry.imperium.mindustry.security.BanListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageAnalysisListener
+import com.xpdustry.imperium.mindustry.security.PunishmentListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
@@ -71,7 +71,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(ReportCommand::class)
         application.register(LogicImageAnalysisListener::class)
         application.register(AdminRequestListener::class)
-        application.register(BanListener::class)
+        application.register(PunishmentListener::class)
         application.init()
     }
 

@@ -29,7 +29,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.VpnDetection
-import com.xpdustry.imperium.common.security.BanManager
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.launch
@@ -50,13 +50,13 @@ import java.io.DataOutputStream
 class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline: GatekeeperPipeline = instances.get()
     private val vpn: VpnDetection = instances.get()
-    private val punishments = instances.get<BanManager>()
+    private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<CoroutineHttpClient>()
 
     override fun onImperiumInit() {
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
-        pipeline.register("punishment", Priority.NORMAL, BanGatekeeper(punishments))
+        pipeline.register("punishment", Priority.NORMAL, PunishmentGatekeeper(punishments))
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->

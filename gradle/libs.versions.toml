@@ -28,6 +28,8 @@ minio = "8.5.4"
 javacord = "3.8.0"
 log4j-to-slf4j = "2.20.0"
 google-cloud-vision = "3.13.0"
+snowflake-id = "0.0.2"
+base32 = "1.1.0"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -68,6 +70,8 @@ javacord-api = { module = "org.javacord:javacord-api", version.ref = "javacord" 
 javacord-core = { module = "org.javacord:javacord-core", version.ref = "javacord" }
 log4j-to-slf4j = { module = "org.apache.logging.log4j:log4j-to-slf4j", version.ref = "log4j-to-slf4j" }
 google-cloud-vision = { module = "com.google.cloud:google-cloud-vision", version.ref = "google-cloud-vision" }
+snowflake-id = { module = "de.mkammerer.snowflake-id:snowflake-id", version.ref = "snowflake-id" }
+base32 = { module = "org.unbroken-dome.base62:base62", version.ref = "base32" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }

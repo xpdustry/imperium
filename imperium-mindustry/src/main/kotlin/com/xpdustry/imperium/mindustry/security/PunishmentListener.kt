@@ -25,44 +25,48 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.BanManager
-import com.xpdustry.imperium.common.security.BanMessage
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Call
 import mindustry.gen.Groups
 
-class BanListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val messenger = instances.get<Messenger>()
-    private val bans = instances.get<BanManager>()
+    private val bans = instances.get<PunishmentManager>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<BanMessage> { message ->
-            val ban = bans.findById(message.id) ?: return@subscribe
+        messenger.subscribe<PunishmentMessage> { message ->
+            val punishment = bans.findById(message.punishment) ?: return@subscribe
+            if (punishment.type != Punishment.Type.BAN && punishment.type != Punishment.Type.KICK) {
+                return@subscribe
+            }
             runMindustryThread {
-                Events.fire(PlayerIpBanEvent(ban.target.hostAddress))
+                Events.fire(PlayerIpBanEvent(punishment.target.ip.hostAddress))
                 for (player in Groups.player) {
-                    if (player.ip().toInetAddress() != ban.target) {
+                    if (player.ip().toInetAddress() != punishment.target.ip || player.uuid() != punishment.target.uuid) {
                         continue
                     }
+                    val verb = if (punishment.type == Punishment.Type.BAN) "banned" else "kicked"
                     Events.fire(PlayerBanEvent(player, player.uuid()))
                     player.kick(
                         """
-                        [scarlet]You have been banned for '${ban.reason}'.
+                        [scarlet]You have been $verb for '${punishment.reason}'.
                         [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
-                        [accent]Your punishment id is [white]${ban._id}[].
+                        [accent]Your punishment id is [white]${punishment._id}[].
                         """.trimIndent(),
                         0,
                     )
                     logger.info(
-                        "{} ({}) has been banned for '{}' (details={})",
+                        "{} ({}) has been banned for '{}'",
                         player.plainName(),
                         player.uuid(),
-                        ban.reason,
-                        ban.details,
+                        punishment.reason,
                     )
-                    Call.sendMessage("[scarlet]Player " + player.plainName() + " has been banned")
+                    Call.sendMessage("[scarlet]Player " + player.plainName() + " has been $verb")
                 }
             }
         }

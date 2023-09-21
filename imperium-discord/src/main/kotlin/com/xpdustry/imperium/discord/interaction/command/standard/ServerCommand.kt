@@ -64,6 +64,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 .setDescription(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName }),
         )
 
+    // TODO Make a better system that can list joins, current and left players
     @Command("server", "player", "joins", permission = Permission.MODERATOR)
     suspend fun onServerPlayerJoin(actor: InteractionActor, server: String) {
         val joins = history[server]
@@ -92,8 +93,9 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(EmbedBuilder().setTitle("Player Join List").setDescription(text))
     }
 
-    @Command("server", "player", "info", permission = Permission.MODERATOR)
-    suspend fun onServerPlayerInfo(actor: InteractionActor, id: String) {
+    // TODO Move into a dedicated command PlayerCommand
+    @Command("player", "info", permission = Permission.MODERATOR)
+    suspend fun onPlayerInfo(actor: InteractionActor, id: String) {
         val user: User?
         val tid = id.toIntOrNull()
         if (tid in 100000..999999) {

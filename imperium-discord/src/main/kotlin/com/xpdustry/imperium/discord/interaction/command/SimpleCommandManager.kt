@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.interaction.command
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -32,8 +33,11 @@ import org.javacord.api.interaction.SlashCommandBuilder
 import org.javacord.api.interaction.SlashCommandInteractionOption
 import org.javacord.api.interaction.SlashCommandOption
 import org.javacord.api.interaction.SlashCommandOptionBuilder
+import org.javacord.api.interaction.SlashCommandOptionChoice
 import org.javacord.api.interaction.SlashCommandOptionType
+import java.time.Duration
 import java.util.function.Consumer
+import java.util.regex.Pattern
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
@@ -57,6 +61,9 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         registerHandler(User::class, USER_TYPE_HANDLER)
         registerHandler(ServerChannel::class, CHANNEL_TYPE_HANDLER)
         registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
+        registerHandler(Duration::class, DURATION_TYPE_HANDLER)
+        // TODO Externalize this ?
+        registerHandler(Punishment.Type::class, createEnumTypeHandler(Punishment.Type::class))
     }
 
     override fun onImperiumInit() {
@@ -337,4 +344,49 @@ private val CHANNEL_TYPE_HANDLER = object : TypeHandler<ServerChannel>(SlashComm
 
 private val ATTACHMENT_TYPE_HANDLER = object : TypeHandler<Attachment>(SlashCommandOptionType.ATTACHMENT) {
     override fun parse(option: SlashCommandInteractionOption) = option.attachmentValue.getOrNull()
+}
+
+private fun <E : Enum<E>> createEnumTypeHandler(klass: KClass<E>) = object : TypeHandler<E>(SlashCommandOptionType.STRING) {
+    override fun parse(option: SlashCommandInteractionOption): E? {
+        val value = option.stringValue.getOrNull() ?: return null
+        return klass.java.enumConstants.find { it.name == value }
+    }
+    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+        builder.setChoices(klass.java.enumConstants.map { SlashCommandOptionChoice.create(it.name, it.name) })
+    }
+}
+
+private val DURATION_TYPE_HANDLER = object : TypeHandler<Duration>(SlashCommandOptionType.STRING) {
+    override fun parse(option: SlashCommandInteractionOption): Duration? {
+        val value = option.stringValue.getOrNull() ?: return null
+        return parse(value)
+    }
+
+    // Stolen from cloud cauz im lazy
+    private fun parse(input: String): Duration {
+        val matcher = DURATION_PATTERN.matcher(input)
+
+        var duration = Duration.ofNanos(0)
+
+        while (matcher.find()) {
+            val group: String = matcher.group()
+            val timeUnit = group[group.length - 1].toString()
+            val timeValue = group.substring(0, group.length - 1).toInt()
+            duration = when (timeUnit) {
+                "d" -> duration.plusDays(timeValue.toLong())
+                "h" -> duration.plusHours(timeValue.toLong())
+                "m" -> duration.plusMinutes(timeValue.toLong())
+                "s" -> duration.plusSeconds(timeValue.toLong())
+                else -> throw Exception("Invalid time unit")
+            }
+        }
+
+        if (duration.isZero) {
+            throw Exception("Invalid duration")
+        }
+
+        return duration
+    }
+
+    private val DURATION_PATTERN = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
 }

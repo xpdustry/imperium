@@ -18,8 +18,10 @@
 package com.xpdustry.imperium.common.misc
 
 import com.google.common.net.InetAddresses
+import org.unbrokendome.base62.Base62
 import java.awt.Color
 import java.net.InetAddress
+import java.nio.LongBuffer
 import java.util.Base64
 import java.util.Locale
 
@@ -40,3 +42,6 @@ fun String.toInetAddress(): InetAddress =
 
 fun ByteArray.toBase64(): String =
     Base64.getEncoder().encodeToString(this)
+
+fun Long.toBase62(): String = Base62.encode(this)
+fun String.toLongFromBase62(): Long = LongBuffer.allocate(1).also { buffer -> Base62.decode(this, buffer) }.get(0)
