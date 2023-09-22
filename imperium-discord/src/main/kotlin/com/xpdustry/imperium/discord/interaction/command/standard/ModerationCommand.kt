@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.misc.toLongFromBase62
 import com.xpdustry.imperium.common.security.Identity
@@ -29,19 +30,72 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.interaction.command.Command
+import com.xpdustry.imperium.discord.interaction.command.Min
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.time.Duration
 
-// TODO Add punishment list command
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
 
-    // TODO Using enums is awful, use multiple commands instead
-    // TODO Fix weird variable names
-    @Command("punish", permission = Permission.MODERATOR)
-    private suspend fun onPunishCommand(actor: InteractionActor, type: Punishment.Type, target: String, reason: String, duration: Duration? = null) {
-        val subject = try {
+    @Command("punishment", "list", permission = Permission.MODERATOR)
+    private suspend fun onPunishmentListCommand(actor: InteractionActor, target: String, @Min(0) page: Int = 0) {
+        val flow = try {
+            val address = target.toInetAddress()
+            punishments.findAllByAddress(address)
+        } catch (e: Exception) {
+            punishments.findAllByUuid(target)
+        }
+
+        val result = flow.drop(page * 10).take(10).toList()
+        if (result.isEmpty()) {
+            actor.respond("No punishments found.")
+            return
+        }
+
+        val embeds = Array<EmbedBuilder>(result.size) {
+            val punishment = result[it]
+            val embed = EmbedBuilder()
+                .setTitle("Punishment ${punishment._id.toBase62()}")
+                .addField("Target IP", punishment.target.address.hostAddress, true)
+                .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
+                .addField("Type", punishment.type.toString(), true)
+                .addField("Reason", punishment.reason, false)
+                .addField("Timestamp", punishment.timestamp.toString(), true)
+                .addField("Duration", punishment.duration?.toString() ?: "Permanent", true)
+                .addField("Pardoned", if (punishment.pardoned) "Yes" else "No", true)
+                .setTimestamp(punishment.timestamp)
+            if (punishment.pardoned) {
+                embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
+                embed.addField("Pardon Timestamp", punishment.pardon!!.timestamp.toString(), true)
+            }
+            embed
+        }
+
+        actor.respond(*embeds)
+    }
+
+    @Command("kick", permission = Permission.MODERATOR)
+    private suspend fun onKickCommand(actor: InteractionActor, target: String, reason: String, duration: Duration? = null) {
+        onPunishCommand("Kicked", Punishment.Type.KICK, actor, target, reason, duration)
+    }
+
+    @Command("ban", permission = Permission.MODERATOR)
+    private suspend fun onBanCommand(actor: InteractionActor, target: String, reason: String) {
+        onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, null)
+    }
+
+    @Command("mute", permission = Permission.MODERATOR)
+    private suspend fun onMuteCommand(actor: InteractionActor, target: String, reason: String, duration: Duration? = null) {
+        onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration)
+    }
+
+    private suspend fun onPunishCommand(verb: String, type: Punishment.Type, actor: InteractionActor, target: String, reason: String, duration: Duration?) {
+        val lookup = try {
             Punishment.Target(target.toInetAddress())
         } catch (e: Exception) {
             val user = users.findByUuid(target)
@@ -52,11 +106,10 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             Punishment.Target(user.lastAddress!!, user._id)
         }
 
-        punishments.punish(Identity.Discord(actor.user.name, actor.user.id), subject, reason, type, duration)
-        actor.respond("Punished user.")
+        punishments.punish(Identity.Discord(actor.user.name, actor.user.id), lookup, reason, type, duration)
+        actor.respond("$verb user $target.")
     }
 
-    // TODO Add punishment type filter so its possible to only unmute someone for example
     @Command("pardon", permission = Permission.MODERATOR)
     private suspend fun onPardonCommand(actor: InteractionActor, id: String, reason: String) {
         val snowflake = try {

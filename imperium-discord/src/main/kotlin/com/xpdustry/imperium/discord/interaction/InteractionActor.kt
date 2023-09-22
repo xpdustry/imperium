@@ -47,9 +47,9 @@ sealed class InteractionActor {
             .send()
             .await()
 
-    suspend fun respond(embed: EmbedBuilder): Message =
+    suspend fun respond(vararg embed: EmbedBuilder): Message =
         interaction.createFollowupMessageBuilder()
-            .addEmbed(embed)
+            .addEmbeds(*embed)
             .send()
             .await()
 

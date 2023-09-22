@@ -20,7 +20,6 @@ package com.xpdustry.imperium.discord.interaction.command
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.discord.interaction.InteractionActor
 import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -33,7 +32,6 @@ import org.javacord.api.interaction.SlashCommandBuilder
 import org.javacord.api.interaction.SlashCommandInteractionOption
 import org.javacord.api.interaction.SlashCommandOption
 import org.javacord.api.interaction.SlashCommandOptionBuilder
-import org.javacord.api.interaction.SlashCommandOptionChoice
 import org.javacord.api.interaction.SlashCommandOptionType
 import java.time.Duration
 import java.util.function.Consumer
@@ -62,8 +60,6 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         registerHandler(ServerChannel::class, CHANNEL_TYPE_HANDLER)
         registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
-        // TODO Externalize this ?
-        registerHandler(Punishment.Type::class, createEnumTypeHandler(Punishment.Type::class))
     }
 
     override fun onImperiumInit() {
@@ -97,8 +93,14 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                         }
 
                         val argument = command.arguments.find { it.name == parameter.name!! }!!
-                        val option = event.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
-                            ?.let { argument.handler.parse(it) }
+                        val option = try {
+                            event.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
+                                ?.let { argument.handler.parse(it) }
+                        } catch (e: OptionParsingException) {
+                            responder.setContent(":warning: Failed to parse the **${argument.name}** argument: ${e.message}")
+                                .update().await()
+                            return@launch
+                        }
 
                         if (option != null) {
                             arguments[parameter] = option
@@ -346,47 +348,36 @@ private val ATTACHMENT_TYPE_HANDLER = object : TypeHandler<Attachment>(SlashComm
     override fun parse(option: SlashCommandInteractionOption) = option.attachmentValue.getOrNull()
 }
 
-private fun <E : Enum<E>> createEnumTypeHandler(klass: KClass<E>) = object : TypeHandler<E>(SlashCommandOptionType.STRING) {
-    override fun parse(option: SlashCommandInteractionOption): E? {
-        val value = option.stringValue.getOrNull() ?: return null
-        return klass.java.enumConstants.find { it.name == value }
-    }
-    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
-        builder.setChoices(klass.java.enumConstants.map { SlashCommandOptionChoice.create(it.name, it.name) })
-    }
-}
-
+// https://github.com/Incendo/cloud/blob/fda52448c20f5537c8f03aaf6a3b844119c20463/cloud-core/src/main/java/cloud/commandframework/arguments/standard/DurationArgument.java
 private val DURATION_TYPE_HANDLER = object : TypeHandler<Duration>(SlashCommandOptionType.STRING) {
+    private val DURATION_PATTERN = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
+
     override fun parse(option: SlashCommandInteractionOption): Duration? {
-        val value = option.stringValue.getOrNull() ?: return null
-        return parse(value)
-    }
-
-    // Stolen from cloud cauz im lazy
-    private fun parse(input: String): Duration {
+        val input = option.stringValue.getOrNull() ?: return null
         val matcher = DURATION_PATTERN.matcher(input)
-
-        var duration = Duration.ofNanos(0)
+        var duration = Duration.ZERO
 
         while (matcher.find()) {
-            val group: String = matcher.group()
-            val timeUnit = group[group.length - 1].toString()
-            val timeValue = group.substring(0, group.length - 1).toInt()
-            duration = when (timeUnit) {
-                "d" -> duration.plusDays(timeValue.toLong())
-                "h" -> duration.plusHours(timeValue.toLong())
-                "m" -> duration.plusMinutes(timeValue.toLong())
-                "s" -> duration.plusSeconds(timeValue.toLong())
-                else -> throw Exception("Invalid time unit")
+            val group = matcher.group()
+            val unit = group[group.length - 1].toString()
+            val value = group.substring(0, group.length - 1)
+            if (value.toIntOrNull() == null) {
+                throw OptionParsingException("$value is not a valid number")
+            }
+            duration = when (unit) {
+                "d" -> duration.plusDays(value.toLong())
+                "h" -> duration.plusHours(value.toLong())
+                "m" -> duration.plusMinutes(value.toLong())
+                "s" -> duration.plusSeconds(value.toLong())
+                else -> throw OptionParsingException("Invalid time unit $unit")
             }
         }
 
         if (duration.isZero) {
-            throw Exception("Invalid duration")
+            throw OptionParsingException("The duration is zero")
         }
-
         return duration
     }
-
-    private val DURATION_PATTERN = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
 }
+
+class OptionParsingException(message: String) : Exception(message)

@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -41,13 +42,13 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { message ->
             val punishment = bans.findById(message.punishment) ?: return@subscribe
-            if (punishment.type != Punishment.Type.BAN && punishment.type != Punishment.Type.KICK) {
+            if (!punishment.type.isKick()) {
                 return@subscribe
             }
             runMindustryThread {
-                Events.fire(PlayerIpBanEvent(punishment.target.ip.hostAddress))
+                Events.fire(PlayerIpBanEvent(punishment.target.address.hostAddress))
                 for (player in Groups.player) {
-                    if (player.ip().toInetAddress() != punishment.target.ip || player.uuid() != punishment.target.uuid) {
+                    if (player.ip().toInetAddress() != punishment.target.address && player.uuid() != punishment.target.uuid) {
                         continue
                     }
                     val verb = if (punishment.type == Punishment.Type.BAN) "banned" else "kicked"
@@ -56,7 +57,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         """
                         [scarlet]You have been $verb for '${punishment.reason}'.
                         [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
-                        [accent]Your punishment id is [white]${punishment._id}[].
+                        [accent]Your punishment id is [white]${punishment._id.toBase62()}[].
                         """.trimIndent(),
                         0,
                     )

@@ -19,11 +19,13 @@ package com.xpdustry.imperium.common.misc
 
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.misc.SimpleSnowflakeGenerator.Companion.IMPERIUM_EPOCH_OFFSET
 import de.mkammerer.snowflakeid.SnowflakeIdGenerator
 import de.mkammerer.snowflakeid.options.Options
 import de.mkammerer.snowflakeid.structure.Structure
 import de.mkammerer.snowflakeid.time.MonotonicTimeSource
 import kotlinx.coroutines.withContext
+import java.time.Duration
 import java.time.Instant
 
 typealias ImperiumSnowflake = Long
@@ -32,7 +34,7 @@ typealias ImperiumSnowflake = Long
 // we can extract the timestamp by shifting the snowflake to the right by the number of bits used by the generatorId
 // and sequenceId, and then converting it to an Instant.
 val ImperiumSnowflake.timestamp: Instant
-    get() = Instant.ofEpochMilli(this shr (SimpleSnowflakeGenerator.STRUCTURE.generatorBits + SimpleSnowflakeGenerator.STRUCTURE.sequenceBits))
+    get() = Instant.ofEpochMilli(this shr (SimpleSnowflakeGenerator.STRUCTURE.generatorBits + SimpleSnowflakeGenerator.STRUCTURE.sequenceBits)).plus(IMPERIUM_EPOCH_OFFSET)
 
 interface ImperiumSnowflakeGenerator {
     suspend fun generate(): ImperiumSnowflake
@@ -42,7 +44,7 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : ImperiumSnowflakeGenera
 
     private val generator = SnowflakeIdGenerator.createCustom(
         config.generatorId.toLong(),
-        MonotonicTimeSource(CHAOTIC_EPOCH),
+        MonotonicTimeSource(IMPERIUM_EPOCH),
         STRUCTURE,
         Options(Options.SequenceOverflowStrategy.SPIN_WAIT),
     )
@@ -52,6 +54,9 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : ImperiumSnowflakeGenera
 
     companion object {
         internal val STRUCTURE = Structure(51, 8, 4)
-        internal val CHAOTIC_EPOCH = Instant.ofEpochMilli(1543879632378L)
+
+        // The creation date of the chaotic neutral server
+        internal val IMPERIUM_EPOCH = Instant.ofEpochMilli(1543879632378L)
+        internal val IMPERIUM_EPOCH_OFFSET = Duration.between(Instant.EPOCH, IMPERIUM_EPOCH)
     }
 }

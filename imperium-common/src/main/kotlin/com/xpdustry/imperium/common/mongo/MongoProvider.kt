@@ -19,9 +19,11 @@ package com.xpdustry.imperium.common.mongo
 
 import com.mongodb.MongoClientSettings
 import com.mongodb.MongoCredential
+import com.mongodb.ReadConcern
 import com.mongodb.ServerAddress
 import com.mongodb.ServerApi
 import com.mongodb.ServerApiVersion
+import com.mongodb.WriteConcern
 import com.mongodb.connection.SslSettings
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
@@ -64,6 +66,8 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
                     ),
                 )
             }
+            .writeConcern(WriteConcern.MAJORITY)
+            .readConcern(ReadConcern.MAJORITY)
             .serverApi(
                 ServerApi.builder()
                     .version(ServerApiVersion.V1)

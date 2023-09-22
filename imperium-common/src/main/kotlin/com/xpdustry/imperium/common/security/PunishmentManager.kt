@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common.security
 
+import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.misc.ImperiumSnowflake
 import kotlinx.coroutines.flow.Flow
 import java.net.InetAddress
@@ -26,5 +27,6 @@ interface PunishmentManager {
     suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?)
     suspend fun pardon(author: Identity?, id: ImperiumSnowflake, reason: String)
     suspend fun findById(id: ImperiumSnowflake): Punishment?
-    suspend fun findAllByTarget(target: InetAddress): Flow<Punishment>
+    suspend fun findAllByAddress(target: InetAddress): Flow<Punishment>
+    suspend fun findAllByUuid(uuid: MindustryUUID): Flow<Punishment>
 }

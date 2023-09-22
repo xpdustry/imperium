@@ -17,24 +17,24 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.processing.Processor
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.toList
 import java.time.Duration
 
 // TODO Improve ban message
 class PunishmentGatekeeper(private val bans: PunishmentManager) : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         val punishment = bans
-            .findAllByTarget(context.address)
-            .filter { it.expired.not() }
-            .toCollection(mutableListOf())
-            .sortedByDescending(Punishment::duration)
-            .firstOrNull()
+            .findAllByAddress(context.address)
+            .filter { it.expired.not() && it.type.isKick() }
+            .toList()
+            .maxByOrNull(Punishment::timestamp)
 
-        return if (punishment == null || (punishment.type != Punishment.Type.KICK && punishment.type != Punishment.Type.BAN)) {
+        return if (punishment == null) {
             GatekeeperResult.Success
         } else {
             val verb = if (punishment.type == Punishment.Type.KICK) "kicked" else "banned"
@@ -44,6 +44,7 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) : Processor<Gate
                 [accent]Reason:[white] ${punishment.reason}
                 [accent]Duration:[white] ${formatDuration(punishment.duration)}
                 [accent]Expires:[white] ${punishment.expiration}
+                [accent]Punishment id:[white] ${punishment._id.toBase62()}
 
                 [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
                 """.trimIndent(),

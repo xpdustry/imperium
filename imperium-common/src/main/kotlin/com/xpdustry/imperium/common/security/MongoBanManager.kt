@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.security
 
 import com.mongodb.client.model.Filters
+import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.ImperiumSnowflake
@@ -53,6 +54,9 @@ internal class MongoBanManager(private val generator: ImperiumSnowflakeGenerator
     override suspend fun findById(id: ImperiumSnowflake): Punishment? =
         bans.findById(id)
 
-    override suspend fun findAllByTarget(target: InetAddress): Flow<Punishment> =
-        bans.find(Filters.eq("target", target))
+    override suspend fun findAllByAddress(target: InetAddress): Flow<Punishment> =
+        bans.find(Filters.eq("target.address", target))
+
+    override suspend fun findAllByUuid(uuid: MindustryUUID): Flow<Punishment> =
+        bans.find(Filters.eq("target.uuid", uuid))
 }

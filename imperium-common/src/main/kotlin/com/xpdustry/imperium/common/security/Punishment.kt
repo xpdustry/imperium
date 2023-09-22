@@ -21,7 +21,6 @@ import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.misc.ImperiumSnowflake
 import com.xpdustry.imperium.common.misc.timestamp
 import com.xpdustry.imperium.common.mongo.Entity
-import com.xpdustry.imperium.common.mongo.timestamp
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
@@ -35,12 +34,16 @@ data class Punishment(
     var pardon: Pardon? = null,
 ) : Entity<ImperiumSnowflake> {
     val pardoned: Boolean get() = pardon != null
-    val expired: Boolean get() = expiration < Instant.now()
+    val expired: Boolean get() = pardoned || expiration < Instant.now()
     val expiration: Instant get() = duration?.let { _id.timestamp.plus(it) } ?: Instant.MAX
     val permanent: Boolean get() = duration == null
-    data class Target(val ip: InetAddress, val uuid: MindustryUUID? = null)
+    val timestamp: Instant get() = _id.timestamp
+    data class Target(val address: InetAddress, val uuid: MindustryUUID? = null)
     data class Pardon(val timestamp: Instant, val reason: String)
     enum class Type {
-        FREEZE, MUTE, KICK, BAN
+        FREEZE, MUTE, KICK, BAN;
+
+        // TODO Better name ?
+        fun isKick() = this == KICK || this == BAN
     }
 }
