@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.mongo.Entity
 import org.bson.types.ObjectId
 import java.time.Duration
+import java.time.Instant
 
 data class MindustryMap(
     override val _id: ObjectId = ObjectId(),
@@ -32,6 +33,7 @@ data class MindustryMap(
     var playtime: Duration = Duration.ZERO,
     var games: Int = 0,
     val servers: MutableSet<String> = mutableSetOf(),
+    var lastUpdate: Instant = _id.date.toInstant(),
 ) : Entity<ObjectId>
 
 data class Rating(

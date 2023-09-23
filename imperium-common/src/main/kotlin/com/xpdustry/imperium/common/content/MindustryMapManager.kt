@@ -27,6 +27,7 @@ interface MindustryMapManager {
     suspend fun findMapById(id: ObjectId): MindustryMap?
     suspend fun findMapByName(name: String): MindustryMap?
     suspend fun findMaps(server: String? = null): Flow<MindustryMap>
+    suspend fun findMapsByServer(server: String): Flow<MindustryMap>
     suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
     suspend fun computeAverageScoreByMap(map: ObjectId): Double
     suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty

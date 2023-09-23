@@ -46,6 +46,7 @@ import org.javacord.api.entity.message.component.Button
 import org.javacord.api.entity.message.embed.Embed
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.awt.Color
+import java.time.Instant
 import kotlin.jvm.optionals.getOrNull
 import kotlin.time.Duration.Companion.hours
 
@@ -143,6 +144,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         map.author = meta.author?.stripMindustryColors()
         map.width = meta.width
         map.height = meta.height
+        map.lastUpdate = Instant.now()
 
         maps.saveMap(map, attachment.asInputStream())
         updateSubmissionEmbed(actor, Color.YELLOW, "updated")

@@ -68,6 +68,9 @@ internal class MongoMindustryMapManager(
             .sort(Sorts.descending("name"))
     }
 
+    override suspend fun findMapsByServer(server: String): Flow<MindustryMap> =
+        maps.find(Filters.`in`("servers", server))
+
     override suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating? =
         ratings.find(Filters.and(Filters.eq("map", map), Filters.eq("player", player))).firstOrNull()
 

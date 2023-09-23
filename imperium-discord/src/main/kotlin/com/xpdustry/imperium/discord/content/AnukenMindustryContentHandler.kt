@@ -394,9 +394,8 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         ver.region("meta", stream, counter) { metaOut[0] = ver.readStringMap(it) }
 
         val meta = metaOut[0]!!
-        val name = meta["name"]
-            ?: throw IOException("Map does not have a name.")
-        val author = meta["author"]
+        val name = meta["name"] ?: throw IOException("Map does not have a name.")
+        val author = meta["author"]?.takeUnless(String::isBlank)
         val description = meta["description"]
         val width = meta.getInt("width")
         val height = meta.getInt("height")
