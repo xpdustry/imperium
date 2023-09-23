@@ -49,6 +49,9 @@ import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
+// TODO
+//  - Override map commands to allow imperium integration (maps, reloadmaps, host)
+//  - Add gamemode field to maps
 class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Mindustry>()
     private val maps = instances.get<MindustryMapManager>()
