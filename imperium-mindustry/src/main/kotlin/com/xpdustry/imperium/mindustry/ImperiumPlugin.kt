@@ -38,6 +38,7 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageAnalysisListener
 import com.xpdustry.imperium.mindustry.security.PunishmentListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
+import com.xpdustry.imperium.mindustry.security.VoteKickCommand
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import kotlin.system.exitProcess
@@ -74,6 +75,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(AdminRequestListener::class)
         application.register(PunishmentListener::class)
         application.register(MapListener::class)
+        application.register(VoteKickCommand::class)
         application.init()
     }
 

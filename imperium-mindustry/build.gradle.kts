@@ -42,7 +42,9 @@ tasks.shadowJar {
     archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
 
-    /* TODO KOTLIN RELOCATION IS BUGGY, THIS IS VERY ANNOYING
+    /*
+
+    // TODO KOTLIN RELOCATION IS BUGGY, THIS IS VERY ANNOYING (CAUSE: DOES NOT RELOCATE KOTLIN METADATA)
     doFirst {
         RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.imperium.shadow")
         relocators.removeAll { it is SimpleRelocator && it.pattern.startsWith("com.xpdustry.imperium.common") }

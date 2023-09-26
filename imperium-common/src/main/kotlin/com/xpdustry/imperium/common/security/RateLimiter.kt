@@ -43,4 +43,9 @@ class RateLimiter<T : Any>(private val limit: Int, period: Duration) {
         increment(key)
         return check
     }
+
+    fun incrementAndCheck(key: T): Boolean {
+        increment(key)
+        return check(key)
+    }
 }
