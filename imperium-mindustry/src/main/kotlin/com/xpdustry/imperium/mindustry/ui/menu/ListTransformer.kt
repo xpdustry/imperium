@@ -22,7 +22,10 @@ import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
+import fr.xpdustry.distributor.api.util.ArcCollections
+import mindustry.gen.Groups
 import mindustry.gen.Iconc
+import mindustry.gen.Player
 import java.util.Objects
 import java.util.function.Function
 
@@ -99,4 +102,16 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
     companion object {
         var PAGE = stateKey<Int>("nucleus:pagination-transformer-page")
     }
+}
+
+fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> = ListTransformer<Player>().apply {
+    elementProvider = Function { view ->
+        ArcCollections.mutableList(Groups.player).apply {
+            remove(view.viewer)
+            sortBy(Player::plainName)
+        }
+    }
+    elementRenderer = Function { it.plainName() }
+    pageHeight = 8
+    choiceAction = action
 }

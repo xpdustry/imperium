@@ -37,23 +37,21 @@ import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
-import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
+import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.ArcCollections
 import kotlinx.coroutines.launch
-import mindustry.gen.Groups
 import mindustry.gen.Player
 import java.net.InetAddress
 import java.time.Duration
-import java.util.function.Function
 
 private val logger = logger<ReportCommand>()
 private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
 
 // TODO
+//  - Remove the player report system in favor of the votekick
 //  - Implement tile reporting ?
 //  - Add rate limit warning BEFORE running the command
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -147,20 +145,10 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
         pane.content = "Select the player you want to report"
     }
     playerListInterface.addTransformer(
-        ListTransformer<Player>().apply {
-            elementProvider = Function { view ->
-                ArcCollections.mutableList(Groups.player).apply {
-                    remove(view.viewer)
-                    sortBy(Player::plainName)
-                }
-            }
-            elementRenderer = Function { it.plainName() }
-            pageHeight = 8
-            choiceAction = BiAction { view, player ->
-                view.close()
-                view.state[REPORT_PLAYER] = player
-                reportReasonInterface.open(view)
-            }
+        createPlayerListTransformer { view, player ->
+            view.close()
+            view.state[REPORT_PLAYER] = player
+            reportReasonInterface.open(view)
         },
     )
 
