@@ -27,7 +27,12 @@ import mindustry.gen.Player
 import kotlin.math.max
 import kotlin.time.Duration
 
-// TODO Replace individual callbacks by a proper listener ?
+// TODO
+//  - Replace individual callbacks by a proper listener ?
+//  - Ignore AFK players
+//  - Add ready state to disallow players from running a vote after it has ended
+//  - Add VoteRequirement that checks if a player is allowed to vote or can start a vote
+//  - Handle multiple sessions with a session id to retrieve the session
 class VoteManager<T : Any>(
     private val duration: Duration,
     private val success: suspend (T) -> Unit,
@@ -38,15 +43,17 @@ class VoteManager<T : Any>(
         private set
     private var currentTimer: Job? = null
 
-    fun start(target: T) {
+    fun start(target: T): Session {
         if (current != null) {
-            return
+            error("A vote is already in progress")
         }
         current = Session(target)
         currentTimer = ImperiumScope.MAIN.launch {
             delay(duration)
             failure(target)
+            current = null
         }
+        return current!!
     }
 
     fun cancel() {

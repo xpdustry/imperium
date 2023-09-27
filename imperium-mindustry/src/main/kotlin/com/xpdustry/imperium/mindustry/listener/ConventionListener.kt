@@ -27,6 +27,7 @@ import fr.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import fr.xpdustry.distributor.api.scheduler.TaskHandler
 import mindustry.net.Administration
 
+// TODO Move to better package
 class ConventionListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Mindustry>()
 

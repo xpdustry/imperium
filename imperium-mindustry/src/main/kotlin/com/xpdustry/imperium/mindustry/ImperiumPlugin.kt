@@ -32,6 +32,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.listener.ConventionListener
+import com.xpdustry.imperium.mindustry.map.ExcavateCommand
 import com.xpdustry.imperium.mindustry.map.MapListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -76,6 +77,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(PunishmentListener::class)
         application.register(MapListener::class)
         application.register(VoteKickCommand::class)
+        application.register(ExcavateCommand::class)
         application.init()
     }
 
