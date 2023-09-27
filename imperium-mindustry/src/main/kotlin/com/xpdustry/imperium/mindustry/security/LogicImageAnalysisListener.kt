@@ -158,7 +158,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
 
     @EventHandler
     fun onBlockBuildEvent(event: EventType.BlockBuildEndEvent) {
-        if (!event.unit.isPlayer) {
+        if (event.unit == null || !event.unit.isPlayer) {
             return
         }
 
