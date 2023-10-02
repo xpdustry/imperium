@@ -27,7 +27,9 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.SimpleVoteManager
 import com.xpdustry.imperium.mindustry.command.VoteManager
+import com.xpdustry.imperium.mindustry.misc.registerCopy
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
@@ -35,8 +37,10 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
+import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.core.NetServer
+import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -44,24 +48,38 @@ import mindustry.net.Administration
 import java.net.InetAddress
 import java.time.Duration
 import kotlin.jvm.optionals.getOrNull
+import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.minutes
 
 private val VOTEKICK_TARGET = stateKey<Player>("votekick_target")
 
+// TODO Implement Session per team for PVP
 class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val clientCommands = instances.get<ImperiumPluginCommandManager>("client")
     private val plugin = instances.get<MindustryPlugin>()
     private val punishments = instances.get<PunishmentManager>()
     private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
-    private val manager = VoteManager<Player>(
+    private val manager = SimpleVoteManager<Player>(
+        plugin = plugin,
         duration = 1.minutes,
-        success = {
-            val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
-            Call.sendMessage("[orange]Vote passed.[scarlet] ${it.name}[orange] will be banned from the server for ${duration.toMinutes()} minutes.")
-            punishments.punish(null, Punishment.Target(it.ip().toInetAddress(), it.uuid()), "Votekick", Punishment.Type.KICK, duration)
+        finished = {
+            if (it.status == VoteManager.Session.Status.TIMEOUT) {
+                Call.sendMessage("[lightgray]Vote failed. Not enough votes to kick[orange] ${it.target.name}[lightgray].")
+            } else if (it.status == VoteManager.Session.Status.SUCCESS) {
+                val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
+                Call.sendMessage("[orange]Vote passed.[scarlet] ${it.target.name}[orange] will be banned from the server for ${duration.toMinutes()} minutes.")
+                punishments.punish(null, Punishment.Target(it.target.ip().toInetAddress(), it.target.uuid()), "Votekick", Punishment.Type.KICK, duration)
+            }
         },
-        failure = {
-            Call.sendMessage("[lightgray]Vote failed. Not enough votes to kick[orange] ${it.name}[lightgray].")
+        threshold = {
+            val players = Groups.player.size()
+            if (players < 5) {
+                2
+            } else if (players < 21) {
+                (players / 2F).roundToInt()
+            } else {
+                10
+            }
         },
     )
 
@@ -90,26 +108,26 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
         }
 
         clientCommands.buildAndRegister("vote") {
-            argument(StringArgument.of("y/n/c"))
-            handler { ctx ->
-                val player = ctx.sender.player
-                val choice = ctx.get<String>("y/n/c")
-                val session = manager.current
+            registerCopy("yes", aliases = arrayOf("y")) {
+                handler { vote(it.sender.player, manager.session, true) }
+            }
 
-                if (player.admin && choice.equals("c", ignoreCase = true)) {
-                    if (session != null) {
-                        Call.sendMessage("[lightgray]Vote canceled by admin[orange] ${player.name}[lightgray].")
-                        manager.cancel()
+            registerCopy("no", aliases = arrayOf("n")) {
+                handler { vote(it.sender.player, manager.session, false) }
+            }
+
+            registerCopy("cancel", aliases = arrayOf("c")) {
+                handler { ctx ->
+                    if (ctx.sender.player.admin) {
+                        if (manager.session != null) {
+                            Call.sendMessage("[lightgray]Vote canceled by admin[orange] ${ctx.sender.player.name}[lightgray].")
+                            manager.session!!.failure()
+                        } else {
+                            ctx.sender.sendMessage("[scarlet]Nobody is being voted on.")
+                        }
                     } else {
-                        player.sendMessage("[scarlet]Nobody is being voted on.")
+                        ctx.sender.sendMessage("[scarlet]You don't have permission to cancel the vote.")
                     }
-                    return@handler
-                }
-
-                when (choice) {
-                    "y" -> vote(player, session, 1)
-                    "n" -> vote(player, session, -1)
-                    else -> vote(player, session, 0)
                 }
             }
         }
@@ -122,66 +140,53 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
                     ctx.sender.player.sendMessage("[scarlet]Vote-kick is disabled on this server.")
                     return@handler
                 }
-
                 if (Groups.player.size() < 3) {
                     // TODO Report the votekick to discord
                     ctx.sender.player.sendMessage("[scarlet]At least 3 players are needed to start a votekick.")
                     return@handler
                 }
-
                 if (ctx.sender.player.isLocal) {
                     ctx.sender.player.sendMessage("[scarlet]Just kick them yourself if you're the host.")
                     return@handler
                 }
-
-                if (manager.current != null) {
+                if (manager.session != null) {
                     ctx.sender.player.sendMessage("[scarlet]A vote is already in progress.")
                     return@handler
                 }
-
                 val target = ctx.getOptional<Player>("player").getOrNull()
                 if (target == null) {
                     playerListInterface.open(ctx.sender.player)
                     return@handler
                 }
-
                 val reason = ctx.getOptional<String>("reason").getOrNull()
                 if (reason == null) {
                     ctx.sender.player.sendMessage("[orange]You need a valid reason to kick the player. Add a reason after the player name.")
                     return@handler
                 }
-
                 if (ctx.sender.player == target) {
                     ctx.sender.player.sendMessage("[scarlet]You can't vote to kick yourself.")
                     return@handler
                 }
-
                 if (target.admin) {
                     ctx.sender.player.sendMessage("[scarlet]Did you really expect to be able to kick an admin?")
                     return@handler
                 }
-
                 if (target.isLocal) {
                     ctx.sender.player.sendMessage("[scarlet]Local players cannot be kicked.")
                     return@handler
                 }
-
                 if (target.team() != ctx.sender.player.team()) {
                     ctx.sender.player.sendMessage("[scarlet]Only players on your team can be kicked.")
                     return@handler
                 }
-
                 if (limiter.incrementAndCheck(ctx.sender.player.ip().toInetAddress())) {
                     ctx.sender.player.sendMessage("[scarlet]You are limited to one votekick per minute. Please try again later.")
                     return@handler
                 }
-
-                manager.start(target)
-                val session = manager.current!!
-                session.vote(ctx.sender.player, 1)
+                val session = manager.start(ctx.sender.player, true, target)
                 Call.sendMessage(
                     """
-                    [lightgray]${ctx.sender.player.name}[lightgray] has voted on kicking [orange]${target.name}[lightgray].[accent] (${session.votes}/${session.requiredVotes})
+                    [lightgray]${ctx.sender.player.name}[lightgray] has voted on kicking [orange]${target.name}[lightgray].[accent] (${session.votes}/${session.required})
                     [lightgray]Reason: [orange]$reason[lightgray].
                     [lightgray]Type[orange] /vote <y/n>[] to agree."
                     """.trimIndent(),
@@ -190,43 +195,32 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
         }
     }
 
-    private fun vote(player: Player, session: VoteManager<Player>.Session?, value: Int) {
+    private fun vote(player: Player, session: VoteManager.Session<Player>?, value: Boolean) {
         if (session == null) {
             player.sendMessage("[scarlet]Nobody is being voted on.")
-            return
-        }
-
-        if (player.isLocal) {
+        } else if (player.isLocal) {
             player.sendMessage("[scarlet]Local players can't vote. Kick the player yourself instead.")
-            return
-        }
-
-        if (!session.canVote(player)) {
+        } else if (session.getVote(player) != null) {
             player.sendMessage("[scarlet]You've already voted. Sit down.")
-            return
-        }
-
-        if (session.target === player) {
+        } else if (session.target === player) {
             player.sendMessage("[scarlet]You can't vote on your own trial.")
-            return
-        }
-
-        if (session.target.team() !== player.team()) {
+        } else if (session.target.team() !== player.team()) {
             player.sendMessage("[scarlet]You can't vote for other teams.")
-            return
+        } else {
+            Call.sendMessage(
+                """
+                [lightgray]${player.name}[lightgray] has voted on kicking[orange] ${session.target.name}.[lightgray].[accent] (${session.votes}/${session.required})
+                [lightgray]Type[orange] /vote <y/n>[] to agree.
+                """.trimIndent(),
+            )
+            session.setVote(player, value)
         }
+    }
 
-        if (value == 0) {
-            player.sendMessage("[scarlet]Vote either 'y' (yes) or 'n' (no).")
-            return
+    @EventHandler
+    internal fun onPlayerLeave(event: EventType.PlayerLeave) {
+        if (manager.session?.target == event.player) {
+            manager.session!!.success()
         }
-
-        session.vote(player, value)
-        Call.sendMessage(
-            """
-            [lightgray]${player.name}[lightgray] has voted on kicking[orange] ${session.target.name}.[lightgray].[accent] (${session.votes}/${session.requiredVotes})
-            [lightgray]Type[orange] /vote <y/n>[] to agree.
-            """.trimIndent(),
-        )
     }
 }

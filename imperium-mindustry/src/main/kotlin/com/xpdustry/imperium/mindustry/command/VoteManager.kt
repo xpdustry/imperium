@@ -18,75 +18,128 @@
 package com.xpdustry.imperium.mindustry.command
 
 import com.xpdustry.imperium.common.async.ImperiumScope
+import fr.xpdustry.distributor.api.DistributorProvider
+import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.ArcCollections
-import kotlinx.coroutines.Job
+import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import mindustry.game.EventType
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import kotlin.math.max
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 
-// TODO
-//  - Replace individual callbacks by a proper listener ?
-//  - Ignore AFK players
-//  - Add ready state to disallow players from running a vote after it has ended
-//  - Add VoteRequirement that checks if a player is allowed to vote or can start a vote
-//  - Handle multiple sessions with a session id to retrieve the session
-class VoteManager<T : Any>(
-    private val duration: Duration,
-    private val success: suspend (T) -> Unit,
-    private val failure: suspend (T) -> Unit,
-    private val _requiredVotes: (Collection<Player>) -> Int = { max(2, it.size / 2) },
-) {
-    var current: Session? = null
-        private set
-    private var currentTimer: Job? = null
+interface VoteManager<T : Any> {
+    val duration: Duration
+    val session: Session<T>? get() = if (sessions.size == 1) sessions.values.firstOrNull() else null
+    val sessions: Map<UUID, Session<T>>
 
-    fun start(target: T): Session {
-        if (current != null) {
-            error("A vote is already in progress")
+    fun start(starter: Player, vote: Boolean, target: T): Session<T>
+
+    interface Session<T : Any> {
+        val id: UUID
+        val start: Instant
+        val starter: Player
+        val target: T
+        val status: Status
+        val votes: Int
+        val required: Int
+        val remaining: Int get() = required - votes
+
+        fun setVote(player: Player, vote: Boolean?)
+        fun getVote(player: Player): Boolean?
+        fun success()
+        fun failure()
+
+        enum class Status {
+            RUNNING,
+            SUCCESS,
+            FAILURE,
+            TIMEOUT,
         }
-        current = Session(target)
-        currentTimer = ImperiumScope.MAIN.launch {
-            delay(duration)
-            failure(target)
-            current = null
-        }
-        return current!!
     }
+}
 
-    fun cancel() {
-        currentTimer?.cancel()
-        currentTimer = null
-        current = null
-    }
+class SimpleVoteManager<T : Any>(
+    plugin: MindustryPlugin,
+    override val duration: Duration,
+    private val finished: suspend (VoteManager.Session<T>) -> Unit,
+    private val threshold: (Collection<Player>) -> Int = { it.size.floorDiv(2) + 1 },
+    private val weight: (Player) -> Int = { 1 },
+) : VoteManager<T> {
+    private val _sessions = mutableMapOf<UUID, SimpleSession>()
+    override val sessions: Map<UUID, VoteManager.Session<T>> = _sessions
 
-    inner class Session(val target: T) {
-        val requiredVotes: Int get() = _requiredVotes(ArcCollections.immutableList(Groups.player))
-        val remainingVotes: Int get() = max(0, requiredVotes - votes)
-        var votes = 0
-            private set
-
-        private val voted = mutableSetOf<String>()
-
-        fun canVote(player: Player): Boolean {
-            return player.uuid() !in voted && player.ip() !in voted
-        }
-
-        fun vote(player: Player, value: Int) {
-            if (!canVote(player)) {
-                return
+    init {
+        DistributorProvider.get().eventBus.subscribe(
+            EventType.PlayerLeave::class.java,
+            Priority.HIGH,
+            plugin,
+        ) {
+            for (session in _sessions.values) {
+                session.required = threshold(ArcCollections.immutableList(Groups.player))
+                if (it.player.id() in session.voters) {
+                    session.setVote(it.player, null)
+                }
+                if (it.player == session.starter) {
+                    session.failure()
+                }
             }
+        }
+    }
 
-            votes += value
-            voted += player.uuid()
-            voted += player.ip()
+    override fun start(starter: Player, vote: Boolean, target: T): VoteManager.Session<T> {
+        val session = SimpleSession(starter, target)
+        _sessions[session.id] = session
+        ImperiumScope.MAIN.launch {
+            delay(duration)
+            session.tryFinishWithStatus(VoteManager.Session.Status.TIMEOUT)
+        }
+        return session
+    }
 
-            if (remainingVotes == 0) {
+    private inner class SimpleSession(
+        override val starter: Player,
+        override val target: T,
+    ) : VoteManager.Session<T> {
+        private val voted = mutableSetOf<String>()
+        private val _status = AtomicReference(VoteManager.Session.Status.RUNNING)
+        val voters = mutableMapOf<Int, Boolean>()
+
+        override val id: UUID = UUID.randomUUID()
+        override val start: Instant = Instant.now()
+        override val status: VoteManager.Session.Status get() = _status.get()
+        override var required: Int = threshold(ArcCollections.immutableList(Groups.player))
+        override val votes: Int get() = voters.entries.sumOf { (player, vote) ->
+            (if (vote) 1 else -1) * weight(Groups.player.getByID(player)!!)
+        }
+
+        override fun setVote(player: Player, vote: Boolean?) {
+            if (vote == null) {
+                voters -= player.id()
+                voted -= player.ip()
+                voted -= player.uuid()
+            } else {
+                voters[player.id()] = vote
+                voted += player.ip()
+                voted += player.uuid()
+            }
+            if (votes >= required) {
+                success()
+            }
+        }
+
+        override fun getVote(player: Player): Boolean? = voters[player.id()]
+        override fun success() = tryFinishWithStatus(VoteManager.Session.Status.SUCCESS)
+        override fun failure() = tryFinishWithStatus(VoteManager.Session.Status.FAILURE)
+        fun tryFinishWithStatus(status: VoteManager.Session.Status) {
+            if (_status.compareAndSet(VoteManager.Session.Status.RUNNING, status)) {
+                this@SimpleVoteManager._sessions.remove(id)
                 ImperiumScope.MAIN.launch {
-                    cancel()
-                    success(target)
+                    finished(this@SimpleSession)
                 }
             }
         }

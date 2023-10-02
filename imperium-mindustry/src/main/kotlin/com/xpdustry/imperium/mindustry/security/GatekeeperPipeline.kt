@@ -52,7 +52,6 @@ class SimpleGatekeeperPipeline : GatekeeperPipeline, AbstractProcessorPipeline<G
                 return@withContext result
             }
         }
-
         GatekeeperResult.Success
     }
 
