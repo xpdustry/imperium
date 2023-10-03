@@ -47,6 +47,7 @@ import java.net.Inet4Address
 import java.net.Inet6Address
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.isSuperclassOf
@@ -87,7 +88,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
             }
 
             if (config.messenger.ssl) {
-                useSslProtocol()
+                useSslProtocol(SSLContext.getDefault())
             }
         }
 
