@@ -91,6 +91,9 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
             val building = it.build
             if (building is CoreBlock.CoreBuild) {
                 val manager = getManager(building.team)
+                if (manager.getElement(building.rx, building.ry) != null) {
+                    return@eachTile
+                }
                 manager.addElement(
                     Cluster.Block(
                         building.rx,

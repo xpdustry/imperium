@@ -23,6 +23,21 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
     val clusters: List<Cluster<T>> get() = _clusters
     private val _clusters = mutableListOf<Cluster<T>>()
 
+    fun getElement(x: Int, y: Int): Cluster.Block<T>? {
+        for (cluster in _clusters) {
+            if (x in cluster.x..cluster.x + cluster.w && y in cluster.y..cluster.y + cluster.h) {
+                for (block in cluster._blocks) {
+                    if (x in block.x..block.x + block.size && y in block.y..block.y + block.size) {
+                        return block
+                    }
+                }
+                return null
+            }
+        }
+        return null
+    }
+
+    // TODO Replace block if inserted at the same position
     fun addElement(block: Cluster.Block<T>) {
         val candidates = mutableListOf<Int>()
         for (i in _clusters.indices) {
