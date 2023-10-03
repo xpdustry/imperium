@@ -1,7 +1,13 @@
 plugins {
-    kotlin("jvm")
-    `java-library`
-    id("com.diffplug.spotless")
+    org.jetbrains.kotlin.jvm
+    net.kyori.indra
+    com.diffplug.spotless
+}
+
+indra {
+    javaVersions {
+        target(libs.versions.java.get().toInt())
+    }
 }
 
 repositories {
@@ -53,8 +59,10 @@ spotless {
     }
 }
 
-tasks.test {
-    useJUnitPlatform()
+// TODO Kyori enables javadoc, but we don't want that with a Kotlin project
+tasks.javadocJar {
+    enabled = false
+    outputs.files()
 }
 
 fun toLongComment(text: String) = buildString {
