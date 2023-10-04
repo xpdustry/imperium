@@ -19,8 +19,14 @@ package com.xpdustry.imperium.common.collection
 
 fun <T : Any> List<T>.findMostCommon(): T? {
     val map = mutableMapOf<T, Int>()
+    var max: T? = null
     for (key in this) {
-        map[key] = (map[key] ?: 0) + 1
+        val value = (map[key] ?: 0) + 1
+        map[key] = value
+        if (max == null || value > map[max]!!) {
+            max = key
+            map[max] = value
+        }
     }
-    return map.maxByOrNull { it.value }?.key
+    return max
 }
