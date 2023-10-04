@@ -86,6 +86,11 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     }
 
     @EventHandler
+    fun onWorldLoad(event: EventType.WorldLoadEvent) {
+        managers.clear()
+    }
+
+    @EventHandler
     fun onPlayEvent(event: EventType.PlayEvent) {
         Vars.world.tiles.eachTile {
             val building = it.build
