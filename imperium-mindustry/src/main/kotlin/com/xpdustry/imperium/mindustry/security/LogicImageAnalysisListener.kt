@@ -157,7 +157,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         }
 
         var building = event.tile.build
-        if (event.breaking && building is ConstructBlock.ConstructBuild) {
+        if (event.breaking && building is ConstructBlock.ConstructBuild && !building.prevBuild.isEmpty) {
             building = building.prevBuild.first()
         }
 

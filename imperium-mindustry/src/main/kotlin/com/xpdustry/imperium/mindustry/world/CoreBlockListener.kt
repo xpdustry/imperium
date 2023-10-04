@@ -136,7 +136,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     @EventHandler
     fun onBlockBuildEvent(event: EventType.BlockBuildEndEvent) {
         var building = event.tile.build
-        if (event.breaking && building is ConstructBlock.ConstructBuild) {
+        if (event.breaking && building is ConstructBlock.ConstructBuild && !building.prevBuild.isEmpty) {
             building = building.prevBuild.first()
         }
 
