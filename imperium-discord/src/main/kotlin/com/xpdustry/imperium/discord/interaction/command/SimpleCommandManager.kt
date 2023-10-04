@@ -25,6 +25,7 @@ import com.xpdustry.imperium.discord.interaction.Permission
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import org.bson.types.ObjectId
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.ServerChannel
 import org.javacord.api.entity.user.User
@@ -60,6 +61,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         registerHandler(ServerChannel::class, CHANNEL_TYPE_HANDLER)
         registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
+        registerHandler(ObjectId::class, OBJECT_ID_TYPE_HANDLER)
     }
 
     override fun onImperiumInit() {
@@ -377,6 +379,16 @@ private val DURATION_TYPE_HANDLER = object : TypeHandler<Duration>(SlashCommandO
             throw OptionParsingException("The duration is zero")
         }
         return duration
+    }
+}
+
+private val OBJECT_ID_TYPE_HANDLER = object : TypeHandler<ObjectId>(SlashCommandOptionType.STRING) {
+    override fun parse(option: SlashCommandInteractionOption): ObjectId? {
+        val input = option.stringValue.getOrNull() ?: return null
+        if (ObjectId.isValid(input)) {
+            return ObjectId(input)
+        }
+        throw OptionParsingException("Invalid ObjectId")
     }
 }
 

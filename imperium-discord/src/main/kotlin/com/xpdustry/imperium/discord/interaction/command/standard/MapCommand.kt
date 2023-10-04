@@ -190,13 +190,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command("map", "info", ephemeral = false)
-    private suspend fun onMapInfo(actor: InteractionActor, id: String) {
-        if (!ObjectId.isValid(id)) {
-            actor.respond("Invalid map id")
-            return
-        }
-
-        val map = maps.findMapById(ObjectId(id))
+    private suspend fun onMapInfo(actor: InteractionActor, id: ObjectId) {
+        val map = maps.findMapById(id)
         if (map == null) {
             actor.respond("Unknown map id")
             return
@@ -241,14 +236,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command("map", "edit", "servers", permission = Permission.ADMINISTRATOR)
-    private suspend fun onMapServersChange(actor: InteractionActor, id: String, servers: String? = null) {
-        if (!ObjectId.isValid(id)) {
-            actor.respond("Invalid map id")
-            return
-        }
-
-        val oid = ObjectId(id)
-        if (maps.findMapById(oid) == null) {
+    private suspend fun onMapServersChange(actor: InteractionActor, id: ObjectId, servers: String? = null) {
+        if (maps.findMapById(id) == null) {
             actor.respond("Unknown map id")
             return
         }
@@ -261,12 +250,21 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        maps.updateMapById(oid) {
+        maps.updateMapById(id) {
             this.servers.clear()
             this.servers.addAll(list)
         }
 
         actor.respond("Map servers updated to $list!")
+    }
+
+    @Command("map", "delete", permission = Permission.ADMINISTRATOR)
+    private suspend fun onMapDelete(actor: InteractionActor, id: ObjectId) {
+        if (maps.deleteMapById(id)) {
+            actor.respond("Map deleted!")
+        } else {
+            actor.respond("Unknown map id")
+        }
     }
 
     private fun Embed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value

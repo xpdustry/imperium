@@ -31,6 +31,7 @@ interface MindustryMapManager {
     suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
     suspend fun computeAverageScoreByMap(map: ObjectId): Double
     suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty
+    suspend fun deleteMapById(id: ObjectId): Boolean
     suspend fun saveMap(map: MindustryMap, stream: InputStream)
     suspend fun getMapObject(map: ObjectId): S3Object?
     suspend fun updateMapById(id: ObjectId, updater: suspend MindustryMap.() -> Unit)

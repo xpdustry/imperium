@@ -105,6 +105,13 @@ internal class MongoMindustryMapManager(
         return Rating.Difficulty.entries[average.roundToInt()]
     }
 
+    override suspend fun deleteMapById(id: ObjectId): Boolean {
+        val map = maps.findById(id) ?: return false
+        maps.deleteById(id)
+        storage.getBucket("imperium-maps", create = true)!!.deleteObject("pool/${map._id}.msav")
+        return true
+    }
+
     override suspend fun saveMap(map: MindustryMap, stream: InputStream) {
         maps.save(map)
         storage.getBucket("imperium-maps", create = true)!!.putObject("pool/${map._id}.msav", stream)
