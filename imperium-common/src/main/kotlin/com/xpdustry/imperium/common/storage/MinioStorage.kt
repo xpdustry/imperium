@@ -62,7 +62,7 @@ class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplic
         }
 
         try {
-            client.listBuckets().join()
+            client.listBuckets().get(10L, TimeUnit.SECONDS)
         } catch (e: Exception) {
             throw RuntimeException("Could not connect to Minio", e)
         }
