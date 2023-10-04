@@ -114,7 +114,7 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
                         Call.sendMessage(
                             """
                             ${ctx.sender.player.name} has started an excavation at between (${area.p1.x}, ${area.p1.y}) and (${area.p2.x}, ${area.p2.y})!
-                            Vote using [accent]/excavate y[] or [accent]/excavate n[]. [accent]${session.required}[] votes are required to pass.
+                            Vote using [accent]/excavate y[] or [accent]/excavate n[]. [accent]${session.remaining}[] votes are required to pass.
                             """.trimIndent(),
                         )
                     }
