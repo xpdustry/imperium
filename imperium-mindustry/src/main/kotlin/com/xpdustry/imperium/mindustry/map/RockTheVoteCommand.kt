@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.map
 
 import arc.Events
-import cloud.commandframework.kotlin.extension.commandBuilder
+import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -49,7 +49,7 @@ class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Liste
         },
     )
     override fun onImperiumInit() {
-        clientCommandManager.commandBuilder("rtv") {
+        clientCommandManager.buildAndRegister("rtv") {
             handler { ctx ->
                 if (manager.session == null) {
                     manager.start(ctx.sender.player, true, Unit)
