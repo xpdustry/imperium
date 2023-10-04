@@ -21,6 +21,7 @@ import arc.math.Mathf
 import cloud.commandframework.kotlin.extension.commandBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
@@ -60,6 +61,7 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
     private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val pitchSequence = AtomicInteger(0)
+    private val config = instances.get<ServerConfig.Mindustry>()
     private lateinit var renderer: Job
     private val manager = SimpleVoteManager(
         plugin = instances.get(),
@@ -242,7 +244,7 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
         if (other != UNSET_POINT) {
             val dx = abs(point.x - other.x)
             val dy = abs(point.y - other.y)
-            if (dx >= MAX_EXCAVATE_SIZE || dy >= MAX_EXCAVATE_SIZE) {
+            if (dx >= config.world.maxExcavateSize || dy >= config.world.maxExcavateSize) {
                 areas[event.player] = ExcavateArea()
                 event.player.sendMessage("The chosen excavate point is too far from the other point, try again!")
                 return
@@ -305,7 +307,6 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
     }
 
     companion object {
-        private const val MAX_EXCAVATE_SIZE = 64
         private val UNSET_POINT = ImmutablePoint(-1, -1)
     }
 }

@@ -85,6 +85,7 @@ sealed interface ServerConfig {
         val hub: Boolean = false,
         val history: History = History(),
         val color: Color = Color.WHITE,
+        val world: World = World(),
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }
@@ -92,6 +93,9 @@ sealed interface ServerConfig {
         data class History(
             val tileEntriesLimit: Int = 10,
             val playerEntriesLimit: Int = 200,
+        )
+        data class World(
+            val maxExcavateSize: Int = 64,
         )
     }
 
