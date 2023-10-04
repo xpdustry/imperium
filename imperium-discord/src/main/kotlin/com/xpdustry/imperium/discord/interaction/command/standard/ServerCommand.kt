@@ -61,7 +61,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(
             EmbedBuilder()
                 .setTitle("Server List")
-                .setDescription(discovery.servers.joinToString(separator = "\n") { " - " + it.serverName }),
+                .setDescription(discovery.servers.joinToString(separator = "\n\n") { " - " + it.serverName }),
         )
 
     // TODO Make a better system that can list joins, current and left players
