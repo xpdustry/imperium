@@ -78,13 +78,20 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .addField("Author", meta.author?.stripMindustryColors() ?: "Unknown")
                     .addField("Description", meta.description?.stripMindustryColors() ?: "Unknown")
                     .addField("Size", "${preview.width} x ${preview.height}")
-                    .apply { if (notes != null) addField("Notes", notes) }
+                    .apply {
+                        if (notes != null) {
+                            addField("Notes", notes)
+                        }
+                        val updating = maps.findMapByName(meta.name.stripMindustryColors())?._id
+                        if (updating != null) {
+                            addField("Updating Map", "`$updating`")
+                        }
+                    }
                     .setImage(preview),
             )
             .addComponents(
                 ActionRow.of(
                     Button.primary(MAP_UPLOAD_BUTTON, "Upload", ImperiumEmojis.INBOX_TRAY),
-                    Button.secondary(MAP_UPDATE_BUTTON, "Update", ImperiumEmojis.PENCIL),
                     Button.danger(MAP_REJECT_BUTTON, "Reject", ImperiumEmojis.WASTE_BASKET),
                 ),
             )
@@ -111,44 +118,26 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         val attachment = actor.message.attachments.first()
         val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
 
-        if (maps.findMapByName(meta.name.stripMindustryColors()) != null) {
-            actor.respond("A map with that name already exists!")
-            return
+        var map = maps.findMapByName(meta.name.stripMindustryColors())
+        if (map == null) {
+            map = MindustryMap(
+                name = meta.name.stripMindustryColors(),
+                description = meta.description?.stripMindustryColors(),
+                author = meta.author?.stripMindustryColors(),
+                width = meta.width,
+                height = meta.height,
+            )
+        } else {
+            map.description = meta.description?.stripMindustryColors()
+            map.author = meta.author?.stripMindustryColors()
+            map.width = meta.width
+            map.height = meta.height
+            map.lastUpdate = Instant.now()
         }
-
-        val map = MindustryMap(
-            name = meta.name.stripMindustryColors(),
-            description = meta.description?.stripMindustryColors(),
-            author = meta.author?.stripMindustryColors(),
-            width = meta.width,
-            height = meta.height,
-        )
 
         maps.saveMap(map, attachment.asInputStream())
         updateSubmissionEmbed(actor, Color.GREEN, "uploaded")
-        actor.respond("Map submission uploaded!")
-    }
-
-    @InteractionButton(MAP_UPDATE_BUTTON, permission = Permission.ADMINISTRATOR)
-    private suspend fun onMapUpdate(actor: InteractionActor.Button) {
-        val attachment = actor.message.attachments.first()
-        val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
-
-        val map = maps.findMapByName(meta.name.stripMindustryColors())
-        if (map == null) {
-            actor.respond("A map with that name does not exist!")
-            return
-        }
-
-        map.description = meta.description?.stripMindustryColors()
-        map.author = meta.author?.stripMindustryColors()
-        map.width = meta.width
-        map.height = meta.height
-        map.lastUpdate = Instant.now()
-
-        maps.saveMap(map, attachment.asInputStream())
-        updateSubmissionEmbed(actor, Color.YELLOW, "updated")
-        actor.respond("Map submission updated!")
+        actor.respond("Map submission uploaded! The map id is `${map._id}`.")
     }
 
     private suspend fun updateSubmissionEmbed(actor: InteractionActor.Button, color: Color, verb: String) {
@@ -286,7 +275,6 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
-        private const val MAP_UPDATE_BUTTON = "map-submission-update:1"
         private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
     }
 }
