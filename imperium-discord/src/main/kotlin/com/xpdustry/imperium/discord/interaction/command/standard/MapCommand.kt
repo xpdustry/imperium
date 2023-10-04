@@ -240,7 +240,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
     }
 
-    @Command("map", "set-servers", permission = Permission.ADMINISTRATOR)
+    @Command("map", "edit", "servers", permission = Permission.ADMINISTRATOR)
     private suspend fun onMapServersChange(actor: InteractionActor, id: String, servers: String? = null) {
         if (!ObjectId.isValid(id)) {
             actor.respond("Invalid map id")
