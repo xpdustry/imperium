@@ -143,8 +143,12 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
                     return@handler
                 }
                 if (Groups.player.size() < 3) {
-                    // TODO Report the votekick to discord
-                    ctx.sender.player.sendMessage("[scarlet]At least 3 players are needed to start a votekick.")
+                    ctx.sender.player.sendMessage(
+                        """
+                        [scarlet]At least 3 players are needed to start a votekick.
+                        Use the [orange]/report[] command instead.
+                        """,
+                    )
                     return@handler
                 }
                 if (ctx.sender.player.isLocal) {

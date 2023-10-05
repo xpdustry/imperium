@@ -51,7 +51,6 @@ private val logger = logger<ReportCommand>()
 private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
 
 // TODO
-//  - Remove the player report system in favor of the votekick
 //  - Implement tile reporting ?
 //  - Add rate limit warning BEFORE running the command
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -76,7 +75,6 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
     val reportConfirmInterface = MenuInterface.create(plugin)
     reportConfirmInterface.addTransformer { view, pane ->
         pane.title = "Report (4/4)"
-        // TODO I really need to implement localization
         pane.content = "Are you sure you want to report [accent]${view.state[REPORT_PLAYER]!!.plainName()}[] for [accent]${view.state[REPORT_REASON]!!.name.lowercase().capitalize()}[]?"
         pane.options.addRow(
             MenuOption("[green]Yes") { _ ->
