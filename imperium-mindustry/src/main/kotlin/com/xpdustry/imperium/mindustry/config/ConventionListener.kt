@@ -21,7 +21,6 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.toHexString
 import fr.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import fr.xpdustry.distributor.api.scheduler.TaskHandler
@@ -32,7 +31,7 @@ class ConventionListener(instances: InstanceManager) : ImperiumApplication.Liste
 
     override fun onImperiumInit() {
         Administration.Config.serverName.set(
-            "[accent]<[white]CN[]> [${config.color.toHexString()}]${config.name.capitalize(all = true)}",
+            "[accent]<[white]CN[]> [${config.color.toHexString()}]${config.displayName}",
         )
     }
 

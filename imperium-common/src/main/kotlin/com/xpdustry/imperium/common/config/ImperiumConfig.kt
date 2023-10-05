@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
+import com.xpdustry.imperium.common.misc.capitalize
 import java.awt.Color
 import java.time.Duration
 import java.util.Locale
@@ -73,6 +74,7 @@ sealed interface MessengerConfig {
 
 sealed interface ServerConfig {
     val name: String
+    val displayName: String get() = name.capitalize()
 
     data object None : ServerConfig {
         override val name: String = "none"
@@ -80,6 +82,7 @@ sealed interface ServerConfig {
 
     data class Mindustry(
         override val name: String,
+        override val displayName: String = name.capitalize(),
         val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
         val hub: Boolean = false,
         val history: History = History(),
