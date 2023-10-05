@@ -17,9 +17,12 @@
  */
 package com.xpdustry.imperium.common.account
 
+import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.mongo.MongoProvider
+import kotlinx.coroutines.flow.firstOrNull
+import java.net.InetAddress
 
 internal class MongoUserManager(private val mongo: MongoProvider) : UserManager, ImperiumApplication.Listener {
 
@@ -32,6 +35,9 @@ internal class MongoUserManager(private val mongo: MongoProvider) : UserManager,
     override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User = users.findById(uuid) ?: User(uuid)
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? = users.findById(uuid)
+
+    override suspend fun findByLastAddress(address: InetAddress): User? =
+        users.find(Filters.eq(User::lastAddress.name, address)).firstOrNull()
 
     override suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit) {
         val user = users.findById(uuid) ?: User(uuid)

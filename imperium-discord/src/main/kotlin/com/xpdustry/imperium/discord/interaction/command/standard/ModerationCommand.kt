@@ -19,6 +19,7 @@ package com.xpdustry.imperium.discord.interaction.command.standard
 
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toBase62
@@ -34,6 +35,7 @@ import com.xpdustry.imperium.discord.interaction.command.Min
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import org.bson.types.ObjectId
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.time.Duration
 
@@ -41,6 +43,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
+    private val analysis = instances.get<LogicImageAnalysis>()
 
     @Command("punishment", "list", permission = Permission.MODERATOR)
     private suspend fun onPunishmentListCommand(actor: InteractionActor, target: String, @Min(0) page: Int = 0) {
@@ -132,5 +135,35 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
         punishments.pardon(Identity.Discord(actor.user.name, actor.user.id), snowflake, reason)
         actor.respond("Pardoned user.")
+    }
+
+    @Command("punishment", "nsfw", "show", permission = Permission.MODERATOR)
+    private suspend fun onPunishmentNsfwShow(actor: InteractionActor, id: ObjectId) {
+        val result = analysis.findHashedImageById(id)
+        if (result == null) {
+            actor.respond("NSFW Image not found.")
+            return
+        }
+        actor.respond {
+            addAttachmentAsSpoiler(result.second.getStream(), "image.png")
+            setContent(
+                buildString {
+                    appendLine("**ID**: ${result.first._id.toHexString()}")
+                    appendLine("**Hashes**: ${result.first.hashes.size}")
+                    appendLine("**Unsafe**: ${result.first.unsafe}")
+                },
+            )
+        }
+    }
+
+    @Command("punishment", "nsfw", "safety", permission = Permission.MODERATOR)
+    private suspend fun onPunishmentNsfwMark(actor: InteractionActor, id: ObjectId, unsafe: Boolean) {
+        val result = analysis.findHashedImageById(id)
+        if (result == null) {
+            actor.respond("NSFW Image not found.")
+            return
+        }
+        analysis.updateSafetyById(result.first._id, unsafe)
+        actor.respond("Updated safety of NSFW to ${if (unsafe) "unsafe" else "safe"}.")
     }
 }

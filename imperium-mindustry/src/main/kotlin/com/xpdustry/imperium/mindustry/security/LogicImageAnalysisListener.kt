@@ -36,6 +36,7 @@ import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
@@ -81,9 +82,6 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     private val pixmapQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.PixMap>>>()
     private val canvases = ClusterManager(QueueClusterListener(pixmapQueue, ::filterPixMap, ::findPixMapAuthor))
     private lateinit var pixmapJob: Job
-
-    // TODO Implement delegate property backed by Core.settings so it persists across restarts
-    // private var debug = false
 
     private val debugPlayers = PlayerMap<Boolean>(instances.get())
 
@@ -312,10 +310,12 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                 continue
             }
             queue.remove()
+
             launch {
                 logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
-                if (analyzer.isUnsafe(element.value.blocks)) {
-                    logger.debug("Cluster ({}, {}) is unsafe. Destroying", element.value.x, element.value.y)
+                val (unsafe, entry) = analyzer.isUnsafe(element.value.blocks)
+                if (unsafe) {
+                    logger.debug("Cluster ({}, {}) is unsafe (entry={}). Destroying", element.value.x, element.value.y, entry)
 
                     runMindustryThread {
                         for (block in element.value.blocks) {
@@ -329,6 +329,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                         }
                     }
 
+                    val extra = if (entry != null) PunishmentMessage.Extra.Nsfw(entry) else PunishmentMessage.Extra.None
                     val player = Groups.player.find { it.uuid() == element.author }
                     if (player != null) {
                         punishments.punish(
@@ -337,6 +338,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                             "Placing NSFW images",
                             Punishment.Type.BAN,
                             Duration.ofDays(3L),
+                            extra,
                         )
                         return@launch
                     }
@@ -349,6 +351,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                             "Placing NSFW images",
                             Punishment.Type.BAN,
                             Duration.ofDays(3L),
+                            extra,
                         )
                         return@launch
                     }

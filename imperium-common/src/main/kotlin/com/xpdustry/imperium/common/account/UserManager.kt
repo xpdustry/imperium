@@ -17,8 +17,11 @@
  */
 package com.xpdustry.imperium.common.account
 
+import java.net.InetAddress
+
 interface UserManager {
     suspend fun findByUuidOrCreate(uuid: MindustryUUID): User
     suspend fun findByUuid(uuid: MindustryUUID): User?
+    suspend fun findByLastAddress(address: InetAddress): User?
     suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
 }

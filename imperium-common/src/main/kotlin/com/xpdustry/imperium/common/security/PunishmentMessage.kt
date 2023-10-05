@@ -19,10 +19,15 @@ package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.misc.ImperiumSnowflake
+import org.bson.types.ObjectId
 
 @Message.Options(local = true)
-data class PunishmentMessage(val author: Identity?, val type: Type, val punishment: ImperiumSnowflake) : Message {
+data class PunishmentMessage(val author: Identity?, val type: Type, val punishment: ImperiumSnowflake, val extra: Extra) : Message {
     enum class Type {
         CREATE, PARDON
+    }
+    sealed interface Extra {
+        data object None : Extra
+        data class Nsfw(val entry: ObjectId) : Extra
     }
 }

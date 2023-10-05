@@ -22,6 +22,6 @@ import org.bson.types.ObjectId
 
 data class HashedLogicImage(
     override val _id: ObjectId = ObjectId(),
-    val unsafe: Boolean,
+    var unsafe: Boolean,
     val hashes: Set<String>,
 ) : Entity<ObjectId>

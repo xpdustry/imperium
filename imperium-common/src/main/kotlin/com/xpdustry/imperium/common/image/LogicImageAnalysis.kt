@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.toBase64
 import com.xpdustry.imperium.common.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.mongo.MongoProvider
+import com.xpdustry.imperium.common.storage.S3Object
 import com.xpdustry.imperium.common.storage.Storage
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -43,7 +44,9 @@ import java.nio.ByteBuffer
 import java.util.Arrays
 
 interface LogicImageAnalysis {
-    suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Boolean
+    suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Pair<Boolean, ObjectId?>
+    suspend fun findHashedImageById(id: ObjectId): Pair<HashedLogicImage, S3Object>?
+    suspend fun updateSafetyById(id: ObjectId, unsafe: Boolean)
 }
 
 internal class SimpleLogicImageAnalysis(
@@ -58,28 +61,39 @@ internal class SimpleLogicImageAnalysis(
         collection = mongo.getCollection("hashed-logic-images", HashedLogicImage::class)
     }
 
-    override suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Boolean = withContext(ImperiumScope.IO.coroutineContext) {
+    override suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Pair<Boolean, ObjectId?> = withContext(ImperiumScope.IO.coroutineContext) {
         val (hashes, entry) = findHashedImageByImages(blocks)
         if (entry != null) {
-            return@withContext entry.unsafe
+            return@withContext entry.unsafe to entry._id
         }
         val image = createImage(blocks)
         when (val result = detection.isUnsafe(image)) {
             is ImageAnalysis.Result.Success -> {
                 if (result.confidence > 0) {
+                    val hashed = HashedLogicImage(unsafe = result.unsafe, hashes = hashes)
                     launch {
-                        val hashed = HashedLogicImage(unsafe = result.unsafe, hashes = hashes)
                         collection.save(hashed)
                         storage.getBucket("imperium-image-analysis", create = true)!!
                             .putObject("unsafe/${hashed._id.toHexString()}.png", MoreImageIO.createInputStream(image))
                     }
+                    result.unsafe to hashed._id
                 }
-                result.unsafe
+                result.unsafe to null
             }
             is ImageAnalysis.Result.Failure -> {
                 logger.error("Failed to analyze image: {}", result.message)
-                false
+                false to null
             }
+        }
+    }
+
+    override suspend fun findHashedImageById(id: ObjectId): Pair<HashedLogicImage, S3Object>? =
+        collection.findById(id)?.let { it to storage.getBucket("imperium-image-analysis", create = true)!!.getObject("unsafe/${it._id.toHexString()}.png")!! }
+
+    override suspend fun updateSafetyById(id: ObjectId, unsafe: Boolean) {
+        collection.findById(id)?.let {
+            it.unsafe = unsafe
+            collection.save(it)
         }
     }
 

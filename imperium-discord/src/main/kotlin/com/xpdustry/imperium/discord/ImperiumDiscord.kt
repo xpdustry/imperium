@@ -29,6 +29,7 @@ import com.xpdustry.imperium.discord.interaction.command.standard.ModerationComm
 import com.xpdustry.imperium.discord.interaction.command.standard.PingCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.SchematicCommand
 import com.xpdustry.imperium.discord.interaction.command.standard.ServerCommand
+import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
 import com.xpdustry.imperium.discord.security.VerifyListener
 import java.util.Scanner
@@ -53,6 +54,7 @@ fun main() {
     application.register(SchematicCommand::class)
     application.register(VerifyListener::class)
     application.register(ModerationCommand::class)
+    application.register(PunishmentListener::class)
 
     val commands = application.instances.get<CommandManager>()
     val buttons = application.instances.get<ButtonManager>()

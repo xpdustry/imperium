@@ -24,7 +24,7 @@ import java.net.InetAddress
 import java.time.Duration
 
 interface PunishmentManager {
-    suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?)
+    suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?, extra: PunishmentMessage.Extra = PunishmentMessage.Extra.None)
     suspend fun pardon(author: Identity?, id: ImperiumSnowflake, reason: String)
     suspend fun findById(id: ImperiumSnowflake): Punishment?
     suspend fun findAllByAddress(target: InetAddress): Flow<Punishment>

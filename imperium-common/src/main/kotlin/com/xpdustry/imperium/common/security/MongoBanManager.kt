@@ -38,17 +38,17 @@ internal class MongoBanManager(private val generator: ImperiumSnowflakeGenerator
         bans = mongo.getCollection("punishments", Punishment::class)
     }
 
-    override suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?) {
+    override suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?, extra: PunishmentMessage.Extra) {
         val punishment = Punishment(generator.generate(), target, reason, type, duration)
         bans.save(punishment)
-        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id))
+        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id, extra))
     }
 
     override suspend fun pardon(author: Identity?, id: ImperiumSnowflake, reason: String) {
         val punishment = findById(id) ?: return
         punishment.pardon = Punishment.Pardon(Instant.now(), reason)
         bans.save(punishment)
-        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment._id))
+        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment._id, PunishmentMessage.Extra.None))
     }
 
     override suspend fun findById(id: ImperiumSnowflake): Punishment? =
