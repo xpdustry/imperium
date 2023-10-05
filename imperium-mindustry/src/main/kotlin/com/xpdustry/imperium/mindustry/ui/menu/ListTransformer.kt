@@ -29,18 +29,19 @@ import mindustry.gen.Player
 import java.util.Objects
 import java.util.function.Function
 
-class ListTransformer<E : Any> : Transformer<MenuPane> {
-    var elementProvider: Function<View, List<E>> = Function<View, List<E>> { emptyList() }
-    var elementRenderer: Function<E, String> = Function { Objects.toString(it) }
-    var choiceAction: BiAction<E> = Action.none().asBiAction()
-    var pageHeight = 5
-    var pageWidth = 1
-    var fillEmpty = false
-    val pageSize: Int
-        get() = pageHeight * pageWidth
+class ListTransformer<E : Any>(
+    var provider: Function<View, List<E>> = Function<View, List<E>> { emptyList() },
+    var renderer: Function<E, String> = Function { Objects.toString(it) },
+    var onChoice: BiAction<E> = Action.none().asBiAction(),
+    var height: Int = 5,
+    var width: Int = 1,
+    var fill: Boolean = false,
+) : Transformer<MenuPane> {
+
+    val pageSize: Int get() = height * width
 
     override fun transform(view: View, pane: MenuPane) {
-        val elements = elementProvider.apply(view)
+        val elements = provider.apply(view)
         if (elements.isEmpty()) {
             pane.options.addRow(MenuOption("Nothing", Action.none()))
             renderNavigation(pane, 0, false)
@@ -51,16 +52,16 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
             page -= 1
         }
         var cursor = 0
-        for (i in 0 until pageHeight) {
+        for (i in 0 until height) {
             val options: MutableList<MenuOption> = ArrayList()
-            for (j in 0 until pageWidth) {
-                cursor = page * pageSize + i * pageWidth + j
+            for (j in 0 until width) {
+                cursor = page * pageSize + i * width + j
                 if (cursor < elements.size) {
                     val element = elements[cursor]
                     options.add(
-                        MenuOption(elementRenderer.apply(element)) { v -> choiceAction.accept(v, element) },
+                        MenuOption(renderer.apply(element)) { v -> onChoice.accept(v, element) },
                     )
-                } else if (fillEmpty) {
+                } else if (fill) {
                     options.add(MenuOption())
                 } else {
                     break
@@ -69,7 +70,7 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
             if (options.isNotEmpty()) {
                 pane.options.addRow(options)
             }
-            if (cursor >= elements.size && !fillEmpty) {
+            if (cursor >= elements.size && !fill) {
                 break
             }
         }
@@ -100,18 +101,18 @@ class ListTransformer<E : Any> : Transformer<MenuPane> {
     }
 
     companion object {
-        var PAGE = stateKey<Int>("nucleus:pagination-transformer-page")
+        val PAGE = stateKey<Int>("nucleus:pagination-transformer-page")
     }
 }
 
-fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> = ListTransformer<Player>().apply {
-    elementProvider = Function { view ->
+fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> = ListTransformer(
+    provider = { view ->
         ArcCollections.mutableList(Groups.player).apply {
             remove(view.viewer)
             sortBy(Player::plainName)
         }
-    }
-    elementRenderer = Function { it.plainName() }
-    pageHeight = 8
-    choiceAction = action
-}
+    },
+    renderer = { it.plainName() },
+    height = 8,
+    onChoice = action,
+)

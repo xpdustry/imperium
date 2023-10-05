@@ -105,7 +105,7 @@ fun commonModule() = module("common") {
     }
 
     single<MindustryMapManager> {
-        MongoMindustryMapManager(get(), get())
+        MongoMindustryMapManager(get(), get(), get())
     }
 
     single<PunishmentManager> {

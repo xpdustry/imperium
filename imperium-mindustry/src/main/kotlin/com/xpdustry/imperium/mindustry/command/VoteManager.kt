@@ -32,14 +32,14 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 
-interface VoteManager<T : Any> {
+interface VoteManager<T : Any?> {
     val duration: Duration
     val session: Session<T>? get() = if (sessions.size == 1) sessions.values.firstOrNull() else null
     val sessions: Map<UUID, Session<T>>
 
     fun start(starter: Player, vote: Boolean, target: T): Session<T>
 
-    interface Session<T : Any> {
+    interface Session<T : Any?> {
         val id: UUID
         val start: Instant
         val starter: Player
@@ -63,7 +63,7 @@ interface VoteManager<T : Any> {
     }
 }
 
-class SimpleVoteManager<T : Any>(
+class SimpleVoteManager<T : Any?>(
     plugin: MindustryPlugin,
     override val duration: Duration,
     private val finished: suspend (VoteManager.Session<T>) -> Unit,
@@ -98,6 +98,7 @@ class SimpleVoteManager<T : Any>(
             delay(duration)
             session.tryFinishWithStatus(VoteManager.Session.Status.TIMEOUT)
         }
+        session.setVote(starter, vote)
         return session
     }
 

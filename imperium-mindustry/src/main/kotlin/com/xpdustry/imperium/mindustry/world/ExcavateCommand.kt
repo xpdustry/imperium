@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.map
+package com.xpdustry.imperium.mindustry.world
 
 import arc.math.Mathf
 import cloud.commandframework.kotlin.extension.commandBuilder
@@ -277,7 +277,7 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
             player.sendMessage("You have already voted!")
             return
         }
-        Call.sendMessage("${player.name} has voted ${if (value) "yes" else "no"}! ${session.remaining} more votes are required to pass.")
+        Call.sendMessage("${player.name} has voted ${if (value) "yes" else "no"}! ${session.remaining - 1} more votes are required to pass.")
         session.setVote(player, value)
     }
 

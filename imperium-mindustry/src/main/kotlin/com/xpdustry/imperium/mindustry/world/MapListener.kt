@@ -18,129 +18,102 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.files.Fi
-import arc.func.Cons
-import arc.util.Log
-import arc.util.Strings
+import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import mindustry.Vars
-import mindustry.core.GameState
-import mindustry.game.EventType.GameOverEvent
-import mindustry.game.Gamemode
-import mindustry.gen.Call
-import mindustry.gen.Groups
 import mindustry.io.MapIO
 import mindustry.maps.Map
-import mindustry.net.Administration
-import mindustry.net.Packets.KickReason
-import mindustry.server.ServerControl
 import java.nio.file.Path
-import java.util.concurrent.atomic.AtomicInteger
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectory
+import kotlin.io.path.deleteRecursively
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
-// TODO
-//  - Override map commands to allow imperium integration (maps, reloadmaps, host)
-//  - Add gamemode field to maps
 class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Mindustry>()
     private val maps = instances.get<MindustryMapManager>()
-    private val cache = instances.get<Path>("directory").resolve("map-cache")
-    private val index = AtomicInteger(0)
+    private val cache = instances.get<Path>("directory").resolve("map-pool")
+    private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
+    private val messenger = instances.get<Messenger>()
 
+    @OptIn(ExperimentalPathApi::class)
     override fun onImperiumInit() {
-        if (cache.notExists()) cache.createDirectory()
-        ServerControl.instance.gameOverListener = Cons(::onGameOver)
-    }
+        cache.deleteRecursively()
+        cache.createDirectory()
 
-    private fun onGameOver(event: GameOverEvent) {
-        if (Vars.state.rules.waves) {
-            Log.info(
-                "Game over! Reached wave @ with @ players online on map @.",
-                Vars.state.wave,
-                Groups.player.size(),
-                Strings.capitalize(Vars.state.map.plainName()),
-            )
-        } else {
-            Log.info(
-                "Game over! Team @ is victorious with @ players online on map @.",
-                event.winner.name,
-                Groups.player.size(),
-                Strings.capitalize(Vars.state.map.plainName()),
-            )
+        serverCommandManager.buildAndRegister("reloadmaps") {
+            commandDescription("Reloads the map pool.")
+            handler { reloadMaps() }
         }
 
-        ImperiumScope.MAIN.launch {
-            val map = try {
-                getNextMap(ServerControl.instance.lastMode, Vars.state.map)
-            } catch (e: Exception) {
-                logger.error("Failed to load next map, closing the server.", e)
-                null
-            }
-
-            runMindustryThread {
-                if (map == null) {
-                    Vars.netServer.kickAll(KickReason.gameover)
-                    Vars.state.set(GameState.State.menu)
-                    Vars.net.closeServer()
-                    return@runMindustryThread
-                }
-
-                Call.infoMessage(
-                    """
-                    ${if (Vars.state.rules.pvp) "[accent]The " + event.winner.coloredName() + " team is victorious![]\n" else "[scarlet]Game over![]\n"}
-                    Next selected map: [accent]${map.name()}[white]${if (map.hasTag("author")) " by[accent] " + map.author() + "[white]" else ""}.
-                    New game begins in ${Administration.Config.roundExtraTime.num()} seconds.
-                    """.trimIndent(),
-                )
-
-                Vars.state.gameOver = true
-                Call.updateGameOver(event.winner)
-                Log.info("Selected next map to be @.", map.plainName())
-                ServerControl.instance.play {
-                    Vars.world.loadMap(map, map.applyRules(ServerControl.instance.lastMode))
-                }
+        messenger.subscribe<MapReloadMessage> {
+            if (config.name in it.servers) {
+                reloadMaps()
             }
         }
+
+        reloadMaps()
     }
 
-    private suspend fun getNextMap(mode: Gamemode, previous: Map): Map? {
-        val pool = maps.findMapsByServer(config.name).toCollection(mutableListOf())
-        pool.sortBy(MindustryMap::name)
+    private fun reloadMaps() = ImperiumScope.MAIN.launch {
+        val old = runMindustryThread {
+            val before = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
+            Vars.maps.reload()
+            return@runMindustryThread before
+        }
+
+        val pool = maps.findMapsByServer(config.name)
+            .map {
+                try {
+                    downloadMapFromPool(it)
+                } catch (e: Exception) {
+                    logger.error("Failed to load map from server pool, falling back to local maps.", e)
+                    null
+                }
+            }
+            .filterNotNull()
+            .toList()
 
         if (pool.isEmpty()) {
             logger.warn("No maps found in server pool, falling back to local maps.")
-            return Vars.maps.getNextMap(mode, previous)
         }
 
-        try {
-            // TODO What if index is out of range?
-            val map = pool[index.getAndIncrement() % pool.size]
-            val file = cache.resolve("${map._id.toHexString()}_${map.lastUpdate.toEpochMilli()}.msav")
-            if (file.notExists()) {
-                logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map._id.toHexString())
-                file.outputStream().use { output ->
-                    maps.getMapObject(map._id)!!.getStream().use { input -> input.copyTo(output) }
-                }
-            }
+        runMindustryThread {
+            Vars.maps.all().addAll(pool)
+            val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
+            logger.info("Reloaded {} maps (added={}, removed={}).", now.size, (now - old).size, (old - now).size)
+        }
+    }
 
-            logger.info("Loaded map {} (id={}) from server pool.", map.name, map._id.toHexString())
-            return MapIO.createMap(Fi(file.toFile()), true).also {
-                it.tags.put("imperium-map-id", map._id.toHexString())
+    private suspend fun downloadMapFromPool(map: MindustryMap): Map {
+        val file = cache.resolve("${map._id.toHexString()}_${map.lastUpdate.toEpochMilli()}.msav")
+        if (file.notExists()) {
+            logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map._id.toHexString())
+            file.outputStream().use { output ->
+                maps.getMapObject(map._id)!!.getStream().use { input -> input.copyTo(output) }
             }
-        } catch (e: Exception) {
-            logger.error("Failed to load map from server pool, falling back to local maps.", e)
-            return Vars.maps.getNextMap(mode, previous)
+        }
+        logger.debug("Loaded map {} (id={}) from server pool.", map.name, map._id.toHexString())
+        return MapIO.createMap(Fi(file.toFile()), true).also {
+            it.tags.put("imperium-map-id", map._id.toHexString())
         }
     }
 

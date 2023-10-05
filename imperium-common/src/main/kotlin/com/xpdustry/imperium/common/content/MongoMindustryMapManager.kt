@@ -24,6 +24,7 @@ import com.mongodb.client.model.Indexes
 import com.mongodb.client.model.Sorts
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.mongo.MongoProvider
 import com.xpdustry.imperium.common.storage.S3Object
@@ -42,6 +43,7 @@ import kotlin.math.roundToInt
 internal class MongoMindustryMapManager(
     private val mongo: MongoProvider,
     private val storage: Storage,
+    private val messenger: Messenger,
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     private lateinit var maps: MongoEntityCollection<MindustryMap, ObjectId>
@@ -109,12 +111,14 @@ internal class MongoMindustryMapManager(
         val map = maps.findById(id) ?: return false
         maps.deleteById(id)
         storage.getBucket("imperium-maps", create = true)!!.deleteObject("pool/${map._id}.msav")
+        notifyReload(map)
         return true
     }
 
     override suspend fun saveMap(map: MindustryMap, stream: InputStream) {
         maps.save(map)
         storage.getBucket("imperium-maps", create = true)!!.putObject("pool/${map._id}.msav", stream)
+        notifyReload(map)
     }
 
     override suspend fun getMapObject(map: ObjectId): S3Object? =
@@ -124,6 +128,13 @@ internal class MongoMindustryMapManager(
         maps.findById(id)?.let {
             updater(it)
             maps.save(it)
+            notifyReload(it)
+        }
+    }
+
+    private suspend fun notifyReload(map: MindustryMap) {
+        if (map.servers.isNotEmpty()) {
+            messenger.publish(MapReloadMessage(map.servers))
         }
     }
 }

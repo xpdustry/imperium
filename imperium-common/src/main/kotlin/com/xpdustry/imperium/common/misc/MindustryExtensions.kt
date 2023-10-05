@@ -15,19 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.misc
+package com.xpdustry.imperium.common.misc
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
+import java.awt.Color
 
-class MindustryExtensionsTest {
+val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
 
-    @Test
-    fun `test mindustry color strip`() {
-        Assertions.assertEquals("Hello World", "[#ff0000]Hello World".stripMindustryColors())
-        Assertions.assertEquals("Hello ", "[#ff0000]Hello [World]".stripMindustryColors())
-        Assertions.assertEquals("Hello [World]", "[#ff0000]Hello [[World]".stripMindustryColors())
-        Assertions.assertEquals("Hello World", "[red]Hello []World".stripMindustryColors())
-        Assertions.assertEquals("[ ]", "[][[[Hello] [World]]".stripMindustryColors())
+fun CharSequence.stripMindustryColors(): String {
+    val out = StringBuilder(length)
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        if (char == '[') {
+            if (getOrNull(index + 1) == '[') {
+                out.append(char)
+                index += 2
+            } else {
+                while (index < length && this[index] != ']') {
+                    index++
+                }
+                index++
+            }
+        } else {
+            out.append(char)
+            index++
+        }
     }
+    return out.toString()
 }

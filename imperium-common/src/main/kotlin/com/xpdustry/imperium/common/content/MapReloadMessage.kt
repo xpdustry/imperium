@@ -15,31 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.misc
+package com.xpdustry.imperium.common.content
 
-import java.awt.Color
+import com.xpdustry.imperium.common.message.Message
 
-val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
-
-fun CharSequence.stripMindustryColors(): String {
-    val out = StringBuilder(length)
-    var index = 0
-    while (index < length) {
-        val char = this[index]
-        if (char == '[') {
-            if (getOrNull(index + 1) == '[') {
-                out.append(char)
-                index += 2
-            } else {
-                while (index < length && this[index] != ']') {
-                    index++
-                }
-                index++
-            }
-        } else {
-            out.append(char)
-            index++
-        }
-    }
-    return out.toString()
+data class MapReloadMessage(val servers: Set<String>) : Message {
+    init { require(servers.isNotEmpty()) { "Servers must not be empty" } }
 }
