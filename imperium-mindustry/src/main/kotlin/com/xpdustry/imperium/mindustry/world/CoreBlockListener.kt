@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import cloud.commandframework.arguments.standard.IntegerArgument
-import cloud.commandframework.kotlin.extension.buildAndRegister
+import cloud.commandframework.kotlin.extension.commandBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
@@ -45,7 +45,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     private val clientCommands = instances.get<ImperiumPluginCommandManager>("client")
 
     override fun onImperiumInit() {
-        clientCommands.buildAndRegister("core") {
+        clientCommands.commandBuilder("core") {
             registerCopy("list") {
                 handler { ctx ->
                     val clusters = getManager(ctx.sender.player.team()).clusters
