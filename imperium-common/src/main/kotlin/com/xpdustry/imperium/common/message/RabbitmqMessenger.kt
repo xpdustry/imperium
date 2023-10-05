@@ -56,7 +56,6 @@ import kotlin.reflect.jvm.jvmName
 
 class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
 
-    // TODO Use json ?
     private val kryo = Kryo().apply {
         instantiatorStrategy = StdInstantiatorStrategy()
         setRegistrationRequired(false)

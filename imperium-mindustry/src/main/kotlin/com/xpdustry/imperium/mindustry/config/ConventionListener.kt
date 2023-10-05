@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.listener
+package com.xpdustry.imperium.mindustry.config
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -27,7 +27,6 @@ import fr.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import fr.xpdustry.distributor.api.scheduler.TaskHandler
 import mindustry.net.Administration
 
-// TODO Move to better package
 class ConventionListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Mindustry>()
 

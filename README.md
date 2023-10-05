@@ -65,3 +65,7 @@ Then you can start the discord bot by running `./gradlew imperium-discord:runImp
 
 > If it's the first time you run it, it will automatically download mindustry assets from GitHub,
 > this might take less than 2 minutes. (Or more if you have potato internet `;-;`)
+
+## Limitations
+
+- It will crash if you it as a local steam server.

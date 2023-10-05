@@ -31,7 +31,6 @@ data class ImperiumConfig(
     val language: Locale = Locale.ENGLISH,
     val storage: StorageConfig = StorageConfig.Minio(),
     val security: SecurityConfig = SecurityConfig(),
-    // TODO Warn when the id is 0
     val generatorId: Int = 0,
 )
 

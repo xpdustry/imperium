@@ -43,7 +43,6 @@ data class Punishment(
     enum class Type {
         FREEZE, MUTE, KICK, BAN;
 
-        // TODO Better name ?
         fun isKick() = this == KICK || this == BAN
     }
 }

@@ -68,7 +68,6 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
 private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: GatekeeperPipeline) {
     if (con.kicked) return
 
-    // TODO Add steam support
     if (con.address.startsWith("steam:")) {
         packet.uuid = con.address.substring("steam:".length)
     }
@@ -120,7 +119,6 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     val mods = packet.mods.copy()
     val missing = Vars.mods.getIncompatibility(mods)
     if (!mods.isEmpty || !missing.isEmpty) {
-        // TODO Localize this message
         // can't easily be localized since kick reasons can't have formatted text with them
         val result = StringBuilder("[accent]Incompatible mods![]\n\n")
         if (!missing.isEmpty) {

@@ -49,6 +49,12 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : ImperiumSnowflakeGenera
         Options(Options.SequenceOverflowStrategy.SPIN_WAIT),
     )
 
+    init {
+        if (config.generatorId == 0) {
+            logger.warn("The generator-id is 0, this config needs an explicit value.")
+        }
+    }
+
     override suspend fun generate(): ImperiumSnowflake =
         withContext(ImperiumScope.MAIN.coroutineContext) { generator.next() }
 
@@ -58,5 +64,6 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : ImperiumSnowflakeGenera
         // The creation date of the chaotic neutral server
         internal val IMPERIUM_EPOCH = Instant.ofEpochMilli(1543879632378L)
         internal val IMPERIUM_EPOCH_OFFSET = Duration.between(Instant.EPOCH, IMPERIUM_EPOCH)
+        private val logger by LoggerDelegate()
     }
 }

@@ -33,11 +33,10 @@ import java.util.function.Consumer
 
 // TODO
 //  - Add interactive mode like the "/inspector" command ?
-//  - Move the rendering logic to a separate class ?
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val history: BlockHistory = instances.get()
-    private val clientCommandManager: ImperiumPluginCommandManager = instances.get("client")
-    private val serverCommandManager: ImperiumPluginCommandManager = instances.get("server")
+    private val history = instances.get<BlockHistory>()
+    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
+    private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
 
     override fun onImperiumInit() {
         withCommandManagers { manager ->

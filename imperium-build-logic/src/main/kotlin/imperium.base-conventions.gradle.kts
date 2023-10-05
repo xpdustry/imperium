@@ -59,7 +59,7 @@ spotless {
     }
 }
 
-// TODO Kyori enables javadoc, but we don't want that with a Kotlin project
+// Kyori enables javadoc, but we don't want that with a Kotlin project
 tasks.javadocJar {
     enabled = false
     outputs.files()

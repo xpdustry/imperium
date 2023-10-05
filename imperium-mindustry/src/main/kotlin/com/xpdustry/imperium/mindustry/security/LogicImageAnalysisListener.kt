@@ -38,6 +38,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.BlockHistory
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.Job
@@ -84,8 +85,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     // TODO Implement delegate property backed by Core.settings so it persists across restarts
     // private var debug = false
 
-    // TODO Implement player map
-    private val debugPlayers = mutableSetOf<Player>()
+    private val debugPlayers = PlayerMap<Boolean>(instances.get())
 
     override fun onImperiumInit() {
         drawerJob = startProcessing(drawerQueue)
@@ -95,11 +95,12 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             literal("debug")
             commandDescription("Show the location of the clusters")
             handler {
-                if (debugPlayers.add(it.sender.player)) {
-                    it.sender.sendMessage("Image analysis debug mode is now enabled")
-                } else {
+                if (debugPlayers[it.sender.player] == true) {
                     debugPlayers.remove(it.sender.player)
                     it.sender.sendMessage("Image analysis debug mode is now disabled")
+                } else {
+                    debugPlayers[it.sender.player] = true
+                    it.sender.sendMessage("Image analysis debug mode is now enabled")
                 }
             }
         }
@@ -109,7 +110,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                 delay(1.seconds)
                 runMindustryThread {
                     if (Vars.state.isPlaying) {
-                        for (player in debugPlayers) {
+                        for (player in debugPlayers.entries.filter { it.second }.map { it.first }) {
                             renderCluster(player, displays, Color.PINK)
                             renderCluster(player, canvases, Color.YELLOW)
                         }

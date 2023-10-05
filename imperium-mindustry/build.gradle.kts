@@ -43,7 +43,6 @@ tasks.shadowJar {
     archiveClassifier.set("plugin")
 
     /*
-
     // TODO KOTLIN RELOCATION IS BUGGY, THIS IS VERY ANNOYING (CAUSE: DOES NOT RELOCATE KOTLIN METADATA)
     doFirst {
         RelocationUtil.configureRelocation(this@shadowJar, "com.xpdustry.imperium.shadow")

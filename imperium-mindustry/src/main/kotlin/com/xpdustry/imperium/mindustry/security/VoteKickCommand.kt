@@ -53,7 +53,9 @@ import kotlin.time.Duration.Companion.minutes
 
 private val VOTEKICK_TARGET = stateKey<Player>("votekick_target")
 
-// TODO Implement Session per team for PVP
+// TODO
+//  - Implement Session per team for PVP
+//  - Implement rate limit (FIX RATELIMITER)
 class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val clientCommands = instances.get<ImperiumPluginCommandManager>("client")
     private val plugin = instances.get<MindustryPlugin>()
