@@ -62,6 +62,6 @@ class IPHubVpnDetection(config: ImperiumConfig, private val http: CoroutineHttpC
         // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
         // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
         val json = gson.fromJson(response.body(), JsonObject::class.java)
-        return VpnDetection.Result.Success(json["block"].asInt != 1)
+        return VpnDetection.Result.Success(json["block"].asInt != 0)
     }
 }
