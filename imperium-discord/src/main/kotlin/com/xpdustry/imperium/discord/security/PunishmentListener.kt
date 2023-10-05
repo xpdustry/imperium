@@ -44,7 +44,11 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { message ->
-            val (author, type, id, extra) = message
+            // TODO Implement pardon notification ?
+            if (message.type != PunishmentMessage.Type.CREATE) {
+                return@subscribe
+            }
+            val (author, _, id, extra) = message
             val punishment = punishments.findById(id)!!
             var user = punishment.target.uuid?.let { users.findByUuid(it) }
             if (user == null) {
@@ -56,7 +60,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 .setColor(Color.RED)
                 .setTitle("Punishment `${id.toBase62()}`")
                 .addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
-                .addField("Type", type.toString(), true)
+                .addField("Type", punishment.type.toString(), true)
                 .addField("Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)
                 .addField("Reason", punishment.reason, false)
             if (extra is PunishmentMessage.Extra.Nsfw) {
@@ -65,7 +69,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             when (author) {
                 is Identity.Discord -> embed.setAuthor(discord.api.getUserById(author.id).await())
                 is Identity.Mindustry -> embed.setAuthor(author.name)
-                null -> embed.setAuthor("**SYSTEM**")
+                null -> embed.setAuthor("SYSTEM")
             }
 
             val channel = discord.getMainServer().getTextChannelById(config.channels.notifications).getOrNull()

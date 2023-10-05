@@ -41,6 +41,7 @@ data class Punishment(
     data class Target(val address: InetAddress, val uuid: MindustryUUID? = null)
     data class Pardon(val timestamp: Instant, val reason: String)
     enum class Type {
+        // TODO Implement Freeze
         FREEZE, MUTE, KICK, BAN;
 
         fun isKick() = this == KICK || this == BAN

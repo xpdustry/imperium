@@ -68,7 +68,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             ?: throw IllegalStateException("Map submission channel not found")
 
         val message = MessageBuilder()
-            .addAttachment(map.url, map.fileName)
+            .addAttachment(map.asInputStream(), map.fileName)
             .addEmbed(
                 EmbedBuilder()
                     .setColor(MINDUSTRY_ACCENT_COLOR)
@@ -147,6 +147,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 actor.message.embeds.first()
                     .toBuilder()
                     .addField("Reviewer", actor.user.mentionTag)
+                    // Avoids the image expiring, I think...
+                    .setImage(actor.message.embeds.first().image.get().url.toString())
                     .setColor(color),
             )
             .removeAllComponents()

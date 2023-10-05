@@ -77,8 +77,9 @@ internal class SimpleLogicImageAnalysis(
                             .putObject("unsafe/${hashed._id.toHexString()}.png", MoreImageIO.createInputStream(image))
                     }
                     result.unsafe to hashed._id
+                } else {
+                    result.unsafe to null
                 }
-                result.unsafe to null
             }
             is ImageAnalysis.Result.Failure -> {
                 logger.error("Failed to analyze image: {}", result.message)

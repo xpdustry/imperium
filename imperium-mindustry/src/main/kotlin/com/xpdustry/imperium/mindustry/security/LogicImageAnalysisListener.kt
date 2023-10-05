@@ -315,7 +315,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                 logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
                 val (unsafe, entry) = analyzer.isUnsafe(element.value.blocks)
                 if (unsafe) {
-                    logger.debug("Cluster ({}, {}) is unsafe (entry={}). Destroying", element.value.x, element.value.y, entry)
+                    logger.debug("Cluster ({}, {}) is unsafe (entry={}). Destroying.", element.value.x, element.value.y, entry)
 
                     runMindustryThread {
                         for (block in element.value.blocks) {

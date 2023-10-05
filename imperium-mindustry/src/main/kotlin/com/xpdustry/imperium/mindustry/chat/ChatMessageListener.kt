@@ -27,10 +27,18 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.toBase62
+import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.argument.PlayerArgument
+import fr.xpdustry.distributor.api.util.Priority
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
@@ -42,14 +50,32 @@ import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline: ChatMessagePipeline = instances.get()
-    private val clientCommandManager: ImperiumPluginCommandManager = instances.get("client")
+    private val pipeline = instances.get<ChatMessagePipeline>()
+    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
+    private val punishments = instances.get<PunishmentManager>()
 
     override fun onImperiumInit() {
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
             if (con.player == null || packet.message == null) return@handleServer
             interceptChatMessage(con.player, packet.message, pipeline)
+        }
+
+        pipeline.register("mute", Priority.HIGH) { ctx ->
+            val muted = punishments.findAllByAddress(ctx.sender.ip().toInetAddress())
+                .filter { !it.expired && it.type == Punishment.Type.MUTE }.firstOrNull()
+            if (muted != null) {
+                if (ctx.target == ctx.sender) {
+                    ctx.sender.showInfoMessage(
+                        """
+                        [scarlet]You can't talk. You are currently muted for '${muted.reason}'.
+                        [orange]You can appeal this decision with the punishment id [cyan]${muted._id.toBase62()}[].
+                        """.trimIndent(),
+                    )
+                }
+                return@register ""
+            }
+            ctx.message
         }
 
         clientCommandManager.buildAndRegister("t") {
@@ -64,6 +90,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     if (target.team() != it.sender.player.team()) return@each
                     ImperiumScope.MAIN.launch {
                         val result = pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
+                        if (result.isBlank()) return@launch
                         runMindustryThread {
                             target.sendMessage(
                                 "[#${sender.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender, result)}",
@@ -88,6 +115,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
                 ImperiumScope.MAIN.launch {
                     val result = pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
+                    if (result.isBlank()) return@launch
                     runMindustryThread {
                         target.sendMessage(
                             "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender, result)}",
@@ -147,6 +175,7 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
     (Groups.player.toList() + listOf(null)).forEach { target ->
         ImperiumScope.MAIN.launch {
             val result = pipeline.pump(ChatMessageContext(sender, target, filtered))
+            if (result.isBlank()) return@launch
             runMindustryThread {
                 target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
                 if (target == null) {
