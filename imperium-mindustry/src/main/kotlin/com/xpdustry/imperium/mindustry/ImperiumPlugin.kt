@@ -21,9 +21,9 @@ import arc.Application
 import arc.ApplicationListener
 import arc.Core
 import arc.util.CommandHandler
+import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
-import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener

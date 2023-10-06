@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.common.application
 
 import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.misc.ExitStatus
 
 interface ImperiumApplication {
     val instances: InstanceManager

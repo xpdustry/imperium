@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.common.account
 
+import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
-import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.security.Identity
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach

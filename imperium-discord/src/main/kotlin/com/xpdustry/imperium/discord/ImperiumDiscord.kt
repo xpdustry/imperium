@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.discord
 
+import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.ExitStatus
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.bridge.BridgeListener
 import com.xpdustry.imperium.discord.interaction.button.ButtonManager
