@@ -23,7 +23,5 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import javax.imageio.ImageIO
 
-object MoreImageIO {
-    fun createInputStream(image: BufferedImage, format: String = "png"): InputStream =
-        ByteArrayInputStream(ByteArrayOutputStream().also { ImageIO.write(image, format, it) }.toByteArray())
-}
+fun BufferedImage.inputStream(format: String = "png"): InputStream =
+    ByteArrayInputStream(ByteArrayOutputStream().also { ImageIO.write(this, format, it) }.toByteArray())

@@ -74,7 +74,7 @@ internal class SimpleLogicImageAnalysis(
                     launch {
                         collection.save(hashed)
                         storage.getBucket("imperium-image-analysis", create = true)!!
-                            .putObject("unsafe/${hashed._id.toHexString()}.png", MoreImageIO.createInputStream(image))
+                            .putObject("unsafe/${hashed._id.toHexString()}.png", image.inputStream())
                     }
                     result.unsafe to hashed._id
                 } else {
