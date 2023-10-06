@@ -33,9 +33,9 @@ import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.database.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.database.snowflake.SimpleSnowflakeGenerator
 import com.xpdustry.imperium.common.database.snowflake.SnowflakeGenerator
-import com.xpdustry.imperium.common.image.GoogleImageAnalysis
 import com.xpdustry.imperium.common.image.ImageAnalysis
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
+import com.xpdustry.imperium.common.image.SightEngineImageAnalysis
 import com.xpdustry.imperium.common.image.SimpleLogicImageAnalysis
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
@@ -54,8 +54,7 @@ import com.xpdustry.imperium.common.storage.MinioStorage
 import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
-import java.nio.file.Path
-import kotlin.io.path.exists
+import okhttp3.OkHttpClient
 
 fun commonModule() = module("common") {
     single(ImperiumConfigFactory())
@@ -119,18 +118,17 @@ fun commonModule() = module("common") {
     single<ImageAnalysis> {
         when (val config = get<ImperiumConfig>().security.imageAnalysis) {
             is SecurityConfig.ImageAnalysis.None -> ImageAnalysis.Noop
-            is SecurityConfig.ImageAnalysis.Google -> {
-                val file = get<Path>("directory").resolve("google-credentials.json")
-                if (!file.exists()) {
-                    error("Google credentials file not found")
-                }
-                GoogleImageAnalysis(file, config)
-            }
+            is SecurityConfig.ImageAnalysis.SightEngine -> SightEngineImageAnalysis(config, get())
         }
     }
 
     single<LogicImageAnalysis> {
         SimpleLogicImageAnalysis(get(), get(), get())
+    }
+
+    // TODO Customize this
+    single<OkHttpClient> {
+        OkHttpClient()
     }
 
     single<SnowflakeGenerator> {

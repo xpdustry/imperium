@@ -69,7 +69,8 @@ internal class SimpleLogicImageAnalysis(
         val image = createImage(blocks)
         when (val result = detection.isUnsafe(image)) {
             is ImageAnalysis.Result.Success -> {
-                if (result.confidence > 0) {
+                // TODO Embed details in hash
+                if (result.details.values.any { it > 0F }) {
                     val hashed = HashedLogicImage(unsafe = result.unsafe, hashes = hashes)
                     launch {
                         collection.save(hashed)

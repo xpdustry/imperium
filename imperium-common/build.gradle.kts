@@ -14,7 +14,6 @@ dependencies {
     }
     api(libs.slf4j.api)
     api(libs.password4j)
-    api(libs.kryo)
     api(libs.rabbitmq.client)
     api(libs.minio)
     api(libs.snowflake.id)
@@ -22,8 +21,6 @@ dependencies {
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.jdk8)
-
-    api(libs.google.cloud.vision)
 
     testApi(libs.slf4j.simple)
     testApi(libs.kotlinx.coroutines.test)

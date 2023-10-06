@@ -17,15 +17,8 @@
  */
 package com.xpdustry.imperium.common.image
 
-import java.awt.image.BufferedImage
-
-interface ImageAnalysis {
-    suspend fun isUnsafe(image: BufferedImage): Result
-    object Noop : ImageAnalysis {
-        override suspend fun isUnsafe(image: BufferedImage) = Result.Success(false, emptyMap())
-    }
-    sealed interface Result {
-        data class Success(val unsafe: Boolean, val details: Map<UnsafeImageType, Float>) : Result
-        data class Failure(val message: String) : Result
-    }
+enum class UnsafeImageType {
+    NUDITY,
+    GORE,
+    OFFENSIVE,
 }

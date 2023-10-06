@@ -143,11 +143,12 @@ data class SecurityConfig(
 ) {
     sealed interface ImageAnalysis {
         data object None : ImageAnalysis
-        data class Google(
-            val threshold: Float = 0.8F,
-            val adultWeight: Float = 1F,
-            val racyWeight: Float = 1F,
-            val violenceWeight: Float = 1F,
+        data class SightEngine(
+            val sightEngineClient: String,
+            val sightEngineSecret: Secret,
+            val nudityThreshold: Float = 0.5F,
+            val goreThreshold: Float = 0.5F,
+            val offensiveThreshold: Float = 0.5F,
         ) : ImageAnalysis
     }
 }

@@ -48,11 +48,9 @@ tasks.shadowJar {
     minimize {
         exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
         exclude(dependency("org.slf4j:slf4j-.*:.*"))
+        exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
-        exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
-        exclude(dependency("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:.*"))
-        exclude(dependency("com.google.cloud:google-cloud-vision:.*"))
     }
 }
 

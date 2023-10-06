@@ -1,0 +1,89 @@
+/*
+ * Imperium, the software collection powering the Xpdustry network.
+ * Copyright (C) 2023  Xpdustry
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package com.xpdustry.imperium.common.image
+
+import com.google.gson.Gson
+import com.google.gson.JsonObject
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.SecurityConfig
+import com.xpdustry.imperium.common.misc.LoggerDelegate
+import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.awt.Color
+import java.awt.image.BufferedImage
+
+class SightEngineImageAnalysis(
+    private val config: SecurityConfig.ImageAnalysis.SightEngine,
+    private val http: OkHttpClient,
+) : ImageAnalysis, ImperiumApplication.Listener {
+    private val gson = Gson()
+
+    override suspend fun isUnsafe(image: BufferedImage): ImageAnalysis.Result {
+        val upload = if (image.type != BufferedImage.TYPE_INT_RGB) {
+            BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB).apply {
+                createGraphics().apply { drawImage(image, 0, 0, Color.BLACK, null) }.dispose()
+            }
+        } else {
+            image
+        }
+        val bytes = withContext(ImperiumScope.IO.coroutineContext) {
+            upload.inputStream("jpg").readAllBytes()
+        }
+        val request = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("api_user", config.sightEngineClient)
+            .addFormDataPart("api_secret", config.sightEngineSecret.value)
+            .addFormDataPart("models", "nudity-2.0,offensive,gore")
+            .addFormDataPart("media", "image.jpg", bytes.toRequestBody("image/jpeg".toMediaTypeOrNull(), 0, bytes.size))
+            .build()
+
+        val response = withContext(ImperiumScope.IO.coroutineContext) {
+            http.newCall(Request.Builder().url("https://api.sightengine.com/1.0/check.json").post(request).build()).execute()
+        }
+
+        val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
+        if (json["status"].asString != "success") {
+            return ImageAnalysis.Result.Failure("SightEngine API returned error: ${json["error"]}")
+        }
+
+        logger.trace("SightEngine response: {}", json)
+
+        val explicitNudityFields = listOf("sexual_activity", "sexual_display", "sextoy", "erotica")
+        val nudity = json["nudity"].asJsonObject.let { obj -> explicitNudityFields.maxOf { obj[it].asFloat } }
+        val offensive = json["offensive"].asJsonObject["prob"].asFloat
+        val gore = json["gore"].asJsonObject["prob"].asFloat
+
+        return ImageAnalysis.Result.Success(
+            nudity >= config.nudityThreshold || offensive >= config.offensiveThreshold || gore >= config.goreThreshold,
+            mapOf(
+                UnsafeImageType.NUDITY to nudity,
+                UnsafeImageType.OFFENSIVE to offensive,
+                UnsafeImageType.GORE to gore,
+            ),
+        )
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
+    }
+}

@@ -62,7 +62,7 @@ tasks.shadowJar {
 
     mergeServiceFiles()
     minimize {
-        exclude(dependency("com.google.cloud:google-cloud-vision:.*"))
+        exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
     }
 }
 
