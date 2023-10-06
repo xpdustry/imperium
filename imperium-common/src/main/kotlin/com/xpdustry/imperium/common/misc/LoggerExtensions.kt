@@ -24,6 +24,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.companionObject
 
 inline fun <reified T : Any> logger(): Logger = LoggerFactory.getLogger(T::class.java)
+
 fun logger(name: String): Logger = LoggerFactory.getLogger(name)
 
 // https://www.baeldung.com/kotlin/logging
