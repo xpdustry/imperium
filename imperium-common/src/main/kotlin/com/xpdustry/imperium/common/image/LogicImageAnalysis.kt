@@ -26,8 +26,7 @@ import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.toBase64
-import com.xpdustry.imperium.common.storage.S3Object
-import com.xpdustry.imperium.common.storage.Storage
+import com.xpdustry.imperium.common.storage.StorageBucket
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,13 +44,13 @@ import java.util.Arrays
 
 interface LogicImageAnalysis {
     suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Pair<Boolean, ObjectId?>
-    suspend fun findHashedImageById(id: ObjectId): Pair<HashedLogicImage, S3Object>?
+    suspend fun findHashedImageById(id: ObjectId): Pair<HashedLogicImage, StorageBucket.S3Object>?
     suspend fun updateSafetyById(id: ObjectId, unsafe: Boolean)
 }
 
 internal class SimpleLogicImageAnalysis(
     private val mongo: MongoProvider,
-    private val storage: Storage,
+    private val storage: StorageBucket,
     private val detection: ImageAnalysis,
 ) : LogicImageAnalysis, ImperiumApplication.Listener {
 
@@ -74,8 +73,7 @@ internal class SimpleLogicImageAnalysis(
                     val hashed = HashedLogicImage(unsafe = result.unsafe, hashes = hashes)
                     launch {
                         collection.save(hashed)
-                        storage.getBucket("imperium-image-analysis", create = true)!!
-                            .putObject("unsafe/${hashed._id.toHexString()}.png", image.inputStream())
+                        storage.getObject("images", "unsafe", "${hashed._id.toHexString()}.jpg").putData(image.inputStream(ImageFormat.JPG))
                     }
                     result.unsafe to hashed._id
                 } else {
@@ -89,8 +87,8 @@ internal class SimpleLogicImageAnalysis(
         }
     }
 
-    override suspend fun findHashedImageById(id: ObjectId): Pair<HashedLogicImage, S3Object>? =
-        collection.findById(id)?.let { it to storage.getBucket("imperium-image-analysis", create = true)!!.getObject("unsafe/${it._id.toHexString()}.png")!! }
+    override suspend fun findHashedImageById(id: ObjectId): Pair<HashedLogicImage, StorageBucket.S3Object>? =
+        collection.findById(id)?.let { it to storage.getObject("images", "unsafe", "${it._id.toHexString()}.jpg") }
 
     override suspend fun updateSafetyById(id: ObjectId, unsafe: Boolean) {
         collection.findById(id)?.let {

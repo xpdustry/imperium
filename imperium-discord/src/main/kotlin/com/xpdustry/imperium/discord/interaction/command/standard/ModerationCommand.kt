@@ -145,7 +145,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             return
         }
         actor.respond {
-            addAttachmentAsSpoiler(result.second.getStream(), "image.png")
+            addAttachmentAsSpoiler(result.second.getData(), "image.jpg")
             setContent(
                 buildString {
                     appendLine("**ID**: ${result.first._id.toHexString()}")

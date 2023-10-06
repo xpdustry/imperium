@@ -17,30 +17,26 @@
  */
 package com.xpdustry.imperium.common.storage
 
+import kotlinx.coroutines.flow.Flow
 import java.io.InputStream
-import java.net.URI
+import java.net.URL
 import java.time.Instant
 import kotlin.time.Duration
 
-interface Storage {
-    suspend fun getBucket(name: String, create: Boolean = false): Bucket?
-    suspend fun listBuckets(): List<Bucket>
-    suspend fun deleteBucket(name: String)
-}
+interface StorageBucket {
+    suspend fun getObject(root: String, vararg path: String): S3Object
+    suspend fun listObjects(prefix: String = "", recursive: Boolean = false): Flow<S3Object>
+    interface S3Object {
+        val name: String get() = path.last()
+        val path: List<String>
+        val fullPath: String get() = path.joinToString("/")
+        val size: Long
+        val lastModified: Instant
+        val exists: Boolean
 
-interface Bucket {
-    val name: String
-    suspend fun getObject(name: String): S3Object?
-    suspend fun putObject(name: String, stream: InputStream)
-    suspend fun listObjects(prefix: String = "", recursive: Boolean = false): List<S3Object>
-    suspend fun deleteObject(name: String)
-}
-
-interface S3Object {
-    val name: String get() = path.last()
-    val path: List<String>
-    val size: Long
-    val lastModified: Instant
-    suspend fun getStream(): InputStream
-    suspend fun getDownloadUrl(expiration: Duration): URI
+        suspend fun putData(stream: InputStream)
+        suspend fun getData(): InputStream
+        suspend fun getDownloadUrl(expiration: Duration): URL
+        suspend fun delete()
+    }
 }

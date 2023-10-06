@@ -23,5 +23,17 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import javax.imageio.ImageIO
 
-fun BufferedImage.inputStream(format: String = "png"): InputStream =
-    ByteArrayInputStream(ByteArrayOutputStream().also { ImageIO.write(this, format, it) }.toByteArray())
+enum class ImageFormat {
+    PNG, JPG
+}
+
+fun BufferedImage.inputStream(format: ImageFormat = ImageFormat.PNG): InputStream {
+    var image = this
+    if (format == ImageFormat.JPG && this.type != BufferedImage.TYPE_INT_RGB) {
+        image = BufferedImage(this.width, this.height, BufferedImage.TYPE_INT_RGB)
+        image.createGraphics().apply { drawImage(this@inputStream, 0, 0, null) }.dispose()
+    }
+    return ByteArrayInputStream(
+        ByteArrayOutputStream().also { ImageIO.write(image, format.name.lowercase(), it) }.toByteArray(),
+    )
+}

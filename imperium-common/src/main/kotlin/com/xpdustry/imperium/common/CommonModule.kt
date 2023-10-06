@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
 import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.SecurityConfig
+import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MongoMindustryMapManager
@@ -48,8 +49,8 @@ import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.MongoBanManager
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.storage.MinioStorage
-import com.xpdustry.imperium.common.storage.Storage
+import com.xpdustry.imperium.common.storage.MinioStorageBucket
+import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
 import okhttp3.OkHttpClient
@@ -82,8 +83,10 @@ fun commonModule() = module("common") {
         RabbitmqMessenger(get(), get())
     }
 
-    single<Storage> {
-        MinioStorage(get(), get())
+    single<StorageBucket> {
+        when (val config = get<ImperiumConfig>().storage) {
+            is StorageConfig.Minio -> MinioStorageBucket(config, get())
+        }
     }
 
     single {

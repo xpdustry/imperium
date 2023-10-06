@@ -212,9 +212,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .addField("Difficulty", maps.computeAverageDifficultyByMap(map._id).name.lowercase())
                     .addField("Servers", if (map.servers.isEmpty()) "`none`" else map.servers.joinToString(", "))
                     .setImage(
-                        content.getMapMetadataWithPreview(
-                            maps.getMapObject(map._id)!!.getStream(),
-                        ).getOrThrow().second,
+                        content.getMapMetadataWithPreview(maps.getMapObject(map._id).getData()).getOrThrow().second,
                     ),
             )
             addComponents(
@@ -227,9 +225,10 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private suspend fun onMapDownload(actor: InteractionActor.Button) {
         val url = actor.message.embeds.first().getFieldValue("Identifier")
             ?.let { maps.getMapObject(ObjectId(it)) }
+            ?.takeIf { it.exists }
             ?.getDownloadUrl(1.hours)
 
-        if (url == null) {
+        if (url === null) {
             actor.respond("Failed to get download url")
             return
         }

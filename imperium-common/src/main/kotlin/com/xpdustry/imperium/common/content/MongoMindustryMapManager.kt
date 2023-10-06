@@ -27,8 +27,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.storage.S3Object
-import com.xpdustry.imperium.common.storage.Storage
+import com.xpdustry.imperium.common.storage.StorageBucket
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -42,7 +41,7 @@ import kotlin.math.roundToInt
 
 internal class MongoMindustryMapManager(
     private val mongo: MongoProvider,
-    private val storage: Storage,
+    private val storage: StorageBucket,
     private val messenger: Messenger,
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
@@ -110,19 +109,19 @@ internal class MongoMindustryMapManager(
     override suspend fun deleteMapById(id: ObjectId): Boolean {
         val map = maps.findById(id) ?: return false
         maps.deleteById(id)
-        storage.getBucket("imperium-maps", create = true)!!.deleteObject("pool/${map._id}.msav")
+        storage.getObject("maps", "pool", map._id.toHexString() + ".msav").delete()
         notifyReload(map)
         return true
     }
 
     override suspend fun saveMap(map: MindustryMap, stream: InputStream) {
         maps.save(map)
-        storage.getBucket("imperium-maps", create = true)!!.putObject("pool/${map._id}.msav", stream)
+        storage.getObject("maps", "pool", map._id.toHexString() + ".msav").putData(stream)
         notifyReload(map)
     }
 
-    override suspend fun getMapObject(map: ObjectId): S3Object? =
-        storage.getBucket("imperium-maps", create = true)!!.getObject("pool/$map.msav")
+    override suspend fun getMapObject(map: ObjectId): StorageBucket.S3Object =
+        storage.getObject("maps", "pool", "$map.msav")
 
     override suspend fun updateMapById(id: ObjectId, updater: suspend MindustryMap.() -> Unit) {
         maps.findById(id)?.let {

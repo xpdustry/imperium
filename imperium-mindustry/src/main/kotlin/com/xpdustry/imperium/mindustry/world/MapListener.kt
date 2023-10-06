@@ -108,7 +108,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (file.notExists()) {
             logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map._id.toHexString())
             file.outputStream().use { output ->
-                maps.getMapObject(map._id)!!.getStream().use { input -> input.copyTo(output) }
+                maps.getMapObject(map._id).getData().use { input -> input.copyTo(output) }
             }
         }
         logger.debug("Loaded map {} (id={}) from server pool.", map.name, map._id.toHexString())

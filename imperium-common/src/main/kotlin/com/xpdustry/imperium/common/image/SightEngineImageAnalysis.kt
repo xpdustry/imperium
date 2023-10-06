@@ -29,7 +29,6 @@ import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.awt.Color
 import java.awt.image.BufferedImage
 
 class SightEngineImageAnalysis(
@@ -39,15 +38,8 @@ class SightEngineImageAnalysis(
     private val gson = Gson()
 
     override suspend fun isUnsafe(image: BufferedImage): ImageAnalysis.Result {
-        val upload = if (image.type != BufferedImage.TYPE_INT_RGB) {
-            BufferedImage(image.width, image.height, BufferedImage.TYPE_INT_RGB).apply {
-                createGraphics().apply { drawImage(image, 0, 0, Color.BLACK, null) }.dispose()
-            }
-        } else {
-            image
-        }
         val bytes = withContext(ImperiumScope.IO.coroutineContext) {
-            upload.inputStream("jpg").readAllBytes()
+            image.inputStream(ImageFormat.JPG).readAllBytes()
         }
         val request = MultipartBody.Builder()
             .setType(MultipartBody.FORM)
