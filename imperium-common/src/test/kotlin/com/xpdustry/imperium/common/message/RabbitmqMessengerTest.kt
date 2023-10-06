@@ -62,7 +62,7 @@ class RabbitmqMessengerTest {
     }
 
     @Test
-    fun `test simple pubsub`() = runTest {
+    fun `test pubsub simple`() = runTest {
         val message = TestMessage("Hello World!")
         val deferred = CompletableDeferred<TestMessage>()
         messenger1.subscribe<TestMessage> {
@@ -80,7 +80,7 @@ class RabbitmqMessengerTest {
     }
 
     @Test
-    fun `test custom subject`() = runTest {
+    fun `test pubsub superclasses`() = runTest {
         val message1 = TestSealedMessage.Number(69)
         val message2 = TestSealedMessage.Text("Hello World!")
         val deferred1 = CompletableDeferred<TestSealedMessage.Number>()
@@ -119,7 +119,7 @@ class RabbitmqMessengerTest {
     }
 
     @Test
-    fun `test local publish`() = runTest {
+    fun `test pubsub local`() = runTest {
         val message = LocalTestMessage("Hello World!")
         val deferred1 = CompletableDeferred<LocalTestMessage>()
         val deferred2 = CompletableDeferred<LocalTestMessage>()
@@ -136,7 +136,7 @@ class RabbitmqMessengerTest {
             }
         }
 
-        Assertions.assertTrue(messenger1.publish(message))
+        Assertions.assertTrue(messenger1.publish(message, local = true))
         val result1 = withContext(ImperiumScope.MAIN.coroutineContext) {
             withTimeout(3.seconds) {
                 deferred1.await()
@@ -154,13 +154,11 @@ class RabbitmqMessengerTest {
 
     data class TestMessage(val content: String) : Message
 
-    @Message.Options(subject = "test-subject")
     sealed interface TestSealedMessage : Message {
         data class Number(val number: Int) : TestSealedMessage
         data class Text(val text: String) : TestSealedMessage
     }
 
-    @Message.Options(local = true)
     data class LocalTestMessage(val content: String) : Message
 
     companion object {

@@ -17,10 +17,8 @@
  */
 package com.xpdustry.imperium.common.message
 
-import com.esotericsoftware.kryo.Kryo
-import com.esotericsoftware.kryo.io.Input
-import com.esotericsoftware.kryo.io.Output
-import com.esotericsoftware.kryo.serializers.DefaultSerializers
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
@@ -42,35 +40,18 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.objenesis.strategy.StdInstantiatorStrategy
-import java.net.Inet4Address
-import java.net.Inet6Address
-import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
-import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.isSuperclassOf
-import kotlin.reflect.full.superclasses
 import kotlin.reflect.jvm.jvmName
 
 class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
-
-    private val kryo = Kryo().apply {
-        instantiatorStrategy = StdInstantiatorStrategy()
-        setRegistrationRequired(false)
-        setAutoReset(true)
-        setOptimizedGenerics(false)
-        addDefaultSerializer(Inet4Address::class.java, InetAddressSerializer)
-        addDefaultSerializer(Inet6Address::class.java, InetAddressSerializer)
-        addDefaultSerializer(UUID::class.java, DefaultSerializers.UUIDSerializer())
-    }
-
-    private val options = mutableMapOf<KClass<out Message>, NotAnnotationOptions>()
+    private val gson = GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create()
     private val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
-
-    private lateinit var connection: Connection
     private lateinit var channel: Channel
+    private lateinit var connection: Connection
 
     override fun onImperiumInit() {
         if (config.messenger !is MessengerConfig.RabbitMQ) {
@@ -101,21 +82,30 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         connection.close()
     }
 
-    override suspend fun <M : Message> publish(message: M) = withContext(ImperiumScope.IO.coroutineContext) {
+    override suspend fun <M : Message> publish(message: M, local: Boolean) = withContext(ImperiumScope.IO.coroutineContext) {
         try {
-            if (getOptions(message::class).local) {
-                @Suppress("UNCHECKED_CAST")
-                (flows[message::class]?.inner as MutableSharedFlow<M>?)?.emit(message)
+            if (local) {
+                handleIncomingMessage(message)
             }
-            channel.basicPublish(
-                IMPERIUM_EXCHANGE,
-                getOptions(message::class).subject,
-                AMQP.BasicProperties.Builder().headers(mapOf(SENDER_HEADER to metadata.identifier.toString())).build(),
-                Output(MAX_OBJECT_SIZE).also { kryo.writeClassAndObject(it, message) }.toBytes(),
-            )
+            val bytes = gson.toJson(message).toByteArray()
+            forEachMessageSuperclass(message::class) {
+                channel.basicPublish(
+                    IMPERIUM_EXCHANGE,
+                    it.jvmName,
+                    AMQP.BasicProperties.Builder()
+                        .headers(
+                            mapOf(
+                                SENDER_HEADER to metadata.identifier.toString(),
+                                JAVA_CLASS_HEADER to message::class.jvmName,
+                            ),
+                        )
+                        .build(),
+                    bytes,
+                )
+            }
             true
         } catch (e: Exception) {
-            logger.error("Failed to publish ${getOptions(message::class).subject} message", e)
+            logger.error("Failed to publish ${message::class.simpleName ?: message::class.jvmName} message", e)
             false
         }
     }
@@ -124,12 +114,9 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         @Suppress("UNCHECKED_CAST")
         val flow = flows.getOrPut(type) {
             val queue = channel.queueDeclare().queue
-            channel.queueBind(queue, IMPERIUM_EXCHANGE, getOptions(type).subject)
-            FlowWithCTag(
-                MutableSharedFlow<M>(),
-                channel.basicConsume(queue, true, RabbitmqFlowAdapter(type)),
-            )
-        } as FlowWithCTag<out M>
+            channel.queueBind(queue, IMPERIUM_EXCHANGE, type.jvmName)
+            FlowWithCTag(channel.basicConsume(queue, true, RabbitmqAdapter(type)))
+        } as FlowWithCTag<M>
         return flow.inner
             .onEach { listener.onMessage(it) }
             .onCompletion { onFlowComplete(type) }
@@ -141,74 +128,94 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         if (flow != null && flow.inner.subscriptionCount.value == 0) {
             flows.remove(type)
             try {
-                channel.basicCancel(flow.cTag)
+                channel.basicCancel(flow.tag)
             } catch (e: Exception) {
-                logger.error("Failed to delete queue for ${getOptions(type).subject}", e)
+                logger.error("Failed to delete queue for ${type.simpleName ?: type.jvmName}", e)
             }
         }
     }
 
-    private fun getOptions(type: KClass<out Message>): NotAnnotationOptions {
-        var result: NotAnnotationOptions?
-        var parent = type
-
-        while (Message::class.isSuperclassOf(parent)) {
-            result = options[parent]
-            if (result != null) {
-                options[type] = result
-                return result
-            }
-
-            result = parent.findAnnotation<Message.Options>()?.let { NotAnnotationOptions(it.subject, it.local) }
-            if (result != null) {
-                options[type] = result
-                return result
-            }
-
-            @Suppress("UNCHECKED_CAST")
-            parent = parent.superclasses.first() as KClass<out Message>
-        }
-
-        result = NotAnnotationOptions(type.jvmName, false)
-        options[type] = result
-        return result
+    private class FlowWithCTag<T : Message>(val tag: String) {
+        val inner = MutableSharedFlow<T>()
     }
 
-    private data class FlowWithCTag<T : Message>(val inner: MutableSharedFlow<T>, val cTag: String)
-
-    private inner class RabbitmqFlowAdapter<T : Message>(private val type: KClass<T>) : Consumer {
+    private inner class RabbitmqAdapter<T : Message>(private val type: KClass<T>) : Consumer {
         override fun handleConsumeOk(consumerTag: String) = Unit
         override fun handleRecoverOk(consumerTag: String) = Unit
         override fun handleCancelOk(consumerTag: String) = Unit
         override fun handleCancel(consumerTag: String) =
-            logger.error("Consumer for ${getOptions(type).subject} has been unexpectedly cancelled")
+            logger.error("Consumer for ${type.simpleName ?: type.jvmName} has been unexpectedly cancelled")
         override fun handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) {
-            if (!sig.isInitiatedByApplication) logger.error("Consumer for ${getOptions(type).subject} has been shut down unexpectedly", sig)
+            if (!sig.isInitiatedByApplication) {
+                logger.error("Consumer for ${type.simpleName ?: type.jvmName} has been shut down unexpectedly", sig)
+            }
         }
-        override fun handleDelivery(consumerTag: String, envelope: Envelope, properties: AMQP.BasicProperties, body: ByteArray) {
+        override fun handleDelivery(
+            consumerTag: String,
+            envelope: Envelope,
+            properties: AMQP.BasicProperties,
+            body: ByteArray,
+        ) = runBlocking {
             // Have to call toString() because it's wrapped in another object
             val sender = properties.headers[SENDER_HEADER]?.toString()
             if (sender == null) {
-                logger.warn("Received ${getOptions(type).subject} message without sender header from $envelope")
-            } else if (sender == metadata.identifier.toString()) {
-                return
-            } else if (body.isEmpty()) {
-                logger.warn("Received empty ${getOptions(type).subject} message from $sender")
-            } else if (body.size > MAX_OBJECT_SIZE) {
-                logger.warn("Received ${getOptions(type).subject} message from $sender that is too large: ${body.size} bytes")
-            } else {
-                runBlocking {
-                    try {
-                        val message = Input(body).use { input -> kryo.readClassAndObject(input) }
-                        if (!type.isInstance(message)) {
-                            return@runBlocking
-                        }
-                        @Suppress("UNCHECKED_CAST")
-                        (flows[type]?.inner as MutableSharedFlow<T>?)?.emit(message as T)
-                    } catch (e: Exception) {
-                        logger.error("Failed to handle ${getOptions(type).subject} message from $sender", e)
-                    }
-                }
+                logger.warn("Received ${type.simpleName ?: type.jvmName} message without sender header from $envelope")
+                return@runBlocking
+            }
+            if (sender == metadata.identifier.toString()) {
+                return@runBlocking
+            }
+
+            if (body.isEmpty()) {
+                logger.warn("Received empty ${type.simpleName ?: type.jvmName} message from $sender")
+                return@runBlocking
+            }
+            if (body.size > MAX_OBJECT_SIZE) {
+                logger.warn("Received ${type.simpleName ?: type.jvmName} message from $sender that is too large: ${body.size} bytes")
+                return@runBlocking
+            }
+
+            val klassName = properties.headers[JAVA_CLASS_HEADER]?.toString()
+            if (klassName == null) {
+                logger.warn("Received ${type.simpleName ?: type.jvmName} message without Java class header from $sender")
+                return@runBlocking
+            }
+            val klass = try {
+                Class.forName(klassName, true, this@RabbitmqMessenger::class.java.classLoader).kotlin
+            } catch (e: ClassNotFoundException) {
+                logger.trace("Received ${type.simpleName ?: type.jvmName} message with unknown Java class from $sender: $klassName")
+                return@runBlocking
+            }
+            if (!type.isSuperclassOf(klass)) {
+                logger.warn("Received ${type.simpleName ?: type.jvmName} message with an unexpected Java superclass from $sender: $klassName")
+                return@runBlocking
+            }
+
+            val parsed = try {
+                gson.fromJson<T>(body.decodeToString(), klass.java)
+            } catch (e: Exception) {
+                logger.error("Failed to parse ${type.simpleName ?: type.jvmName} message from $sender", e)
+                return@runBlocking
+            }
+
+            handleIncomingMessage(parsed)
+        }
+    }
+
+    private suspend fun handleIncomingMessage(message: Message) {
+        forEachMessageSuperclass(message::class) {
+            val flow = flows[it] ?: return@forEachMessageSuperclass
+            @Suppress("UNCHECKED_CAST")
+            (flow.inner as MutableSharedFlow<Message>).emit(message)
+        }
+    }
+
+    private suspend fun forEachMessageSuperclass(klass: KClass<out Message>, callback: suspend (KClass<out Message>) -> Unit) {
+        callback(klass)
+        klass.allSuperclasses.forEach {
+            if (Message::class.isSuperclassOf(it)) {
+                @Suppress("UNCHECKED_CAST")
+                callback(it as KClass<out Message>)
             }
         }
     }
@@ -217,9 +224,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         private val logger by LoggerDelegate()
         const val IMPERIUM_EXCHANGE = "imperium"
         const val SENDER_HEADER = "Imperium-Sender"
-        const val MAX_OBJECT_SIZE = 1024 * 1024
+        const val JAVA_CLASS_HEADER = "Imperium-Java-Class"
+        const val MAX_OBJECT_SIZE = 2 * 1024 * 1024
     }
-
-    // Why kotlin... Why forcing constants for annotations...
-    data class NotAnnotationOptions(val subject: String, val local: Boolean)
 }

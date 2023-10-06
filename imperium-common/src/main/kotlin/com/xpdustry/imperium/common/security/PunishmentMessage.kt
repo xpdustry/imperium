@@ -21,7 +21,6 @@ import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.message.Message
 import org.bson.types.ObjectId
 
-@Message.Options(local = true)
 data class PunishmentMessage(val author: Identity?, val type: Type, val punishment: Snowflake, val extra: Extra) : Message {
     enum class Type {
         CREATE, PARDON

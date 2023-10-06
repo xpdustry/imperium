@@ -41,14 +41,14 @@ internal class MongoBanManager(private val generator: SnowflakeGenerator, privat
     override suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?, extra: PunishmentMessage.Extra) {
         val punishment = Punishment(generator.generate(), target, reason, type, duration)
         bans.save(punishment)
-        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id, extra))
+        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id, extra), local = true)
     }
 
     override suspend fun pardon(author: Identity?, id: Snowflake, reason: String) {
         val punishment = findById(id) ?: return
         punishment.pardon = Punishment.Pardon(Instant.now(), reason)
         bans.save(punishment)
-        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment._id, PunishmentMessage.Extra.None))
+        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment._id, PunishmentMessage.Extra.None), local = true)
     }
 
     override suspend fun findById(id: Snowflake): Punishment? =

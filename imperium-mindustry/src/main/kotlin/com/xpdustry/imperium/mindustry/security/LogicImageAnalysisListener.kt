@@ -69,6 +69,7 @@ import kotlin.time.Duration.Companion.seconds
 // TODO
 //  - Different cluster managers for different teams ?
 //  - Index blocks on map load ?
+//  - "Less dramatic destruction" - .json probably
 class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val analyzer = instances.get<LogicImageAnalysis>()
     private val history = instances.get<BlockHistory>()
