@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.mongo
+package com.xpdustry.imperium.common.database.mongo
 
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.IndexOptions
@@ -24,6 +24,7 @@ import com.mongodb.client.model.ReplaceOptions
 import com.mongodb.kotlin.client.coroutine.AggregateFlow
 import com.mongodb.kotlin.client.coroutine.FindFlow
 import com.mongodb.kotlin.client.coroutine.MongoCollection
+import com.xpdustry.imperium.common.database.Entity
 import kotlinx.coroutines.flow.firstOrNull
 import org.bson.conversions.Bson
 import kotlin.reflect.KClass

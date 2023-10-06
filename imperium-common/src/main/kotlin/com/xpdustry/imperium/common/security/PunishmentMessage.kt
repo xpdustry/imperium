@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.common.security
 
+import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.misc.Snowflake
 import org.bson.types.ObjectId
 
 @Message.Options(local = true)

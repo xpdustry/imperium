@@ -15,9 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.mongo
+package com.xpdustry.imperium.common.database.mongo
 
 import org.bson.BsonReader
+import org.bson.BsonType
 import org.bson.BsonWriter
 import org.bson.codecs.Codec
 import org.bson.codecs.DecoderContext
@@ -28,10 +29,12 @@ internal class DurationCodec : Codec<Duration> {
     override fun getEncoderClass(): Class<Duration> = Duration::class.java
 
     override fun encode(writer: BsonWriter, value: Duration, encoderContext: EncoderContext) {
-        writer.writeInt64(value.seconds)
+        writer.writeString(value.toString())
     }
 
-    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Duration {
-        return Duration.ofSeconds(reader.readInt64())
+    override fun decode(reader: BsonReader, decoderContext: DecoderContext): Duration = when (reader.currentBsonType) {
+        BsonType.STRING -> Duration.parse(reader.readString())
+        BsonType.INT64 -> Duration.ofMillis(reader.readInt64())
+        else -> throw IllegalArgumentException("Cannot decode ${reader.currentBsonType} into a Duration")
     }
 }

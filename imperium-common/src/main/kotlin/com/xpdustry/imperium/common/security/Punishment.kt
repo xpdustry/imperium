@@ -18,9 +18,9 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
-import com.xpdustry.imperium.common.misc.Snowflake
-import com.xpdustry.imperium.common.misc.timestamp
-import com.xpdustry.imperium.common.mongo.Entity
+import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.database.snowflake.Snowflake
+import com.xpdustry.imperium.common.database.snowflake.timestamp
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant

@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
-import com.xpdustry.imperium.common.misc.Snowflake
+import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import kotlinx.coroutines.flow.Flow
 import java.net.InetAddress
 import java.time.Duration

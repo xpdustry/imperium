@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.mongo
+package com.xpdustry.imperium.common.database.mongo
 
 import com.google.common.net.InetAddresses
 import org.bson.BsonReader

@@ -29,6 +29,10 @@ import com.xpdustry.imperium.common.config.SecurityConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MongoMindustryMapManager
+import com.xpdustry.imperium.common.database.mongo.MongoProvider
+import com.xpdustry.imperium.common.database.mongo.SimpleMongoProvider
+import com.xpdustry.imperium.common.database.snowflake.SimpleSnowflakeGenerator
+import com.xpdustry.imperium.common.database.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.image.GoogleImageAnalysis
 import com.xpdustry.imperium.common.image.ImageAnalysis
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
@@ -38,10 +42,6 @@ import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
-import com.xpdustry.imperium.common.misc.SimpleSnowflakeGenerator
-import com.xpdustry.imperium.common.misc.SnowflakeGenerator
-import com.xpdustry.imperium.common.mongo.MongoProvider
-import com.xpdustry.imperium.common.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.IPHubVpnDetection

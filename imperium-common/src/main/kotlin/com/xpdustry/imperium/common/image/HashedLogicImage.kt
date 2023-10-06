@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.image
 
-import com.xpdustry.imperium.common.mongo.Entity
+import com.xpdustry.imperium.common.database.Entity
 import org.bson.types.ObjectId
 
 data class HashedLogicImage(

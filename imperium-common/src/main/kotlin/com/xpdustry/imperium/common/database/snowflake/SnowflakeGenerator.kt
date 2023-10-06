@@ -15,11 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.misc
+package com.xpdustry.imperium.common.database.snowflake
 
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.misc.SimpleSnowflakeGenerator.Companion.IMPERIUM_EPOCH_OFFSET
+import com.xpdustry.imperium.common.database.snowflake.SimpleSnowflakeGenerator.Companion.IMPERIUM_EPOCH_OFFSET
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import de.mkammerer.snowflakeid.SnowflakeIdGenerator
 import de.mkammerer.snowflakeid.options.Options
 import de.mkammerer.snowflakeid.structure.Structure
