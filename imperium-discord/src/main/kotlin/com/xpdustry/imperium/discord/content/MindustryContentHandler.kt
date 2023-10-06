@@ -20,11 +20,13 @@ package com.xpdustry.imperium.discord.content
 import mindustry.game.Schematic
 import java.awt.image.BufferedImage
 import java.io.InputStream
+import java.io.OutputStream
 
 interface MindustryContentHandler {
     suspend fun getSchematic(stream: InputStream): Result<Schematic>
     suspend fun getSchematic(string: String): Result<Schematic>
     suspend fun getSchematicPreview(schematic: Schematic): Result<BufferedImage>
+    suspend fun writeSchematic(schematic: Schematic, output: OutputStream): Result<Unit>
     suspend fun getMapMetadata(stream: InputStream): Result<MapMetadata>
     suspend fun getMapMetadataWithPreview(stream: InputStream): Result<Pair<MapMetadata, BufferedImage>>
 }

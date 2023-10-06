@@ -32,11 +32,13 @@ import arc.math.Mathf
 import arc.math.geom.Point2
 import arc.mock.MockSettings
 import arc.struct.IntMap
+import arc.struct.OrderedSet
 import arc.struct.Seq
 import arc.struct.StringMap
 import arc.util.Log
 import arc.util.io.CounterInputStream
 import arc.util.io.Reads
+import arc.util.io.Writes
 import arc.util.serialization.Base64Coder
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -57,7 +59,9 @@ import mindustry.core.World
 import mindustry.ctype.ContentType
 import mindustry.entities.units.BuildPlan
 import mindustry.game.Schematic
+import mindustry.game.Schematic.Stile
 import mindustry.game.Team
+import mindustry.io.JsonIO
 import mindustry.io.MapIO
 import mindustry.io.SaveFileReader
 import mindustry.io.SaveIO
@@ -73,9 +77,11 @@ import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
+import java.io.DataOutputStream
 import java.io.File
 import java.io.IOException
 import java.io.InputStream
+import java.io.OutputStream
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -84,6 +90,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
 import java.time.temporal.ChronoUnit
+import java.util.zip.DeflaterOutputStream
 import java.util.zip.InflaterInputStream
 import java.util.zip.ZipInputStream
 import javax.imageio.ImageIO
@@ -270,12 +277,12 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
     }
 
     override suspend fun getSchematic(stream: InputStream): Result<Schematic> =
-        withContext(ImperiumScope.MAIN.coroutineContext) {
+        withContext(ImperiumScope.IO.coroutineContext) {
             getSchematic0(stream)
         }
 
     override suspend fun getSchematic(string: String): Result<Schematic> =
-        withContext(ImperiumScope.MAIN.coroutineContext) {
+        withContext(ImperiumScope.IO.coroutineContext) {
             getSchematic0(
                 try {
                     ByteArrayInputStream(Base64Coder.decode(string))
@@ -286,15 +293,16 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         }
 
     private fun getSchematic0(stream: InputStream): Result<Schematic> = runCatching {
-        val header = byteArrayOf('m'.code.toByte(), 's'.code.toByte(), 'c'.code.toByte(), 'h'.code.toByte())
-        for (b in header) {
+        for (b in SCHEMATIC_HEADER) {
             if (stream.read() != b.toInt()) {
                 throw IOException("Not a schematic file (missing header).")
             }
         }
 
-        // discard version
-        stream.read()
+        if (stream.read() != 1) {
+            throw IOException("Unsupported schematic version.")
+        }
+
         DataInputStream(InflaterInputStream(stream)).use { data ->
             val width = data.readShort()
             val height = data.readShort()
@@ -369,6 +377,42 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
                 }
 
                 image
+            }
+        }
+
+    override suspend fun writeSchematic(schematic: Schematic, output: OutputStream): Result<Unit> =
+        withContext(ImperiumScope.IO.coroutineContext) {
+            runCatching {
+                output.write(SCHEMATIC_HEADER)
+                output.write(1)
+
+                DataOutputStream(DeflaterOutputStream(output)).use { stream ->
+                    stream.writeShort(schematic.width)
+                    stream.writeShort(schematic.height)
+                    val tags = StringMap().apply { putAll(schematic.tags) }
+                    tags.put("labels", JsonIO.write(schematic.labels.toArray<Any>(String::class.java)))
+                    stream.writeByte(tags.size)
+                    for (e in tags.entries()) {
+                        stream.writeUTF(e.key)
+                        stream.writeUTF(e.value)
+                    }
+                    val blocks = OrderedSet<Block>()
+                    schematic.tiles.forEach { blocks.add(it.block) }
+
+                    // create dictionary
+                    stream.writeByte(blocks.size)
+                    for (i in 0 until blocks.size) {
+                        stream.writeUTF(blocks.orderedItems()[i].name)
+                    }
+                    stream.writeInt(schematic.tiles.size)
+                    // write each tile
+                    for (tile in schematic.tiles) {
+                        stream.writeByte(blocks.orderedItems().indexOf(tile.block))
+                        stream.writeInt(Point2.pack(tile.x.toInt(), tile.y.toInt()))
+                        TypeIO.writeObject(Writes.get(stream), tile.config)
+                        stream.writeByte(tile.rotation.toInt())
+                    }
+                }
             }
         }
 
@@ -516,5 +560,6 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         private val logger by LoggerDelegate()
         private val SCHEMATIC_PREVIEW_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
         private val MAP_PREVIEW_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+        private val SCHEMATIC_HEADER = byteArrayOf('m'.code.toByte(), 's'.code.toByte(), 'c'.code.toByte(), 'h'.code.toByte())
     }
 }
