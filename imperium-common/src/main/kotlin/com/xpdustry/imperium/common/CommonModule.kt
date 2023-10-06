@@ -38,8 +38,8 @@ import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
-import com.xpdustry.imperium.common.misc.ImperiumSnowflakeGenerator
 import com.xpdustry.imperium.common.misc.SimpleSnowflakeGenerator
+import com.xpdustry.imperium.common.misc.SnowflakeGenerator
 import com.xpdustry.imperium.common.mongo.MongoProvider
 import com.xpdustry.imperium.common.mongo.SimpleMongoProvider
 import com.xpdustry.imperium.common.network.CoroutineHttpClient
@@ -133,7 +133,7 @@ fun commonModule() = module("common") {
         SimpleLogicImageAnalysis(get(), get(), get())
     }
 
-    single<ImperiumSnowflakeGenerator> {
+    single<SnowflakeGenerator> {
         SimpleSnowflakeGenerator(get())
     }
 }

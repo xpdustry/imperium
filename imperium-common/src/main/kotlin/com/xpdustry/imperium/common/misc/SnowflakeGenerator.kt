@@ -28,19 +28,19 @@ import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
 
-typealias ImperiumSnowflake = Long
+typealias Snowflake = Long
 
 // Given the fact that the snowflake is structured as (timestamp, generatorId, sequenceId),
 // we can extract the timestamp by shifting the snowflake to the right by the number of bits used by the generatorId
 // and sequenceId, and then converting it to an Instant.
-val ImperiumSnowflake.timestamp: Instant
+val Snowflake.timestamp: Instant
     get() = Instant.ofEpochMilli(this shr (SimpleSnowflakeGenerator.STRUCTURE.generatorBits + SimpleSnowflakeGenerator.STRUCTURE.sequenceBits)).plus(IMPERIUM_EPOCH_OFFSET)
 
-interface ImperiumSnowflakeGenerator {
-    suspend fun generate(): ImperiumSnowflake
+interface SnowflakeGenerator {
+    suspend fun generate(): Snowflake
 }
 
-class SimpleSnowflakeGenerator(config: ImperiumConfig) : ImperiumSnowflakeGenerator {
+class SimpleSnowflakeGenerator(config: ImperiumConfig) : SnowflakeGenerator {
 
     private val generator = SnowflakeIdGenerator.createCustom(
         config.generatorId.toLong(),
@@ -55,15 +55,14 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : ImperiumSnowflakeGenera
         }
     }
 
-    override suspend fun generate(): ImperiumSnowflake =
+    override suspend fun generate(): Snowflake =
         withContext(ImperiumScope.MAIN.coroutineContext) { generator.next() }
 
     companion object {
-        internal val STRUCTURE = Structure(51, 8, 4)
-
         // The creation date of the chaotic neutral server
         internal val IMPERIUM_EPOCH = Instant.ofEpochMilli(1543879632378L)
         internal val IMPERIUM_EPOCH_OFFSET = Duration.between(Instant.EPOCH, IMPERIUM_EPOCH)
+        internal val STRUCTURE = Structure(51, 8, 4)
         private val logger by LoggerDelegate()
     }
 }

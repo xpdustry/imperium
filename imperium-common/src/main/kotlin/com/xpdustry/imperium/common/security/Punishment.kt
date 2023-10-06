@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
-import com.xpdustry.imperium.common.misc.ImperiumSnowflake
+import com.xpdustry.imperium.common.misc.Snowflake
 import com.xpdustry.imperium.common.misc.timestamp
 import com.xpdustry.imperium.common.mongo.Entity
 import java.net.InetAddress
@@ -26,13 +26,13 @@ import java.time.Duration
 import java.time.Instant
 
 data class Punishment(
-    override val _id: ImperiumSnowflake,
+    override val _id: Snowflake,
     var target: Target,
     var reason: String,
     val type: Type,
     var duration: Duration?,
     var pardon: Pardon? = null,
-) : Entity<ImperiumSnowflake> {
+) : Entity<Snowflake> {
     val pardoned: Boolean get() = pardon != null
     val expired: Boolean get() = pardoned || expiration < Instant.now()
     val expiration: Instant get() = duration?.let { _id.timestamp.plus(it) } ?: Instant.MAX

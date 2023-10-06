@@ -19,8 +19,8 @@ package com.xpdustry.imperium.mindustry.history
 
 import arc.math.geom.Point2
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.misc.LimitedList
 import com.xpdustry.imperium.mindustry.history.factory.CANVAS_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.factory.CommonConfigurationFactory
 import com.xpdustry.imperium.mindustry.history.factory.ITEM_BRIDGE_CONFIGURATION_FACTORY

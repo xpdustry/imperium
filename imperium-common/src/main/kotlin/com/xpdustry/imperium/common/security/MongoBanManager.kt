@@ -21,8 +21,8 @@ import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.misc.ImperiumSnowflake
-import com.xpdustry.imperium.common.misc.ImperiumSnowflakeGenerator
+import com.xpdustry.imperium.common.misc.Snowflake
+import com.xpdustry.imperium.common.misc.SnowflakeGenerator
 import com.xpdustry.imperium.common.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.mongo.MongoProvider
 import kotlinx.coroutines.flow.Flow
@@ -30,9 +30,9 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
-internal class MongoBanManager(private val generator: ImperiumSnowflakeGenerator, private val mongo: MongoProvider, private val messenger: Messenger) : PunishmentManager, ImperiumApplication.Listener {
+internal class MongoBanManager(private val generator: SnowflakeGenerator, private val mongo: MongoProvider, private val messenger: Messenger) : PunishmentManager, ImperiumApplication.Listener {
 
-    private lateinit var bans: MongoEntityCollection<Punishment, ImperiumSnowflake>
+    private lateinit var bans: MongoEntityCollection<Punishment, Snowflake>
 
     override fun onImperiumInit() {
         bans = mongo.getCollection("punishments", Punishment::class)
@@ -44,14 +44,14 @@ internal class MongoBanManager(private val generator: ImperiumSnowflakeGenerator
         messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id, extra))
     }
 
-    override suspend fun pardon(author: Identity?, id: ImperiumSnowflake, reason: String) {
+    override suspend fun pardon(author: Identity?, id: Snowflake, reason: String) {
         val punishment = findById(id) ?: return
         punishment.pardon = Punishment.Pardon(Instant.now(), reason)
         bans.save(punishment)
         messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment._id, PunishmentMessage.Extra.None))
     }
 
-    override suspend fun findById(id: ImperiumSnowflake): Punishment? =
+    override suspend fun findById(id: Snowflake): Punishment? =
         bans.findById(id)
 
     override suspend fun findAllByAddress(target: InetAddress): Flow<Punishment> =
