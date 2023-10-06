@@ -19,49 +19,38 @@ package com.xpdustry.imperium.common.network
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import java.net.InetAddress
-import java.net.http.HttpResponse
 
-class IPHubVpnDetection(config: ImperiumConfig, private val http: CoroutineHttpClient) : VpnDetection {
-
-    private val token: String? = (config.network.vpnDetection as? NetworkConfig.VpnDetectionConfig.IPHub)?.token?.value
+class IPHubVpnDetection(private val config: NetworkConfig.VpnDetectionConfig.IPHub, private val http: OkHttpClient) : VpnDetection {
     private val gson = Gson()
 
     override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
-        if (token == null) {
-            return VpnDetection.Result.RateLimited
-        }
-
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
             return VpnDetection.Result.Success(false)
         }
 
-        val response = try {
-            http.get(
-                URIBuilder("https://v2.api.iphub.info/ip/${address.hostAddress}").addParameter("key", token).build(),
-                HttpResponse.BodyHandlers.ofString(),
-            )
-        } catch (e: Exception) {
-            return VpnDetection.Result.Failure(e)
-        }
+        val url = "https://v2.api.iphub.info/ip/${address.hostAddress}".toHttpUrl()
+            .newBuilder()
+            .addQueryParameter("key", config.token.value)
+            .build()
 
-        if (response.statusCode() == 429) {
+        val response = http.newCall(Request.Builder().url(url).build()).await()
+        if (response.code == 429) {
             return VpnDetection.Result.RateLimited
         }
-
-        if (response.statusCode() != 200) {
-            return VpnDetection.Result.Failure(
-                IllegalStateException("Unexpected status code: ${response.statusCode()}"),
-            )
+        if (response.code != 200) {
+            return VpnDetection.Result.Failure(IllegalStateException("Unexpected status code: ${response.code}"))
         }
 
         // https://iphub.info/api
         // block: 0 - Residential or business IP (i.e. safe IP)
         // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
         // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
-        val json = gson.fromJson(response.body(), JsonObject::class.java)
+        val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
         return VpnDetection.Result.Success(json["block"].asInt != 0)
     }
 }

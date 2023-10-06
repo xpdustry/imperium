@@ -23,19 +23,19 @@ import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.network.CoroutineHttpClient
+import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.mindustry.processing.Processor
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.jsoup.Jsoup
 import java.io.IOException
 import java.net.InetAddress
-import java.net.URI
-import java.net.http.HttpResponse.BodyHandlers
-import kotlin.time.Duration.Companion.seconds
+import java.net.URL
 
 private val PROVIDERS = listOf<AddressProvider>(
     AzureAddressProvider(),
@@ -45,7 +45,7 @@ private val PROVIDERS = listOf<AddressProvider>(
     OracleCloudAddressProvider(),
 )
 
-class DdosGatekeeper(private val http: CoroutineHttpClient) : Processor<GatekeeperContext, GatekeeperResult> {
+class DdosGatekeeper(private val http: OkHttpClient) : Processor<GatekeeperContext, GatekeeperResult> {
 
     private val addresses: Deferred<Set<InetAddress>> = ImperiumScope.MAIN.async(start = CoroutineStart.LAZY) {
         fetchAddresses()
@@ -85,24 +85,25 @@ class DdosGatekeeper(private val http: CoroutineHttpClient) : Processor<Gatekeep
 
 private interface AddressProvider {
     val name: String
-    suspend fun fetchAddresses(http: CoroutineHttpClient): List<InetAddress>
+    suspend fun fetchAddresses(http: OkHttpClient): List<InetAddress>
 }
 
 private abstract class JsonAddressProvider protected constructor(override val name: String) : AddressProvider {
 
-    override suspend fun fetchAddresses(http: CoroutineHttpClient): List<InetAddress> {
-        val response = http.get(fetchUri(), BodyHandlers.ofInputStream(), timeout = 10.seconds)
+    override suspend fun fetchAddresses(http: OkHttpClient): List<InetAddress> {
+        val url = fetchUrl()
+        val response = http.newCall(Request.Builder().url(url).build()).await()
 
-        if (response.statusCode() != 200) {
-            throw IOException("Failed to download '$name' public addresses file (status-code: ${response.statusCode()}, uri: ${response.uri()}).")
+        if (response.code != 200) {
+            throw IOException("Failed to download '$name' public addresses file (status-code: ${response.code}, url: $url).")
         }
 
-        return response.body().reader().use { reader ->
+        return response.body!!.charStream().use { reader ->
             extractAddresses(GSON.fromJson(reader, JsonObject::class.java))
         }
     }
 
-    protected abstract suspend fun fetchUri(): URI
+    protected abstract suspend fun fetchUrl(): URL
 
     protected abstract fun extractAddresses(json: JsonObject): List<InetAddress>
 
@@ -118,13 +119,13 @@ private fun toInetAddressWithoutMask(string: String): InetAddress {
 private class AzureAddressProvider : JsonAddressProvider("Azure") {
 
     // This goofy aah hacky code 💀
-    override suspend fun fetchUri(): URI = withContext(ImperiumScope.IO.coroutineContext) {
+    override suspend fun fetchUrl(): URL = withContext(ImperiumScope.IO.coroutineContext) {
         Jsoup.connect(AZURE_PUBLIC_ADDRESSES_DOWNLOAD_LINK)
             .get()
             .select("a[href*=download.microsoft.com]")
             .map { element -> element.attr("abs:href") }
             .find { it.contains("ServiceTags_Public") }
-            ?.let { URI(it) }
+            ?.let { URL(it) }
             ?: throw IOException("Failed to find Azure public addresses download link.")
     }
 
@@ -141,18 +142,18 @@ private class AzureAddressProvider : JsonAddressProvider("Azure") {
 }
 
 private class GithubActionsAddressProvider : JsonAddressProvider("Github Actions") {
-    override suspend fun fetchUri(): URI = GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK
+    override suspend fun fetchUrl(): URL = GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> =
         json["actions"].asJsonArray.asList().map { toInetAddressWithoutMask(it.asString) }
 
     companion object {
-        private val GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK = URI("https://api.github.com/meta")
+        private val GITHUB_ACTIONS_ADDRESSES_DOWNLOAD_LINK = URL("https://api.github.com/meta")
     }
 }
 
 private class AmazonWebServicesAddressProvider : JsonAddressProvider("Amazon Web Services") {
-    override suspend fun fetchUri(): URI = AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK
+    override suspend fun fetchUrl(): URL = AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> {
         val addresses = mutableSetOf<InetAddress>()
@@ -165,13 +166,12 @@ private class AmazonWebServicesAddressProvider : JsonAddressProvider("Amazon Web
         json[name].asJsonArray.map { toInetAddressWithoutMask(it.asJsonObject[element].asString) }
 
     companion object {
-        private val AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK =
-            URI("https://ip-ranges.amazonaws.com/ip-ranges.json")
+        private val AMAZON_WEB_SERVICES_ADDRESSES_DOWNLOAD_LINK = URL("https://ip-ranges.amazonaws.com/ip-ranges.json")
     }
 }
 
 private class GoogleCloudAddressProvider : JsonAddressProvider("Google Cloud") {
-    override suspend fun fetchUri(): URI = GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK
+    override suspend fun fetchUrl(): URL = GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> =
         json["prefixes"].asJsonArray.map { extractAddress(it.asJsonObject) }
@@ -180,13 +180,12 @@ private class GoogleCloudAddressProvider : JsonAddressProvider("Google Cloud") {
         toInetAddressWithoutMask(if (json.has("ipv4Prefix")) json["ipv4Prefix"].asString else json["ipv6Prefix"].asString)
 
     companion object {
-        private val GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK =
-            URI("https://www.gstatic.com/ipranges/cloud.json")
+        private val GOOGLE_CLOUD_ADDRESSES_DOWNLOAD_LINK = URL("https://www.gstatic.com/ipranges/cloud.json")
     }
 }
 
 private class OracleCloudAddressProvider : JsonAddressProvider("Oracle Cloud") {
-    override suspend fun fetchUri(): URI = ORACLE_CLOUD_ADDRESSES_DOWNLOAD_LINK
+    override suspend fun fetchUrl(): URL = ORACLE_CLOUD_ADDRESSES_DOWNLOAD_LINK
 
     override fun extractAddresses(json: JsonObject): List<InetAddress> = json["regions"].asJsonArray
         .flatMap { it.asJsonObject["cidrs"].asJsonArray }
@@ -194,6 +193,6 @@ private class OracleCloudAddressProvider : JsonAddressProvider("Oracle Cloud") {
 
     companion object {
         private val ORACLE_CLOUD_ADDRESSES_DOWNLOAD_LINK =
-            URI("https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json")
+            URL("https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json")
     }
 }

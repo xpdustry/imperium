@@ -18,6 +18,8 @@ dependencies {
     api(libs.minio)
     api(libs.snowflake.id)
     api(libs.base32)
+    api(libs.okhttp)
+    runtimeOnly(libs.okio) // Fixes CVE in okhttp
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.jdk8)

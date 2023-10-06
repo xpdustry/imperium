@@ -42,10 +42,8 @@ import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
-import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.IPHubVpnDetection
-import com.xpdustry.imperium.common.network.SimpleCoroutineHttpClient
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.MongoBanManager
@@ -55,6 +53,8 @@ import com.xpdustry.imperium.common.storage.Storage
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
 import okhttp3.OkHttpClient
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 fun commonModule() = module("common") {
     single(ImperiumConfigFactory())
@@ -72,10 +72,9 @@ fun commonModule() = module("common") {
     }
 
     single<VpnDetection> {
-        val config = get<ImperiumConfig>().network.vpnDetection
-        when (config) {
+        when (val config = get<ImperiumConfig>().network.vpnDetection) {
             is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
-            is NetworkConfig.VpnDetectionConfig.IPHub -> IPHubVpnDetection(get(), get())
+            is NetworkConfig.VpnDetectionConfig.IPHub -> IPHubVpnDetection(config, get())
         }
     }
 
@@ -84,11 +83,7 @@ fun commonModule() = module("common") {
     }
 
     single<Storage> {
-        MinioStorage(get())
-    }
-
-    single<CoroutineHttpClient> {
-        SimpleCoroutineHttpClient(get("scheduler"))
+        MinioStorage(get(), get())
     }
 
     single {
@@ -126,9 +121,13 @@ fun commonModule() = module("common") {
         SimpleLogicImageAnalysis(get(), get(), get())
     }
 
-    // TODO Customize this
     single<OkHttpClient> {
-        OkHttpClient()
+        OkHttpClient.Builder()
+            .connectTimeout(20.seconds.toJavaDuration())
+            .connectTimeout(20.seconds.toJavaDuration())
+            .readTimeout(20.seconds.toJavaDuration())
+            .writeTimeout(20.seconds.toJavaDuration())
+            .build()
     }
 
     single<SnowflakeGenerator> {

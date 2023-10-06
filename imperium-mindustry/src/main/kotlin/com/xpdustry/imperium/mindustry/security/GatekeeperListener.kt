@@ -27,7 +27,6 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.network.CoroutineHttpClient
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -44,6 +43,7 @@ import mindustry.net.Administration.PlayerInfo
 import mindustry.net.NetConnection
 import mindustry.net.Packets
 import mindustry.net.Packets.KickReason
+import okhttp3.OkHttpClient
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
@@ -51,7 +51,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val pipeline: GatekeeperPipeline = instances.get()
     private val vpn: VpnDetection = instances.get()
     private val punishments = instances.get<PunishmentManager>()
-    private val http = instances.get<CoroutineHttpClient>()
+    private val http = instances.get<OkHttpClient>()
 
     override fun onImperiumInit() {
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http))

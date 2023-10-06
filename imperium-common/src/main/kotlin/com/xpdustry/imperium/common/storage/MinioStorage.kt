@@ -32,7 +32,6 @@ import io.minio.RemoveBucketArgs
 import io.minio.RemoveObjectArgs
 import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
-import io.minio.http.HttpUtils
 import io.minio.http.Method
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
@@ -43,37 +42,25 @@ import java.time.Instant
 import java.util.concurrent.CompletionException
 import java.util.concurrent.TimeUnit
 
-class MinioStorage(private val config: ImperiumConfig) : Storage, ImperiumApplication.Listener {
+class MinioStorage(private val config: ImperiumConfig, private val http: OkHttpClient) : Storage, ImperiumApplication.Listener {
     private lateinit var client: MinioAsyncClient
-    private lateinit var httpClient: OkHttpClient
 
     override fun onImperiumInit() {
         if (config.storage !is StorageConfig.Minio) {
             throw IllegalStateException("The current storage configuration is not Minio")
         }
-        val timeout = java.time.Duration.ofMinutes(5).toMillis()
-        httpClient = HttpUtils.newDefaultHttpClient(timeout, timeout, timeout)
         client = with(config.storage) {
             MinioAsyncClient.builder()
                 .endpoint(host, port, secure)
                 .credentials(accessKey.value, secretKey.value)
-                .httpClient(httpClient)
+                .httpClient(http)
                 .build()
         }
-
         try {
             client.listBuckets().get(10L, TimeUnit.SECONDS)
         } catch (e: Exception) {
             throw RuntimeException("Could not connect to Minio", e)
         }
-    }
-
-    override fun onImperiumExit() {
-        httpClient.dispatcher.executorService.shutdown()
-        httpClient.connectionPool.evictAll()
-        httpClient.cache?.close()
-        httpClient.dispatcher.cancelAll()
-        httpClient.dispatcher.executorService.awaitTermination(5, TimeUnit.SECONDS)
     }
 
     override suspend fun getBucket(name: String, create: Boolean): Bucket? {
