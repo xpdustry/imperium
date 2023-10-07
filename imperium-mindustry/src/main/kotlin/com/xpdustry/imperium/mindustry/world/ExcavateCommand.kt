@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import arc.graphics.Color
 import arc.math.Mathf
 import cloud.commandframework.kotlin.extension.commandBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -55,7 +56,6 @@ import kotlin.math.min
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import arc.graphics.Color as ArcColor
 
 class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
@@ -180,9 +180,10 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
                     }
                     Call.setTile(tile, Blocks.air, Team.derelict, 0)
                     Call.setFloor(tile, getFloorOfWall(block), Blocks.air)
-                    Call.effect(Fx.flakExplosion, x.toFloat() * Vars.tilesize, y.toFloat() * Vars.tilesize, 0F, ArcColor.white)
-                    Call.soundAt(Sounds.place, x.toFloat() * Vars.tilesize, y.toFloat() * Vars.tilesize, 1F, getNextPitch())
+                    Call.effect(Fx.flakExplosion, x.toFloat() * Vars.tilesize, y.toFloat() * Vars.tilesize, 0F, Color.white)
                 }
+                val cx = area.x1 + ((area.x2 - area.x1) / 2F) * Vars.tilesize
+                Call.soundAt(Sounds.place, cx, y.toFloat() * Vars.tilesize, 1F, getNextPitch())
             }
         }
         Call.sendMessage("The excavation has finished!")
