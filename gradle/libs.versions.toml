@@ -32,6 +32,7 @@ base32 = "1.1.0"
 okhttp = "4.11.0"
 # Fixes CVE in okhttp
 okio = "3.6.0"
+classgraph = "4.8.162"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -76,6 +77,7 @@ base32 = { module = "org.unbroken-dome.base62:base62", version.ref = "base32" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+classgraph = { module = "io.github.classgraph:classgraph", version.ref = "classgraph" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }

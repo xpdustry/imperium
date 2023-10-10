@@ -30,4 +30,5 @@ dependencies {
     testApi(libs.kotlinx.coroutines.test)
     testApi(libs.kotlinx.serialization.json)
     testApi(libs.mongodb.bson.kotlinx)
+    testApi(libs.classgraph)
 }
