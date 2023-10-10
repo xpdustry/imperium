@@ -15,11 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(InetAddressSerializer::class)
+
 package com.xpdustry.imperium.common.network
 
+import com.xpdustry.imperium.common.serialization.InetAddressSerializer
 import com.xpdustry.imperium.common.version.MindustryVersion
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import java.net.InetAddress
 
+@Serializable
 data class MindustryServerInfo(
     val name: String,
     val host: InetAddress,

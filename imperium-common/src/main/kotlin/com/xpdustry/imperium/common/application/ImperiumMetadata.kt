@@ -15,11 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(UUIDSerializer::class)
+
 package com.xpdustry.imperium.common.application
 
+import com.xpdustry.imperium.common.serialization.UUIDSerializer
 import com.xpdustry.imperium.common.version.ImperiumVersion
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import java.util.UUID
 
+@Serializable
 data class ImperiumMetadata(
     val platform: ImperiumPlatform = ImperiumPlatform.UNKNOWN,
     val version: ImperiumVersion = ImperiumVersion(1, 1, 1),

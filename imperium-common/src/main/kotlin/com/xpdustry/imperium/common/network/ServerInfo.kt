@@ -18,7 +18,9 @@
 package com.xpdustry.imperium.common.network
 
 import com.xpdustry.imperium.common.application.ImperiumMetadata
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ServerInfo(
     val serverName: String,
     val metadata: ImperiumMetadata,

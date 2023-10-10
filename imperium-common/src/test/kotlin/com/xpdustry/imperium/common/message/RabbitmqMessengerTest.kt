@@ -32,6 +32,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -152,13 +153,19 @@ class RabbitmqMessengerTest {
         Assertions.assertEquals(message, result2)
     }
 
+    @Serializable
     data class TestMessage(val content: String) : Message
 
+    @Serializable
     sealed interface TestSealedMessage : Message {
+        @Serializable
         data class Number(val number: Int) : TestSealedMessage
+
+        @Serializable
         data class Text(val text: String) : TestSealedMessage
     }
 
+    @Serializable
     data class LocalTestMessage(val content: String) : Message
 
     companion object {

@@ -65,10 +65,10 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 return@subscribe
             }
 
-            val text = when (message) {
-                is MindustryPlayerMessage.Join -> ":green_square: **${message.player.name}** has joined the server."
-                is MindustryPlayerMessage.Quit -> ":red_square: **${message.player.name}** has left the server."
-                is MindustryPlayerMessage.Chat -> ":blue_square: **${message.player.name}**: ${message.message}"
+            val text = when (val action = message.action) {
+                is MindustryPlayerMessage.Action.Join -> ":green_square: **${message.player.name}** has joined the server."
+                is MindustryPlayerMessage.Action.Quit -> ":red_square: **${message.player.name}** has left the server."
+                is MindustryPlayerMessage.Action.Chat -> ":blue_square: **${message.player.name}**: ${action.message}"
             }
 
             MessageBuilder()

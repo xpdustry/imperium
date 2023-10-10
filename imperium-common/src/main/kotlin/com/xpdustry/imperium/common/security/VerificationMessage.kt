@@ -15,10 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(ObjectIdSerializer::class)
+
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.serialization.ObjectIdSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.bson.types.ObjectId
 
+@Serializable
 data class VerificationMessage(val account: ObjectId, val uuid: MindustryUUID, val code: Int, val response: Boolean = false) : Message

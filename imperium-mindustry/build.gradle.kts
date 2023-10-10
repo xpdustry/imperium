@@ -20,13 +20,7 @@ toxopid {
 }
 
 dependencies {
-    api(projects.imperiumCommon) {
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib")
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
-        exclude("org.jetbrains.kotlin", "kotlin-reflect")
-        exclude("org.slf4j")
-    }
+    api(projects.imperiumCommon)
 
     mindustryDependencies()
     compileOnly(libs.distributor.api)
@@ -64,6 +58,14 @@ tasks.shadowJar {
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
     }
+}
+
+configurations.runtimeClasspath {
+    exclude("org.jetbrains.kotlin", "kotlin-stdlib")
+    exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
+    exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
+    exclude("org.jetbrains.kotlin", "kotlin-reflect")
+    exclude("org.slf4j")
 }
 
 tasks.register("getArtifactPath") {

@@ -12,7 +12,8 @@ dependencies {
     implementation(libs.toxopid)
     implementation(libs.spotless)
     implementation(libs.shadow)
-    implementation(libs.kotlin.gradle)
+    implementation(libs.kotlin.plugin.core)
+    implementation(libs.kotlin.plugin.serialization)
     implementation(libs.gradle.versions)
     // https://github.com/gradle/gradle/issues/15383#issuecomment-779893192
     implementation(files(libs.javaClass.superclass.protectionDomain.codeSource.location))

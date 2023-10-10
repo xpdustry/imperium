@@ -17,6 +17,9 @@
  */
 package com.xpdustry.imperium.common.version
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class MindustryVersion(val major: Int, val build: Int, val patch: Int, val type: Type) {
     init {
         require(major >= 0) { "Major version must be positive" }

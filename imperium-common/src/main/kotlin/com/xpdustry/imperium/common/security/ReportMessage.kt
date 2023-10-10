@@ -18,7 +18,9 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class ReportMessage(
     val serverName: String,
     val sender: Identity.Mindustry,

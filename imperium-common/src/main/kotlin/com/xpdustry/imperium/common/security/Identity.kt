@@ -15,12 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(InetAddressSerializer::class)
+
 package com.xpdustry.imperium.common.security
 
+import com.xpdustry.imperium.common.serialization.InetAddressSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import java.net.InetAddress
 
+@Serializable
 sealed interface Identity {
     val name: String
+
+    @Serializable
     data class Mindustry(override val name: String, val uuid: String, val usid: String, val address: InetAddress) : Identity
+
+    @Serializable
     data class Discord(override val name: String, val id: Long) : Identity
 }

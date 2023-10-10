@@ -23,7 +23,9 @@ dependencies {
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.jdk8)
+    api(libs.kotlinx.serialization.json)
 
     testApi(libs.slf4j.simple)
     testApi(libs.kotlinx.coroutines.test)
+    testApi(libs.kotlinx.serialization.json)
 }

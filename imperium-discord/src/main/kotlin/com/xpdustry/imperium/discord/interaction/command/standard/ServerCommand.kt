@@ -50,7 +50,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<MindustryPlayerMessage.Join> {
+        messenger.subscribe<MindustryPlayerMessage> {
+            if (it.action != MindustryPlayerMessage.Action.Join) return@subscribe
             history.computeIfAbsent(it.serverName) { LimitedList(30) }
                 .add(PlayerJoinEntry(it.player, Random.nextInt(100000..999999)))
         }

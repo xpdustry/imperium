@@ -15,18 +15,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(ObjectIdSerializer::class)
+
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.serialization.ObjectIdSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.bson.types.ObjectId
 
+@Serializable
 data class PunishmentMessage(val author: Identity?, val type: Type, val punishment: Snowflake, val extra: Extra) : Message {
     enum class Type {
         CREATE, PARDON
     }
+
+    @Serializable
     sealed interface Extra {
+        @Serializable
         data object None : Extra
+
+        @Serializable
         data class Nsfw(val entry: ObjectId) : Extra
     }
 }

@@ -1,5 +1,6 @@
 plugins {
     org.jetbrains.kotlin.jvm
+    org.jetbrains.kotlin.plugin.serialization
     net.kyori.indra
     com.diffplug.spotless
 }

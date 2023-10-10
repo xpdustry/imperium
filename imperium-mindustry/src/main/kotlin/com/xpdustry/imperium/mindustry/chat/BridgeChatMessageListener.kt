@@ -49,18 +49,18 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) = ImperiumScope.MAIN.launch {
-        messenger.publish(MindustryPlayerMessage.Join(config.server.name, event.player.identity))
+        messenger.publish(MindustryPlayerMessage(config.server.name, event.player.identity, MindustryPlayerMessage.Action.Join))
     }
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) = ImperiumScope.MAIN.launch {
-        messenger.publish(MindustryPlayerMessage.Quit(config.server.name, event.player.identity))
+        messenger.publish(MindustryPlayerMessage(config.server.name, event.player.identity, MindustryPlayerMessage.Action.Quit))
     }
 
     @EventHandler
     fun onPlayerChat(event: ProcessedPlayerChatEvent) = ImperiumScope.MAIN.launch {
         messenger.publish(
-            MindustryPlayerMessage.Chat(config.server.name, event.player.identity, Strings.stripColors(event.message)),
+            MindustryPlayerMessage(config.server.name, event.player.identity, MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message))),
         )
     }
 }

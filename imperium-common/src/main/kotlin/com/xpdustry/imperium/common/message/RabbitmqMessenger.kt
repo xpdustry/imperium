@@ -17,8 +17,6 @@
  */
 package com.xpdustry.imperium.common.message
 
-import com.google.gson.FieldNamingPolicy
-import com.google.gson.GsonBuilder
 import com.rabbitmq.client.AMQP
 import com.rabbitmq.client.BuiltinExchangeType
 import com.rabbitmq.client.Channel
@@ -40,6 +38,9 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.serializer
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
@@ -48,7 +49,6 @@ import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.jvmName
 
 class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
-    private val gson = GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create()
     private val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
     private lateinit var connection: Connection
@@ -82,12 +82,17 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
         connection.close()
     }
 
+    @OptIn(InternalSerializationApi::class)
     override suspend fun <M : Message> publish(message: M, local: Boolean) = withContext(ImperiumScope.IO.coroutineContext) {
         try {
             if (local) {
                 handleIncomingMessage(message)
             }
-            val bytes = gson.toJson(message).toByteArray()
+
+            @Suppress("UNCHECKED_CAST")
+            val json = Json.encodeToString((message::class as KClass<M>).serializer(), message)
+            logger.trace("Publishing ${message::class.simpleName ?: message::class.jvmName} message: $json")
+            val bytes = json.encodeToByteArray()
             forEachMessageSuperclass(message::class) {
                 channel.basicPublish(
                     IMPERIUM_EXCHANGE,
@@ -150,6 +155,8 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
                 logger.error("Consumer for ${type.simpleName ?: type.jvmName} has been shut down unexpectedly", sig)
             }
         }
+
+        @OptIn(InternalSerializationApi::class)
         override fun handleDelivery(
             consumerTag: String,
             envelope: Envelope,
@@ -191,13 +198,16 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
                 return@runBlocking
             }
 
+            val json = body.decodeToString()
             val parsed = try {
-                gson.fromJson<T>(body.decodeToString(), klass.java)
+                @Suppress("UNCHECKED_CAST")
+                Json.decodeFromString(klass.serializer(), body.decodeToString()) as T
             } catch (e: Exception) {
                 logger.error("Failed to parse ${type.simpleName ?: type.jvmName} message from $sender", e)
                 return@runBlocking
             }
 
+            logger.trace("Received ${type.simpleName ?: type.jvmName} message from $sender: $json")
             handleIncomingMessage(parsed)
         }
     }

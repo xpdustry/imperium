@@ -18,7 +18,9 @@
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class MapReloadMessage(val servers: Set<String>) : Message {
     init { require(servers.isNotEmpty()) { "Servers must not be empty" } }
 }

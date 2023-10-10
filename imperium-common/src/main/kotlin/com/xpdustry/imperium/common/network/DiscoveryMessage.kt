@@ -18,7 +18,9 @@
 package com.xpdustry.imperium.common.network
 
 import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class DiscoveryMessage(val info: ServerInfo, val type: Type) : Message {
     enum class Type {
         DISCOVER,
