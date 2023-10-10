@@ -31,9 +31,11 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.serialization.InetAddressCodecProvider
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.kotlinx.KotlinSerializerCodecProvider
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
@@ -80,7 +82,7 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
             }
             .codecRegistry(
                 CodecRegistries.fromProviders(
-                    CodecRegistries.fromCodecs(DurationCodec(), HashCodec()),
+                    KotlinSerializerCodecProvider(),
                     InetAddressCodecProvider,
                     MongoClientSettings.getDefaultCodecRegistry(),
                 ),

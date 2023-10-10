@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.common.account
 
+import kotlinx.serialization.Serializable
+
 enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
     ACTIVE(7, true),
     HYPER(30, true),
@@ -29,5 +31,6 @@ enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
     MONTH(30 * 24 * 60),
     ;
 
+    @Serializable
     data class Progression(var progress: Int = 0, var completed: Boolean = false)
 }

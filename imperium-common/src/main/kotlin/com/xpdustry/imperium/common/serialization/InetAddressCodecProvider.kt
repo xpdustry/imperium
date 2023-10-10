@@ -15,32 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.mongo
+package com.xpdustry.imperium.common.serialization
 
-import com.google.common.net.InetAddresses
-import org.bson.BsonReader
-import org.bson.BsonWriter
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import org.bson.codecs.Codec
-import org.bson.codecs.DecoderContext
-import org.bson.codecs.EncoderContext
 import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistry
+import org.bson.codecs.kotlinx.BsonConfiguration
+import org.bson.codecs.kotlinx.KotlinSerializerCodec
+import org.bson.codecs.kotlinx.defaultSerializersModule
 import java.net.InetAddress
+import kotlin.reflect.full.isSuperclassOf
 
 object InetAddressCodecProvider : CodecProvider {
+    @Suppress("UNCHECKED_CAST")
+    @OptIn(ExperimentalSerializationApi::class)
     override fun <T : Any> get(clazz: Class<T>, registry: CodecRegistry): Codec<T>? {
-        if (InetAddress::class.java.isAssignableFrom(clazz)) {
-            @Suppress("UNCHECKED_CAST")
-            return InetAddressCodec as Codec<T>
+        if (InetAddress::class.isSuperclassOf(clazz.kotlin)) {
+            return KotlinSerializerCodec.create(
+                clazz.kotlin,
+                InetAddressSerializer as KSerializer<T>,
+                defaultSerializersModule,
+                BsonConfiguration(),
+            )
         }
         return null
-    }
-
-    private object InetAddressCodec : Codec<InetAddress> {
-        override fun getEncoderClass(): Class<InetAddress> = InetAddress::class.java
-        override fun encode(writer: BsonWriter, value: InetAddress, encoderContext: EncoderContext) =
-            writer.writeString(value.hostAddress)
-        override fun decode(reader: BsonReader, decoderContext: DecoderContext): InetAddress =
-            InetAddresses.forString(reader.readString())
     }
 }

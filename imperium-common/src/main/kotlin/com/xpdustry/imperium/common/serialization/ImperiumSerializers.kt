@@ -24,8 +24,12 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import org.bson.codecs.kotlinx.BsonDecoder
+import org.bson.codecs.kotlinx.BsonEncoder
 import org.bson.types.ObjectId
 import java.net.InetAddress
+import java.time.Duration
+import java.time.Instant
 import java.util.UUID
 
 object InetAddressSerializer : KSerializer<InetAddress> {
@@ -42,6 +46,24 @@ object UUIDSerializer : KSerializer<UUID> {
 
 object ObjectIdSerializer : KSerializer<ObjectId> {
     override val descriptor = PrimitiveSerialDescriptor("ObjectId", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ObjectId) = encoder.encodeString(value.toString())
-    override fun deserialize(decoder: Decoder): ObjectId = ObjectId(decoder.decodeString())
+    override fun serialize(encoder: Encoder, value: ObjectId) = when (encoder) {
+        is BsonEncoder -> encoder.encodeObjectId(value)
+        else -> encoder.encodeString(value.toString())
+    }
+    override fun deserialize(decoder: Decoder): ObjectId = when (decoder) {
+        is BsonDecoder -> decoder.decodeObjectId()
+        else -> ObjectId(decoder.decodeString())
+    }
+}
+
+object JavaInstantSerializer : KSerializer<Instant> {
+    override val descriptor = PrimitiveSerialDescriptor("JavaInstant", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): Instant = Instant.parse(decoder.decodeString())
+}
+
+object JavaDurationSerializer : KSerializer<Duration> {
+    override val descriptor = PrimitiveSerialDescriptor("JavaDuration", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Duration) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): Duration = Duration.parse(decoder.decodeString())
 }

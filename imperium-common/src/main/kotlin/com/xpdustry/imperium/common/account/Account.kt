@@ -15,14 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(JavaDurationSerializer::class, JavaInstantSerializer::class, ObjectIdSerializer::class)
+
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.hash.Hash
+import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
+import com.xpdustry.imperium.common.serialization.JavaInstantSerializer
+import com.xpdustry.imperium.common.serialization.ObjectIdSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.bson.types.ObjectId
 import java.time.Duration
 import java.time.Instant
 
+@Serializable
 data class Account(
     var username: String,
     var password: Hash,
@@ -56,7 +64,9 @@ data class Account(
         OWNER,
     }
 
+    @Serializable
     data class Session(val expiration: Instant)
 
+    @Serializable
     data class Friend(var pending: Boolean)
 }

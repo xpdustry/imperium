@@ -15,14 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(JavaDurationSerializer::class, JavaInstantSerializer::class, ObjectIdSerializer::class)
+
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
+import com.xpdustry.imperium.common.serialization.JavaInstantSerializer
+import com.xpdustry.imperium.common.serialization.ObjectIdSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import org.bson.types.ObjectId
 import java.time.Duration
 import java.time.Instant
 
+@Serializable
 data class MindustryMap(
     override val _id: ObjectId = ObjectId(),
     var name: String,
@@ -36,6 +44,7 @@ data class MindustryMap(
     var lastUpdate: Instant = _id.date.toInstant(),
 ) : Entity<ObjectId>
 
+@Serializable
 data class Rating(
     override val _id: ObjectId = ObjectId(),
     var map: ObjectId,

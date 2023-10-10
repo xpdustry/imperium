@@ -18,12 +18,13 @@
 package com.xpdustry.imperium.common.hash
 
 import com.xpdustry.imperium.common.misc.toBase64
+import kotlinx.serialization.Serializable
 import java.util.Objects
 
-class Hash(hash: ByteArray, salt: ByteArray, val params: HashParams) {
-    private val _hash: ByteArray = hash.clone()
-    private val _salt: ByteArray = salt.clone()
+fun Hash(hash: ByteArray, salt: ByteArray, params: HashParams): Hash = Hash(params, hash.clone(), salt.clone())
 
+@Serializable
+class Hash internal constructor(val params: HashParams, private val _hash: ByteArray, private val _salt: ByteArray) {
     val hash: ByteArray get() = _hash.clone()
     val salt: ByteArray get() = _salt.clone()
 

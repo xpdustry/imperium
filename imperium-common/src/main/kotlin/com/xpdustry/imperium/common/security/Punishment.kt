@@ -15,16 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(JavaInstantSerializer::class, JavaDurationSerializer::class, InetAddressSerializer::class)
+
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.database.snowflake.timestamp
+import com.xpdustry.imperium.common.serialization.InetAddressSerializer
+import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
+import com.xpdustry.imperium.common.serialization.JavaInstantSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 
+@Serializable
 data class Punishment(
     override val _id: Snowflake,
     var target: Target,
@@ -38,7 +46,11 @@ data class Punishment(
     val expiration: Instant get() = duration?.let { _id.timestamp.plus(it) } ?: Instant.MAX
     val permanent: Boolean get() = duration == null
     val timestamp: Instant get() = _id.timestamp
+
+    @Serializable
     data class Target(val address: InetAddress, val uuid: MindustryUUID? = null)
+
+    @Serializable
     data class Pardon(val timestamp: Instant, val reason: String)
     enum class Type {
         // TODO Implement Freeze

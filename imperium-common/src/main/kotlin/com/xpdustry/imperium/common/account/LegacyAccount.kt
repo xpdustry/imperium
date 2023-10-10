@@ -15,14 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:UseSerializers(JavaDurationSerializer::class)
+
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.hash.Hash
+import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.UseSerializers
 import java.time.Duration
 
 typealias HashedUsername = String
 
+@Serializable
 data class LegacyAccount(
     override val _id: HashedUsername,
     var password: Hash,
