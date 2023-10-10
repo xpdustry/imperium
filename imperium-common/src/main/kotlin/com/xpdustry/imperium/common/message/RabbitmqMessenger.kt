@@ -86,28 +86,28 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
     override suspend fun <M : Message> publish(message: M, local: Boolean) = withContext(ImperiumScope.IO.coroutineContext) {
         try {
             if (local) {
-                handleIncomingMessage(message)
+                forEachMessageSuperclass(message::class) { klass ->
+                    handleIncomingMessage(klass, message)
+                }
             }
 
             @Suppress("UNCHECKED_CAST")
             val json = Json.encodeToString((message::class as KClass<M>).serializer(), message)
             logger.trace("Publishing ${message::class.simpleName ?: message::class.jvmName} message: $json")
             val bytes = json.encodeToByteArray()
-            forEachMessageSuperclass(message::class) {
-                channel.basicPublish(
-                    IMPERIUM_EXCHANGE,
-                    it.jvmName,
-                    AMQP.BasicProperties.Builder()
-                        .headers(
-                            mapOf(
-                                SENDER_HEADER to metadata.identifier.toString(),
-                                JAVA_CLASS_HEADER to message::class.jvmName,
-                            ),
-                        )
-                        .build(),
-                    bytes,
+            val properties = AMQP.BasicProperties.Builder()
+                .headers(
+                    mapOf(
+                        SENDER_HEADER to metadata.identifier.toString(),
+                        JAVA_CLASS_HEADER to message::class.jvmName,
+                    ),
                 )
+                .build()
+
+            forEachMessageSuperclass(message::class) { klass ->
+                channel.basicPublish(IMPERIUM_EXCHANGE, klass.jvmName, properties, bytes)
             }
+
             true
         } catch (e: Exception) {
             logger.error("Failed to publish ${message::class.simpleName ?: message::class.jvmName} message", e)
@@ -208,16 +208,14 @@ class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata
             }
 
             logger.trace("Received ${type.simpleName ?: type.jvmName} message from $sender: $json")
-            handleIncomingMessage(parsed)
+            handleIncomingMessage(type, parsed)
         }
     }
 
-    private suspend fun handleIncomingMessage(message: Message) {
-        forEachMessageSuperclass(message::class) {
-            val flow = flows[it] ?: return@forEachMessageSuperclass
-            @Suppress("UNCHECKED_CAST")
-            (flow.inner as MutableSharedFlow<Message>).emit(message)
-        }
+    private suspend fun <T : Message> handleIncomingMessage(klass: KClass<out T>, message: T) {
+        val flow = flows[klass] ?: return
+        @Suppress("UNCHECKED_CAST")
+        (flow.inner as MutableSharedFlow<Message>).emit(message)
     }
 
     private suspend fun forEachMessageSuperclass(klass: KClass<out Message>, callback: suspend (KClass<out Message>) -> Unit) {
