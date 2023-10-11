@@ -312,7 +312,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             }
             queue.remove()
 
-            launch {
+            launch broadcast@{
                 logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
                 val (unsafe, entry) = analyzer.isUnsafe(element.value.blocks)
                 if (unsafe) {
@@ -341,7 +341,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                             Duration.ofDays(3L),
                             extra,
                         )
-                        return@launch
+                        return@broadcast
                     }
 
                     val address = users.findByUuid(element.author)?.lastAddress
@@ -354,7 +354,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                             Duration.ofDays(3L),
                             extra,
                         )
-                        return@launch
+                        return@broadcast
                     }
 
                     logger.warn("Could not find player with UUID ${element.author}")
