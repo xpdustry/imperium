@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
+import com.xpdustry.imperium.mindustry.chat.ChatInvisibleCharactersListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
@@ -82,6 +83,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(ExcavateCommand::class)
         application.register(RockTheVoteCommand::class)
         application.register(CoreBlockListener::class)
+        application.register(ChatInvisibleCharactersListener::class)
         application.init()
     }
 
