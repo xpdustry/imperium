@@ -34,8 +34,14 @@ import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.serialization.InetAddressCodecProvider
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ExperimentalSerializationApi
+import org.bson.codecs.Codec
+import org.bson.codecs.configuration.CodecProvider
 import org.bson.codecs.configuration.CodecRegistries
-import org.bson.codecs.kotlinx.KotlinSerializerCodecProvider
+import org.bson.codecs.configuration.CodecRegistry
+import org.bson.codecs.kotlinx.BsonConfiguration
+import org.bson.codecs.kotlinx.KotlinSerializerCodec
+import org.bson.codecs.kotlinx.defaultSerializersModule
 import java.util.concurrent.TimeUnit
 import kotlin.reflect.KClass
 
@@ -50,6 +56,16 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
     override fun onImperiumInit() {
         if (config.database !is DatabaseConfig.Mongo) {
             throw IllegalStateException("The current database configuration is not Mongo")
+        }
+        @OptIn(ExperimentalSerializationApi::class)
+        val kotlinSerializationCodec = object : CodecProvider {
+            private val configuration = BsonConfiguration(
+                explicitNulls = true,
+                encodeDefaults = true,
+                classDiscriminator = "_java_class",
+            )
+            override fun <T : Any> get(clazz: Class<T>, registry: CodecRegistry): Codec<T>? =
+                KotlinSerializerCodec.create(clazz.kotlin, defaultSerializersModule, configuration)
         }
         val settings = MongoClientSettings.builder()
             .applicationName("imperium-${config.server.name}")
@@ -82,7 +98,8 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
             }
             .codecRegistry(
                 CodecRegistries.fromProviders(
-                    KotlinSerializerCodecProvider(),
+                    kotlinSerializationCodec,
+                    // The kotlin serialization codec covers InetAddress, not its subclasses directly
                     InetAddressCodecProvider,
                     MongoClientSettings.getDefaultCodecRegistry(),
                 ),

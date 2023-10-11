@@ -15,15 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:UseSerializers(JavaDurationSerializer::class)
-
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.hash.Hash
-import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
+import com.xpdustry.imperium.common.serialization.SerializableJDuration
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
 import java.time.Duration
 
 typealias HashedUsername = String
@@ -34,6 +31,6 @@ data class LegacyAccount(
     var password: Hash,
     var rank: Account.Rank = Account.Rank.NORMAL,
     var games: Int = 0,
-    var playtime: Duration = Duration.ZERO,
+    var playtime: SerializableJDuration = Duration.ZERO,
     val achievements: MutableSet<Achievement> = mutableSetOf(),
 ) : Entity<HashedUsername>

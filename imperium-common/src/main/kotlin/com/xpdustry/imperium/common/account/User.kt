@@ -15,16 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:UseSerializers(InetAddressSerializer::class, JavaInstantSerializer::class)
-
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.serialization.InetAddressSerializer
-import com.xpdustry.imperium.common.serialization.JavaInstantSerializer
+import com.xpdustry.imperium.common.serialization.SerializableInetAddress
+import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
-import java.net.InetAddress
 import java.time.Instant
 
 typealias MindustryUUID = String
@@ -34,10 +30,10 @@ typealias MindustryUSID = String
 data class User(
     override val _id: MindustryUUID,
     val names: MutableSet<String> = mutableSetOf(),
-    val addresses: MutableSet<InetAddress> = mutableSetOf(),
+    val addresses: MutableSet<SerializableInetAddress> = mutableSetOf(),
     var lastName: String? = null,
-    var lastAddress: InetAddress? = null,
+    var lastAddress: SerializableInetAddress? = null,
     var timesJoined: Int = 0,
-    var firstJoin: Instant = Instant.now(),
-    var lastJoin: Instant = Instant.now(),
+    var firstJoin: SerializableJInstant = Instant.now(),
+    var lastJoin: SerializableJInstant = Instant.now(),
 ) : Entity<MindustryUUID>

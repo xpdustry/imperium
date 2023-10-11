@@ -15,39 +15,35 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:UseSerializers(JavaDurationSerializer::class, JavaInstantSerializer::class, ObjectIdSerializer::class)
-
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
-import com.xpdustry.imperium.common.serialization.JavaInstantSerializer
-import com.xpdustry.imperium.common.serialization.ObjectIdSerializer
+import com.xpdustry.imperium.common.serialization.SerializableJDuration
+import com.xpdustry.imperium.common.serialization.SerializableJInstant
+import com.xpdustry.imperium.common.serialization.SerializableObjectId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
 import org.bson.types.ObjectId
 import java.time.Duration
-import java.time.Instant
 
 @Serializable
 data class MindustryMap(
-    override val _id: ObjectId = ObjectId(),
+    override val _id: SerializableObjectId = ObjectId(),
     var name: String,
     var description: String?,
     var author: String?,
     var width: Int,
     var height: Int,
-    var playtime: Duration = Duration.ZERO,
+    var playtime: SerializableJDuration = Duration.ZERO,
     var games: Int = 0,
     val servers: MutableSet<String> = mutableSetOf(),
-    var lastUpdate: Instant = _id.date.toInstant(),
+    var lastUpdate: SerializableJInstant = _id.date.toInstant(),
 ) : Entity<ObjectId>
 
 @Serializable
 data class Rating(
-    override val _id: ObjectId = ObjectId(),
-    var map: ObjectId,
+    override val _id: SerializableObjectId = ObjectId(),
+    var map: SerializableObjectId,
     var player: MindustryUUID,
     var score: Int,
     var difficulty: Difficulty,

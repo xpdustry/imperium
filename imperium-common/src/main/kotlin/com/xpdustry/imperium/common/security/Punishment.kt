@@ -15,21 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:UseSerializers(JavaInstantSerializer::class, JavaDurationSerializer::class, InetAddressSerializer::class)
-
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.database.snowflake.timestamp
-import com.xpdustry.imperium.common.serialization.InetAddressSerializer
-import com.xpdustry.imperium.common.serialization.JavaDurationSerializer
-import com.xpdustry.imperium.common.serialization.JavaInstantSerializer
+import com.xpdustry.imperium.common.serialization.SerializableInetAddress
+import com.xpdustry.imperium.common.serialization.SerializableJDuration
+import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
-import java.net.InetAddress
-import java.time.Duration
 import java.time.Instant
 
 @Serializable
@@ -38,7 +33,7 @@ data class Punishment(
     var target: Target,
     var reason: String,
     val type: Type,
-    var duration: Duration?,
+    var duration: SerializableJDuration?,
     var pardon: Pardon? = null,
 ) : Entity<Snowflake> {
     val pardoned: Boolean get() = pardon != null
@@ -48,10 +43,10 @@ data class Punishment(
     val timestamp: Instant get() = _id.timestamp
 
     @Serializable
-    data class Target(val address: InetAddress, val uuid: MindustryUUID? = null)
+    data class Target(val address: SerializableInetAddress, val uuid: MindustryUUID? = null)
 
     @Serializable
-    data class Pardon(val timestamp: Instant, val reason: String)
+    data class Pardon(val timestamp: SerializableJInstant, val reason: String)
     enum class Type {
         // TODO Implement Freeze
         FREEZE, MUTE, KICK, BAN;

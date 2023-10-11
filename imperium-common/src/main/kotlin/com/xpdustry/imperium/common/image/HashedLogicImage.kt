@@ -15,19 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-@file:UseSerializers(ObjectIdSerializer::class)
-
 package com.xpdustry.imperium.common.image
 
 import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.serialization.ObjectIdSerializer
+import com.xpdustry.imperium.common.serialization.SerializableObjectId
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.UseSerializers
 import org.bson.types.ObjectId
 
 @Serializable
 data class HashedLogicImage(
-    override val _id: ObjectId = ObjectId(),
+    override val _id: SerializableObjectId = ObjectId(),
     var unsafe: Boolean,
     val hashes: Set<String>,
 ) : Entity<ObjectId>

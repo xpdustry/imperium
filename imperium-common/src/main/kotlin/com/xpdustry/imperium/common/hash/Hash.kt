@@ -18,13 +18,19 @@
 package com.xpdustry.imperium.common.hash
 
 import com.xpdustry.imperium.common.misc.toBase64
+import com.xpdustry.imperium.common.serialization.ByteArrayAsBsonBinary
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.util.Objects
 
 fun Hash(hash: ByteArray, salt: ByteArray, params: HashParams): Hash = Hash(params, hash.clone(), salt.clone())
 
 @Serializable
-class Hash internal constructor(val params: HashParams, private val _hash: ByteArray, private val _salt: ByteArray) {
+class Hash internal constructor(
+    val params: HashParams,
+    @SerialName("hash") private val _hash: ByteArrayAsBsonBinary,
+    @SerialName("salt") private val _salt: ByteArrayAsBsonBinary,
+) {
     val hash: ByteArray get() = _hash.clone()
     val salt: ByteArray get() = _salt.clone()
 
@@ -35,7 +41,7 @@ class Hash internal constructor(val params: HashParams, private val _hash: ByteA
         Objects.hash(_hash.contentHashCode(), _salt.contentHashCode(), params)
 
     override fun toString() =
-        "Password(hash=${_hash.toBase64()}, salt=${_salt.toBase64()}, params=$params)"
+        "Hash(hash=${_hash.toBase64()}, salt=${_salt.toBase64()}, params=$params)"
 }
 
 // Stolen from password4j
