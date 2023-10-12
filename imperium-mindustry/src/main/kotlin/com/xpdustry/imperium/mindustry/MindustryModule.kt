@@ -29,6 +29,8 @@ import com.xpdustry.imperium.common.network.MindustryServerInfo
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
+import com.xpdustry.imperium.mindustry.command.CloudCommandRegistry
+import com.xpdustry.imperium.mindustry.command.CommandRegistry
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
@@ -43,6 +45,7 @@ import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.gen.Groups
 import mindustry.net.Administration
+import mindustry.server.ServerControl
 import java.net.InetAddress
 import java.nio.file.Path
 import java.util.concurrent.Executor
@@ -95,6 +98,14 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
     single<ServerConfig.Mindustry> {
         get<ImperiumConfig>().server as? ServerConfig.Mindustry
             ?: error("The current server configuration is not Mindustry")
+    }
+
+    single<CommandRegistry>("client") {
+        CloudCommandRegistry(plugin, Vars.netServer.clientCommands, get())
+    }
+
+    single<CommandRegistry>("server") {
+        CloudCommandRegistry(plugin, ServerControl.instance.handler, get())
     }
 }
 

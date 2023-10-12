@@ -54,6 +54,10 @@ tasks.shadowJar {
         into("META-INF")
     }
 
+    from(rootProject.fileTree("imperium-bundles")) {
+        into("com/xpdustry/imperium/bundles/")
+    }
+
     mergeServiceFiles()
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
@@ -65,6 +69,8 @@ configurations.runtimeClasspath {
     exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
     exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
     exclude("org.jetbrains.kotlin", "kotlin-reflect")
+    exclude("org.jetbrains.kotlinx", "kotlinx-coroutines-core")
+    exclude("org.jetbrains.kotlinx", "kotlinx-coroutines-jdk8")
     exclude("org.slf4j")
 }
 

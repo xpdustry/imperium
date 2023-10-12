@@ -19,23 +19,22 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.CommandHandler.ResponseType
 import arc.util.Log
-import arc.util.Strings
 import arc.util.Time
-import cloud.commandframework.arguments.standard.StringArgument
-import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.CommandRegistry
+import com.xpdustry.imperium.mindustry.command.PlayerTypeSpec
+import com.xpdustry.imperium.mindustry.command.StringTypeSpec
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.command.argument.PlayerArgument
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
@@ -51,7 +50,7 @@ import mindustry.net.ValidateException
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline = instances.get<ChatMessagePipeline>()
-    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
+    private val clientCommandRegistry = instances.get<CommandRegistry>("client")
     private val punishments = instances.get<PunishmentManager>()
 
     override fun onImperiumInit() {
@@ -59,6 +58,14 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
             if (con.player == null || packet.message == null) return@handleServer
             interceptChatMessage(con.player, packet.message, pipeline)
+        }
+
+        // I don't know why but Foo client appends invisible characters to the end of messages,
+        // this is very annoying for the discord bridge.
+        pipeline.register("anti-foo-sign", Priority.HIGHEST) { context ->
+            val msg = context.message
+            // https://github.com/mindustry-antigrief/mindustry-client/blob/23025185c20d102f3fbb9d9a4c20196cc871d94b/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
+            if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2) else msg
         }
 
         pipeline.register("mute", Priority.HIGH) { ctx ->
@@ -78,52 +85,39 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             ctx.message
         }
 
-        clientCommandManager.buildAndRegister("t") {
-            commandDescription("Send a message to your team.")
-            argument(StringArgument.greedy("message"))
-            handler {
-                val sender = it.sender.player
-                val normalized: String = Vars.netServer.admins.filterMessage(it.sender.player, it.get("message"))
-                    ?: return@handler
+        pipeline.register("mindustry-filter", Priority.HIGH) {
+            runMindustryThread {
+                Vars.netServer.admins.filterMessage(it.sender, it.message) ?: ""
+            }
+        }
 
-                Groups.player.each { target ->
-                    if (target.team() != it.sender.player.team()) return@each
-                    ImperiumScope.MAIN.launch {
-                        val result = pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
-                        if (result.isBlank()) return@launch
-                        runMindustryThread {
-                            target.sendMessage(
-                                "[#${sender.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender, result)}",
-                                sender,
-                                result,
-                            )
-                        }
-                    }
+        clientCommandRegistry.command("t") {
+            val message = argument("message", StringTypeSpec(greedy = true))
+            handler { ctx ->
+                for (target in Groups.player.toList()) {
+                    if (ctx.sender.player.team() != target.team()) continue
+                    val filtered = pipeline.pump(ChatMessageContext(ctx.sender.player, target, ctx[message]))
+                    if (filtered.isBlank()) continue
+                    target.sendMessage(
+                        "[#${ctx.sender.player.team().color}]<T> ${Vars.netServer.chatFormatter.format(ctx.sender.player, filtered)}",
+                        ctx.sender.player,
+                        filtered,
+                    )
                 }
             }
         }
 
-        clientCommandManager.buildAndRegister("w") {
-            commandDescription("Send a private message to a player.")
-            argument(PlayerArgument.of("player"))
-            argument(StringArgument.greedy("message"))
-            handler {
-                val sender = it.sender.player
-                val target = it.get<Player>("player")
-                val normalized: String = Vars.netServer.admins.filterMessage(it.sender.player, it.get("message"))
-                    ?: return@handler
-
-                ImperiumScope.MAIN.launch {
-                    val result = pipeline.pump(ChatMessageContext(it.sender.player, target, normalized))
-                    if (result.isBlank()) return@launch
-                    runMindustryThread {
-                        target.sendMessage(
-                            "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender, result)}",
-                            sender,
-                            result,
-                        )
-                    }
-                }
+        clientCommandRegistry.command("w") {
+            val target = argument("target", PlayerTypeSpec)
+            val message = argument("message", StringTypeSpec(greedy = true))
+            handler { ctx ->
+                val filtered = pipeline.pump(ChatMessageContext(ctx.sender.player, ctx[target], ctx[message]))
+                if (filtered.isBlank()) return@handler
+                ctx[target].sendMessage(
+                    "[gray]<W>[] ${Vars.netServer.chatFormatter.format(ctx.sender.player, filtered)}",
+                    ctx.sender.player,
+                    filtered,
+                )
             }
         }
     }
@@ -168,18 +162,15 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
         return
     }
 
-    val filtered = Vars.netServer.admins.filterMessage(sender, escaped)
-        ?: return
-
     // The null target represents the server, for logging and event purposes
     (Groups.player.toList() + listOf(null)).forEach { target ->
         ImperiumScope.MAIN.launch {
-            val result = pipeline.pump(ChatMessageContext(sender, target, filtered))
+            val result = pipeline.pump(ChatMessageContext(sender, target, escaped))
             if (result.isBlank()) return@launch
             runMindustryThread {
                 target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
                 if (target == null) {
-                    Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw${Strings.stripColors(result)}")
+                    Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw${result.stripMindustryColors()}")
                     DistributorProvider.get().eventBus.post(ProcessedPlayerChatEvent(sender, result))
                 }
             }

@@ -24,10 +24,11 @@ import arc.util.CommandHandler
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
-import com.xpdustry.imperium.mindustry.chat.ChatInvisibleCharactersListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
@@ -44,7 +45,9 @@ import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import fr.xpdustry.distributor.api.DistributorProvider
+import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+import java.util.Locale
 import kotlin.system.exitProcess
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
@@ -66,6 +69,20 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
     override fun onLoad() {
         application.instances.createSingletons()
+
+        val registry = LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
+        registry.registerAll(
+            Locale.ENGLISH,
+            "com/xpdustry/imperium/bundles/bundle",
+            this::class.java.classLoader,
+        )
+        registry.registerAll(
+            Locale.FRENCH,
+            "com/xpdustry/imperium/bundles/bundle",
+            this::class.java.classLoader,
+        )
+        DistributorProvider.get().globalLocalizationSource.addLocalizationSource(registry)
+
         application.register(ConventionListener::class)
         application.register(GatekeeperListener::class)
         application.register(ChatTranslatorListener::class)
@@ -83,7 +100,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(ExcavateCommand::class)
         application.register(RockTheVoteCommand::class)
         application.register(CoreBlockListener::class)
-        application.register(ChatInvisibleCharactersListener::class)
         application.init()
     }
 
