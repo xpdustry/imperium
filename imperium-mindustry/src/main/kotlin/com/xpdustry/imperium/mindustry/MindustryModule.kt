@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -29,26 +30,21 @@ import com.xpdustry.imperium.common.network.MindustryServerInfo
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
-import com.xpdustry.imperium.mindustry.command.CloudCommandRegistry
-import com.xpdustry.imperium.mindustry.command.CommandRegistry
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.MindustryCommandRegistry
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
-import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.Vars
 import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.gen.Groups
 import mindustry.net.Administration
-import mindustry.server.ServerControl
 import java.net.InetAddress
 import java.nio.file.Path
-import java.util.concurrent.Executor
 import java.util.function.Supplier
 
 fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
@@ -83,29 +79,13 @@ fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
         plugin.directory
     }
 
-    single<ImperiumPluginCommandManager>("client") {
-        plugin.clientCommandManager
-    }
-
-    single<ImperiumPluginCommandManager>("server") {
-        plugin.serverCommandManager
-    }
-
-    single<Executor>("scheduler") {
-        Executor { runnable -> DistributorProvider.get().pluginScheduler.scheduleAsync(plugin).execute(runnable) }
-    }
-
     single<ServerConfig.Mindustry> {
         get<ImperiumConfig>().server as? ServerConfig.Mindustry
             ?: error("The current server configuration is not Mindustry")
     }
 
-    single<CommandRegistry>("client") {
-        CloudCommandRegistry(plugin, Vars.netServer.clientCommands, get())
-    }
-
-    single<CommandRegistry>("server") {
-        CloudCommandRegistry(plugin, ServerControl.instance.handler, get())
+    single<CommandRegistry> {
+        MindustryCommandRegistry(get(), get(), get())
     }
 }
 

@@ -15,13 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command
+package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.CommandRegistry
+import com.xpdustry.imperium.common.command.Permission
+import com.xpdustry.imperium.common.command.annotation.Max
+import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.Permission
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -45,10 +50,11 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
 
-class SimpleCommandManager(private val discord: DiscordService) : CommandManager, ImperiumApplication.Listener {
+class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistry, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
     private val tree = CommandNode("root", parent = null)
@@ -79,7 +85,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                     return@launch
                 }
 
-                val actor = InteractionActor.Slash(event)
+                val actor = InteractionSender.Slash(event)
                 val arguments = mutableMapOf<KParameter, Any>()
 
                 try {
@@ -131,13 +137,14 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
         }
     }
 
-    override fun register(container: Any) {
-        containers.add(container)
+    override fun parse(container: Any) {
+        containers += container
     }
 
     private fun register0(container: Any) {
         for (function in container::class.memberFunctions) {
-            val command = function.findAnnotation<Command>()?.apply(Command::validate) ?: continue
+            val command = function.findAnnotation<Command>() ?: continue
+            command.validate().getOrThrow()
 
             if (!function.isSuspend) {
                 throw IllegalArgumentException("$function must be suspend")
@@ -180,7 +187,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
                     function,
                     command.permission,
                     arguments,
-                    command.ephemeral,
+                    !function.hasAnnotation<NonEphemeral>(),
                 ),
             )
         }
@@ -252,7 +259,7 @@ class SimpleCommandManager(private val discord: DiscordService) : CommandManager
     }
 
     private fun isSupportedActor(classifier: KClassifier) =
-        classifier == InteractionActor::class || classifier == InteractionActor.Slash::class
+        classifier == InteractionSender::class || classifier == InteractionSender.Slash::class
 
     companion object {
         private val logger by LoggerDelegate()

@@ -17,16 +17,13 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import cloud.commandframework.arguments.standard.IntegerArgument
-import cloud.commandframework.kotlin.extension.commandBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import com.xpdustry.imperium.mindustry.misc.registerCopy
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import mindustry.Vars
@@ -40,49 +37,43 @@ import mindustry.world.blocks.storage.CoreBlock
 // TODO
 //  - Add Core Alerts option to not interfere with other plugins
 //  - Add Core damage alerts
-class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class CoreBlockListener : ImperiumApplication.Listener {
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
-    private val clientCommands = instances.get<ImperiumPluginCommandManager>("client")
 
-    override fun onImperiumInit() {
-        clientCommands.commandBuilder("core") {
-            registerCopy("list") {
-                handler { ctx ->
-                    val clusters = getManager(ctx.sender.player.team()).clusters
-                    if (clusters.isEmpty()) {
-                        ctx.sender.sendMessage("No cores found")
-                    } else {
-                        ctx.sender.sendMessage(
-                            buildString {
-                                append("Found ${clusters.size} cores: ")
-                                for ((index, cluster) in clusters.withIndex()) {
-                                    append("\n - #${index + 1} ${cluster.x}, ${cluster.y} (${cluster.w}x${cluster.h})")
-                                }
-                            },
-                        )
-                    }
-                }
-            }
-
-            registerCopy("teleport", aliases = arrayOf("tp")) {
-                argument(IntegerArgument.builder<CommandSender>("id").withMin(1))
-                handler { ctx ->
-                    val clusters = getManager(ctx.sender.player.team()).clusters
-                    if (clusters.isEmpty()) {
-                        ctx.sender.sendMessage("No cores found")
-                    } else {
-                        val cluster = clusters.getOrNull(ctx.get<Int>("id") - 1)
-                        if (cluster == null) {
-                            ctx.sender.sendMessage("Invalid core id")
-                        } else {
-                            val core = cluster.blocks.first()
-                            Call.playerSpawn(Vars.world.tile(core.x, core.y), ctx.sender.player)
-                            ctx.sender.sendMessage("Teleported to core at ${cluster.x}, ${cluster.y}")
-                        }
-                    }
-                }
-            }
+    @Command(["core", "list"])
+    @ClientSide
+    private fun onCoreListCommand(sender: CommandSender) {
+        val clusters = getManager(sender.player.team()).clusters
+        if (clusters.isEmpty()) {
+            sender.sendMessage("No cores found")
+            return
         }
+        sender.sendMessage(
+            buildString {
+                appendLine("Found ${clusters.size} cores: ")
+                for ((index, cluster) in clusters.withIndex()) {
+                    appendLine("- #${index + 1} ${cluster.x}, ${cluster.y} (${cluster.w}x${cluster.h})")
+                }
+            },
+        )
+    }
+
+    @Command(["core", "tp"])
+    @ClientSide
+    private fun onCoreTeleportCommand(sender: CommandSender, @Min(1) id: Int) {
+        val clusters = getManager(sender.player.team()).clusters
+        if (clusters.isEmpty()) {
+            sender.sendMessage("No cores found")
+            return
+        }
+        val cluster = clusters.getOrNull(id - 1)
+        if (cluster == null) {
+            sender.sendMessage("Invalid core id")
+            return
+        }
+        val core = cluster.blocks.first()
+        Call.playerSpawn(Vars.world.tile(core.x, core.y), sender.player)
+        sender.sendMessage("Teleported to core at ${cluster.x}, ${cluster.y}")
     }
 
     @EventHandler

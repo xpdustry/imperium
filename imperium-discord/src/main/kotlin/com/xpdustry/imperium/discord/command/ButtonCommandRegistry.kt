@@ -15,13 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.button
+package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.CommandRegistry
+import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.Permission
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -30,10 +31,11 @@ import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
 
-class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, ImperiumApplication.Listener {
+class ButtonCommandRegistry(private val discord: DiscordService) : CommandRegistry, ImperiumApplication.Listener {
     private val handlers = mutableMapOf<String, ButtonHandler>()
     private val containers = mutableListOf<Any>()
 
@@ -62,7 +64,7 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
                     return@launch
                 }
 
-                val actor = InteractionActor.Button(event)
+                val actor = InteractionSender.Button(event)
                 try {
                     handler.function.callSuspend(handler.container, actor)
                 } catch (e: Exception) {
@@ -76,20 +78,16 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
         }
     }
 
-    override fun register(container: Any) {
+    override fun parse(container: Any) {
         containers += container
     }
 
     private fun register0(container: Any) {
         for (function in container::class.memberFunctions) {
-            val button = function.findAnnotation<InteractionButton>() ?: continue
+            val button = function.findAnnotation<ButtonCommand>() ?: continue
 
             if (!button.name.all { it.isLetterOrDigit() || it == '-' || it == ':' }) {
                 throw IllegalArgumentException("$function button name must be alphanumeric")
-            }
-
-            if (!function.isSuspend) {
-                throw IllegalArgumentException("$function button must be suspend")
             }
 
             if (function.parameters.size != 2 || !isSupportedActor(function.parameters[1].type.classifier!!)) {
@@ -105,13 +103,13 @@ class SimpleButtonManager(private val discord: DiscordService) : ButtonManager, 
                 container,
                 button.permission,
                 function,
-                button.ephemeral,
+                !function.hasAnnotation<NonEphemeral>(),
             )
         }
     }
 
     private fun isSupportedActor(classifier: KClassifier) =
-        classifier == InteractionActor::class || classifier == InteractionActor.Button::class
+        classifier == InteractionSender::class || classifier == InteractionSender.Button::class
 
     companion object {
         private val logger by LoggerDelegate()

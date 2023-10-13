@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -29,7 +29,7 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.ReportMessage
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
@@ -41,6 +41,7 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
+import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
@@ -54,16 +55,16 @@ private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
 //  - Implement tile reporting ?
 //  - Add rate limit warning BEFORE running the command
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
-    private val messenger = instances.get<Messenger>()
-    private val plugin = instances.get<MindustryPlugin>()
-    private val config = instances.get<ImperiumConfig>()
-    override fun onImperiumInit() {
-        val reportInterface = createReportInterface(plugin, messenger, config)
-        clientCommandManager.buildAndRegister("report") {
-            commandDescription("Report a player")
-            handler { ctx -> reportInterface.open(ctx.sender.player) }
-        }
+    private val reportInterface = createReportInterface(
+        instances.get<MindustryPlugin>(),
+        instances.get<Messenger>(),
+        instances.get<ImperiumConfig>(),
+    )
+
+    @Command(["report"])
+    @ClientSide
+    private fun onPlayerReport(sender: CommandSender) {
+        reportInterface.open(sender.player)
     }
 }
 

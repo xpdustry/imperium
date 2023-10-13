@@ -15,10 +15,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command.standard
+package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.Permission
+import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -28,10 +31,7 @@ import com.xpdustry.imperium.common.misc.toLongFromBase62
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.Permission
-import com.xpdustry.imperium.discord.interaction.command.Command
-import com.xpdustry.imperium.discord.interaction.command.Min
+import com.xpdustry.imperium.discord.command.InteractionSender
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -45,8 +45,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val users = instances.get<UserManager>()
     private val analysis = instances.get<LogicImageAnalysis>()
 
-    @Command("punishment", "list", permission = Permission.MODERATOR)
-    private suspend fun onPunishmentListCommand(actor: InteractionActor, target: String, @Min(0) page: Int = 0) {
+    @Command(["punishment", "list"], Permission.MODERATOR)
+    private suspend fun onPunishmentListCommand(actor: InteractionSender, target: String, @Min(0) page: Int = 0) {
         val flow = try {
             val address = target.toInetAddress()
             punishments.findAllByAddress(address)
@@ -82,22 +82,22 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(*embeds)
     }
 
-    @Command("kick", permission = Permission.MODERATOR)
-    private suspend fun onKickCommand(actor: InteractionActor, target: String, reason: String, duration: Duration? = null) {
+    @Command(["kick"], Permission.MODERATOR)
+    private suspend fun onKickCommand(actor: InteractionSender, target: String, reason: String, duration: Duration? = null) {
         onPunishCommand("Kicked", Punishment.Type.KICK, actor, target, reason, duration)
     }
 
-    @Command("ban", permission = Permission.MODERATOR)
-    private suspend fun onBanCommand(actor: InteractionActor, target: String, reason: String) {
+    @Command(["ban"], Permission.MODERATOR)
+    private suspend fun onBanCommand(actor: InteractionSender, target: String, reason: String) {
         onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, null)
     }
 
-    @Command("mute", permission = Permission.MODERATOR)
-    private suspend fun onMuteCommand(actor: InteractionActor, target: String, reason: String, duration: Duration? = null) {
+    @Command(["mute"], Permission.MODERATOR)
+    private suspend fun onMuteCommand(actor: InteractionSender, target: String, reason: String, duration: Duration? = null) {
         onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration)
     }
 
-    private suspend fun onPunishCommand(verb: String, type: Punishment.Type, actor: InteractionActor, target: String, reason: String, duration: Duration?) {
+    private suspend fun onPunishCommand(verb: String, type: Punishment.Type, actor: InteractionSender, target: String, reason: String, duration: Duration?) {
         val lookup = try {
             Punishment.Target(target.toInetAddress())
         } catch (e: Exception) {
@@ -113,8 +113,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("$verb user $target.")
     }
 
-    @Command("pardon", permission = Permission.MODERATOR)
-    private suspend fun onPardonCommand(actor: InteractionActor, id: String, reason: String) {
+    @Command(["pardon"], Permission.MODERATOR)
+    private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
         val snowflake = try {
             id.toLongFromBase62()
         } catch (e: Exception) {
@@ -137,8 +137,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("Pardoned user.")
     }
 
-    @Command("punishment", "nsfw", "show", permission = Permission.MODERATOR)
-    private suspend fun onPunishmentNsfwShow(actor: InteractionActor, id: ObjectId) {
+    @Command(["punishment", "nsfw", "show"], Permission.MODERATOR)
+    private suspend fun onPunishmentNsfwShow(actor: InteractionSender, id: ObjectId) {
         val result = analysis.findHashedImageById(id)
         if (result == null) {
             actor.respond("NSFW Image not found.")
@@ -156,8 +156,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         }
     }
 
-    @Command("punishment", "nsfw", "safety", permission = Permission.MODERATOR)
-    private suspend fun onPunishmentNsfwMark(actor: InteractionActor, id: ObjectId, unsafe: Boolean) {
+    @Command(["punishment", "nsfw", "safety"], Permission.MODERATOR)
+    private suspend fun onPunishmentNsfwMark(actor: InteractionSender, id: ObjectId, unsafe: Boolean) {
         val result = analysis.findHashedImageById(id)
         if (result == null) {
             actor.respond("NSFW Image not found.")

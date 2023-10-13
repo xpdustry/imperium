@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command
+package com.xpdustry.imperium.common.command.annotation
 
-interface CommandManager {
-    fun register(container: Any)
-}
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class Greedy

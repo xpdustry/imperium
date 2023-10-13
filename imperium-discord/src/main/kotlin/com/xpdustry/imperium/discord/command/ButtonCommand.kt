@@ -15,8 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.button
+package com.xpdustry.imperium.discord.command
 
-interface ButtonManager {
-    fun register(container: Any)
-}
+import com.xpdustry.imperium.common.command.Permission
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class ButtonCommand(val name: String, val permission: Permission = Permission.EVERYONE)

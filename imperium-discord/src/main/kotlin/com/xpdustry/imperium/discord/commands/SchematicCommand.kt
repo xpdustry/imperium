@@ -15,15 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command.standard
+package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.command.Command
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.io.ByteArrayInputStream
@@ -34,8 +35,9 @@ import kotlin.random.nextInt
 class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val content = instances.get<MindustryContentHandler>()
 
-    @Command("schematic", "text", ephemeral = false)
-    suspend fun onSchematicCommand(actor: InteractionActor, schematic: String) {
+    @Command(["schematic", "text"])
+    @NonEphemeral
+    suspend fun onSchematicCommand(actor: InteractionSender, schematic: String) {
         val result = content.getSchematic(schematic)
         if (result.isFailure) {
             actor.respond("Failed to parse the schematic.")
@@ -59,8 +61,9 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
         }
     }
 
-    @Command("schematic", "file", ephemeral = false)
-    suspend fun onSchematicCommand(actor: InteractionActor, file: Attachment) {
+    @Command(["schematic", "file"])
+    @NonEphemeral
+    suspend fun onSchematicCommand(actor: InteractionSender, file: Attachment) {
         if (!file.fileName.endsWith(".msch")) {
             actor.respond("Invalid schematic file!")
             return

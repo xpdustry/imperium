@@ -19,12 +19,12 @@ package com.xpdustry.imperium.mindustry.security
 
 import arc.math.geom.Point2
 import arc.struct.IntSet
-import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.findMostCommon
+import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
 import com.xpdustry.imperium.common.image.LogicImage
@@ -37,10 +37,11 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -73,7 +74,6 @@ import kotlin.time.Duration.Companion.seconds
 class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val analyzer = instances.get<LogicImageAnalysis>()
     private val history = instances.get<BlockHistory>()
-    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
     private val users = instances.get<UserManager>()
     private val punishments = instances.get<PunishmentManager>()
 
@@ -90,20 +90,6 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         drawerJob = startProcessing(drawerQueue)
         pixmapJob = startProcessing(pixmapQueue)
 
-        clientCommandManager.buildAndRegister("image-analysis") {
-            literal("debug")
-            commandDescription("Show the location of the clusters")
-            handler {
-                if (debugPlayers[it.sender.player] == true) {
-                    debugPlayers.remove(it.sender.player)
-                    it.sender.sendMessage("Image analysis debug mode is now disabled")
-                } else {
-                    debugPlayers[it.sender.player] = true
-                    it.sender.sendMessage("Image analysis debug mode is now enabled")
-                }
-            }
-        }
-
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
@@ -119,6 +105,18 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         }
     }
 
+    @Command(["image-analysis", "debug"])
+    @ClientSide
+    private fun onDebugCommand(sender: CommandSender) {
+        if (debugPlayers[sender.player] == true) {
+            debugPlayers.remove(sender.player)
+            sender.sendMessage("Image analysis debug mode is now disabled")
+        } else {
+            debugPlayers[sender.player] = true
+            sender.sendMessage("Image analysis debug mode is now enabled")
+        }
+    }
+
     override fun onImperiumExit() = runBlocking {
         drawerJob.cancel()
         pixmapJob.cancel()
@@ -126,15 +124,27 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     }
 
     private fun renderCluster(player: Player, manager: ClusterManager<*>, color: Color) {
-        for ((index, cluster) in manager.clusters.withIndex()) {
+        for ((cIndex, cluster) in manager.clusters.withIndex()) {
             for (block in cluster.blocks) {
                 Call.label(
                     player.con,
-                    "[${color.toHexString()}]C$index",
+                    "[${color.toHexString()}]C$cIndex",
                     1F,
                     block.x.toFloat() * Vars.tilesize,
                     block.y.toFloat() * Vars.tilesize,
                 )
+                val data = block.data
+                if (data is LogicImage.Drawer) {
+                    for ((dIndex, processor) in data.processors.withIndex()) {
+                        Call.label(
+                            player.con,
+                            "[${color.toHexString()}]C${cIndex}P$dIndex",
+                            1F,
+                            processor.x.toFloat() * Vars.tilesize,
+                            processor.y.toFloat() * Vars.tilesize,
+                        )
+                    }
+                }
             }
         }
     }
@@ -148,6 +158,21 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     fun onWorldLoad(event: EventType.WorldLoadEvent) {
         displays.reset()
         canvases.reset()
+    }
+
+    @EventHandler
+    fun onBlockDestroyEvent(event: EventType.BlockDestroyEvent) {
+        val building = event.tile.build
+        if (building is LogicDisplay.LogicDisplayBuild) {
+            displays.removeElement(building.rx, building.ry)
+            logger.trace("Removed display at ({}, {})", building.rx, building.ry)
+            return
+        }
+        if (building is CanvasBlock.CanvasBuild) {
+            canvases.removeElement(building.rx, building.ry)
+            logger.trace("Removed canvas at ({}, {})", building.rx, building.ry)
+            return
+        }
     }
 
     @EventHandler
@@ -182,18 +207,11 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                     ) {
                         continue
                     }
-                    val instructions = readInstructions(build.executor)
-                    if (instructions.isNotEmpty()) {
-                        processors += LogicImage.Drawer.Processor(build.rx, build.ry, instructions)
-                    }
+                    processors += LogicImage.Drawer.Processor(build.rx, build.ry, readInstructions(build.executor))
                     build.tile.getLinkedTiles {
                         covered.add(Point2.pack(it.x.toInt(), it.y.toInt()))
                     }
                 }
-            }
-
-            if (processors.isEmpty()) {
-                return
             }
 
             displays.addElement(
@@ -207,6 +225,23 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                     ),
                 ),
             )
+        }
+
+        // TODO This does not cover processors that are built then bound, but let's be honest, who does that ?
+        if (building is LogicBlock.LogicBuild) {
+            building.links.asSequence().filter { it.active }.forEach { link ->
+                val display = Vars.world.tile(link.x, link.y)?.build as? LogicDisplay.LogicDisplayBuild ?: return@forEach
+                val (cluster, block) = displays.getElement(display.rx, display.ry)!!
+                displays.removeElement(cluster.x, cluster.y)
+                val processors = block.data.processors.toMutableList()
+                if (event.breaking) {
+                    processors.removeIf { it.x == building.rx && it.y == building.ry }
+                } else {
+                    processors += LogicImage.Drawer.Processor(building.rx, building.ry, readInstructions(building.executor))
+                }
+                displays.addElement(block.copy(data = LogicImage.Drawer(block.data.resolution, processors)))
+                logger.trace("Updated display at ({}, {})", display.rx, display.ry)
+            }
         }
 
         if (building is CanvasBlock.CanvasBuild) {

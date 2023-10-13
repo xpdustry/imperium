@@ -18,9 +18,9 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.files.Fi
-import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
@@ -31,7 +31,7 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -41,9 +41,7 @@ import mindustry.Vars
 import mindustry.io.MapIO
 import mindustry.maps.Map
 import java.nio.file.Path
-import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.createDirectory
-import kotlin.io.path.deleteRecursively
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
 
@@ -51,25 +49,21 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Mindustry>()
     private val maps = instances.get<MindustryMapManager>()
     private val cache = instances.get<Path>("directory").resolve("map-pool")
-    private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
     private val messenger = instances.get<Messenger>()
 
-    @OptIn(ExperimentalPathApi::class)
     override fun onImperiumInit() {
-        cache.deleteRecursively()
-        cache.createDirectory()
-
-        serverCommandManager.buildAndRegister("reloadmaps") {
-            commandDescription("Reloads the map pool.")
-            handler { reloadMaps() }
-        }
+        if (cache.notExists()) cache.createDirectory()
 
         messenger.subscribe<MapReloadMessage> {
-            if (config.name in it.servers) {
-                reloadMaps()
-            }
+            if (config.name in it.servers) reloadMaps()
         }
 
+        reloadMaps()
+    }
+
+    @Command(["reloadmaps"])
+    @ServerSide
+    private fun onMapReloadCommand() {
         reloadMaps()
     }
 

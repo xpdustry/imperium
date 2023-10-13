@@ -15,15 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.command
+package com.xpdustry.imperium.common.command.annotation
 
-import fr.xpdustry.distributor.api.command.ArcCommandManager
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import java.util.function.Function
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class Min(val value: Long)
 
-class ImperiumPluginCommandManager(plugin: MindustryPlugin) : ArcCommandManager<CommandSender>(plugin, Function.identity(), Function.identity(), false) {
-    init {
-        setSetting(ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
-    }
-}
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class Max(val value: Long)

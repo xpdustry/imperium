@@ -15,9 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command.standard
+package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.Permission
+import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -25,12 +28,10 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.discord.command.ButtonCommand
+import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.Permission
-import com.xpdustry.imperium.discord.interaction.button.InteractionButton
-import com.xpdustry.imperium.discord.interaction.command.Command
-import com.xpdustry.imperium.discord.interaction.command.Min
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlinx.coroutines.flow.drop
@@ -56,8 +57,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
 
-    @Command("map", "submit")
-    suspend fun onSubmitCommand(actor: InteractionActor, map: Attachment, notes: String? = null) {
+    @Command(["map", "submit"])
+    suspend fun onSubmitCommand(actor: InteractionSender, map: Attachment, notes: String? = null) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")
             return
@@ -107,14 +108,14 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
     }
 
-    @InteractionButton(MAP_REJECT_BUTTON, permission = Permission.ADMINISTRATOR)
-    private suspend fun onMapReject(actor: InteractionActor.Button) {
+    @ButtonCommand(MAP_REJECT_BUTTON, Permission.ADMINISTRATOR)
+    private suspend fun onMapReject(actor: InteractionSender.Button) {
         updateSubmissionEmbed(actor, Color.RED, "rejected")
         actor.respond("Map submission rejected!")
     }
 
-    @InteractionButton(MAP_UPLOAD_BUTTON, permission = Permission.ADMINISTRATOR)
-    private suspend fun onMapUpload(actor: InteractionActor.Button) {
+    @ButtonCommand(MAP_UPLOAD_BUTTON, Permission.ADMINISTRATOR)
+    private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
         val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
 
@@ -140,7 +141,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("Map submission uploaded! The map id is `${map._id}`.")
     }
 
-    private suspend fun updateSubmissionEmbed(actor: InteractionActor.Button, color: Color, verb: String) {
+    private suspend fun updateSubmissionEmbed(actor: InteractionSender.Button, color: Color, verb: String) {
         actor.message.createUpdater()
             .removeAllEmbeds()
             .addEmbed(
@@ -166,8 +167,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             ?.await()
     }
 
-    @Command("map", "list", ephemeral = false)
-    private suspend fun onMapList(actor: InteractionActor, @Min(1) page: Int = 1, server: String? = null) {
+    @Command(["map", "list"])
+    @NonEphemeral
+    private suspend fun onMapList(actor: InteractionSender, @Min(1) page: Int = 1, server: String? = null) {
         val result = maps.findMaps(server).drop((page - 1) * 10).take(11).toCollection(mutableListOf())
         val hasMore = result.size > 11
         if (hasMore) {
@@ -191,8 +193,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(embed)
     }
 
-    @Command("map", "info", ephemeral = false)
-    private suspend fun onMapInfo(actor: InteractionActor, id: ObjectId) {
+    @Command(["map", "info"])
+    @NonEphemeral
+    private suspend fun onMapInfo(actor: InteractionSender, id: ObjectId) {
         val map = maps.findMapById(id)
         if (map == null) {
             actor.respond("Unknown map id")
@@ -221,8 +224,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @InteractionButton(MAP_DOWNLOAD_BUTTON)
-    private suspend fun onMapDownload(actor: InteractionActor.Button) {
+    @ButtonCommand(MAP_DOWNLOAD_BUTTON)
+    private suspend fun onMapDownload(actor: InteractionSender.Button) {
         val url = actor.message.embeds.first().getFieldValue("Identifier")
             ?.let { maps.getMapObject(ObjectId(it)) }
             ?.takeIf { it.exists }
@@ -236,8 +239,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
     }
 
-    @Command("map", "edit", "servers", permission = Permission.ADMINISTRATOR)
-    private suspend fun onMapServersChange(actor: InteractionActor, id: ObjectId, servers: String? = null) {
+    @Command(["map", "edit", "servers"], Permission.ADMINISTRATOR)
+    private suspend fun onMapServersChange(actor: InteractionSender, id: ObjectId, servers: String? = null) {
         if (maps.findMapById(id) == null) {
             actor.respond("Unknown map id")
             return
@@ -259,8 +262,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("Map servers updated to $list!")
     }
 
-    @Command("map", "delete", permission = Permission.ADMINISTRATOR)
-    private suspend fun onMapDelete(actor: InteractionActor, id: ObjectId) {
+    @Command(["map", "delete"], Permission.ADMINISTRATOR)
+    private suspend fun onMapDelete(actor: InteractionSender, id: ObjectId) {
         if (maps.deleteMapById(id)) {
             actor.respond("Map deleted!")
         } else {

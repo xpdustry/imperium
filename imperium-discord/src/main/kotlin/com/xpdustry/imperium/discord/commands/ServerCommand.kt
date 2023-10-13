@@ -15,22 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command.standard
+package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.User
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.collection.LimitedList
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.Permission
-import com.xpdustry.imperium.discord.interaction.command.Command
+import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.net.InetAddress
 import java.time.Instant
@@ -57,8 +58,9 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @Command("server", "list", ephemeral = false)
-    suspend fun onServerList(actor: InteractionActor) =
+    @Command(["server", "list"])
+    @NonEphemeral
+    suspend fun onServerList(actor: InteractionSender) =
         actor.respond(
             EmbedBuilder()
                 .setTitle("Server List")
@@ -66,8 +68,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
 
     // TODO Make a better system that can list joins, current and left players
-    @Command("server", "player", "joins", permission = Permission.MODERATOR)
-    suspend fun onServerPlayerJoin(actor: InteractionActor, server: String) {
+    @Command(["server", "player", "joins"], Permission.MODERATOR)
+    suspend fun onServerPlayerJoin(actor: InteractionSender, server: String) {
         val joins = history[server]
         if (joins == null) {
             actor.respond("Server not found.")
@@ -95,8 +97,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     // TODO Move into a dedicated command PlayerCommand
-    @Command("player", "info", permission = Permission.MODERATOR)
-    suspend fun onPlayerInfo(actor: InteractionActor, id: String) {
+    @Command(["player", "info"], Permission.MODERATOR)
+    suspend fun onPlayerInfo(actor: InteractionSender, id: String) {
         val user: User?
         val tid = id.toIntOrNull()
         if (tid in 100000..999999) {

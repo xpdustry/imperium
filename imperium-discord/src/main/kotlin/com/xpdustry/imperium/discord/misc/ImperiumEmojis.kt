@@ -31,7 +31,7 @@ object ImperiumEmojis {
     val WASTE_BASKET: Emoji = UnicodeEmoji("🗑️")
 
     private data class UnicodeEmoji(private val emoji: String) : Emoji {
-        override fun getMentionTag(): String = emoji
+        override fun getMentionTag() = emoji
         override fun asUnicodeEmoji() = Optional.of(emoji)
         override fun asCustomEmoji() = Optional.empty<CustomEmoji>()
         override fun asKnownCustomEmoji() = Optional.empty<KnownCustomEmoji>()

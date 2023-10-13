@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction
+package com.xpdustry.imperium.discord.command
 
 import kotlinx.coroutines.future.await
 import org.javacord.api.DiscordApi
@@ -30,7 +30,7 @@ import org.javacord.api.interaction.InteractionBase
 import org.javacord.api.interaction.SlashCommandInteraction
 import org.javacord.api.interaction.callback.ExtendedInteractionMessageBuilderBase
 
-sealed class InteractionActor {
+sealed class InteractionSender {
     val discord: DiscordApi get() = interaction.api
     val user: User get() = interaction.user
     protected abstract val interaction: InteractionBase
@@ -53,12 +53,12 @@ sealed class InteractionActor {
             .send()
             .await()
 
-    class Slash(private val event: SlashCommandCreateEvent) : InteractionActor() {
+    class Slash(private val event: SlashCommandCreateEvent) : InteractionSender() {
         val channel: TextChannel get() = event.slashCommandInteraction.channel.get()
         override val interaction: SlashCommandInteraction get() = event.slashCommandInteraction
     }
 
-    class Button(private val event: ButtonClickEvent) : InteractionActor() {
+    class Button(private val event: ButtonClickEvent) : InteractionSender() {
         val message: Message get() = event.buttonInteraction.message
         override var interaction: ButtonInteraction = event.buttonInteraction
     }

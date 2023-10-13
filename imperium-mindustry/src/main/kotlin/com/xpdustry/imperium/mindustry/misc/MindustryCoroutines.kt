@@ -29,13 +29,12 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 // https://stackoverflow.com/a/73494554
-suspend fun <T> runMindustryThread(timeout: Duration = 10.seconds, task: () -> T): T =
-    withTimeout(timeout) {
-        suspendCancellableCoroutine { continuation ->
-            DistributorProvider.get().pluginScheduler
-                .scheduleSync(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
-                .execute { _ ->
-                    runCatching(task).fold(continuation::resume, continuation::resumeWithException)
-                }
-        }
+suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T = withTimeout(timeout) {
+    suspendCancellableCoroutine { continuation ->
+        DistributorProvider.get().pluginScheduler
+            .scheduleSync(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
+            .execute { _ ->
+                runCatching(task).fold(continuation::resume, continuation::resumeWithException)
+            }
     }
+}

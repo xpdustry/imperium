@@ -19,26 +19,24 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.graphics.Color
 import arc.math.Mathf
-import cloud.commandframework.kotlin.extension.commandBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.command.SimpleVoteManager
 import com.xpdustry.imperium.mindustry.command.VoteManager
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
-import com.xpdustry.imperium.mindustry.misc.registerCopy
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.content.Fx
@@ -58,11 +56,9 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val pitchSequence = AtomicInteger(0)
     private val config = instances.get<ServerConfig.Mindustry>()
-    private lateinit var renderer: Job
     private val manager = SimpleVoteManager(
         plugin = instances.get(),
         duration = 1.minutes,
@@ -84,76 +80,80 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
         },
     )
 
-    override fun onImperiumInit() {
-        clientCommandManager.commandBuilder("excavate", aliases = arrayOf("e")) {
-            registerCopy("begin") {
-                handler { ctx ->
-                    if (areas[ctx.sender.player] != null) {
-                        ctx.sender.sendMessage("You have already started setting points!")
-                        return@handler
-                    }
-                    ctx.sender.sendMessage("You have started setting points! Tap on the first point.")
-                    areas[ctx.sender.player] = ExcavateArea()
-                }
-            }
-
-            registerCopy("start") {
-                handler { ctx ->
-                    val area = areas[ctx.sender.player]
-                    if (area == null) {
-                        ctx.sender.sendMessage("You haven't started setting points yet!")
-                        return@handler
-                    }
-                    if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
-                        ctx.sender.sendMessage("You have not set both points yet!")
-                        return@handler
-                    }
-                    if (manager.session != null) {
-                        ctx.sender.sendMessage("There is already an excavation in progress!")
-                    } else {
-                        val session = manager.start(ctx.sender.player, true, area)
-                        areas.remove(ctx.sender.player)
-                        Call.sendMessage(
-                            """
-                            ${ctx.sender.player.name} has started an excavation at between (${area.p1.x}, ${area.p1.y}) and (${area.p2.x}, ${area.p2.y})!
-                            Vote using [accent]/excavate y[] or [accent]/excavate n[]. [accent]${session.remaining}[] votes are required to pass.
-                            """.trimIndent(),
-                        )
-                    }
-                }
-            }
-
-            registerCopy("yes", aliases = arrayOf("y")) {
-                handler { ctx -> vote(ctx.sender.player, manager.session, true) }
-            }
-
-            registerCopy("no", aliases = arrayOf("n")) {
-                handler { ctx -> vote(ctx.sender.player, manager.session, false) }
-            }
-
-            registerCopy("cancel", aliases = arrayOf("c")) {
-                handler { ctx ->
-                    val area = areas[ctx.sender.player]
-                    if (area != null) {
-                        areas.remove(ctx.sender.player)
-                        ctx.sender.sendMessage("You have cancelled setting points!")
-                        return@handler
-                    }
-                    if (manager.session == null) {
-                        ctx.sender.sendMessage("There is no excavation in progress!")
-                        return@handler
-                    }
-                    if (ctx.sender.player.admin) {
-                        manager.session!!.failure()
-                        Call.sendMessage("${ctx.sender.player.name} has cancelled the excavation.")
-                    } else {
-                        ctx.sender.sendMessage("You are not allowed to cancel the excavation!")
-                    }
-                }
-            }
+    @Command(["excavate", "begin"])
+    @ClientSide
+    private fun onExcavateBeginCommand(sender: CommandSender) {
+        if (areas[sender.player] != null) {
+            sender.sendMessage("You have already started setting points!")
+            return
         }
+        sender.sendMessage("You have started setting points! Tap on the first point.")
+        areas[sender.player] = ExcavateArea()
+    }
 
-        renderer = ImperiumScope.MAIN.launch {
+    @Command(["excavate", "end"])
+    @ClientSide
+    private fun onExcavateEndCommand(sender: CommandSender) {
+        val area = areas[sender.player]
+        if (area != null) {
+            areas.remove(sender.player)
+            sender.sendMessage("You have cancelled setting points!")
+        } else {
+            sender.sendMessage("You have not started setting points yet!")
+        }
+    }
+
+    @Command(["excavate", "start"])
+    @ClientSide
+    private fun onExcavateStartCommand(sender: CommandSender) {
+        val area = areas[sender.player]
+        if (area == null) {
+            sender.sendMessage("You haven't started setting points yet!")
+            return
+        }
+        if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
+            sender.sendMessage("You have not set both points yet!")
+            return
+        }
+        if (manager.session != null) {
+            sender.sendMessage("There is already an excavation in progress!")
+            return
+        }
+        val session = manager.start(sender.player, true, area)
+        areas.remove(sender.player)
+        Call.sendMessage(
+            """
+            ${sender.player.name} has started an excavation at between (${area.p1.x}, ${area.p1.y}) and (${area.p2.x}, ${area.p2.y})!
+            Vote using [accent]/excavate y[] or [accent]/excavate n[]. [accent]${session.remaining}[] votes are required to pass.
+            """.trimIndent(),
+        )
+    }
+
+    @Command(["excavate", "y"])
+    @ClientSide
+    private fun onExcavateYesCommand(sender: CommandSender) {
+        vote(sender.player, manager.session, true)
+    }
+
+    @Command(["excavate", "n"])
+    @ClientSide
+    private fun onExcavateNoCommand(sender: CommandSender) {
+        vote(sender.player, manager.session, false)
+    }
+
+    @Command(["excavate", "cancel"], Permission.MODERATOR)
+    @ClientSide
+    private fun onExcavateCancelCommand(sender: CommandSender) {
+        if (manager.session == null) {
+            sender.sendMessage("There is no excavation in progress!")
+        } else {
+            manager.session!!.failure()
+            Call.sendMessage("${sender.player.name} has cancelled the excavation.")
+        }
+    }
+
+    override fun onImperiumInit() {
+        ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
                 if (Vars.state.isPlaying) {
@@ -161,10 +161,6 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
                 }
             }
         }
-    }
-
-    override fun onImperiumExit() = runBlocking(ImperiumScope.MAIN.coroutineContext) {
-        renderer.cancelAndJoin()
     }
 
     private suspend fun excavate(area: ExcavateArea) {

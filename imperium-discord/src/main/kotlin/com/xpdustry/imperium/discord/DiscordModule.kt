@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.discord
 
+import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -24,16 +25,13 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.network.MindustryServerInfo
+import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
+import com.xpdustry.imperium.discord.command.SlashCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
-import com.xpdustry.imperium.discord.interaction.button.ButtonManager
-import com.xpdustry.imperium.discord.interaction.button.SimpleButtonManager
-import com.xpdustry.imperium.discord.interaction.command.CommandManager
-import com.xpdustry.imperium.discord.interaction.command.SimpleCommandManager
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
-import java.util.concurrent.Executor
 import java.util.function.Supplier
 import kotlin.io.path.Path
 
@@ -48,12 +46,12 @@ fun discordModule() = module("discord") {
         Path(".")
     }
 
-    single<CommandManager> {
-        SimpleCommandManager(get())
+    single<CommandRegistry>("slash") {
+        SlashCommandRegistry(get())
     }
 
-    single<ButtonManager> {
-        SimpleButtonManager(get())
+    single<CommandRegistry>("button") {
+        ButtonCommandRegistry(get())
     }
 
     single<Supplier<MindustryServerInfo?>> {
@@ -62,10 +60,6 @@ fun discordModule() = module("discord") {
 
     single<MindustryContentHandler> {
         AnukenMindustryContentHandler(get("directory"), get())
-    }
-
-    single<Executor>("scheduler") {
-        Executor { get<DiscordService>().api.threadPool.executorService.execute(it) }
     }
 
     single<ServerConfig.Discord> {

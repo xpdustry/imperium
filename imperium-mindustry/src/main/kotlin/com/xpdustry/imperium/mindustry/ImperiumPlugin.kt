@@ -20,10 +20,10 @@ package com.xpdustry.imperium.mindustry
 import arc.Application
 import arc.ApplicationListener
 import arc.Core
-import arc.util.CommandHandler
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
+import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.account.AccountCommand
@@ -31,7 +31,7 @@ import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
@@ -51,56 +51,55 @@ import java.util.Locale
 import kotlin.system.exitProcess
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
-    internal val serverCommandManager = ImperiumPluginCommandManager(this)
-    internal val clientCommandManager = ImperiumPluginCommandManager(this)
     private val application = MindustryImperiumApplication(this)
 
     override fun onInit() {
         logger.info("Imperium plugin loaded!")
     }
 
-    override fun onServerCommandsRegistration(handler: CommandHandler) {
-        serverCommandManager.initialize(handler)
-    }
-
-    override fun onClientCommandsRegistration(handler: CommandHandler) {
-        clientCommandManager.initialize(handler)
-    }
-
     override fun onLoad() {
-        application.instances.createSingletons()
-
-        val registry = LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
-        registry.registerAll(
+        val source = LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
+        source.registerAll(
             Locale.ENGLISH,
             "com/xpdustry/imperium/bundles/bundle",
             this::class.java.classLoader,
         )
-        registry.registerAll(
+        source.registerAll(
             Locale.FRENCH,
             "com/xpdustry/imperium/bundles/bundle",
             this::class.java.classLoader,
         )
-        DistributorProvider.get().globalLocalizationSource.addLocalizationSource(registry)
+        DistributorProvider.get().globalLocalizationSource.addLocalizationSource(source)
 
-        application.register(ConventionListener::class)
-        application.register(GatekeeperListener::class)
-        application.register(ChatTranslatorListener::class)
-        application.register(AccountListener::class)
-        application.register(AccountCommand::class)
-        application.register(ChatMessageListener::class)
-        application.register(HistoryCommand::class)
-        application.register(BridgeChatMessageListener::class)
-        application.register(ReportCommand::class)
-        application.register(LogicImageAnalysisListener::class)
-        application.register(AdminRequestListener::class)
-        application.register(PunishmentListener::class)
-        application.register(MapListener::class)
-        application.register(VoteKickCommand::class)
-        application.register(ExcavateCommand::class)
-        application.register(RockTheVoteCommand::class)
-        application.register(CoreBlockListener::class)
+        application.instances.createSingletons()
+        listOf(
+            ConventionListener::class,
+            GatekeeperListener::class,
+            ChatTranslatorListener::class,
+            AccountListener::class,
+            AccountCommand::class,
+            ChatMessageListener::class,
+            HistoryCommand::class,
+            BridgeChatMessageListener::class,
+            ReportCommand::class,
+            LogicImageAnalysisListener::class,
+            AdminRequestListener::class,
+            PunishmentListener::class,
+            MapListener::class,
+            VoteKickCommand::class,
+            ExcavateCommand::class,
+            RockTheVoteCommand::class,
+            CoreBlockListener::class,
+            HelpCommand::class,
+        ).forEach {
+            application.register(it)
+        }
         application.init()
+
+        val registry = application.instances.get<CommandRegistry>()
+        application.listeners.forEach {
+            registry.parse(it)
+        }
     }
 
     override fun onExit() {

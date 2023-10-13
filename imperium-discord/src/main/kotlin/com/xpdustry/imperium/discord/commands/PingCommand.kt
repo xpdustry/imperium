@@ -15,8 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction
+package com.xpdustry.imperium.discord.commands
 
-enum class Permission {
-    EVERYONE, VERIFIED, MODERATOR, ADMINISTRATOR, OWNER,
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import kotlinx.coroutines.future.await
+
+class PingCommand : ImperiumApplication.Listener {
+    @Command(["ping"])
+    @NonEphemeral
+    suspend fun onPingCommand(actor: InteractionSender) =
+        actor.respond("pong with **${actor.discord.measureRestLatency().await().toMillis()}** milliseconds of latency!")
 }

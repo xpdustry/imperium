@@ -48,9 +48,7 @@ data class Account(
         }
     }
 
-    fun completed(achievement: Achievement): Boolean {
-        return achievements[achievement.name.lowercase()]?.completed == true
-    }
+    fun completed(achievement: Achievement): Boolean = achievements[achievement.name.lowercase()]?.completed == true
 
     enum class Rank {
         NORMAL,

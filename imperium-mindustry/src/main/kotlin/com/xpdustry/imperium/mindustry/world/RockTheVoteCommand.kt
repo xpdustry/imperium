@@ -18,14 +18,15 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.Events
-import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
 import com.xpdustry.imperium.mindustry.command.SimpleVoteManager
 import com.xpdustry.imperium.mindustry.command.VoteManager
-import com.xpdustry.imperium.mindustry.misc.registerCopy
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
@@ -41,7 +42,6 @@ import mindustry.maps.Map
 import kotlin.time.Duration.Companion.minutes
 
 class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
     private val plugin = instances.get<MindustryPlugin>()
 
     private val manager = SimpleVoteManager<Map?>(
@@ -58,9 +58,8 @@ class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Liste
         },
     )
 
-    override fun onImperiumInit() {
-        val mapListInterface = MenuInterface.create(plugin)
-        mapListInterface.addTransformer(
+    private val mapListInterface: Interface = MenuInterface.create(plugin).apply {
+        addTransformer(
             ListTransformer(
                 provider = { ArcCollections.immutableList(Vars.maps.customMaps()) },
                 renderer = { it.name() },
@@ -68,23 +67,38 @@ class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Liste
                 fill = true,
             ),
         )
-        mapListInterface.addTransformer { _, pane ->
+        addTransformer { _, pane ->
             pane.title = "Choose a map"
             pane.options.addRow(MenuOption("[yellow]Random") { view -> start(view, null) })
         }
+    }
 
-        clientCommandManager.buildAndRegister("rtv") {
-            handler { ctx -> mapListInterface.open(ctx.sender.player) }
+    @Command(["rtv"])
+    @ClientSide
+    private fun onRtvCommand(sender: Player) {
+        mapListInterface.open(sender)
+    }
 
-            registerCopy("yes", aliases = arrayOf("y")) {
-                commandDescription("Vote yes to change the map.")
-                handler { vote(it.sender.player, manager.session, true) }
-            }
+    @Command(["rtv", "y"])
+    @ClientSide
+    private fun onRtvYesCommand(sender: Player) {
+        vote(sender, manager.session, true)
+    }
 
-            registerCopy("no", aliases = arrayOf("n")) {
-                commandDescription("Vote no to change the map.")
-                handler { vote(it.sender.player, manager.session, false) }
-            }
+    @Command(["rtv", "n"])
+    @ClientSide
+    private fun onRtvNoCommand(sender: Player) {
+        vote(sender, manager.session, false)
+    }
+
+    @Command(["rtv", "cancel"], Permission.MODERATOR)
+    @ClientSide
+    private fun onRtvCancelCommand(sender: Player) {
+        if (manager.session != null) {
+            manager.session!!.failure()
+            Call.sendMessage("[orange]The RTV vote has been cancelled.")
+        } else {
+            Call.sendMessage("[orange]There is no RTV in progress.")
         }
     }
 

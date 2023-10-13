@@ -22,6 +22,8 @@ import arc.util.Log
 import arc.util.Time
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -29,12 +31,11 @@ import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.mindustry.command.CommandRegistry
-import com.xpdustry.imperium.mindustry.command.PlayerTypeSpec
-import com.xpdustry.imperium.mindustry.command.StringTypeSpec
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import fr.xpdustry.distributor.api.DistributorProvider
+import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Priority
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
@@ -50,7 +51,6 @@ import mindustry.net.ValidateException
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline = instances.get<ChatMessagePipeline>()
-    private val clientCommandRegistry = instances.get<CommandRegistry>("client")
     private val punishments = instances.get<PunishmentManager>()
 
     override fun onImperiumInit() {
@@ -90,36 +90,33 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 Vars.netServer.admins.filterMessage(it.sender, it.message) ?: ""
             }
         }
+    }
 
-        clientCommandRegistry.command("t") {
-            val message = argument("message", StringTypeSpec(greedy = true))
-            handler { ctx ->
-                for (target in Groups.player.toList()) {
-                    if (ctx.sender.player.team() != target.team()) continue
-                    val filtered = pipeline.pump(ChatMessageContext(ctx.sender.player, target, ctx[message]))
-                    if (filtered.isBlank()) continue
-                    target.sendMessage(
-                        "[#${ctx.sender.player.team().color}]<T> ${Vars.netServer.chatFormatter.format(ctx.sender.player, filtered)}",
-                        ctx.sender.player,
-                        filtered,
-                    )
-                }
-            }
+    @Command(["t"])
+    @ClientSide
+    private suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
+        for (target in Groups.player.toList()) {
+            if (sender.player.team() != target.team()) continue
+            val filtered = pipeline.pump(ChatMessageContext(sender.player, target, message))
+            if (filtered.isBlank()) continue
+            target.sendMessage(
+                "[#${sender.player.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender.player, filtered)}",
+                sender.player,
+                filtered,
+            )
         }
+    }
 
-        clientCommandRegistry.command("w") {
-            val target = argument("target", PlayerTypeSpec)
-            val message = argument("message", StringTypeSpec(greedy = true))
-            handler { ctx ->
-                val filtered = pipeline.pump(ChatMessageContext(ctx.sender.player, ctx[target], ctx[message]))
-                if (filtered.isBlank()) return@handler
-                ctx[target].sendMessage(
-                    "[gray]<W>[] ${Vars.netServer.chatFormatter.format(ctx.sender.player, filtered)}",
-                    ctx.sender.player,
-                    filtered,
-                )
-            }
-        }
+    @Command(["w"])
+    @ClientSide
+    private suspend fun onWhisperCommand(sender: CommandSender, target: Player, @Greedy message: String) {
+        val filtered = pipeline.pump(ChatMessageContext(sender.player, target, message))
+        if (filtered.isBlank()) return
+        target.sendMessage(
+            "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender.player, filtered)}",
+            sender.player,
+            filtered,
+        )
     }
 }
 

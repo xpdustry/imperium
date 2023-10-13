@@ -15,24 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.command
+package com.xpdustry.imperium.common.command
 
-import com.xpdustry.imperium.discord.interaction.Permission
-
-// TODO Rename like InteractionButton ?
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class Command(vararg val path: String, val permission: Permission = Permission.EVERYONE, val ephemeral: Boolean = true)
-
-val Command.name: String
-    get() = path[0]
-
-fun Command.validate() {
-    if (path.isEmpty()) {
-        throw IllegalArgumentException("Command name cannot be empty")
-    }
-    if (path.any { !it.matches(Regex("^[a-zA-Z](-?[a-zA-Z0-9])*$")) }) {
-        throw IllegalArgumentException("Command name must be alphanumeric and start with a letter")
-    }
+// TODO Add lock method to persist the commands
+interface CommandRegistry {
+    fun parse(container: Any)
 }

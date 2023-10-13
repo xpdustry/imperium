@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.discord.interaction.Permission
 import org.javacord.api.DiscordApi
 import org.javacord.api.DiscordApiBuilder
 import org.javacord.api.entity.intent.Intent

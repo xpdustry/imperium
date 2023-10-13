@@ -88,6 +88,7 @@ sealed interface ServerConfig {
         val history: History = History(),
         val color: Color = Color.WHITE,
         val world: World = World(),
+        val gatekeeper: Boolean = true,
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }

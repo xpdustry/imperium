@@ -15,11 +15,14 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.interaction.button
+package com.xpdustry.imperium.mindustry.command
 
-import com.xpdustry.imperium.discord.interaction.Permission
+import cloud.commandframework.ArgumentDescription
+import fr.xpdustry.distributor.api.DistributorProvider
+import java.util.Locale
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class InteractionButton(val name: String, val permission: Permission = Permission.EVERYONE, val ephemeral: Boolean = true)
+// TODO Replace with a component based Description
+class LocalisableArgumentDescription(private val key: String, private val default: Locale) : ArgumentDescription {
+    override fun getDescription(): String = DistributorProvider.get().globalLocalizationSource.format(key, default)
+    fun getDescription(locale: Locale): String = DistributorProvider.get().globalLocalizationSource.format(key, locale)
+}

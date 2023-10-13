@@ -25,8 +25,10 @@ import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -48,24 +50,33 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline: GatekeeperPipeline = instances.get()
-    private val vpn: VpnDetection = instances.get()
+    private val pipeline = instances.get<GatekeeperPipeline>()
+    private val vpn = instances.get<VpnDetection>()
     private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<OkHttpClient>()
+    private val config = instances.get<ServerConfig.Mindustry>()
 
     override fun onImperiumInit() {
+        if (!config.gatekeeper) {
+            logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")
+        }
+
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register("punishment", Priority.NORMAL, PunishmentGatekeeper(punishments))
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
-            interceptPlayerConnection(con, packet, pipeline)
+            interceptPlayerConnection(con, packet, pipeline, config)
         }
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
     }
 }
 
-private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: GatekeeperPipeline) {
+private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: GatekeeperPipeline, config: ServerConfig.Mindustry) {
     if (con.kicked) return
 
     if (con.address.startsWith("steam:")) {
@@ -197,7 +208,11 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
 
     // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
     ImperiumScope.MAIN.launch {
-        val result = pipeline.pump(GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
+        val result = if (config.gatekeeper) {
+            pipeline.pump(GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
+        } else {
+            GatekeeperResult.Success
+        }
         runMindustryThread {
             if (result is GatekeeperResult.Failure) {
                 con.kick(result.reason, result.time.toMillis())

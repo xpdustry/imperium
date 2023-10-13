@@ -15,25 +15,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.security
+package com.xpdustry.imperium.discord.commands
 
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.discord.interaction.InteractionActor
-import com.xpdustry.imperium.discord.interaction.command.Command
+import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import org.bson.types.ObjectId
 import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
-class VerifyListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     // TODO There is an issue with the RateLimiter, the real limit is 3
     private val limiter = RateLimiter<Long>(2, Duration.ofMinutes(10))
     private val messenger = instances.get<Messenger>()
@@ -48,8 +49,9 @@ class VerifyListener(instances: InstanceManager) : ImperiumApplication.Listener 
         }
     }
 
-    @Command("verify", ephemeral = false)
-    private suspend fun onVerifyCommand(actor: InteractionActor, code: Int) {
+    @Command(["verify"])
+    @NonEphemeral
+    private suspend fun onVerifyCommand(actor: InteractionSender, code: Int) {
         if (!limiter.check(actor.user.id)) {
             actor.respond("You made too many attempts! Wait 10 minutes and try again.")
             return

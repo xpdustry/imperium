@@ -17,111 +17,75 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
-import arc.util.Strings
-import cloud.commandframework.arguments.standard.IntegerArgument
-import cloud.commandframework.meta.CommandMeta
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.annotation.Max
+import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
-import fr.xpdustry.distributor.api.command.argument.PlayerInfoArgument
+import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.misc.toHexString
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
-import java.awt.Color
-import java.util.function.Consumer
 
 // TODO
 //  - Add interactive mode like the "/inspector" command ?
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
-    private val clientCommandManager = instances.get<ImperiumPluginCommandManager>("client")
-    private val serverCommandManager = instances.get<ImperiumPluginCommandManager>("server")
 
-    override fun onImperiumInit() {
-        withCommandManagers { manager ->
-            manager.command(
-                manager.commandBuilder("history")
-                    .literal("player")
-                    .meta(CommandMeta.DESCRIPTION, "Show the history of a player.")
-                    .argument(PlayerInfoArgument.of("player"))
-                    .argument(
-                        IntegerArgument.builder<CommandSender>("limit")
-                            .withMin(1)
-                            .withMax(50)
-                            .asOptionalWithDefault(10),
-                    )
-                    .handler { ctx ->
-                        val info = ctx.get<PlayerInfo>("player")
-                        val entries = normalize(history.getHistory(info.id), ctx.get("limit"))
-                        if (entries.isEmpty()) {
-                            ctx.sender.sendWarning("No history found.")
-                            return@handler
-                        }
-                        val builder = StringBuilder("[accent]History of player [white]").append(info.plainLastName())
-                        if (canSeeUuid(ctx.sender)) {
-                            builder.append(" [accent](").append(info.id).append(")")
-                        }
-                        builder.append(":")
-                        for (entry in entries) {
-                            builder.append("\n[accent] > ").append(renderEntry(entry, false, false, true, 3))
-                        }
-
-                        // TODO I really need this Component API
-                        ctx.sender
-                            .sendMessage(
-                                if (ctx.sender.isConsole) Strings.stripColors(builder.toString()) else builder.toString(),
-                            )
-                    },
-            )
-
-            manager.command(
-                manager.commandBuilder("history")
-                    .literal("tile")
-                    .meta(CommandMeta.DESCRIPTION, "Show the history of a tile.")
-                    .argument(
-                        IntegerArgument.builder<CommandSender>("x").withMin(0).withMax(
-                            Short.MAX_VALUE.toInt(),
-                        ),
-                    )
-                    .argument(
-                        IntegerArgument.builder<CommandSender>("y").withMin(0).withMax(
-                            Short.MAX_VALUE.toInt(),
-                        ),
-                    )
-                    .argument(
-                        IntegerArgument.builder<CommandSender>("limit")
-                            .withMin(1)
-                            .withMax(50)
-                            .asOptionalWithDefault(10),
-                    )
-                    .handler { ctx ->
-                        val x = ctx.get<Int>("x")
-                        val y = ctx.get<Int>("y")
-                        val entries = normalize(history.getHistory(x, y), ctx.get("limit"))
-                        if (entries.isEmpty()) {
-                            ctx.sender.sendWarning("No history found.")
-                            return@handler
-                        }
-                        val builder = StringBuilder("[accent]History of tile [white]")
-                            .append("(")
-                            .append(x)
-                            .append(", ")
-                            .append(y)
-                            .append(")[]:")
-                        for (entry in entries) {
-                            builder.append("\n[accent] > ")
-                                .append(renderEntry(entry, true, canSeeUuid(ctx.sender), false, 3))
-                        }
-
-                        // TODO I really need this Component API
-                        ctx.sender
-                            .sendMessage(
-                                if (ctx.sender.isConsole) Strings.stripColors(builder.toString()) else builder.toString(),
-                            )
-                    },
+    @Command(["history", "player"])
+    @ClientSide
+    @ServerSide
+    private fun onPlayerHistoryCommand(sender: CommandSender, info: PlayerInfo, @Min(1) @Max(50) limit: Int = 10) {
+        val entries = normalize(history.getHistory(info.id), limit)
+        if (entries.none()) {
+            sender.sendWarning("No history found.")
+            return
+        }
+        val builder = StringBuilder("[accent]History of player [white]").append(info.plainLastName())
+        if (canSeeUuid(sender)) {
+            builder.append(" [accent](").append(info.id).append(")")
+        }
+        builder.append(":")
+        for (entry in entries) {
+            builder.append("\n[accent] > ").append(
+                renderEntry(entry, name = false, uuid = false, position = true, indent = 3),
             )
         }
+
+        // TODO I really need this Component API
+        sender.sendMessage(if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
+    }
+
+    @Command(["history", "tile"])
+    @ClientSide
+    @ServerSide
+    private fun onTileHistoryCommand(
+        sender: CommandSender,
+        @Min(1) x: Short,
+        @Min(1) y: Short,
+        @Min(1) @Max(50) limit: Int = 10,
+    ) {
+        val entries = normalize(history.getHistory(x.toInt(), y.toInt()), limit)
+        if (entries.none()) {
+            sender.sendWarning("No history found.")
+            return
+        }
+        val builder = StringBuilder("[accent]History of tile [white]")
+            .append("(")
+            .append(x)
+            .append(", ")
+            .append(y)
+            .append(")[]:")
+        for (entry in entries) {
+            builder.append("\n[accent] > ").append(renderEntry(entry, true, canSeeUuid(sender), false, 3))
+        }
+
+        // TODO I really need this Component API
+        sender.sendMessage(if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }
 
     private fun renderEntry(entry: HistoryEntry, name: Boolean, uuid: Boolean, position: Boolean, indent: Int): String {
@@ -235,7 +199,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 builder.append("Configured [accent]")
                     .append(entry.block.name)
                     .append("[white] to [accent]")
-                    .append(toHex(config.color))
+                    .append(config.color.toHexString())
             }
             is HistoryConfig.Simple -> {
                 builder.append("Configured [accent]")
@@ -250,29 +214,14 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         return if (author.uuid != null) Vars.netServer.admins.getInfo(author.uuid).lastName else author.team.name.lowercase() + " " + author.unit.name
     }
 
-    private fun withCommandManagers(consumer: Consumer<ImperiumPluginCommandManager>) {
-        consumer.accept(clientCommandManager)
-        consumer.accept(serverCommandManager)
-    }
+    private fun canSeeUuid(sender: CommandSender): Boolean = sender.isConsole || sender.player.admin()
 
-    private fun canSeeUuid(sender: CommandSender): Boolean {
-        return sender.isConsole || sender.player.admin()
-    }
-
-    private fun normalize(entries: List<HistoryEntry>, limit: Int): List<HistoryEntry> {
-        // First we sort by timestamp from latest to earliest, then we take the first N elements,
-        // then we reverse the list so the latest entries are at the end
-        return entries.stream()
-            .sorted(Comparator.comparing(HistoryEntry::timestamp).reversed())
-            .limit(limit.toLong())
-            .sorted(Comparator.comparing(HistoryEntry::timestamp))
-            .toList()
-    }
-
-    private fun toHex(color: Color): String {
-        // https://stackoverflow.com/a/3607942
-        return String.format("#%02x%02x%02x", color.red, color.green, color.blue)
-    }
+    // First we sort by timestamp from latest to earliest, then we take the first N elements,
+    // then we reverse the list so the latest entries are at the end
+    private fun normalize(entries: List<HistoryEntry>, limit: Int) = entries.asSequence()
+        .sortedByDescending(HistoryEntry::timestamp)
+        .take(limit)
+        .sortedBy(HistoryEntry::timestamp)
 
     private fun getOrientation(rotation: Int): String = when (rotation % 4) {
         0 -> "right"

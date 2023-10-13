@@ -19,19 +19,18 @@ package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
+import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.bridge.BridgeListener
-import com.xpdustry.imperium.discord.interaction.button.ButtonManager
-import com.xpdustry.imperium.discord.interaction.command.CommandManager
-import com.xpdustry.imperium.discord.interaction.command.standard.MapCommand
-import com.xpdustry.imperium.discord.interaction.command.standard.ModerationCommand
-import com.xpdustry.imperium.discord.interaction.command.standard.PingCommand
-import com.xpdustry.imperium.discord.interaction.command.standard.SchematicCommand
-import com.xpdustry.imperium.discord.interaction.command.standard.ServerCommand
+import com.xpdustry.imperium.discord.commands.MapCommand
+import com.xpdustry.imperium.discord.commands.ModerationCommand
+import com.xpdustry.imperium.discord.commands.PingCommand
+import com.xpdustry.imperium.discord.commands.SchematicCommand
+import com.xpdustry.imperium.discord.commands.ServerCommand
+import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
-import com.xpdustry.imperium.discord.security.VerifyListener
 import java.util.Scanner
 import kotlin.system.exitProcess
 
@@ -52,15 +51,15 @@ fun main() {
     application.register(ReportListener::class)
     application.register(MapCommand::class)
     application.register(SchematicCommand::class)
-    application.register(VerifyListener::class)
+    application.register(VerifyCommand::class)
     application.register(ModerationCommand::class)
     application.register(PunishmentListener::class)
 
-    val commands = application.instances.get<CommandManager>()
-    val buttons = application.instances.get<ButtonManager>()
+    val commands = application.instances.get<CommandRegistry>("slash")
+    val buttons = application.instances.get<CommandRegistry>("button")
     for (listener in application.listeners) {
-        commands.register(listener)
-        buttons.register(listener)
+        commands.parse(listener)
+        buttons.parse(listener)
     }
 
     application.init()

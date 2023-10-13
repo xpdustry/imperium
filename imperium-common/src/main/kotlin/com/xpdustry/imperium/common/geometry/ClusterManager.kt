@@ -19,16 +19,17 @@ package com.xpdustry.imperium.common.geometry
 
 import java.util.LinkedList
 
+// TODO This class is quite unsafe, it relies on the checks done by Mindustry
 class ClusterManager<T : Any>(private val listener: Listener<T>) {
     val clusters: List<Cluster<T>> get() = _clusters
     private val _clusters = mutableListOf<Cluster<T>>()
 
-    fun getElement(x: Int, y: Int): Cluster.Block<T>? {
+    fun getElement(x: Int, y: Int): Pair<Cluster<T>, Cluster.Block<T>>? {
         for (cluster in _clusters) {
             if (x in cluster.x..cluster.x + cluster.w && y in cluster.y..cluster.y + cluster.h) {
                 for (block in cluster._blocks) {
                     if (x in block.x..block.x + block.size && y in block.y..block.y + block.size) {
-                        return block
+                        return cluster to block
                     }
                 }
                 return null
@@ -37,8 +38,12 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
         return null
     }
 
-    // TODO Replace block if inserted at the same position
     fun addElement(block: Cluster.Block<T>) {
+        val existing = getElement(block.x, block.y)
+        if (existing != null) {
+            val (cluster, element) = existing
+            error("The point is occupied by the block (x=${element.x}, y=${element.y}, size=${element.size}) of the cluster (x=${cluster.x}, y=${cluster.y}, w=${cluster.w}, h=${cluster.h})")
+        }
         val candidates = mutableListOf<Int>()
         for (i in _clusters.indices) {
             if (canBePartOfCluster(_clusters[i], block)) {

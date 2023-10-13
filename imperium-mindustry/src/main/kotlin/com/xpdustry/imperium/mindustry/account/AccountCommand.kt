@@ -17,20 +17,19 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
-import cloud.commandframework.arguments.standard.StringArgument
-import cloud.commandframework.kotlin.extension.buildAndRegister
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountOperationResult
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.mindustry.command.ImperiumPluginCommandManager
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
@@ -39,9 +38,11 @@ import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
+import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import org.bson.types.ObjectId
@@ -63,117 +64,105 @@ private val OLD_PASSWORD = stateKey<String>("old_password")
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val plugin: MindustryPlugin = instances.get()
-    private val manager: AccountManager = instances.get()
-    private val clientCommandManager: ImperiumPluginCommandManager = instances.get("client")
+    private val manager = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
-    private val pending = CacheBuilder.newBuilder()
-        .expireAfterWrite(10.minutes.toJavaDuration())
-        .build<ObjectId, Int>()
+    private val verifications = CacheBuilder.newBuilder().expireAfterWrite(10.minutes.toJavaDuration()).build<ObjectId, Int>()
+    private val loginInterface = createLoginInterface(instances.get(), manager)
+    private val registerInterface = createRegisterInterface(instances.get(), manager)
+    private val migrateInterface = createMigrateInterface(instances.get(), manager)
+    private val changePasswordInterface = createPasswordChangeInterface(instances.get(), manager)
+
+    @Command(["login"])
+    @ClientSide
+    private suspend fun onLoginCommand(sender: CommandSender) = withContext(PlayerCoroutineExceptionHandler(sender.player)) {
+        val account = manager.findByIdentity(sender.player.identity)
+        if (account == null) {
+            runMindustryThread {
+                loginInterface.open(sender.player)
+            }
+        } else {
+            sender.player.showInfoMessage("You are already logged in!")
+        }
+    }
+
+    @Command(["register"])
+    @ClientSide
+    private fun onRegisterCommand(sender: CommandSender) {
+        registerInterface.open(sender.player)
+    }
+
+    @Command(["migrate"])
+    @ClientSide
+    private fun onMigrateCommand(sender: CommandSender) {
+        migrateInterface.open(sender.player)
+    }
+
+    @Command(["logout"])
+    @ClientSide
+    private suspend fun onLogoutCommand(sender: CommandSender) = withContext(PlayerCoroutineExceptionHandler(sender.player)) {
+        if (manager.findByIdentity(sender.player.identity) == null) {
+            sender.player.sendMessage("You are not logged in!")
+        } else {
+            manager.logout(sender.player.identity)
+            sender.player.sendMessage("You have been logged out!")
+        }
+    }
+
+    @Command(["change-password"])
+    @ClientSide
+    private fun onChangePasswordCommand(sender: CommandSender) {
+        changePasswordInterface.open(sender.player)
+    }
+
+    @Command(["verify"])
+    @ClientSide
+    private suspend fun onVerifyCommand(sender: CommandSender) {
+        val account = manager.findByIdentity(sender.player.identity)
+        if (account == null) {
+            sender.sendWarning("You are not logged in!")
+            return
+        } else if (account.verified) {
+            sender.sendWarning("Your account is already verified.")
+            return
+        }
+
+        var code: Int? = verifications.getIfPresent(sender.player.uuid())
+        if (code != null) {
+            sender.sendWarning(
+                """
+                You already have a pending verification.
+                [lightgray]Remember:
+                Join our discord server with the [cyan]/discord[] command.
+                And run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
+                """.trimIndent(),
+            )
+            return
+        }
+
+        code = Random.nextInt(1000..9999)
+        messenger.publish(VerificationMessage(account._id, sender.player.uuid(), code))
+        verifications.put(account._id, code)
+
+        sender.sendMessage(
+            """
+            To go forward with the verification process, you need to verify yourself with discord.
+            Join it using the [cyan]/discord[] command and run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
+            The code will expire in 10 minutes.
+            """.trimIndent(),
+        )
+    }
 
     override fun onImperiumInit() {
-        val loginInterface = createLoginInterface(plugin, manager)
-        clientCommandManager.buildAndRegister("login") {
-            commandDescription("Login to your account")
-            argument(StringArgument.optional("username", StringArgument.StringMode.GREEDY))
-            handler { ctx ->
-                ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(ctx.sender.player)) {
-                    val account = manager.findByIdentity(ctx.sender.player.identity)
-                    if (account == null) {
-                        runMindustryThread {
-                            loginInterface.open(ctx.sender.player)
-                        }
-                    } else {
-                        ctx.sender.player.showInfoMessage("You are already logged in!")
-                    }
-                }
-            }
-        }
-
-        val registerInterface = createRegisterInterface(plugin, manager)
-        clientCommandManager.buildAndRegister("register") {
-            commandDescription("Register your account")
-            handler { ctx -> registerInterface.open(ctx.sender.player) }
-        }
-
-        val migrateInterface = createMigrateInterface(plugin, manager)
-        clientCommandManager.buildAndRegister("migrate") {
-            commandDescription("Migrate your CN account")
-            handler { ctx -> migrateInterface.open(ctx.sender.player) }
-        }
-
-        clientCommandManager.buildAndRegister("logout") {
-            commandDescription("Logout from your account")
-            handler { ctx ->
-                ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(ctx.sender.player)) {
-                    if (manager.findByIdentity(ctx.sender.player.identity) == null) {
-                        ctx.sender.sendMessage("You are not logged in!")
-                    } else {
-                        manager.logout(ctx.sender.player.identity)
-                        ctx.sender.sendMessage("You have been logged out!")
-                    }
-                }
-            }
-        }
-
-        val changePasswordInterface = createPasswordChangeInterface(plugin, manager)
-        clientCommandManager.buildAndRegister("change-password") {
-            commandDescription("Change your password")
-            handler { ctx -> changePasswordInterface.open(ctx.sender.player) }
-        }
-
         messenger.subscribe<VerificationMessage> { message ->
-            if (message.response && pending.getIfPresent(message.account) == message.code) {
-                pending.invalidate(message.account)
+            if (message.response && verifications.getIfPresent(message.account) == message.code) {
+                verifications.invalidate(message.account)
                 ImperiumScope.MAIN.launch {
                     manager.updateById(message.account) { account ->
                         account.verified = true
                     }
                     runMindustryThread {
-                        Groups.player.find { it.uuid() == message.uuid }
-                            ?.showInfoMessage("You have been verified!")
+                        Groups.player.find { it.uuid() == message.uuid }?.showInfoMessage("You have been verified!")
                     }
-                }
-            }
-        }
-
-        clientCommandManager.buildAndRegister("verify") {
-            commandDescription("Verify yourself with discord.")
-            handler { ctx ->
-                ImperiumScope.MAIN.launch {
-                    val account = manager.findByIdentity(ctx.sender.player.identity)
-                    if (account == null) {
-                        ctx.sender.sendWarning("You are not logged in!")
-                        return@launch
-                    } else if (account.verified) {
-                        ctx.sender.sendWarning("Your account is already verified.")
-                        return@launch
-                    }
-
-                    var code: Int? = pending.getIfPresent(ctx.sender.player.uuid())
-                    if (code != null) {
-                        ctx.sender.sendWarning(
-                            """
-                            You already have a pending verification.
-                            [lightgray]Remember:
-                            Join our discord server with the [cyan]/discord[] command.
-                            And run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
-                            """.trimIndent(),
-                        )
-                        return@launch
-                    }
-
-                    code = Random.nextInt(1000..9999)
-                    messenger.publish(VerificationMessage(account._id, ctx.sender.player.uuid(), code))
-                    pending.put(account._id, code)
-
-                    ctx.sender.sendMessage(
-                        """
-                        To go forward with the verification process, you need to verify yourself with discord.
-                        Join it using the [cyan]/discord[] command and run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
-                        The code will expire in 10 minutes.
-                        """.trimIndent(),
-                    )
                 }
             }
         }
