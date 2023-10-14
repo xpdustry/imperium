@@ -21,7 +21,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.SecurityConfig
+import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -32,7 +32,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.awt.image.BufferedImage
 
 class SightEngineImageAnalysis(
-    private val config: SecurityConfig.ImageAnalysis.SightEngine,
+    private val config: ImageAnalysisConfig.SightEngine,
     private val http: OkHttpClient,
 ) : ImageAnalysis, ImperiumApplication.Listener {
     private val gson = Gson()

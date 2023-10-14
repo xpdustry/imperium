@@ -22,10 +22,11 @@ import com.xpdustry.imperium.common.account.MongoAccountManager
 import com.xpdustry.imperium.common.account.MongoUserManager
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumMetadata
+import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
+import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
-import com.xpdustry.imperium.common.config.SecurityConfig
 import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -80,7 +81,9 @@ fun commonModule() = module("common") {
     }
 
     single<Messenger> {
-        RabbitmqMessenger(get(), get())
+        when (val config = get<ImperiumConfig>().messenger) {
+            is MessengerConfig.RabbitMQ -> RabbitmqMessenger(config, get())
+        }
     }
 
     single<StorageBucket> {
@@ -114,9 +117,9 @@ fun commonModule() = module("common") {
     }
 
     single<ImageAnalysis> {
-        when (val config = get<ImperiumConfig>().security.imageAnalysis) {
-            is SecurityConfig.ImageAnalysis.None -> ImageAnalysis.Noop
-            is SecurityConfig.ImageAnalysis.SightEngine -> SightEngineImageAnalysis(config, get())
+        when (val config = get<ImperiumConfig>().imageAnalysis) {
+            is ImageAnalysisConfig.None -> ImageAnalysis.Noop
+            is ImageAnalysisConfig.SightEngine -> SightEngineImageAnalysis(config, get())
         }
     }
 

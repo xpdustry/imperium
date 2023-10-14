@@ -19,16 +19,16 @@ package com.xpdustry.imperium.common.geometry
 
 import java.util.LinkedList
 
-// TODO This class is quite unsafe, it relies on the checks done by Mindustry
+// TODO Index this shit
 class ClusterManager<T : Any>(private val listener: Listener<T>) {
     val clusters: List<Cluster<T>> get() = _clusters
     private val _clusters = mutableListOf<Cluster<T>>()
 
     fun getElement(x: Int, y: Int): Pair<Cluster<T>, Cluster.Block<T>>? {
         for (cluster in _clusters) {
-            if (x in cluster.x..cluster.x + cluster.w && y in cluster.y..cluster.y + cluster.h) {
+            if (x in cluster.x until cluster.x + cluster.w && y in cluster.y until cluster.y + cluster.h) {
                 for (block in cluster._blocks) {
-                    if (x in block.x..block.x + block.size && y in block.y..block.y + block.size) {
+                    if (x in block.x until block.x + block.size && y in block.y until block.y + block.size) {
                         return cluster to block
                     }
                 }

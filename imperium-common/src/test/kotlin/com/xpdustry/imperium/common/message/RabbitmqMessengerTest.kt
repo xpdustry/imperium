@@ -22,12 +22,10 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.commonModule
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
-import com.xpdustry.imperium.common.inject.single
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -173,11 +171,8 @@ class RabbitmqMessengerTest {
         private val RABBITMQ_CONTAINER = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
         private val MODULE = module("rabbitmq-messenger-test") {
             include(commonModule())
-            single<ImperiumConfig> {
-                ImperiumConfig(messenger = MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort))
-            }
             factory<Messenger> {
-                RabbitmqMessenger(get(), ImperiumMetadata())
+                RabbitmqMessenger(MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort), ImperiumMetadata())
             }
         }
     }

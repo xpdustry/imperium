@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.geometry
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class ClusterManagerTest {
 
@@ -130,6 +131,15 @@ class ClusterManagerTest {
         Assertions.assertEquals(2, manager.clusters.size)
         manager.addElement(createBlock(1, 3, 1))
         Assertions.assertEquals(1, manager.clusters.size)
+    }
+
+    @Test
+    fun `test error on add to occupied`() {
+        val manager = createManager()
+        manager.addElement(createBlock(0, 0, 1))
+        assertThrows<IllegalStateException> {
+            manager.addElement(createBlock(0, 0, 1))
+        }
     }
 
     private fun createManager() = ClusterManager<Unit> { _, _ -> }

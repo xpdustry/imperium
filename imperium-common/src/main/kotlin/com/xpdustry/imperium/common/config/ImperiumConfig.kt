@@ -20,8 +20,9 @@ package com.xpdustry.imperium.common.config
 import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.misc.capitalize
 import java.awt.Color
-import java.time.Duration
 import java.util.Locale
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
@@ -31,13 +32,13 @@ data class ImperiumConfig(
     val server: ServerConfig = ServerConfig.None,
     val language: Locale = Locale.ENGLISH,
     val storage: StorageConfig = StorageConfig.Minio(),
-    val security: SecurityConfig = SecurityConfig(),
+    val imageAnalysis: ImageAnalysisConfig = ImageAnalysisConfig.None,
     val generatorId: Int = 0,
 )
 
 data class NetworkConfig(
     val vpnDetection: VpnDetectionConfig = VpnDetectionConfig.None,
-    val discoveryInterval: Duration = Duration.ofSeconds(5L),
+    val discoveryInterval: Duration = 10.seconds,
 ) {
     sealed interface VpnDetectionConfig {
         data object None : VpnDetectionConfig
@@ -88,7 +89,7 @@ sealed interface ServerConfig {
         val history: History = History(),
         val color: Color = Color.WHITE,
         val world: World = World(),
-        val gatekeeper: Boolean = true,
+        val security: Security = Security(),
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }
@@ -99,6 +100,10 @@ sealed interface ServerConfig {
         )
         data class World(
             val maxExcavateSize: Int = 64,
+        )
+        data class Security(
+            val gatekeeper: Boolean = true,
+            val imageProcessingDelay: Duration = 3.seconds,
         )
     }
 
@@ -139,17 +144,13 @@ sealed interface StorageConfig {
     ) : StorageConfig
 }
 
-data class SecurityConfig(
-    val imageAnalysis: ImageAnalysis = ImageAnalysis.None,
-) {
-    sealed interface ImageAnalysis {
-        data object None : ImageAnalysis
-        data class SightEngine(
-            val sightEngineClient: String,
-            val sightEngineSecret: Secret,
-            val nudityThreshold: Float = 0.5F,
-            val goreThreshold: Float = 0.5F,
-            val offensiveThreshold: Float = 0.5F,
-        ) : ImageAnalysis
-    }
+sealed interface ImageAnalysisConfig {
+    data object None : ImageAnalysisConfig
+    data class SightEngine(
+        val sightEngineClient: String,
+        val sightEngineSecret: Secret,
+        val nudityThreshold: Float = 0.5F,
+        val goreThreshold: Float = 0.5F,
+        val offensiveThreshold: Float = 0.5F,
+    ) : ImageAnalysisConfig
 }

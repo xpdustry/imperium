@@ -28,7 +28,6 @@ import com.rabbitmq.client.ShutdownSignalException
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import kotlinx.coroutines.Job
@@ -48,26 +47,23 @@ import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.jvmName
 
-class RabbitmqMessenger(private val config: ImperiumConfig, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
+class RabbitmqMessenger(private val config: MessengerConfig.RabbitMQ, private val metadata: ImperiumMetadata) : Messenger, ImperiumApplication.Listener {
     private val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
     private lateinit var connection: Connection
 
     override fun onImperiumInit() {
-        if (config.messenger !is MessengerConfig.RabbitMQ) {
-            throw IllegalStateException("The current Messenger configuration is not RabbitMQ")
-        }
         val factory = ConnectionFactory().apply {
-            host = config.messenger.host
-            port = config.messenger.port
+            host = config.host
+            port = config.port
             isAutomaticRecoveryEnabled = true
 
             if (username.isNotBlank()) {
-                username = config.messenger.username
-                password = config.messenger.password.value
+                username = config.username
+                password = config.password.value
             }
 
-            if (config.messenger.ssl) {
+            if (config.ssl) {
                 useSslProtocol(SSLContext.getDefault())
             }
         }

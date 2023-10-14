@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.findMostCommon
 import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
 import com.xpdustry.imperium.common.image.LogicImage
@@ -66,6 +67,7 @@ import java.time.Instant
 import java.util.Queue
 import java.util.concurrent.PriorityBlockingQueue
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 
 // TODO
 //  - Different cluster managers for different teams ?
@@ -76,6 +78,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     private val history = instances.get<BlockHistory>()
     private val users = instances.get<UserManager>()
     private val punishments = instances.get<PunishmentManager>()
+    private val config = instances.get<ServerConfig.Mindustry>()
 
     private val drawerQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.Drawer>>>()
     private val displays = ClusterManager(QueueClusterListener(drawerQueue, ::filterDrawer, ::findDrawerAuthor))
@@ -428,7 +431,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         private val logger by LoggerDelegate()
     }
 
-    private class QueueClusterListener<T : LogicImage>(
+    private inner class QueueClusterListener<T : LogicImage>(
         private val queue: Queue<Wrapper<Cluster<T>>>,
         private val clusterFilter: (Cluster<T>) -> Boolean,
         private val clusterAuthor: (Cluster<T>) -> MindustryUUID?,
@@ -445,7 +448,13 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                     logger.trace("Cluster (${cluster.x}, ${cluster.y}) has no author")
                     return
                 }
-                queue.add(Wrapper(cluster.copy(), Instant.now().plusSeconds(5L), author))
+                queue.add(
+                    Wrapper(
+                        cluster.copy(),
+                        Instant.now().plus(config.security.imageProcessingDelay.toJavaDuration()),
+                        author,
+                    ),
+                )
                 return
             }
             if (removed) {

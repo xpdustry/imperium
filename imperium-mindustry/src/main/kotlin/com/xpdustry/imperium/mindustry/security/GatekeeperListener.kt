@@ -57,7 +57,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val config = instances.get<ServerConfig.Mindustry>()
 
     override fun onImperiumInit() {
-        if (!config.gatekeeper) {
+        if (!config.security.gatekeeper) {
             logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")
         }
 
@@ -208,7 +208,7 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
 
     // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
     ImperiumScope.MAIN.launch {
-        val result = if (config.gatekeeper) {
+        val result = if (config.security.gatekeeper) {
             pipeline.pump(GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
         } else {
             GatekeeperResult.Success
