@@ -45,15 +45,20 @@ fun main() {
     val application = ImperiumDiscord()
 
     application.instances.createSingletons()
-    application.register(BridgeListener::class)
-    application.register(PingCommand::class)
-    application.register(ServerCommand::class)
-    application.register(ReportListener::class)
-    application.register(MapCommand::class)
-    application.register(SchematicCommand::class)
-    application.register(VerifyCommand::class)
-    application.register(ModerationCommand::class)
-    application.register(PunishmentListener::class)
+    for (listener in
+        listOf(
+            BridgeListener::class,
+            PingCommand::class,
+            ServerCommand::class,
+            ReportListener::class,
+            MapCommand::class,
+            SchematicCommand::class,
+            VerifyCommand::class,
+            ModerationCommand::class,
+            PunishmentListener::class,
+        )) {
+        application.register(listener)
+    }
 
     val commands = application.instances.get<CommandRegistry>("slash")
     val buttons = application.instances.get<CommandRegistry>("button")

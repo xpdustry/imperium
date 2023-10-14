@@ -33,6 +33,8 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.game.KillCommand
+import com.xpdustry.imperium.mindustry.game.WaveCommand
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -73,7 +75,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         DistributorProvider.get().globalLocalizationSource.addLocalizationSource(source)
 
         application.instances.createSingletons()
-        listOf(
+        for (listener in
+            listOf(
                 ConventionListener::class,
                 GatekeeperListener::class,
                 ChatTranslatorListener::class,
@@ -92,8 +95,11 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 RockTheVoteCommand::class,
                 CoreBlockListener::class,
                 HelpCommand::class,
-            )
-            .forEach { application.register(it) }
+                WaveCommand::class,
+                KillCommand::class,
+            )) {
+            application.register(listener)
+        }
         application.init()
 
         val registry = application.instances.get<CommandRegistry>()
