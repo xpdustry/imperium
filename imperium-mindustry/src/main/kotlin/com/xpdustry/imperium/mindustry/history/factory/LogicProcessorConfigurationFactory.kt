@@ -21,18 +21,26 @@ import com.xpdustry.imperium.mindustry.history.HistoryConfig
 import com.xpdustry.imperium.mindustry.history.HistoryEntry
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import fr.xpdustry.distributor.api.util.ArcCollections
-import mindustry.world.blocks.logic.LogicBlock
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.IOException
 import java.nio.charset.StandardCharsets
 import java.util.zip.InflaterInputStream
+import mindustry.world.blocks.logic.LogicBlock
 
-object LogicProcessorConfigurationFactory : LinkableBlockConfigurationFactory<LogicBlock.LogicBuild>() {
+object LogicProcessorConfigurationFactory :
+    LinkableBlockConfigurationFactory<LogicBlock.LogicBuild>() {
     private const val MAX_INSTRUCTIONS_SIZE = 1024 * 500
 
-    override fun create(building: LogicBlock.LogicBuild, type: HistoryEntry.Type, config: Any?): HistoryConfig? {
-        if (type === HistoryEntry.Type.PLACING || type === HistoryEntry.Type.PLACE || type === HistoryEntry.Type.BREAKING || type === HistoryEntry.Type.BREAK) {
+    override fun create(
+        building: LogicBlock.LogicBuild,
+        type: HistoryEntry.Type,
+        config: Any?
+    ): HistoryConfig? {
+        if (type === HistoryEntry.Type.PLACING ||
+            type === HistoryEntry.Type.PLACE ||
+            type === HistoryEntry.Type.BREAKING ||
+            type === HistoryEntry.Type.BREAK) {
             return getConfiguration(building)
         } else if (config is ByteArray) {
             return readCode(config)?.let { HistoryConfig.Text(it, HistoryConfig.Text.Type.CODE) }
@@ -47,10 +55,13 @@ object LogicProcessorConfigurationFactory : LinkableBlockConfigurationFactory<Lo
 
     private fun getConfiguration(building: LogicBlock.LogicBuild): HistoryConfig? {
         val configurations = mutableListOf<HistoryConfig>()
-        val links = ArcCollections.immutableList(building.links)
-            .filter { it.active }
-            .map { link -> ImmutablePoint(link.x - building.tileX(), link.y - building.tileY()) }
-            .toList()
+        val links =
+            ArcCollections.immutableList(building.links)
+                .filter { it.active }
+                .map { link ->
+                    ImmutablePoint(link.x - building.tileX(), link.y - building.tileY())
+                }
+                .toList()
 
         if (links.isNotEmpty()) {
             configurations += HistoryConfig.Link(links, true)

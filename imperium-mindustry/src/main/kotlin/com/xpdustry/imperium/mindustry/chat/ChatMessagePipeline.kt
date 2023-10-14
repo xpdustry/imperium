@@ -30,16 +30,20 @@ data class ChatMessageContext(
 
 interface ChatMessagePipeline : ProcessorPipeline<ChatMessageContext, String>
 
-class SimpleChatMessagePipeline : ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>() {
+class SimpleChatMessagePipeline :
+    ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>() {
     override suspend fun pump(context: ChatMessageContext): String {
         var result = context.message
         for (processor in processors) {
-            result = try {
-                processor.process(context.copy(message = result))
-            } catch (error: Throwable) {
-                logger.error("Error while processing chat message for player ${context.sender.name()}", error)
-                result
-            }
+            result =
+                try {
+                    processor.process(context.copy(message = result))
+                } catch (error: Throwable) {
+                    logger.error(
+                        "Error while processing chat message for player ${context.sender.name()}",
+                        error)
+                    result
+                }
             if (result.isEmpty()) break
         }
         return result

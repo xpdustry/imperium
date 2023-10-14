@@ -28,12 +28,12 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.service.DiscordService
+import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import org.javacord.api.entity.channel.ChannelCategory
 import org.javacord.api.entity.message.MessageBuilder
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder
-import kotlin.jvm.optionals.getOrNull
 
 class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
@@ -42,22 +42,29 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
     override fun onImperiumInit() {
         discord.getMainServer().addMessageCreateListener { event ->
-            if (event.message.author.isBotUser || event.message.content.isBlank()) return@addMessageCreateListener
-            val channel = event.channel.asServerTextChannel().getOrNull() ?: return@addMessageCreateListener
+            if (event.message.author.isBotUser || event.message.content.isBlank())
+                return@addMessageCreateListener
+            val channel =
+                event.channel.asServerTextChannel().getOrNull() ?: return@addMessageCreateListener
             if (channel.category.getOrNull()?.id == config.categories.liveChat) {
                 ImperiumScope.MAIN.launch {
-                    messenger.publish(BridgeChatMessage(channel.name, event.message.author.name, event.message.content))
+                    messenger.publish(
+                        BridgeChatMessage(
+                            channel.name, event.message.author.name, event.message.content))
                 }
             }
         }
 
         messenger.subscribe<MindustryPlayerMessage> { message ->
-            val channel = getLiveChatCategory().channels.find { it.name == message.serverName }
-                ?: discord.getMainServer().createTextChannelBuilder()
-                    .setCategory(getLiveChatCategory())
-                    .setName(message.serverName)
-                    .create()
-                    .await()
+            val channel =
+                getLiveChatCategory().channels.find { it.name == message.serverName }
+                    ?: discord
+                        .getMainServer()
+                        .createTextChannelBuilder()
+                        .setCategory(getLiveChatCategory())
+                        .setName(message.serverName)
+                        .create()
+                        .await()
 
             val textChannel = channel.asServerTextChannel().getOrNull()
             if (textChannel == null) {
@@ -65,11 +72,15 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 return@subscribe
             }
 
-            val text = when (val action = message.action) {
-                is MindustryPlayerMessage.Action.Join -> ":green_square: **${message.player.name}** has joined the server."
-                is MindustryPlayerMessage.Action.Quit -> ":red_square: **${message.player.name}** has left the server."
-                is MindustryPlayerMessage.Action.Chat -> ":blue_square: **${message.player.name}**: ${action.message}"
-            }
+            val text =
+                when (val action = message.action) {
+                    is MindustryPlayerMessage.Action.Join ->
+                        ":green_square: **${message.player.name}** has joined the server."
+                    is MindustryPlayerMessage.Action.Quit ->
+                        ":red_square: **${message.player.name}** has left the server."
+                    is MindustryPlayerMessage.Action.Chat ->
+                        ":blue_square: **${message.player.name}**: ${action.message}"
+                }
 
             MessageBuilder()
                 .setAllowedMentions(NO_MENTIONS)
@@ -84,10 +95,11 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
     companion object {
         private val logger by LoggerDelegate()
-        private val NO_MENTIONS = AllowedMentionsBuilder()
-            .setMentionEveryoneAndHere(false)
-            .setMentionRoles(false)
-            .setMentionUsers(false)
-            .build()
+        private val NO_MENTIONS =
+            AllowedMentionsBuilder()
+                .setMentionEveryoneAndHere(false)
+                .setMentionRoles(false)
+                .setMentionUsers(false)
+                .build()
     }
 }

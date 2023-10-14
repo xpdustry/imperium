@@ -58,7 +58,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     override fun onLoad() {
-        val source = LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
+        val source =
+            LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
         source.registerAll(
             Locale.ENGLISH,
             "com/xpdustry/imperium/bundles/bundle",
@@ -73,33 +74,30 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         application.instances.createSingletons()
         listOf(
-            ConventionListener::class,
-            GatekeeperListener::class,
-            ChatTranslatorListener::class,
-            AccountListener::class,
-            AccountCommand::class,
-            ChatMessageListener::class,
-            HistoryCommand::class,
-            BridgeChatMessageListener::class,
-            ReportCommand::class,
-            LogicImageAnalysisListener::class,
-            AdminRequestListener::class,
-            PunishmentListener::class,
-            MapListener::class,
-            VoteKickCommand::class,
-            ExcavateCommand::class,
-            RockTheVoteCommand::class,
-            CoreBlockListener::class,
-            HelpCommand::class,
-        ).forEach {
-            application.register(it)
-        }
+                ConventionListener::class,
+                GatekeeperListener::class,
+                ChatTranslatorListener::class,
+                AccountListener::class,
+                AccountCommand::class,
+                ChatMessageListener::class,
+                HistoryCommand::class,
+                BridgeChatMessageListener::class,
+                ReportCommand::class,
+                LogicImageAnalysisListener::class,
+                AdminRequestListener::class,
+                PunishmentListener::class,
+                MapListener::class,
+                VoteKickCommand::class,
+                ExcavateCommand::class,
+                RockTheVoteCommand::class,
+                CoreBlockListener::class,
+                HelpCommand::class,
+            )
+            .forEach { application.register(it) }
         application.init()
 
         val registry = application.instances.get<CommandRegistry>()
-        application.listeners.forEach {
-            registry.parse(it)
-        }
+        application.listeners.forEach { registry.parse(it) }
     }
 
     override fun onExit() {
@@ -107,17 +105,21 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 }
 
-private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) : SimpleImperiumApplication(mindustryModule(plugin)) {
+private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
+    SimpleImperiumApplication(mindustryModule(plugin)) {
     private var exited = false
+
     override fun exit(status: ExitStatus) {
         if (exited) return
         exited = true
         super.exit(status)
         when (status) {
-            ExitStatus.EXIT, ExitStatus.INIT_FAILURE -> Core.app.exit()
+            ExitStatus.EXIT,
+            ExitStatus.INIT_FAILURE -> Core.app.exit()
             ExitStatus.RESTART -> Core.app.restart()
         }
     }
+
     override fun onListenerRegistration(listener: ImperiumApplication.Listener) {
         super.onListenerRegistration(listener)
         DistributorProvider.get().eventBus.parse(plugin, listener)
@@ -128,10 +130,11 @@ private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
 // Very hacky way to restart the server
 private fun Application.restart() {
     exit()
-    addListener(object : ApplicationListener {
-        override fun dispose() {
-            Core.settings.autosave()
-            exitProcess(2)
-        }
-    })
+    addListener(
+        object : ApplicationListener {
+            override fun dispose() {
+                Core.settings.autosave()
+                exitProcess(2)
+            }
+        })
 }

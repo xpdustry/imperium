@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.discord.misc
 
+import java.util.Optional
 import org.javacord.api.entity.emoji.CustomEmoji
 import org.javacord.api.entity.emoji.Emoji
 import org.javacord.api.entity.emoji.KnownCustomEmoji
-import java.util.Optional
 
 object ImperiumEmojis {
     val CHECK_MARK: Emoji = UnicodeEmoji("✔️")
@@ -32,9 +32,13 @@ object ImperiumEmojis {
 
     private data class UnicodeEmoji(private val emoji: String) : Emoji {
         override fun getMentionTag() = emoji
+
         override fun asUnicodeEmoji() = Optional.of(emoji)
+
         override fun asCustomEmoji() = Optional.empty<CustomEmoji>()
+
         override fun asKnownCustomEmoji() = Optional.empty<KnownCustomEmoji>()
+
         override fun isAnimated() = false
     }
 }

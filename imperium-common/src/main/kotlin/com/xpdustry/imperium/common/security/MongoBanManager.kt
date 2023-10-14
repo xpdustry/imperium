@@ -25,12 +25,16 @@ import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.database.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.message.Messenger
-import kotlinx.coroutines.flow.Flow
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.flow.Flow
 
-internal class MongoBanManager(private val generator: SnowflakeGenerator, private val mongo: MongoProvider, private val messenger: Messenger) : PunishmentManager, ImperiumApplication.Listener {
+internal class MongoBanManager(
+    private val generator: SnowflakeGenerator,
+    private val mongo: MongoProvider,
+    private val messenger: Messenger
+) : PunishmentManager, ImperiumApplication.Listener {
 
     private lateinit var bans: MongoEntityCollection<Punishment, Snowflake>
 
@@ -38,21 +42,35 @@ internal class MongoBanManager(private val generator: SnowflakeGenerator, privat
         bans = mongo.getCollection("punishments", Punishment::class)
     }
 
-    override suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?, extra: PunishmentMessage.Extra) {
+    override suspend fun punish(
+        author: Identity?,
+        target: Punishment.Target,
+        reason: String,
+        type: Punishment.Type,
+        duration: Duration?,
+        extra: PunishmentMessage.Extra
+    ) {
         val punishment = Punishment(generator.generate(), target, reason, type, duration)
         bans.save(punishment)
-        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id, extra), local = true)
+        messenger.publish(
+            PunishmentMessage(author, PunishmentMessage.Type.CREATE, punishment._id, extra),
+            local = true)
     }
 
     override suspend fun pardon(author: Identity?, id: Snowflake, reason: String) {
         val punishment = findById(id) ?: return
         punishment.pardon = Punishment.Pardon(Instant.now(), reason)
         bans.save(punishment)
-        messenger.publish(PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment._id, PunishmentMessage.Extra.None), local = true)
+        messenger.publish(
+            PunishmentMessage(
+                author,
+                PunishmentMessage.Type.PARDON,
+                punishment._id,
+                PunishmentMessage.Extra.None),
+            local = true)
     }
 
-    override suspend fun findById(id: Snowflake): Punishment? =
-        bans.findById(id)
+    override suspend fun findById(id: Snowflake): Punishment? = bans.findById(id)
 
     override suspend fun findAllByAddress(target: InetAddress): Flow<Punishment> =
         bans.find(Filters.eq("target.address", target))

@@ -42,12 +42,14 @@ data class NetworkConfig(
 ) {
     sealed interface VpnDetectionConfig {
         data object None : VpnDetectionConfig
+
         data class IPHub(val token: Secret) : VpnDetectionConfig
     }
 }
 
 sealed interface TranslatorConfig {
     data object None : TranslatorConfig
+
     data class DeepL(val token: Secret) : TranslatorConfig
 }
 
@@ -75,7 +77,8 @@ sealed interface MessengerConfig {
 
 sealed interface ServerConfig {
     val name: String
-    val displayName: String get() = name.capitalize()
+    val displayName: String
+        get() = name.capitalize()
 
     data object None : ServerConfig {
         override val name: String = "none"
@@ -94,13 +97,16 @@ sealed interface ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }
         }
+
         data class History(
             val tileEntriesLimit: Int = 10,
             val playerEntriesLimit: Int = 200,
         )
+
         data class World(
             val maxExcavateSize: Int = 64,
         )
+
         data class Security(
             val gatekeeper: Boolean = true,
             val imageProcessingDelay: Duration = 3.seconds,
@@ -146,6 +152,7 @@ sealed interface StorageConfig {
 
 sealed interface ImageAnalysisConfig {
     data object None : ImageAnalysisConfig
+
     data class SightEngine(
         val sightEngineClient: String,
         val sightEngineSecret: Secret,

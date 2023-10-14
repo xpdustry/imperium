@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
-import mindustry.world.Block
 import java.time.Instant
+import mindustry.world.Block
 
 data class HistoryEntry(
     val x: Int,

@@ -32,6 +32,8 @@ import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.serialization.InetAddressCodecProvider
+import java.util.concurrent.TimeUnit
+import kotlin.reflect.KClass
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -42,14 +44,16 @@ import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.kotlinx.BsonConfiguration
 import org.bson.codecs.kotlinx.KotlinSerializerCodec
 import org.bson.codecs.kotlinx.defaultSerializersModule
-import java.util.concurrent.TimeUnit
-import kotlin.reflect.KClass
 
 internal interface MongoProvider {
-    fun <E : Entity<I>, I : Any> getCollection(name: String, klass: KClass<E>): MongoEntityCollection<E, I>
+    fun <E : Entity<I>, I : Any> getCollection(
+        name: String,
+        klass: KClass<E>
+    ): MongoEntityCollection<E, I>
 }
 
-internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoProvider, ImperiumApplication.Listener {
+internal class SimpleMongoProvider(private val config: ImperiumConfig) :
+    MongoProvider, ImperiumApplication.Listener {
     private lateinit var client: MongoClient
     private lateinit var database: MongoDatabase
 
@@ -58,53 +62,59 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
             throw IllegalStateException("The current database configuration is not Mongo")
         }
         @OptIn(ExperimentalSerializationApi::class)
-        val kotlinSerializationCodec = object : CodecProvider {
-            private val configuration = BsonConfiguration(
-                explicitNulls = true,
-                encodeDefaults = true,
-                classDiscriminator = "_java_class",
-            )
-            override fun <T : Any> get(clazz: Class<T>, registry: CodecRegistry): Codec<T>? =
-                KotlinSerializerCodec.create(clazz.kotlin, defaultSerializersModule, configuration)
-        }
-        val settings = MongoClientSettings.builder()
-            .applicationName("imperium-${config.server.name}")
-            .applyToClusterSettings { cluster ->
-                cluster.hosts(listOf(ServerAddress(config.database.host, config.database.port)))
-                cluster.serverSelectionTimeout(5, TimeUnit.SECONDS)
+        val kotlinSerializationCodec =
+            object : CodecProvider {
+                private val configuration =
+                    BsonConfiguration(
+                        explicitNulls = true,
+                        encodeDefaults = true,
+                        classDiscriminator = "_java_class",
+                    )
+
+                override fun <T : Any> get(clazz: Class<T>, registry: CodecRegistry): Codec<T>? =
+                    KotlinSerializerCodec.create(
+                        clazz.kotlin, defaultSerializersModule, configuration)
             }
-            .also { settings ->
-                if (config.database.username.isBlank()) {
-                    return@also
+        val settings =
+            MongoClientSettings.builder()
+                .applicationName("imperium-${config.server.name}")
+                .applyToClusterSettings { cluster ->
+                    cluster.hosts(listOf(ServerAddress(config.database.host, config.database.port)))
+                    cluster.serverSelectionTimeout(5, TimeUnit.SECONDS)
                 }
-                settings.credential(
-                    MongoCredential.createCredential(
-                        config.database.username,
-                        config.database.authDatabase,
-                        config.database.password.value.toCharArray(),
+                .also { settings ->
+                    if (config.database.username.isBlank()) {
+                        return@also
+                    }
+                    settings.credential(
+                        MongoCredential.createCredential(
+                            config.database.username,
+                            config.database.authDatabase,
+                            config.database.password.value.toCharArray(),
+                        ),
+                    )
+                }
+                .writeConcern(WriteConcern.MAJORITY)
+                .readConcern(ReadConcern.MAJORITY)
+                .serverApi(
+                    ServerApi.builder()
+                        .version(ServerApiVersion.V1)
+                        .deprecationErrors(true)
+                        .build(),
+                )
+                .applyToSslSettings { ssl ->
+                    ssl.applySettings(SslSettings.builder().enabled(config.database.ssl).build())
+                }
+                .codecRegistry(
+                    CodecRegistries.fromProviders(
+                        kotlinSerializationCodec,
+                        // The kotlin serialization codec covers InetAddress, not its subclasses
+                        // directly
+                        InetAddressCodecProvider,
+                        MongoClientSettings.getDefaultCodecRegistry(),
                     ),
                 )
-            }
-            .writeConcern(WriteConcern.MAJORITY)
-            .readConcern(ReadConcern.MAJORITY)
-            .serverApi(
-                ServerApi.builder()
-                    .version(ServerApiVersion.V1)
-                    .deprecationErrors(true)
-                    .build(),
-            )
-            .applyToSslSettings { ssl ->
-                ssl.applySettings(SslSettings.builder().enabled(config.database.ssl).build())
-            }
-            .codecRegistry(
-                CodecRegistries.fromProviders(
-                    kotlinSerializationCodec,
-                    // The kotlin serialization codec covers InetAddress, not its subclasses directly
-                    InetAddressCodecProvider,
-                    MongoClientSettings.getDefaultCodecRegistry(),
-                ),
-            )
-            .build()
+                .build()
 
         client = MongoClient.create(settings)
 
@@ -121,6 +131,8 @@ internal class SimpleMongoProvider(private val config: ImperiumConfig) : MongoPr
         client.close()
     }
 
-    override fun <E : Entity<I>, I : Any> getCollection(name: String, klass: KClass<E>): MongoEntityCollection<E, I> =
-        MongoEntityCollection(database.getCollection(name, klass.java))
+    override fun <E : Entity<I>, I : Any> getCollection(
+        name: String,
+        klass: KClass<E>
+    ): MongoEntityCollection<E, I> = MongoEntityCollection(database.getCollection(name, klass.java))
 }

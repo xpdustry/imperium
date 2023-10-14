@@ -31,6 +31,5 @@ enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
     MONTH(30 * 24 * 60),
     ;
 
-    @Serializable
-    data class Progression(var progress: Int = 0, var completed: Boolean = false)
+    @Serializable data class Progression(var progress: Int = 0, var completed: Boolean = false)
 }

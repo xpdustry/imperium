@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.common.serialization
 
+import java.net.InetAddress
+import kotlin.reflect.full.isSuperclassOf
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import org.bson.codecs.Codec
@@ -25,8 +27,6 @@ import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.kotlinx.BsonConfiguration
 import org.bson.codecs.kotlinx.KotlinSerializerCodec
 import org.bson.codecs.kotlinx.defaultSerializersModule
-import java.net.InetAddress
-import kotlin.reflect.full.isSuperclassOf
 
 object InetAddressCodecProvider : CodecProvider {
     @Suppress("UNCHECKED_CAST")

@@ -27,21 +27,26 @@ import mindustry.gen.Player
 // TODO Delegate the creation to a factory?
 class PlayerMap<V>(plugin: MindustryPlugin) {
     private val players = mutableMapOf<Int, V>()
-    val entries: Sequence<Pair<Player, V>> get() = players.entries
-        .asSequence()
-        .map { entry -> Groups.player.getByID(entry.key) to entry.value }
-        .filter { it.first != null }
+    val entries: Sequence<Pair<Player, V>>
+        get() =
+            players.entries
+                .asSequence()
+                .map { entry -> Groups.player.getByID(entry.key) to entry.value }
+                .filter { it.first != null }
 
     init {
-        DistributorProvider.get().eventBus.subscribe(PlayerLeave::class.java, Priority.LOWEST, plugin) {
-            players.remove(it.player.id())
-        }
+        DistributorProvider.get().eventBus.subscribe(
+            PlayerLeave::class.java, Priority.LOWEST, plugin) {
+                players.remove(it.player.id())
+            }
     }
 
     operator fun get(player: Player): V? = players[player.id()]
+
     operator fun set(player: Player, value: V) {
         players[player.id()] = value
     }
+
     fun remove(player: Player) {
         players.remove(player.id())
     }

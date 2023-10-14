@@ -21,10 +21,15 @@ import com.xpdustry.imperium.common.account.MindustryUUID
 
 interface BlockHistory {
     fun getHistory(x: Int, y: Int): List<HistoryEntry>
+
     fun getHistory(uuid: MindustryUUID): List<HistoryEntry>
-    fun getLatestPlace(x: Int, y: Int): HistoryEntry? = getHistory(x, y)
-        .toMutableList()
-        .dropLastWhile { it.type == HistoryEntry.Type.ROTATE || it.type == HistoryEntry.Type.CONFIGURE }
-        .lastOrNull()
-        ?.takeIf { it.type == HistoryEntry.Type.PLACE }
+
+    fun getLatestPlace(x: Int, y: Int): HistoryEntry? =
+        getHistory(x, y)
+            .toMutableList()
+            .dropLastWhile {
+                it.type == HistoryEntry.Type.ROTATE || it.type == HistoryEntry.Type.CONFIGURE
+            }
+            .lastOrNull()
+            ?.takeIf { it.type == HistoryEntry.Type.PLACE }
 }

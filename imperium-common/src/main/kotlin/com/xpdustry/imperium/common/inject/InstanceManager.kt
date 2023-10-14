@@ -21,18 +21,27 @@ import kotlin.reflect.KClass
 
 interface InstanceManager {
     fun createSingletons()
+
     fun <T : Any> getOrNull(clazz: KClass<T>, name: String = ""): T?
+
     fun <T : Any> get(clazz: KClass<T>, name: String = ""): T =
-        getOrNull(clazz, name) ?: throw IllegalArgumentException("No instance of $clazz (name=$name) found")
+        getOrNull(clazz, name)
+            ?: throw IllegalArgumentException("No instance of $clazz (name=$name) found")
+
     interface Listener {
         fun onInstanceProvision(instance: Any)
     }
 }
 
-inline fun <reified T : Any> InstanceManager.getOrNull(name: String = ""): T? = getOrNull(T::class, name)
+inline fun <reified T : Any> InstanceManager.getOrNull(name: String = ""): T? =
+    getOrNull(T::class, name)
+
 inline fun <reified T : Any> InstanceManager.get(name: String = ""): T = get(T::class, name)
 
-internal class SimpleInstanceManager(private val module: Module, private val listener: InstanceManager.Listener) : InstanceManager {
+internal class SimpleInstanceManager(
+    private val module: Module,
+    private val listener: InstanceManager.Listener
+) : InstanceManager {
     override fun createSingletons() {
         for (instance in module.instances) {
             if (instance.value is SingleInstanceFactory) {
@@ -54,7 +63,9 @@ internal class SimpleInstanceManager(private val module: Module, private val lis
 
     private inner class ResolvingInstanceManager : InstanceManager {
         private val resolving = mutableSetOf<InstanceKey<*>>()
+
         override fun createSingletons() = Unit
+
         override fun <T : Any> getOrNull(clazz: KClass<T>, name: String): T? {
             val key = InstanceKey(clazz, name)
             if (key in resolving) {
@@ -62,11 +73,9 @@ internal class SimpleInstanceManager(private val module: Module, private val lis
             }
 
             resolving += key
-            val provider = module.instances[key]
-                ?: return null
+            val provider = module.instances[key] ?: return null
 
-            @Suppress("UNCHECKED_CAST")
-            val instance = provider.create(this) as T?
+            @Suppress("UNCHECKED_CAST") val instance = provider.create(this) as T?
             resolving -= key
 
             if (instance != null) {

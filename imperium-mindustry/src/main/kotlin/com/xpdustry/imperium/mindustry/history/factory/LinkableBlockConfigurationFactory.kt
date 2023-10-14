@@ -47,7 +47,12 @@ abstract class LinkableBlockConfigurationFactory<B : Building> : HistoryConfig.F
                 isLinkValid(building, config.x + building.tileX(), config.y + building.tileY()),
             )
         } else if (config is Array<*> && config.isArrayOf<Point2>()) {
-            HistoryConfig.Link(config.map { it as Point2; ImmutablePoint(it.x, it.y) }, true)
+            HistoryConfig.Link(
+                config.map {
+                    it as Point2
+                    ImmutablePoint(it.x, it.y)
+                },
+                true)
         } else {
             null
         }

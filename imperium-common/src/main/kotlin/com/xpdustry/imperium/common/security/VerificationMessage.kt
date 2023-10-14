@@ -23,4 +23,9 @@ import com.xpdustry.imperium.common.serialization.SerializableObjectId
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class VerificationMessage(val account: SerializableObjectId, val uuid: MindustryUUID, val code: Int, val response: Boolean = false) : Message
+data class VerificationMessage(
+    val account: SerializableObjectId,
+    val uuid: MindustryUUID,
+    val code: Int,
+    val response: Boolean = false
+) : Message

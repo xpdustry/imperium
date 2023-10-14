@@ -21,18 +21,20 @@ import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.processing.Processor
+import java.time.Duration
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
-import java.time.Duration
 
 // TODO Improve ban message
-class PunishmentGatekeeper(private val bans: PunishmentManager) : Processor<GatekeeperContext, GatekeeperResult> {
+class PunishmentGatekeeper(private val bans: PunishmentManager) :
+    Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
-        val punishment = bans
-            .findAllByAddress(context.address)
-            .filter { it.expired.not() && it.type.isKick() }
-            .toList()
-            .maxByOrNull(Punishment::timestamp)
+        val punishment =
+            bans
+                .findAllByAddress(context.address)
+                .filter { it.expired.not() && it.type.isKick() }
+                .toList()
+                .maxByOrNull(Punishment::timestamp)
 
         return if (punishment == null) {
             GatekeeperResult.Success
@@ -47,16 +49,18 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) : Processor<Gate
                 [accent]Punishment id:[white] ${punishment._id.toBase62()}
 
                 [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
-                """.trimIndent(),
+                """
+                    .trimIndent(),
             )
         }
     }
 }
 
-private fun formatDuration(duration: Duration?): String = when {
-    duration == null -> "Permanent"
-    duration >= Duration.ofDays(1L) -> "${duration.toDays()} days"
-    duration >= Duration.ofHours(1L) -> "${duration.toHours()} hours"
-    duration >= Duration.ofMinutes(1L) -> "${duration.toMinutes()} minutes"
-    else -> "${duration.seconds} seconds"
-}
+private fun formatDuration(duration: Duration?): String =
+    when {
+        duration == null -> "Permanent"
+        duration >= Duration.ofDays(1L) -> "${duration.toDays()} days"
+        duration >= Duration.ofHours(1L) -> "${duration.toHours()} hours"
+        duration >= Duration.ofMinutes(1L) -> "${duration.toMinutes()} minutes"
+        else -> "${duration.seconds} seconds"
+    }

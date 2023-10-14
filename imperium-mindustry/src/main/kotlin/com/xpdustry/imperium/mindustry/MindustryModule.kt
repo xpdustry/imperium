@@ -38,56 +38,43 @@ import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import java.net.InetAddress
+import java.nio.file.Path
+import java.util.function.Supplier
 import mindustry.Vars
 import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.gen.Groups
 import mindustry.net.Administration
-import java.net.InetAddress
-import java.nio.file.Path
-import java.util.function.Supplier
 
-fun mindustryModule(plugin: ImperiumPlugin) = module("mindustry") {
-    include(commonModule())
+fun mindustryModule(plugin: ImperiumPlugin) =
+    module("mindustry") {
+        include(commonModule())
 
-    factory<Supplier<MindustryServerInfo?>> {
-        val config = get<ImperiumConfig>()
-        Supplier { getMindustryServerInfo(config) }
+        factory<Supplier<MindustryServerInfo?>> {
+            val config = get<ImperiumConfig>()
+            Supplier { getMindustryServerInfo(config) }
+        }
+
+        single<BlockHistory> { SimpleBlockHistory(get()) }
+
+        single<MindustryPlugin> { plugin }
+
+        single<GatekeeperPipeline> { SimpleGatekeeperPipeline() }
+
+        single<ChatMessagePipeline> { SimpleChatMessagePipeline() }
+
+        single<PlaceholderPipeline> { SimplePlaceholderManager() }
+
+        single<Path>("directory") { plugin.directory }
+
+        single<ServerConfig.Mindustry> {
+            get<ImperiumConfig>().server as? ServerConfig.Mindustry
+                ?: error("The current server configuration is not Mindustry")
+        }
+
+        single<CommandRegistry> { MindustryCommandRegistry(get(), get(), get()) }
     }
-
-    single<BlockHistory> {
-        SimpleBlockHistory(get())
-    }
-
-    single<MindustryPlugin> {
-        plugin
-    }
-
-    single<GatekeeperPipeline> {
-        SimpleGatekeeperPipeline()
-    }
-
-    single<ChatMessagePipeline> {
-        SimpleChatMessagePipeline()
-    }
-
-    single<PlaceholderPipeline> {
-        SimplePlaceholderManager()
-    }
-
-    single<Path>("directory") {
-        plugin.directory
-    }
-
-    single<ServerConfig.Mindustry> {
-        get<ImperiumConfig>().server as? ServerConfig.Mindustry
-            ?: error("The current server configuration is not Mindustry")
-    }
-
-    single<CommandRegistry> {
-        MindustryCommandRegistry(get(), get(), get())
-    }
-}
 
 private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo? {
     if (Vars.state.isMenu) {
@@ -95,7 +82,8 @@ private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo?
     }
     return MindustryServerInfo(
         config.server.name,
-        // Our servers run within a pterodactyl container, so we can use the SERVER_IP environment variable
+        // Our servers run within a pterodactyl container, so we can use the SERVER_IP environment
+        // variable
         System.getenv("SERVER_IP")?.toInetAddress() ?: InetAddress.getLocalHost(),
         Administration.Config.port.num(),
         Vars.state.map.name(),
@@ -109,20 +97,22 @@ private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo?
     )
 }
 
-private fun getGameMode(): MindustryServerInfo.GameMode = when (Vars.state.rules.mode()!!) {
-    Gamemode.attack -> MindustryServerInfo.GameMode.ATTACK
-    Gamemode.pvp -> MindustryServerInfo.GameMode.PVP
-    Gamemode.sandbox -> MindustryServerInfo.GameMode.SANDBOX
-    Gamemode.survival -> MindustryServerInfo.GameMode.SURVIVAL
-    Gamemode.editor -> MindustryServerInfo.GameMode.EDITOR
-}
+private fun getGameMode(): MindustryServerInfo.GameMode =
+    when (Vars.state.rules.mode()!!) {
+        Gamemode.attack -> MindustryServerInfo.GameMode.ATTACK
+        Gamemode.pvp -> MindustryServerInfo.GameMode.PVP
+        Gamemode.sandbox -> MindustryServerInfo.GameMode.SANDBOX
+        Gamemode.survival -> MindustryServerInfo.GameMode.SURVIVAL
+        Gamemode.editor -> MindustryServerInfo.GameMode.EDITOR
+    }
 
-private fun getVersion(): MindustryVersion = MindustryVersion(
-    Version.number,
-    Version.build.coerceAtLeast(0),
-    Version.revision,
-    getVersionType(),
-)
+private fun getVersion(): MindustryVersion =
+    MindustryVersion(
+        Version.number,
+        Version.build.coerceAtLeast(0),
+        Version.revision,
+        getVersionType(),
+    )
 
 // Yes, this is a mess
 private fun getVersionType(): MindustryVersion.Type {
@@ -131,13 +121,7 @@ private fun getVersionType(): MindustryVersion.Type {
     }
     return when (Version.modifier.lowercase()) {
         "alpha" -> MindustryVersion.Type.ALPHA
-        "release" -> when (Version.type) {
-            "official" -> MindustryVersion.Type.OFFICIAL
-            "bleeding-edge" -> MindustryVersion.Type.BLEEDING_EDGE
-            else -> MindustryVersion.Type.CUSTOM
-        }
         else -> {
-            MindustryVersion.Type.CUSTOM
             when (Version.type) {
                 "official" -> MindustryVersion.Type.OFFICIAL
                 "bleeding-edge" -> MindustryVersion.Type.BLEEDING_EDGE

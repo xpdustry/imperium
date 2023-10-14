@@ -22,8 +22,11 @@ import kotlin.reflect.KClass
 interface Module {
     val name: String
     val instances: Map<InstanceKey<*>, InstanceFactory<*>>
+
     fun include(module: Module)
+
     fun <T : Any> single(clazz: KClass<T>, name: String, creator: InstanceFactory<out T>)
+
     fun <T : Any> factory(clazz: KClass<T>, name: String, creator: InstanceFactory<out T>)
 }
 
@@ -33,8 +36,10 @@ fun module(name: String, init: Module.() -> Unit): Module {
     return module
 }
 
-inline fun <reified T : Any> Module.single(name: String = "", crossinline creator: InstanceManager.() -> T) =
-    single(T::class, name) { creator(it) }
+inline fun <reified T : Any> Module.single(
+    name: String = "",
+    crossinline creator: InstanceManager.() -> T
+) = single(T::class, name) { creator(it) }
 
 inline fun <reified T : Any> Module.single(name: String, creator: InstanceFactory<out T>) =
     single(T::class, name, creator)
@@ -42,8 +47,10 @@ inline fun <reified T : Any> Module.single(name: String, creator: InstanceFactor
 inline fun <reified T : Any> Module.single(creator: InstanceFactory<out T>) =
     single(T::class, "", creator)
 
-inline fun <reified T : Any> Module.factory(name: String = "", crossinline creator: InstanceManager.() -> T) =
-    factory(T::class, name) { creator(it) }
+inline fun <reified T : Any> Module.factory(
+    name: String = "",
+    crossinline creator: InstanceManager.() -> T
+) = factory(T::class, name) { creator(it) }
 
 inline fun <reified T : Any> Module.factory(name: String, creator: InstanceFactory<out T>) =
     factory(T::class, name, creator)
@@ -55,12 +62,13 @@ private class SimpleModule(override val name: String) : Module {
     private val _instances = mutableMapOf<InstanceKey<*>, InstanceFactory<*>>()
     private val modules = mutableListOf<Module>()
 
-    override val instances: Map<InstanceKey<*>, InstanceFactory<*>> get() {
-        val result = mutableMapOf<InstanceKey<*>, InstanceFactory<*>>()
-        modules.forEach { result.putAll(it.instances) }
-        result.putAll(_instances)
-        return result
-    }
+    override val instances: Map<InstanceKey<*>, InstanceFactory<*>>
+        get() {
+            val result = mutableMapOf<InstanceKey<*>, InstanceFactory<*>>()
+            modules.forEach { result.putAll(it.instances) }
+            result.putAll(_instances)
+            return result
+        }
 
     override fun include(module: Module) {
         if (module in modules) {
@@ -73,7 +81,11 @@ private class SimpleModule(override val name: String) : Module {
         factory(clazz, name, SingleInstanceFactory(creator))
     }
 
-    override fun <T : Any> factory(clazz: KClass<T>, name: String, creator: InstanceFactory<out T>) {
+    override fun <T : Any> factory(
+        clazz: KClass<T>,
+        name: String,
+        creator: InstanceFactory<out T>
+    ) {
         val key = InstanceKey(clazz, name)
         if (!_instances.containsKey(key)) {
             _instances[key] = creator
@@ -83,9 +95,11 @@ private class SimpleModule(override val name: String) : Module {
     }
 }
 
-internal class SingleInstanceFactory<T : Any>(private val provider: InstanceFactory<T>) : InstanceFactory<T> {
+internal class SingleInstanceFactory<T : Any>(private val provider: InstanceFactory<T>) :
+    InstanceFactory<T> {
     private var provided = false
     private var value: T? = null
+
     override fun create(instances: InstanceManager): T? {
         if (provided) {
             return value

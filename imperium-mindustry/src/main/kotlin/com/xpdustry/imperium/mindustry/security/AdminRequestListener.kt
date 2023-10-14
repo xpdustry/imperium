@@ -35,6 +35,7 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import java.time.Duration
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
@@ -45,7 +46,6 @@ import mindustry.net.Administration.TraceInfo
 import mindustry.net.NetConnection
 import mindustry.net.Packets
 import mindustry.net.Packets.AdminAction
-import java.time.Duration
 
 private val PUNISHMENT_DURATION = stateKey<Duration>("punishment_duration")
 private val PUNISHMENT_REASON = stateKey<String>("punishment_reason")
@@ -60,7 +60,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         val banConfirmationInterface = MenuInterface.create(plugin)
         banConfirmationInterface.addTransformer { view, pane ->
             val type = if (view.state[PUNISHMENT_DURATION] == null) "permanently" else "temporarily"
-            pane.content = "Are you sure you want to [scarlet]$type[] ban [accent]${view.state[PUNISHMENT_TARGET]!!.name}[] for [accent]${view.state[PUNISHMENT_REASON]!!}[] ?"
+            pane.content =
+                "Are you sure you want to [scarlet]$type[] ban [accent]${view.state[PUNISHMENT_TARGET]!!.name}[] for [accent]${view.state[PUNISHMENT_REASON]!!}[] ?"
             pane.options.addRow(
                 MenuOption("[green]Yes") { _ ->
                     view.closeAll()
@@ -93,47 +94,59 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             }
         }
 
-        banInterface = MenuInterface.create(plugin).apply {
-            addTransformer { view, pane ->
-                pane.title = "Ban (1/3)"
-                pane.content = "Select duration of the ban of ${view.state[PUNISHMENT_TARGET]!!.name}"
+        banInterface =
+            MenuInterface.create(plugin).apply {
+                addTransformer { view, pane ->
+                    pane.title = "Ban (1/3)"
+                    pane.content =
+                        "Select duration of the ban of ${view.state[PUNISHMENT_TARGET]!!.name}"
 
-                // TODO Goofy aah function, use proper library to display durations
-                fun addDuration(display: String, duration: Duration?) = pane.options.addRow(
-                    MenuOption(display) { _ ->
-                        view.close()
-                        if (duration != null) view.state[PUNISHMENT_DURATION] = duration
-                        detailsInterface.open(view)
-                    },
-                )
+                    // TODO Goofy aah function, use proper library to display durations
+                    fun addDuration(display: String, duration: Duration?) =
+                        pane.options.addRow(
+                            MenuOption(display) { _ ->
+                                view.close()
+                                if (duration != null) view.state[PUNISHMENT_DURATION] = duration
+                                detailsInterface.open(view)
+                            },
+                        )
 
-                addDuration("[green]1 hour", Duration.ofHours(1L))
-                addDuration("[green]6 hours", Duration.ofHours(6L))
-                addDuration("[green]1 day", Duration.ofDays(1L))
-                addDuration("[green]3 days", Duration.ofDays(3L))
-                addDuration("[green]1 week", Duration.ofDays(7L))
-                addDuration("[green]1 month", Duration.ofDays(30L))
-                addDuration("[red]Permanent", null)
-                pane.options.addRow(MenuOption("[red]Cancel", View::back))
+                    addDuration("[green]1 hour", Duration.ofHours(1L))
+                    addDuration("[green]6 hours", Duration.ofHours(6L))
+                    addDuration("[green]1 day", Duration.ofDays(1L))
+                    addDuration("[green]3 days", Duration.ofDays(3L))
+                    addDuration("[green]1 week", Duration.ofDays(7L))
+                    addDuration("[green]1 month", Duration.ofDays(30L))
+                    addDuration("[red]Permanent", null)
+                    pane.options.addRow(MenuOption("[red]Cancel", View::back))
+                }
             }
-        }
 
         Vars.net.handleServer(AdminRequestCallPacket::class.java, ::interceptAdminRequest)
     }
 
     private fun interceptAdminRequest(con: NetConnection, packet: AdminRequestCallPacket) {
         if (con.player == null) {
-            logger.warn("Received admin request from non-existent player (uuid: {}, ip: {})", con.uuid, con.address)
+            logger.warn(
+                "Received admin request from non-existent player (uuid: {}, ip: {})",
+                con.uuid,
+                con.address)
             return
         }
 
         if (!con.player.admin()) {
-            logger.warn("{} ({}) attempted to perform an admin action without permission", con.player.plainName(), con.player.uuid())
+            logger.warn(
+                "{} ({}) attempted to perform an admin action without permission",
+                con.player.plainName(),
+                con.player.uuid())
             return
         }
 
         if (packet.other == null) {
-            logger.warn("{} ({}) attempted to perform an admin action on non-existent", con.player.plainName(), con.player.uuid())
+            logger.warn(
+                "{} ({}) attempted to perform an admin action on non-existent",
+                con.player.plainName(),
+                con.player.uuid())
             return
         }
 
@@ -152,9 +165,9 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         when (packet.action) {
             AdminAction.wave -> {
                 Vars.logic.skipWave()
-                logger.info("{} ({}) has skipped the wave", con.player.plainName(), con.player.uuid())
+                logger.info(
+                    "{} ({}) has skipped the wave", con.player.plainName(), con.player.uuid())
             }
-
             AdminAction.trace -> {
                 val stats = Vars.netServer.admins.getInfo(packet.other.uuid())
                 Call.traceInfo(
@@ -179,11 +192,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     packet.other.uuid(),
                 )
             }
-
-            AdminAction.ban -> banInterface.open(con.player) {
-                it[PUNISHMENT_TARGET] = packet.other.identity
-            }
-
+            AdminAction.ban ->
+                banInterface.open(con.player) { it[PUNISHMENT_TARGET] = packet.other.identity }
             AdminAction.kick -> {
                 packet.other.kick(Packets.KickReason.kick, 0L)
                 logger.info(
@@ -194,7 +204,6 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     packet.other.uuid(),
                 )
             }
-
             AdminAction.switchTeam -> {
                 val param = packet.params
                 if (param is Team) {
@@ -218,15 +227,15 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     )
                 }
             }
-
-            else -> logger.warn(
-                "{} ({}) attempted to perform an unknown admin action {} on {} ({})",
-                con.player.plainName(),
-                con.player.uuid(),
-                packet.action,
-                packet.other.plainName(),
-                packet.other.uuid(),
-            )
+            else ->
+                logger.warn(
+                    "{} ({}) attempted to perform an unknown admin action {} on {} ({})",
+                    con.player.plainName(),
+                    con.player.uuid(),
+                    packet.action,
+                    packet.other.plainName(),
+                    packet.other.uuid(),
+                )
         }
     }
 

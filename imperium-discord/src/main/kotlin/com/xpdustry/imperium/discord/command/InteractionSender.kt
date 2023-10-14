@@ -31,35 +31,36 @@ import org.javacord.api.interaction.SlashCommandInteraction
 import org.javacord.api.interaction.callback.ExtendedInteractionMessageBuilderBase
 
 sealed class InteractionSender {
-    val discord: DiscordApi get() = interaction.api
-    val user: User get() = interaction.user
+    val discord: DiscordApi
+        get() = interaction.api
+
+    val user: User
+        get() = interaction.user
+
     protected abstract val interaction: InteractionBase
 
-    suspend fun respond(block: suspend ExtendedInteractionMessageBuilderBase<*>.() -> Unit): Message =
-        interaction.createFollowupMessageBuilder()
-            .apply { block() }
-            .send()
-            .await()
+    suspend fun respond(
+        block: suspend ExtendedInteractionMessageBuilderBase<*>.() -> Unit
+    ): Message = interaction.createFollowupMessageBuilder().apply { block() }.send().await()
 
     suspend fun respond(message: String): Message =
-        interaction.createFollowupMessageBuilder()
-            .setContent(message)
-            .send()
-            .await()
+        interaction.createFollowupMessageBuilder().setContent(message).send().await()
 
     suspend fun respond(vararg embed: EmbedBuilder): Message =
-        interaction.createFollowupMessageBuilder()
-            .addEmbeds(*embed)
-            .send()
-            .await()
+        interaction.createFollowupMessageBuilder().addEmbeds(*embed).send().await()
 
     class Slash(private val event: SlashCommandCreateEvent) : InteractionSender() {
-        val channel: TextChannel get() = event.slashCommandInteraction.channel.get()
-        override val interaction: SlashCommandInteraction get() = event.slashCommandInteraction
+        val channel: TextChannel
+            get() = event.slashCommandInteraction.channel.get()
+
+        override val interaction: SlashCommandInteraction
+            get() = event.slashCommandInteraction
     }
 
     class Button(private val event: ButtonClickEvent) : InteractionSender() {
-        val message: Message get() = event.buttonInteraction.message
+        val message: Message
+            get() = event.buttonInteraction.message
+
         override var interaction: ButtonInteraction = event.buttonInteraction
     }
 }

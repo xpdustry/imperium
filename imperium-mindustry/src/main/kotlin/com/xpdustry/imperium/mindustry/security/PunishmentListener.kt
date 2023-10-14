@@ -48,7 +48,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             runMindustryThread {
                 Events.fire(PlayerIpBanEvent(punishment.target.address.hostAddress))
                 for (player in Groups.player) {
-                    if (player.ip().toInetAddress() != punishment.target.address && player.uuid() != punishment.target.uuid) {
+                    if (player.ip().toInetAddress() != punishment.target.address &&
+                        player.uuid() != punishment.target.uuid) {
                         continue
                     }
                     val verb = if (punishment.type == Punishment.Type.BAN) "banned" else "kicked"
@@ -58,7 +59,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         [scarlet]You have been $verb for '${punishment.reason}'.
                         [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
                         [accent]Your punishment id is [white]${punishment._id.toBase62()}[].
-                        """.trimIndent(),
+                        """
+                            .trimIndent(),
                         0,
                     )
                     logger.info(

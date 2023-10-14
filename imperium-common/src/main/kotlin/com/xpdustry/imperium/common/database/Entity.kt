@@ -17,12 +17,11 @@
  */
 package com.xpdustry.imperium.common.database
 
-import org.bson.types.ObjectId
 import java.time.Instant
+import org.bson.types.ObjectId
 
 interface Entity<I> {
-    @Suppress("PropertyName")
-    val _id: I
+    @Suppress("PropertyName") val _id: I
 }
 
 val Entity<ObjectId>.timestamp: Instant

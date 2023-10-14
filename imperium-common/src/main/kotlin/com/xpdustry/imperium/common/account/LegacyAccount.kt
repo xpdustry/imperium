@@ -20,8 +20,8 @@ package com.xpdustry.imperium.common.account
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.hash.Hash
 import com.xpdustry.imperium.common.serialization.SerializableJDuration
-import kotlinx.serialization.Serializable
 import java.time.Duration
+import kotlinx.serialization.Serializable
 
 typealias HashedUsername = String
 

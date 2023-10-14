@@ -45,6 +45,32 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import java.awt.Graphics2D
+import java.awt.geom.AffineTransform
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import java.io.DataInputStream
+import java.io.DataOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse.BodyHandlers
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
+import java.time.temporal.ChronoUnit
+import java.util.zip.DeflaterOutputStream
+import java.util.zip.InflaterInputStream
+import java.util.zip.ZipInputStream
+import javax.imageio.ImageIO
+import kotlin.io.path.extension
+import kotlin.io.path.nameWithoutExtension
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -72,44 +98,21 @@ import mindustry.world.Tile
 import mindustry.world.WorldContext
 import mindustry.world.blocks.environment.OreBlock
 import mindustry.world.blocks.legacy.LegacyBlock
-import java.awt.Graphics2D
-import java.awt.geom.AffineTransform
-import java.awt.image.BufferedImage
-import java.io.ByteArrayInputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.File
-import java.io.IOException
-import java.io.InputStream
-import java.io.OutputStream
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse.BodyHandlers
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Duration
-import java.time.temporal.ChronoUnit
-import java.util.zip.DeflaterOutputStream
-import java.util.zip.InflaterInputStream
-import java.util.zip.ZipInputStream
-import javax.imageio.ImageIO
-import kotlin.io.path.extension
-import kotlin.io.path.nameWithoutExtension
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
 
-// The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a multithreaded environment.
+// The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a
+// multithreaded environment.
 // TODO Add proper logging
-class AnukenMindustryContentHandler(directory: Path, private val config: ServerConfig.Discord) : MindustryContentHandler, ImperiumApplication.Listener {
+class AnukenMindustryContentHandler(directory: Path, private val config: ServerConfig.Discord) :
+    MindustryContentHandler, ImperiumApplication.Listener {
     private var currentSchematicGraphics: Graphics2D? = null
     private var currentSchematicImage: BufferedImage? = null
 
     private val directory = directory.resolve("mindustry-assets")
     private val images = mutableMapOf<String, Path>()
-    private val regions = CacheBuilder.newBuilder()
-        .expireAfterAccess(Duration.of(1L, ChronoUnit.MINUTES))
-        .build<String, BufferedImage>()
+    private val regions =
+        CacheBuilder.newBuilder()
+            .expireAfterAccess(Duration.of(1L, ChronoUnit.MINUTES))
+            .build<String, BufferedImage>()
 
     override fun onImperiumInit() {
         Version.enabled = false
@@ -128,11 +131,12 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         Vars.state = GameState()
         Core.atlas = TextureAtlas()
 
-        val data = TextureAtlasData(
-            Fi(directory.resolve("sprites/sprites.aatls").toFile()),
-            Fi(directory.resolve("sprites").toFile()),
-            false,
-        )
+        val data =
+            TextureAtlasData(
+                Fi(directory.resolve("sprites/sprites.aatls").toFile()),
+                Fi(directory.resolve("sprites").toFile()),
+                false,
+            )
 
         Files.walk(directory.resolve("raw-sprites"))
             .filter { it.extension == "png" }
@@ -161,42 +165,51 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         Lines.useLegacyLine = true
         Core.atlas.setErrorRegion("error")
         Draw.scl = 1f / 4f
-        Core.batch = object : SpriteBatch(0) {
-            override fun draw(
-                region: TextureRegion,
-                x: Float,
-                y: Float,
-                originX: Float,
-                originY: Float,
-                w: Float,
-                h: Float,
-                rotation: Float,
-            ) {
-                var sx = x
-                var sy = y
-                var sw = w
-                var sh = h
-                sx += 4f
-                sy += 4f
-                sx *= 4f
-                sy *= 4f
-                sw *= 4f
-                sh *= 4f
-                sy = currentSchematicImage!!.height - (sy + sh / 2f) - sh / 2f
-                val affine = AffineTransform()
-                affine.translate(sx.toDouble(), sy.toDouble())
-                affine.rotate((-rotation * Mathf.degRad).toDouble(), (originX * 4).toDouble(), (originY * 4).toDouble())
-                currentSchematicGraphics!!.transform = affine
-                var image = getImage((region as AtlasRegion).name)
-                if (color != Color.white) {
-                    image = tint(image, color)
+        Core.batch =
+            object : SpriteBatch(0) {
+                override fun draw(
+                    region: TextureRegion,
+                    x: Float,
+                    y: Float,
+                    originX: Float,
+                    originY: Float,
+                    w: Float,
+                    h: Float,
+                    rotation: Float,
+                ) {
+                    var sx = x
+                    var sy = y
+                    var sw = w
+                    var sh = h
+                    sx += 4f
+                    sy += 4f
+                    sx *= 4f
+                    sy *= 4f
+                    sw *= 4f
+                    sh *= 4f
+                    sy = currentSchematicImage!!.height - (sy + sh / 2f) - sh / 2f
+                    val affine = AffineTransform()
+                    affine.translate(sx.toDouble(), sy.toDouble())
+                    affine.rotate(
+                        (-rotation * Mathf.degRad).toDouble(),
+                        (originX * 4).toDouble(),
+                        (originY * 4).toDouble())
+                    currentSchematicGraphics!!.transform = affine
+                    var image = getImage((region as AtlasRegion).name)
+                    if (color != Color.white) {
+                        image = tint(image, color)
+                    }
+                    currentSchematicGraphics!!.drawImage(image, 0, 0, sw.toInt(), sh.toInt(), null)
                 }
-                currentSchematicGraphics!!.drawImage(image, 0, 0, sw.toInt(), sh.toInt(), null)
-            }
 
-            // Do nothing
-            override fun draw(texture: Texture, spriteVertices: FloatArray, offset: Int, count: Int) = Unit
-        }
+                // Do nothing
+                override fun draw(
+                    texture: Texture,
+                    spriteVertices: FloatArray,
+                    offset: Int,
+                    count: Int
+                ) = Unit
+            }
 
         Vars.content.load()
 
@@ -206,9 +219,10 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             (block as? OreBlock)?.mapColor?.set(block.itemDrop.color)
         }
 
-        Vars.world = object : World() {
-            override fun tile(x: Int, y: Int): Tile = Tile(x, y)
-        }
+        Vars.world =
+            object : World() {
+                override fun tile(x: Int, y: Int): Tile = Tile(x, y)
+            }
     }
 
     private fun downloadAssets() {
@@ -218,25 +232,31 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         }
 
         if (Files.exists(directory)) {
-            Files.walk(directory).sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete)
+            Files.walk(directory)
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete)
         }
         Files.createDirectories(directory)
 
-        val http = HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.ALWAYS)
-            .connectTimeout(Duration.ofSeconds(10L))
-            .build()
+        val http =
+            HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .connectTimeout(Duration.ofSeconds(10L))
+                .build()
 
         downloadZipDirectory(
             http,
-            URI.create("https://github.com/Anuken/Mindustry/releases/download/v${config.mindustryVersion}/Mindustry.jar"),
+            URI.create(
+                "https://github.com/Anuken/Mindustry/releases/download/v${config.mindustryVersion}/Mindustry.jar"),
             "sprites",
             "sprites",
         )
 
         downloadZipDirectory(
             http,
-            URI.create("https://github.com/Anuken/Mindustry/archive/refs/tags/v${config.mindustryVersion}.zip"),
+            URI.create(
+                "https://github.com/Anuken/Mindustry/archive/refs/tags/v${config.mindustryVersion}.zip"),
             "Mindustry-${config.mindustryVersion}/core/assets-raw/sprites",
             "raw-sprites",
         )
@@ -246,10 +266,16 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
         versionFile.writeText(config.mindustryVersion)
     }
 
-    private fun downloadZipDirectory(http: HttpClient, uri: URI, folder: String, destination: String) {
+    private fun downloadZipDirectory(
+        http: HttpClient,
+        uri: URI,
+        folder: String,
+        destination: String
+    ) {
         logger.info("Downloading assets from $uri")
 
-        val response = http.send(HttpRequest.newBuilder(uri).GET().build(), BodyHandlers.ofInputStream())
+        val response =
+            http.send(HttpRequest.newBuilder(uri).GET().build(), BodyHandlers.ofInputStream())
 
         if (response.statusCode() != 200) {
             throw RuntimeException("Failed to download $uri")
@@ -259,13 +285,17 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             var entry = zip.getNextEntry()
             while (entry != null) {
                 if (entry.name.startsWith(folder) && !entry.isDirectory) {
-                    val file = directory.resolve(destination).resolve(entry.name.substring(folder.length + 1))
+                    val file =
+                        directory
+                            .resolve(destination)
+                            .resolve(entry.name.substring(folder.length + 1))
                     Files.createDirectories(file.parent)
                     Files.newOutputStream(file).use { output ->
                         // https://stackoverflow.com/a/22646404
                         val buffer = ByteArray(1024)
                         var bytesRead: Int
-                        while (zip.read(buffer).also { bytesRead = it } != -1 && bytesRead <= entry!!.size) {
+                        while (zip.read(buffer).also { bytesRead = it } != -1 &&
+                            bytesRead <= entry!!.size) {
                             output.write(buffer, 0, bytesRead)
                         }
                     }
@@ -277,9 +307,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
     }
 
     override suspend fun getSchematic(stream: InputStream): Result<Schematic> =
-        withContext(ImperiumScope.IO.coroutineContext) {
-            getSchematic0(stream)
-        }
+        withContext(ImperiumScope.IO.coroutineContext) { getSchematic0(stream) }
 
     override suspend fun getSchematic(string: String): Result<Schematic> =
         withContext(ImperiumScope.IO.coroutineContext) {
@@ -316,7 +344,9 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             val length = data.readByte()
             for (i in 0 until length) {
                 val name = data.readUTF()
-                val block = Vars.content.getByName<Block>(ContentType.block, SaveFileReader.fallback[name, name])
+                val block =
+                    Vars.content.getByName<Block>(
+                        ContentType.block, SaveFileReader.fallback[name, name])
                 blocks.put(i, if (block == null || block is LegacyBlock) Blocks.air else block)
             }
 
@@ -352,18 +382,21 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
                     throw IOException("Schematic cannot be larger than 64x64.")
                 }
 
-                val image = BufferedImage(schematic.width * 32, schematic.height * 32, BufferedImage.TYPE_INT_ARGB)
+                val image =
+                    BufferedImage(
+                        schematic.width * 32, schematic.height * 32, BufferedImage.TYPE_INT_ARGB)
 
                 Draw.reset()
-                val requests = schematic.tiles.map {
-                    BuildPlan(
-                        it.x.toInt(),
-                        it.y.toInt(),
-                        it.rotation.toInt(),
-                        it.block,
-                        it.config,
-                    )
-                }
+                val requests =
+                    schematic.tiles.map {
+                        BuildPlan(
+                            it.x.toInt(),
+                            it.y.toInt(),
+                            it.rotation.toInt(),
+                            it.block,
+                            it.config,
+                        )
+                    }
 
                 currentSchematicGraphics = image.createGraphics()
                 currentSchematicImage = image
@@ -390,7 +423,8 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
                     stream.writeShort(schematic.width)
                     stream.writeShort(schematic.height)
                     val tags = StringMap().apply { putAll(schematic.tags) }
-                    tags.put("labels", JsonIO.write(schematic.labels.toArray<Any>(String::class.java)))
+                    tags.put(
+                        "labels", JsonIO.write(schematic.labels.toArray<Any>(String::class.java)))
                     stream.writeByte(tags.size)
                     for (e in tags.entries()) {
                         stream.writeUTF(e.key)
@@ -421,12 +455,17 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             getMapMetadataWithPreview0(stream, false).map { it.first }
         }
 
-    override suspend fun getMapMetadataWithPreview(stream: InputStream): Result<Pair<MapMetadata, BufferedImage>> =
+    override suspend fun getMapMetadataWithPreview(
+        stream: InputStream
+    ): Result<Pair<MapMetadata, BufferedImage>> =
         withContext(MAP_PREVIEW_SCOPE.coroutineContext) {
             getMapMetadataWithPreview0(stream, true).map { it.first to it.second!! }
         }
 
-    private fun getMapMetadataWithPreview0(input: InputStream, preview: Boolean): Result<Pair<MapMetadata, BufferedImage?>> = runCatching {
+    private fun getMapMetadataWithPreview0(
+        input: InputStream,
+        preview: Boolean
+    ): Result<Pair<MapMetadata, BufferedImage?>> = runCatching {
         val counter = CounterInputStream(InflaterInputStream(input))
         val stream = DataInputStream(counter)
         SaveIO.readHeader(stream)
@@ -453,29 +492,34 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
                 val fGraphics = floors.createGraphics()
                 val jColor = java.awt.Color(0, 0, 0, 64)
                 val black = 255
-                val tile: CachedTile = object : CachedTile() {
-                    override fun setBlock(type: Block) {
-                        super.setBlock(type)
-                        val c = MapIO.colorFor(block(), Blocks.air, Blocks.air, team())
-                        if (c != black && c != 0) {
-                            walls.setRGB(x.toInt(), floors.height - 1 - y, conv(c))
-                            fGraphics.color = jColor
-                            fGraphics.drawRect(x.toInt(), floors.height - 1 - y + 1, 1, 1)
+                val tile: CachedTile =
+                    object : CachedTile() {
+                        override fun setBlock(type: Block) {
+                            super.setBlock(type)
+                            val c = MapIO.colorFor(block(), Blocks.air, Blocks.air, team())
+                            if (c != black && c != 0) {
+                                walls.setRGB(x.toInt(), floors.height - 1 - y, conv(c))
+                                fGraphics.color = jColor
+                                fGraphics.drawRect(x.toInt(), floors.height - 1 - y + 1, 1, 1)
+                            }
                         }
                     }
-                }
                 ver.region("preview_map", stream, counter) {
                     ver.readMap(
                         it,
                         object : WorldContext {
                             override fun resize(width: Int, height: Int) = Unit
+
                             override fun isGenerating(): Boolean = false
+
                             override fun begin() {
                                 Vars.world.isGenerating = true
                             }
+
                             override fun end() {
                                 Vars.world.isGenerating = false
                             }
+
                             override fun onReadBuilding() {
                                 // read team colors
                                 if (tile.build != null) {
@@ -492,20 +536,30 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
                                     }
                                 }
                             }
+
                             override fun tile(index: Int): Tile {
                                 tile.x = (index % width).toShort()
                                 tile.y = (index / width).toShort()
                                 return tile
                             }
-                            override fun create(x: Int, y: Int, floorID: Int, overlayID: Int, wallID: Int): Tile {
+
+                            override fun create(
+                                x: Int,
+                                y: Int,
+                                floorID: Int,
+                                overlayID: Int,
+                                wallID: Int
+                            ): Tile {
                                 floors.setRGB(
                                     x,
                                     floors.height - 1 - y,
                                     conv(
                                         MapIO.colorFor(
                                             Blocks.air,
-                                            if (overlayID != 0) Blocks.air else Vars.content.block(floorID),
-                                            if (overlayID != 0) Vars.content.block(overlayID) else Blocks.air,
+                                            if (overlayID != 0) Blocks.air
+                                            else Vars.content.block(floorID),
+                                            if (overlayID != 0) Vars.content.block(overlayID)
+                                            else Blocks.air,
                                             Team.derelict,
                                         ),
                                     ),
@@ -522,20 +576,24 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             }
         }
 
-        val metadata = MapMetadata(name, description, author, width, height, meta.associate { it.key to it.value })
+        val metadata =
+            MapMetadata(
+                name, description, author, width, height, meta.associate { it.key to it.value })
         return@runCatching metadata to floors
     }
 
-    private fun getImage(name: String): BufferedImage = regions[
-        name, {
-            var image = images[name]
-            if (image == null) {
-                logger
-                image = images["error"]!!
-            }
-            ImageIO.read(image.toFile())
-        },
-    ]
+    private fun getImage(name: String): BufferedImage =
+        regions[
+            name,
+            {
+                var image = images[name]
+                if (image == null) {
+                    logger
+                    image = images["error"]!!
+                }
+                ImageIO.read(image.toFile())
+            },
+        ]
 
     private fun tint(image: BufferedImage, color: Color): BufferedImage {
         val copy = BufferedImage(image.width, image.height, image.type)
@@ -558,8 +616,11 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
     @OptIn(ExperimentalCoroutinesApi::class)
     companion object {
         private val logger by LoggerDelegate()
-        private val SCHEMATIC_PREVIEW_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
-        private val MAP_PREVIEW_SCOPE = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
-        private val SCHEMATIC_HEADER = byteArrayOf('m'.code.toByte(), 's'.code.toByte(), 'c'.code.toByte(), 'h'.code.toByte())
+        private val SCHEMATIC_PREVIEW_SCOPE =
+            CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+        private val MAP_PREVIEW_SCOPE =
+            CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
+        private val SCHEMATIC_HEADER =
+            byteArrayOf('m'.code.toByte(), 's'.code.toByte(), 'c'.code.toByte(), 'h'.code.toByte())
     }
 }

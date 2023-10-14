@@ -21,14 +21,18 @@ import java.util.LinkedList
 
 // TODO Index this shit
 class ClusterManager<T : Any>(private val listener: Listener<T>) {
-    val clusters: List<Cluster<T>> get() = _clusters
+    val clusters: List<Cluster<T>>
+        get() = _clusters
+
     private val _clusters = mutableListOf<Cluster<T>>()
 
     fun getElement(x: Int, y: Int): Pair<Cluster<T>, Cluster.Block<T>>? {
         for (cluster in _clusters) {
-            if (x in cluster.x until cluster.x + cluster.w && y in cluster.y until cluster.y + cluster.h) {
+            if (x in cluster.x until cluster.x + cluster.w &&
+                y in cluster.y until cluster.y + cluster.h) {
                 for (block in cluster._blocks) {
-                    if (x in block.x until block.x + block.size && y in block.y until block.y + block.size) {
+                    if (x in block.x until block.x + block.size &&
+                        y in block.y until block.y + block.size) {
                         return cluster to block
                     }
                 }
@@ -42,7 +46,8 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
         val existing = getElement(block.x, block.y)
         if (existing != null) {
             val (cluster, element) = existing
-            error("The point is occupied by the block (x=${element.x}, y=${element.y}, size=${element.size}) of the cluster (x=${cluster.x}, y=${cluster.y}, w=${cluster.w}, h=${cluster.h})")
+            error(
+                "The point is occupied by the block (x=${element.x}, y=${element.y}, size=${element.size}) of the cluster (x=${cluster.x}, y=${cluster.y}, w=${cluster.w}, h=${cluster.h})")
         }
         val candidates = mutableListOf<Int>()
         for (i in _clusters.indices) {
@@ -140,56 +145,63 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
         _clusters.sortWith(compareBy(Cluster<T>::x, Cluster<T>::y))
     }
 
-    private fun canBePartOfCluster(cluster: Cluster<T>, block: Cluster.Block<T>): Boolean = cluster._blocks.any {
-        val r1 = it.x + it.size + 1
-        val l1 = it.x - 1
-        val b1 = it.y - 1
-        val t1 = it.y + it.size + 1
+    private fun canBePartOfCluster(cluster: Cluster<T>, block: Cluster.Block<T>): Boolean =
+        cluster._blocks.any {
+            val r1 = it.x + it.size + 1
+            val l1 = it.x - 1
+            val b1 = it.y - 1
+            val t1 = it.y + it.size + 1
 
-        val r2 = block.x + block.size + 1
-        val l2 = block.x - 1
-        val b2 = block.y - 1
-        val t2 = block.y + block.size + 1
+            val r2 = block.x + block.size + 1
+            val l2 = block.x - 1
+            val b2 = block.y - 1
+            val t2 = block.y + block.size + 1
 
-        val x1 = maxOf(l1, l2)
-        val y1 = maxOf(b1, b2)
-        val x2 = minOf(r1, r2)
-        val y2 = minOf(t1, t2)
+            val x1 = maxOf(l1, l2)
+            val y1 = maxOf(b1, b2)
+            val x2 = minOf(r1, r2)
+            val y2 = minOf(t1, t2)
 
-        maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
-    }
+            maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
+        }
 
     fun interface Listener<T : Any> {
         fun onClusterEvent(cluster: Cluster<T>, event: Event)
     }
 
     enum class Event {
-        NEW, UPDATE, REMOVE
+        NEW,
+        UPDATE,
+        REMOVE
     }
 }
 
 class Cluster<T : Any>(blocks: List<Block<T>> = emptyList()) {
     var x: Int = 0
         private set
+
     var y: Int = 0
         private set
+
     var w: Int = 0
         private set
+
     var h: Int = 0
         private set
 
-    val blocks: List<Block<T>> get() = _blocks
+    val blocks: List<Block<T>>
+        get() = _blocks
 
-    @Suppress("PropertyName")
-    internal val _blocks: MutableList<Block<T>> = blocks.toMutableList()
+    @Suppress("PropertyName") internal val _blocks: MutableList<Block<T>> = blocks.toMutableList()
 
-    fun copy() = Cluster<T>().also {
-        it.x = x
-        it.y = y
-        it.w = w
-        it.h = h
-        it._blocks += _blocks
-    }
+    fun copy() =
+        Cluster<T>().also {
+            it.x = x
+            it.y = y
+            it.w = w
+            it.h = h
+            it._blocks += _blocks
+        }
 
     internal fun update() {
         x = _blocks.minOf { it.x }

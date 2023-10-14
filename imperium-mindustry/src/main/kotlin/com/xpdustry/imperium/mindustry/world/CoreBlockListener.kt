@@ -52,7 +52,8 @@ class CoreBlockListener : ImperiumApplication.Listener {
             buildString {
                 appendLine("Found ${clusters.size} cores: ")
                 for ((index, cluster) in clusters.withIndex()) {
-                    appendLine("- #${index + 1} ${cluster.x}, ${cluster.y} (${cluster.w}x${cluster.h})")
+                    appendLine(
+                        "- #${index + 1} ${cluster.x}, ${cluster.y} (${cluster.w}x${cluster.h})")
                 }
             },
         )
@@ -98,7 +99,8 @@ class CoreBlockListener : ImperiumApplication.Listener {
                         Unit,
                     ),
                 )
-                logger.trace("Loaded {} core at ({}, {})", building.team.name, building.rx, building.ry)
+                logger.trace(
+                    "Loaded {} core at ({}, {})", building.team.name, building.rx, building.ry)
             }
         }
     }
@@ -109,7 +111,8 @@ class CoreBlockListener : ImperiumApplication.Listener {
         if (building is CoreBlock.CoreBuild) {
             val manager = getManager(building.team)
             manager.removeElement(building.rx, building.ry)
-            logger.trace("Destroyed {} core at ({}, {})", building.team.name, building.rx, building.ry)
+            logger.trace(
+                "Destroyed {} core at ({}, {})", building.team.name, building.rx, building.ry)
         }
     }
 
@@ -117,22 +120,30 @@ class CoreBlockListener : ImperiumApplication.Listener {
     fun onTeamChangeEvent(event: EventType.BuildTeamChangeEvent) {
         val building = event.build
         if (building !is CoreBlock.CoreBuild) return
-        logger.trace("Changed core team at ({}, {}) from {} to {}", building.rx, building.ry, event.previous.name, building.team.name)
+        logger.trace(
+            "Changed core team at ({}, {}) from {} to {}",
+            building.rx,
+            building.ry,
+            event.previous.name,
+            building.team.name)
         getManager(event.previous).removeElement(building.rx, building.ry)
-        getManager(building.team).addElement(
-            Cluster.Block(
-                building.rx,
-                building.ry,
-                building.block.size,
-                Unit,
-            ),
-        )
+        getManager(building.team)
+            .addElement(
+                Cluster.Block(
+                    building.rx,
+                    building.ry,
+                    building.block.size,
+                    Unit,
+                ),
+            )
     }
 
     @EventHandler
     fun onBlockBuildEvent(event: EventType.BlockBuildEndEvent) {
         var building = event.tile.build
-        if (event.breaking && building is ConstructBlock.ConstructBuild && !building.prevBuild.isEmpty) {
+        if (event.breaking &&
+            building is ConstructBlock.ConstructBuild &&
+            !building.prevBuild.isEmpty) {
             building = building.prevBuild.first()
         }
 
@@ -140,7 +151,8 @@ class CoreBlockListener : ImperiumApplication.Listener {
             if (event.breaking) {
                 val manager = getManager(building.team)
                 manager.removeElement(building.rx, building.ry)
-                logger.trace("Removed {} core at ({}, {})", building.team.name, building.rx, building.ry)
+                logger.trace(
+                    "Removed {} core at ({}, {})", building.team.name, building.rx, building.ry)
             } else {
                 val manager = getManager(building.team)
                 manager.addElement(
@@ -151,7 +163,8 @@ class CoreBlockListener : ImperiumApplication.Listener {
                         Unit,
                     ),
                 )
-                logger.trace("Added {} core at ({}, {})", building.team.name, building.rx, building.ry)
+                logger.trace(
+                    "Added {} core at ({}, {})", building.team.name, building.rx, building.ry)
             }
         }
     }
@@ -159,8 +172,11 @@ class CoreBlockListener : ImperiumApplication.Listener {
     private fun getManager(team: Team) = managers.getOrPut(team) { ClusterManager { _, _ -> } }
 
     // Goofy ass Mindustry coordinate system
-    private val Building.rx: Int get() = tileX() + block.sizeOffset
-    private val Building.ry: Int get() = tileY() + block.sizeOffset
+    private val Building.rx: Int
+        get() = tileX() + block.sizeOffset
+
+    private val Building.ry: Int
+        get() = tileY() + block.sizeOffset
 
     companion object {
         private val logger by LoggerDelegate()

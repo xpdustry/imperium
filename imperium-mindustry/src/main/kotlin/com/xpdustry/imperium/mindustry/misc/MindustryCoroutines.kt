@@ -20,21 +20,23 @@ package com.xpdustry.imperium.mindustry.misc
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeout
-import mindustry.Vars
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
+import mindustry.Vars
 
 // https://stackoverflow.com/a/73494554
-suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T = withTimeout(timeout) {
-    suspendCancellableCoroutine { continuation ->
-        DistributorProvider.get().pluginScheduler
-            .scheduleSync(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
-            .execute { _ ->
-                runCatching(task).fold(continuation::resume, continuation::resumeWithException)
-            }
+suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T =
+    withTimeout(timeout) {
+        suspendCancellableCoroutine { continuation ->
+            DistributorProvider.get()
+                .pluginScheduler
+                .scheduleSync(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
+                .execute { _ ->
+                    runCatching(task).fold(continuation::resume, continuation::resumeWithException)
+                }
+        }
     }
-}

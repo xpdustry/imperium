@@ -24,9 +24,6 @@ import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
-import org.javacord.api.entity.message.MessageFlag
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
@@ -34,8 +31,12 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import org.javacord.api.entity.message.MessageFlag
 
-class ButtonCommandRegistry(private val discord: DiscordService) : CommandRegistry, ImperiumApplication.Listener {
+class ButtonCommandRegistry(private val discord: DiscordService) :
+    CommandRegistry, ImperiumApplication.Listener {
     private val handlers = mutableMapOf<String, ButtonHandler>()
     private val containers = mutableListOf<Any>()
 
@@ -48,7 +49,8 @@ class ButtonCommandRegistry(private val discord: DiscordService) : CommandRegist
             ImperiumScope.MAIN.launch {
                 val handler = handlers[event.buttonInteraction.customId]
                 if (handler == null) {
-                    event.buttonInteraction.createImmediateResponder()
+                    event.buttonInteraction
+                        .createImmediateResponder()
                         .setContent("This button is no longer valid")
                         .setFlags(MessageFlag.EPHEMERAL)
                         .respond()
@@ -59,8 +61,10 @@ class ButtonCommandRegistry(private val discord: DiscordService) : CommandRegist
                 val updater = event.buttonInteraction.respondLater(handler.ephemeral).await()
 
                 if (!discord.isAllowed(event.buttonInteraction.user, handler.permission)) {
-                    updater.setContent(":warning: **You do not have permission to use this command.**")
-                        .update().await()
+                    updater
+                        .setContent(":warning: **You do not have permission to use this command.**")
+                        .update()
+                        .await()
                     return@launch
                 }
 
@@ -68,8 +72,10 @@ class ButtonCommandRegistry(private val discord: DiscordService) : CommandRegist
                 try {
                     handler.function.callSuspend(handler.container, actor)
                 } catch (e: Exception) {
-                    logger.error("Error while executing button ${event.buttonInteraction.customId}", e)
-                    updater.setContent("An error occurred while executing this button")
+                    logger.error(
+                        "Error while executing button ${event.buttonInteraction.customId}", e)
+                    updater
+                        .setContent("An error occurred while executing this button")
                         .setFlags(MessageFlag.EPHEMERAL)
                         .update()
                         .await()
@@ -90,21 +96,25 @@ class ButtonCommandRegistry(private val discord: DiscordService) : CommandRegist
                 throw IllegalArgumentException("$function button name must be alphanumeric")
             }
 
-            if (function.parameters.size != 2 || !isSupportedActor(function.parameters[1].type.classifier!!)) {
-                throw IllegalArgumentException("$function button must have exactly one parameter of type InteractionActor")
+            if (function.parameters.size != 2 ||
+                !isSupportedActor(function.parameters[1].type.classifier!!)) {
+                throw IllegalArgumentException(
+                    "$function button must have exactly one parameter of type InteractionActor")
             }
 
             if (button.name in handlers) {
-                throw IllegalArgumentException("$function button ${button.name} is already registered")
+                throw IllegalArgumentException(
+                    "$function button ${button.name} is already registered")
             }
 
             function.isAccessible = true
-            handlers[button.name] = ButtonHandler(
-                container,
-                button.permission,
-                function,
-                !function.hasAnnotation<NonEphemeral>(),
-            )
+            handlers[button.name] =
+                ButtonHandler(
+                    container,
+                    button.permission,
+                    function,
+                    !function.hasAnnotation<NonEphemeral>(),
+                )
         }
     }
 

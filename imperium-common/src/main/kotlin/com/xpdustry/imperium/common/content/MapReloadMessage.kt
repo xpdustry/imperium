@@ -22,5 +22,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class MapReloadMessage(val servers: Set<String>) : Message {
-    init { require(servers.isNotEmpty()) { "Servers must not be empty" } }
+    init {
+        require(servers.isNotEmpty()) { "Servers must not be empty" }
+    }
 }

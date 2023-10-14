@@ -52,10 +52,14 @@ object ShaHashFunction : HashFunction<ShaType> {
 
     override suspend fun create(chars: CharArray, params: ShaType): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            Hash(getHashFunction(params).hashString(SecureString(chars), Charsets.UTF_8).asBytes(), ByteArray(0), params)
+            Hash(
+                getHashFunction(params).hashString(SecureString(chars), Charsets.UTF_8).asBytes(),
+                ByteArray(0),
+                params)
         }
 
-    private fun getHashFunction(params: ShaType) = when (params) {
-        ShaType.SHA256 -> Hashing.sha256()
-    }
+    private fun getHashFunction(params: ShaType) =
+        when (params) {
+            ShaType.SHA256 -> Hashing.sha256()
+        }
 }

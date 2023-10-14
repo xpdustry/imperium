@@ -41,7 +41,8 @@ object CommonConfigurationFactory : HistoryConfig.Factory<Building> {
 
     private fun isContentConfigurableBlockOnly(building: Building): Boolean {
         for (configuration in building.block().configurations.keys()) {
-            if (!(UnlockableContent::class.java.isAssignableFrom(configuration) || configuration == Void.TYPE)) {
+            if (!(UnlockableContent::class.java.isAssignableFrom(configuration) ||
+                configuration == Void.TYPE)) {
                 return false
             }
         }

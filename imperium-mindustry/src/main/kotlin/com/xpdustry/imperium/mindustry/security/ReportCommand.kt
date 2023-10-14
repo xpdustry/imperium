@@ -43,10 +43,10 @@ import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import kotlinx.coroutines.launch
-import mindustry.gen.Player
 import java.net.InetAddress
 import java.time.Duration
+import kotlinx.coroutines.launch
+import mindustry.gen.Player
 
 private val logger = logger<ReportCommand>()
 private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
@@ -55,11 +55,12 @@ private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
 //  - Implement tile reporting ?
 //  - Add rate limit warning BEFORE running the command
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val reportInterface = createReportInterface(
-        instances.get<MindustryPlugin>(),
-        instances.get<Messenger>(),
-        instances.get<ImperiumConfig>(),
-    )
+    private val reportInterface =
+        createReportInterface(
+            instances.get<MindustryPlugin>(),
+            instances.get<Messenger>(),
+            instances.get<ImperiumConfig>(),
+        )
 
     @Command(["report"])
     @ClientSide
@@ -72,32 +73,41 @@ private val REPORT_PLAYER = stateKey<Player>("report_player")
 private val REPORT_REASON = stateKey<ReportMessage.Reason>("report_reason")
 private val REPORT_DETAIL = stateKey<String>("report_detail")
 
-fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config: ImperiumConfig): Interface {
+fun createReportInterface(
+    plugin: MindustryPlugin,
+    messenger: Messenger,
+    config: ImperiumConfig
+): Interface {
     val reportConfirmInterface = MenuInterface.create(plugin)
     reportConfirmInterface.addTransformer { view, pane ->
         pane.title = "Report (4/4)"
-        pane.content = "Are you sure you want to report [accent]${view.state[REPORT_PLAYER]!!.plainName()}[] for [accent]${view.state[REPORT_REASON]!!.name.lowercase().capitalize()}[]?"
+        pane.content =
+            "Are you sure you want to report [accent]${view.state[REPORT_PLAYER]!!.plainName()}[] for [accent]${view.state[REPORT_REASON]!!.name.lowercase().capitalize()}[]?"
         pane.options.addRow(
             MenuOption("[green]Yes") { _ ->
                 if (!limiter.checkAndIncrement(view.viewer.ip().toInetAddress())) {
-                    view.viewer.showInfoMessage("[red]You are limited to one report per minute. Please try again later.")
+                    view.viewer.showInfoMessage(
+                        "[red]You are limited to one report per minute. Please try again later.")
                     return@MenuOption
                 }
                 view.closeAll()
                 ImperiumScope.MAIN.launch {
-                    val sent = messenger.publish(
-                        ReportMessage(
-                            config.server.name,
-                            view.viewer.identity,
-                            view.state[REPORT_PLAYER]!!.identity,
-                            view.state[REPORT_REASON]!!,
-                            view.state[REPORT_DETAIL],
-                        ),
-                    )
+                    val sent =
+                        messenger.publish(
+                            ReportMessage(
+                                config.server.name,
+                                view.viewer.identity,
+                                view.state[REPORT_PLAYER]!!.identity,
+                                view.state[REPORT_REASON]!!,
+                                view.state[REPORT_DETAIL],
+                            ),
+                        )
                     if (sent) {
-                        view.viewer.sendMessage("[green]Your report has been sent, thank you for your contribution.")
+                        view.viewer.sendMessage(
+                            "[green]Your report has been sent, thank you for your contribution.")
                     } else {
-                        view.viewer.sendMessage("[scarlet]An error occurred while sending your report, please try again later.")
+                        view.viewer.sendMessage(
+                            "[scarlet]An error occurred while sending your report, please try again later.")
                     }
                 }
             },
@@ -109,7 +119,8 @@ fun createReportInterface(plugin: MindustryPlugin, messenger: Messenger, config:
     val reportDetailInterface = TextInputInterface.create(plugin)
     reportDetailInterface.addTransformer { _, pane ->
         pane.title = "Report (3/4)"
-        pane.description = "Enter the details of your report, \nclick on cancel if you don't have any."
+        pane.description =
+            "Enter the details of your report, \nclick on cancel if you don't have any."
         pane.inputAction = BiAction { view, input ->
             view.close()
             view.state[REPORT_DETAIL] = input

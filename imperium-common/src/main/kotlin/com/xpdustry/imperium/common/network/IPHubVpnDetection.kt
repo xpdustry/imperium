@@ -20,12 +20,15 @@ package com.xpdustry.imperium.common.network
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.config.NetworkConfig
+import java.net.InetAddress
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import java.net.InetAddress
 
-class IPHubVpnDetection(private val config: NetworkConfig.VpnDetectionConfig.IPHub, private val http: OkHttpClient) : VpnDetection {
+class IPHubVpnDetection(
+    private val config: NetworkConfig.VpnDetectionConfig.IPHub,
+    private val http: OkHttpClient
+) : VpnDetection {
     private val gson = Gson()
 
     override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
@@ -33,17 +36,20 @@ class IPHubVpnDetection(private val config: NetworkConfig.VpnDetectionConfig.IPH
             return VpnDetection.Result.Success(false)
         }
 
-        val url = "https://v2.api.iphub.info/ip/${address.hostAddress}".toHttpUrl()
-            .newBuilder()
-            .addQueryParameter("key", config.token.value)
-            .build()
+        val url =
+            "https://v2.api.iphub.info/ip/${address.hostAddress}"
+                .toHttpUrl()
+                .newBuilder()
+                .addQueryParameter("key", config.token.value)
+                .build()
 
         val response = http.newCall(Request.Builder().url(url).build()).await()
         if (response.code == 429) {
             return VpnDetection.Result.RateLimited
         }
         if (response.code != 200) {
-            return VpnDetection.Result.Failure(IllegalStateException("Unexpected status code: ${response.code}"))
+            return VpnDetection.Result.Failure(
+                IllegalStateException("Unexpected status code: ${response.code}"))
         }
 
         // https://iphub.info/api

@@ -30,27 +30,33 @@ data class PlaceholderContext(val player: Player, val message: String)
 
 interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String>
 
-class SimplePlaceholderManager : PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
-    override suspend fun pump(context: PlaceholderContext): String = withContext(ImperiumScope.MAIN.coroutineContext) {
-        PLACEHOLDER_REGEX.findAll(context.message).map { it.groupValues[1] }.toSet()
-            .map { placeholder ->
-                async {
-                    val parts = placeholder.split("_", limit = 2)
-                    val processor = processor(parts[0])
-                        ?: return@async null
-                    val query = parts.getOrNull(1) ?: ""
-                    try {
-                        placeholder to processor.process(PlaceholderContext(context.player, query))
-                    } catch (error: Exception) {
-                        logger.error("Failed to process placeholder '{}'", placeholder, error)
-                        null
+class SimplePlaceholderManager :
+    PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
+    override suspend fun pump(context: PlaceholderContext): String =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            PLACEHOLDER_REGEX.findAll(context.message)
+                .map { it.groupValues[1] }
+                .toSet()
+                .map { placeholder ->
+                    async {
+                        val parts = placeholder.split("_", limit = 2)
+                        val processor = processor(parts[0]) ?: return@async null
+                        val query = parts.getOrNull(1) ?: ""
+                        try {
+                            placeholder to
+                                processor.process(PlaceholderContext(context.player, query))
+                        } catch (error: Exception) {
+                            logger.error("Failed to process placeholder '{}'", placeholder, error)
+                            null
+                        }
                     }
                 }
-            }
-            .awaitAll()
-            .filterNotNull()
-            .fold(context.message) { message, result -> message.replace("%${result.first}%", result.second) }
-    }
+                .awaitAll()
+                .filterNotNull()
+                .fold(context.message) { message, result ->
+                    message.replace("%${result.first}%", result.second)
+                }
+        }
 
     companion object {
         private val logger by LoggerDelegate()

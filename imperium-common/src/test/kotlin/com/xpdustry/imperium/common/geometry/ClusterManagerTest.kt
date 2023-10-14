@@ -137,11 +137,10 @@ class ClusterManagerTest {
     fun `test error on add to occupied`() {
         val manager = createManager()
         manager.addElement(createBlock(0, 0, 1))
-        assertThrows<IllegalStateException> {
-            manager.addElement(createBlock(0, 0, 1))
-        }
+        assertThrows<IllegalStateException> { manager.addElement(createBlock(0, 0, 1)) }
     }
 
     private fun createManager() = ClusterManager<Unit> { _, _ -> }
+
     private fun createBlock(x: Int, y: Int, size: Int) = Cluster.Block(x, y, size, Unit)
 }

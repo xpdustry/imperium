@@ -22,10 +22,13 @@ import mindustry.game.Team
 import mindustry.gen.Unit
 import mindustry.type.UnitType
 
-class HistoryAuthor private constructor(
+class HistoryAuthor
+private constructor(
     val uuid: MindustryUUID?,
     val team: Team,
     val unit: UnitType,
 ) {
-    constructor(unit: Unit) : this(if (unit.isPlayer) unit.player.uuid() else null, unit.team, unit.type())
+    constructor(
+        unit: Unit
+    ) : this(if (unit.isPlayer) unit.player.uuid() else null, unit.team, unit.type())
 }

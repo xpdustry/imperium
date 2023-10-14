@@ -31,29 +31,33 @@ import io.minio.RemoveObjectArgs
 import io.minio.StatObjectArgs
 import io.minio.errors.ErrorResponseException
 import io.minio.http.Method
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import java.io.InputStream
 import java.net.URL
 import java.time.Instant
 import java.util.concurrent.CompletionException
 import kotlin.time.Duration
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
 
-class MinioStorageBucket(private val config: StorageConfig.Minio, private val http: OkHttpClient) : StorageBucket, ImperiumApplication.Listener {
+class MinioStorageBucket(private val config: StorageConfig.Minio, private val http: OkHttpClient) :
+    StorageBucket, ImperiumApplication.Listener {
     private lateinit var client: MinioAsyncClient
 
     override fun onImperiumInit() {
-        client = MinioAsyncClient.builder()
-            .endpoint(config.host, config.port, config.secure)
-            .credentials(config.accessKey.value, config.secretKey.value)
-            .httpClient(http)
-            .build()
+        client =
+            MinioAsyncClient.builder()
+                .endpoint(config.host, config.port, config.secure)
+                .credentials(config.accessKey.value, config.secretKey.value)
+                .httpClient(http)
+                .build()
 
         try {
-            if (!client.bucketExists(BucketExistsArgs.builder().bucket(config.bucket).build()).join()) {
+            if (!client
+                .bucketExists(BucketExistsArgs.builder().bucket(config.bucket).build())
+                .join()) {
                 client.makeBucket(MakeBucketArgs.builder().bucket(config.bucket).build()).join()
             }
         } catch (e: Exception) {
@@ -64,15 +68,20 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
     override suspend fun getObject(root: String, vararg path: String): StorageBucket.S3Object =
         MinioS3Object(listOf(root, *path)).also { it.update() }
 
-    override suspend fun listObjects(prefix: String, recursive: Boolean): Flow<StorageBucket.S3Object> =
+    override suspend fun listObjects(
+        prefix: String,
+        recursive: Boolean
+    ): Flow<StorageBucket.S3Object> =
         withContext(ImperiumScope.IO.coroutineContext) {
             flow {
-                val results = client.listObjects(
-                    ListObjectsArgs.builder()
-                        .bucket(config.bucket)
-                        .prefix(prefix)
-                        .recursive(recursive).build(),
-                )
+                val results =
+                    client.listObjects(
+                        ListObjectsArgs.builder()
+                            .bucket(config.bucket)
+                            .prefix(prefix)
+                            .recursive(recursive)
+                            .build(),
+                    )
                 for (result in results) {
                     val entry = result.get()
                     val obj = MinioS3Object(entry.objectName().split("/"))
@@ -91,24 +100,25 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
 
         override suspend fun putData(stream: InputStream) =
             withContext(ImperiumScope.IO.coroutineContext) {
-                client.putObject(
-                    PutObjectArgs.builder()
-                        .bucket(config.bucket)
-                        .`object`(fullPath)
-                        .stream(stream, -1, DEFAULT_PART_SIZE)
-                        .build(),
-                ).await()
+                client
+                    .putObject(
+                        PutObjectArgs.builder()
+                            .bucket(config.bucket)
+                            .`object`(fullPath)
+                            .stream(stream, -1, DEFAULT_PART_SIZE)
+                            .build(),
+                    )
+                    .await()
                 update()
             }
 
         override suspend fun getData(): InputStream =
             withContext(ImperiumScope.IO.coroutineContext) {
-                client.getObject(
-                    GetObjectArgs.builder()
-                        .bucket(config.bucket)
-                        .`object`(fullPath)
-                        .build(),
-                ).await()
+                client
+                    .getObject(
+                        GetObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build(),
+                    )
+                    .await()
             }
 
         override suspend fun getDownloadUrl(expiration: Duration): URL =
@@ -127,30 +137,38 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
 
         override suspend fun delete() =
             withContext(ImperiumScope.IO.coroutineContext) {
-                client.removeObject(RemoveObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build()).await()
+                client
+                    .removeObject(
+                        RemoveObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build())
+                    .await()
                 update()
             }
 
         suspend fun update() =
             withContext(ImperiumScope.IO.coroutineContext) {
-                val stats = try {
-                    client.statObject(
-                        StatObjectArgs.builder()
-                            .bucket(config.bucket)
-                            .`object`(fullPath)
-                            .build(),
-                    ).await()
-                } catch (e: CompletionException) {
-                    // For some reason, the real exception is wrapped withing multiple CompletionException
-                    var exception: Throwable = e
-                    while (exception is CompletionException && exception.cause != null) {
-                        exception = exception.cause!!
+                val stats =
+                    try {
+                        client
+                            .statObject(
+                                StatObjectArgs.builder()
+                                    .bucket(config.bucket)
+                                    .`object`(fullPath)
+                                    .build(),
+                            )
+                            .await()
+                    } catch (e: CompletionException) {
+                        // For some reason, the real exception is wrapped withing multiple
+                        // CompletionException
+                        var exception: Throwable = e
+                        while (exception is CompletionException && exception.cause != null) {
+                            exception = exception.cause!!
+                        }
+                        if (exception is ErrorResponseException &&
+                            exception.errorResponse().code() != "NoSuchKey") {
+                            throw e
+                        }
+                        null
                     }
-                    if (exception is ErrorResponseException && exception.errorResponse().code() != "NoSuchKey") {
-                        throw e
-                    }
-                    null
-                }
                 if (stats != null) {
                     exists = true
                     lastModified = stats.lastModified().toInstant()

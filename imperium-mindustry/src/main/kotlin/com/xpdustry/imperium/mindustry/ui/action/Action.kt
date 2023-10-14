@@ -19,10 +19,10 @@ package com.xpdustry.imperium.mindustry.ui.action
 
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.state.State
-import mindustry.Vars
-import mindustry.gen.Call
 import java.net.URI
 import java.util.function.Consumer
+import mindustry.Vars
+import mindustry.gen.Call
 
 fun interface Action {
     fun accept(view: View)
@@ -41,7 +41,7 @@ fun interface Action {
     // TODO Move some default actions to the View class
     companion object {
         fun none(): Action {
-            return Action { }
+            return Action {}
         }
 
         fun open(): Action {
@@ -78,7 +78,9 @@ fun interface Action {
                 builder.append(' ').append(argument)
             }
             val input = builder.toString()
-            return Action { view: View -> Vars.netServer.clientCommands.handleMessage(input, view.viewer) }
+            return Action { view: View ->
+                Vars.netServer.clientCommands.handleMessage(input, view.viewer)
+            }
         }
     }
 }

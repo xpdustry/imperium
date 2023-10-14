@@ -35,35 +35,24 @@ import java.nio.file.Path
 import java.util.function.Supplier
 import kotlin.io.path.Path
 
-fun discordModule() = module("discord") {
-    include(commonModule())
+fun discordModule() =
+    module("discord") {
+        include(commonModule())
 
-    single<DiscordService> {
-        SimpleDiscordService(get())
-    }
+        single<DiscordService> { SimpleDiscordService(get()) }
 
-    single<Path>("directory") {
-        Path(".")
-    }
+        single<Path>("directory") { Path(".") }
 
-    single<CommandRegistry>("slash") {
-        SlashCommandRegistry(get())
-    }
+        single<CommandRegistry>("slash") { SlashCommandRegistry(get()) }
 
-    single<CommandRegistry>("button") {
-        ButtonCommandRegistry(get())
-    }
+        single<CommandRegistry>("button") { ButtonCommandRegistry(get()) }
 
-    single<Supplier<MindustryServerInfo?>> {
-        Supplier { null }
-    }
+        single<Supplier<MindustryServerInfo?>> { Supplier { null } }
 
-    single<MindustryContentHandler> {
-        AnukenMindustryContentHandler(get("directory"), get())
-    }
+        single<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
 
-    single<ServerConfig.Discord> {
-        get<ImperiumConfig>().server as? ServerConfig.Discord
-            ?: error("The current server configuration is not Discord")
+        single<ServerConfig.Discord> {
+            get<ImperiumConfig>().server as? ServerConfig.Discord
+                ?: error("The current server configuration is not Discord")
+        }
     }
-}

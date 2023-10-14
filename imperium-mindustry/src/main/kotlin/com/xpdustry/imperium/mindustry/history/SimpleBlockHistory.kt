@@ -33,6 +33,9 @@ import com.xpdustry.imperium.mindustry.history.factory.POWER_NODE_CONFIGURATION_
 import com.xpdustry.imperium.mindustry.history.factory.UNIT_FACTORY_CONFIGURATION_FACTORY
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
+import kotlin.reflect.KClass
+import kotlin.reflect.full.isSuperclassOf
+import kotlin.reflect.full.superclasses
 import mindustry.game.EventType
 import mindustry.gen.Building
 import mindustry.world.Block
@@ -46,11 +49,9 @@ import mindustry.world.blocks.payloads.PayloadMassDriver
 import mindustry.world.blocks.power.LightBlock
 import mindustry.world.blocks.power.PowerNode
 import mindustry.world.blocks.units.UnitFactory
-import kotlin.reflect.KClass
-import kotlin.reflect.full.isSuperclassOf
-import kotlin.reflect.full.superclasses
 
-class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHistory, ImperiumApplication.Listener {
+class SimpleBlockHistory(private val config: ServerConfig.Mindustry) :
+    BlockHistory, ImperiumApplication.Listener {
     private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
     private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()
     private val factories = mutableMapOf<KClass<out Building>, HistoryConfig.Factory<*>>()
@@ -63,12 +64,15 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         setConfigurationFactory<LogicBlock.LogicBuild>(LogicProcessorConfigurationFactory)
         setConfigurationFactory<MassDriver.MassDriverBuild>(MASS_DRIVER_CONFIGURATION_FACTORY)
         setConfigurationFactory<MessageBlock.MessageBuild>(MESSAGE_BLOCK_CONFIGURATION_FACTORY)
-        setConfigurationFactory<PayloadMassDriver.PayloadDriverBuild>(PAYLOAD_DRIVER_CONFIGURATION_FACTORY)
+        setConfigurationFactory<PayloadMassDriver.PayloadDriverBuild>(
+            PAYLOAD_DRIVER_CONFIGURATION_FACTORY)
         setConfigurationFactory<PowerNode.PowerNodeBuild>(POWER_NODE_CONFIGURATION_FACTORY)
         setConfigurationFactory<UnitFactory.UnitFactoryBuild>(UNIT_FACTORY_CONFIGURATION_FACTORY)
     }
 
-    private inline fun <reified B : Building> setConfigurationFactory(factory: HistoryConfig.Factory<B>) {
+    private inline fun <reified B : Building> setConfigurationFactory(
+        factory: HistoryConfig.Factory<B>
+    ) {
         factories[B::class] = factory
     }
 
@@ -87,8 +91,15 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         }
 
         // TODO Check if tile is ConstructBlock ?
-        val block: Block = if (event.breaking) (event.tile.build as ConstructBlock.ConstructBuild).current else event.tile.block()
-        this.addEntry(event.tile.build, block, event.unit, if (event.breaking) HistoryEntry.Type.BREAK else HistoryEntry.Type.PLACE, event.config)
+        val block: Block =
+            if (event.breaking) (event.tile.build as ConstructBlock.ConstructBuild).current
+            else event.tile.block()
+        this.addEntry(
+            event.tile.build,
+            block,
+            event.unit,
+            if (event.breaking) HistoryEntry.Type.BREAK else HistoryEntry.Type.PLACE,
+            event.config)
     }
 
     @EventHandler(priority = Priority.HIGH)
@@ -113,7 +124,12 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         if (event.player == null) {
             return
         }
-        this.addEntry(event.tile, event.tile.block(), event.player.unit(), HistoryEntry.Type.CONFIGURE, event.value)
+        this.addEntry(
+            event.tile,
+            event.tile.block(),
+            event.player.unit(),
+            HistoryEntry.Type.CONFIGURE,
+            event.value)
     }
 
     @EventHandler(priority = Priority.HIGH)
@@ -127,7 +143,12 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         if (event.unit == null || event.build.rotation == event.previous) {
             return
         }
-        this.addEntry(event.build, event.build.block(), event.unit, HistoryEntry.Type.ROTATE, event.build.config())
+        this.addEntry(
+            event.build,
+            event.build.block(),
+            event.unit,
+            HistoryEntry.Type.ROTATE,
+            event.build.config())
     }
 
     @Suppress("UNCHECKED_CAST")
@@ -178,9 +199,10 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
     }
 
     private fun addEntry(entry: HistoryEntry) {
-        val entries = positions.computeIfAbsent(Point2.pack(entry.x, entry.y)) {
-            LimitedList(config.history.tileEntriesLimit)
-        }
+        val entries =
+            positions.computeIfAbsent(Point2.pack(entry.x, entry.y)) {
+                LimitedList(config.history.tileEntriesLimit)
+            }
         val previous: HistoryEntry? = entries.peekLast()
         // Some blocks have repeating configurations, we don't want to spam the history with them
         if (previous != null && haveSameConfiguration(previous, entry)) {
@@ -189,12 +211,16 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) : BlockHist
         entries.add(entry)
         if (entry.author.uuid != null && !entry.virtual) {
             players
-                .computeIfAbsent(entry.author.uuid) { LimitedList(config.history.playerEntriesLimit) }
+                .computeIfAbsent(entry.author.uuid) {
+                    LimitedList(config.history.playerEntriesLimit)
+                }
                 .add(entry)
         }
     }
 
     private fun haveSameConfiguration(entryA: HistoryEntry, entryB: HistoryEntry): Boolean {
-        return entryA.block == entryB.block && entryA.configuration == entryB.configuration && entryA.type === entryB.type
+        return entryA.block == entryB.block &&
+            entryA.configuration == entryB.configuration &&
+            entryA.type === entryB.type
     }
 }

@@ -41,14 +41,17 @@ fun interface PasswordRequirement {
     }
 }
 
-fun List<PasswordRequirement>.findMissingPasswordRequirements(password: CharArray): List<PasswordRequirement> {
+fun List<PasswordRequirement>.findMissingPasswordRequirements(
+    password: CharArray
+): List<PasswordRequirement> {
     return filter { !it.check(password) }
 }
 
-val DEFAULT_PASSWORD_REQUIREMENTS = listOf(
-    PasswordRequirement.Length(8, 64),
-    PasswordRequirement.Number,
-    PasswordRequirement.Symbol,
-    PasswordRequirement.LowercaseLetter,
-    PasswordRequirement.UppercaseLetter,
-)
+val DEFAULT_PASSWORD_REQUIREMENTS =
+    listOf(
+        PasswordRequirement.Length(8, 64),
+        PasswordRequirement.Number,
+        PasswordRequirement.Symbol,
+        PasswordRequirement.LowercaseLetter,
+        PasswordRequirement.UppercaseLetter,
+    )

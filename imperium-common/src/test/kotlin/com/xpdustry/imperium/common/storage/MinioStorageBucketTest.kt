@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
+import java.time.Duration
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
@@ -36,7 +37,6 @@ import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import java.time.Duration
 
 // TODO Add more tests + cleanup
 @Testcontainers
@@ -80,17 +80,22 @@ class MinioStorageBucketTest {
     companion object {
         // Stolen from testcontainers-dotnet, hehe...
         @Container
-        private val MINIO_CONTAINER = GenericContainer(DockerImageName.parse("minio/minio:latest"))
-            .withExposedPorts(9000)
-            .withCommand("server", "/data")
-            .waitingFor(
-                Wait.forHttp("/minio/health/live").forStatusCode(200).withStartupTimeout(Duration.ofSeconds(60)),
-            )
-        private val MODULE = module("minio-storage-test") {
-            include(commonModule())
-            single<ImperiumConfig> {
-                ImperiumConfig(storage = StorageConfig.Minio(port = MINIO_CONTAINER.firstMappedPort))
+        private val MINIO_CONTAINER =
+            GenericContainer(DockerImageName.parse("minio/minio:latest"))
+                .withExposedPorts(9000)
+                .withCommand("server", "/data")
+                .waitingFor(
+                    Wait.forHttp("/minio/health/live")
+                        .forStatusCode(200)
+                        .withStartupTimeout(Duration.ofSeconds(60)),
+                )
+        private val MODULE =
+            module("minio-storage-test") {
+                include(commonModule())
+                single<ImperiumConfig> {
+                    ImperiumConfig(
+                        storage = StorageConfig.Minio(port = MINIO_CONTAINER.firstMappedPort))
+                }
             }
-        }
     }
 }

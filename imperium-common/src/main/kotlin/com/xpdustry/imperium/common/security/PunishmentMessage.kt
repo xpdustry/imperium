@@ -23,17 +23,21 @@ import com.xpdustry.imperium.common.serialization.SerializableObjectId
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class PunishmentMessage(val author: Identity?, val type: Type, val punishment: Snowflake, val extra: Extra) : Message {
+data class PunishmentMessage(
+    val author: Identity?,
+    val type: Type,
+    val punishment: Snowflake,
+    val extra: Extra
+) : Message {
     enum class Type {
-        CREATE, PARDON
+        CREATE,
+        PARDON
     }
 
     @Serializable
     sealed interface Extra {
-        @Serializable
-        data object None : Extra
+        @Serializable data object None : Extra
 
-        @Serializable
-        data class Nsfw(val entry: SerializableObjectId) : Extra
+        @Serializable data class Nsfw(val entry: SerializableObjectId) : Extra
     }
 }

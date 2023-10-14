@@ -25,19 +25,22 @@ import kotlin.reflect.KClass
 
 open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
-    override val instances: InstanceManager = SimpleInstanceManager(module, ApplicationInjectorListener())
+    override val instances: InstanceManager =
+        SimpleInstanceManager(module, ApplicationInjectorListener())
     private val logger by LoggerDelegate()
 
-    // TODO This should be hidden, but I need to process the instances for the commands for the discord bot
+    // TODO This should be hidden, but I need to process the instances for the commands for the
+    // discord bot
     val listeners = arrayListOf<ImperiumApplication.Listener>()
     private val initialized = arrayListOf<ImperiumApplication.Listener>()
 
-    fun register(listener: ImperiumApplication.Listener) = synchronized(listeners) {
-        if (listeners.contains(listener)) {
-            return
+    fun register(listener: ImperiumApplication.Listener) =
+        synchronized(listeners) {
+            if (listeners.contains(listener)) {
+                return
+            }
+            onListenerRegistration(listener)
         }
-        onListenerRegistration(listener)
-    }
 
     fun register(listener: KClass<out ImperiumApplication.Listener>) {
         var constructor = listener.constructors.find { it.parameters.isEmpty() }
@@ -45,14 +48,17 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
             register(constructor.call())
             return
         }
-        constructor = listener.constructors.find {
-            it.parameters.size == 1 && it.parameters[0].type.classifier == InstanceManager::class
-        }
+        constructor =
+            listener.constructors.find {
+                it.parameters.size == 1 &&
+                    it.parameters[0].type.classifier == InstanceManager::class
+            }
         if (constructor != null) {
             register(constructor.call(instances))
             return
         }
-        throw IllegalArgumentException("Cannot find a valid constructor for listener: ${listener.simpleName}")
+        throw IllegalArgumentException(
+            "Cannot find a valid constructor for listener: ${listener.simpleName}")
     }
 
     protected open fun onListenerRegistration(listener: ImperiumApplication.Listener) {

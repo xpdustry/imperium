@@ -23,8 +23,8 @@ import com.password4j.Password
 import com.password4j.SecureString
 import com.password4j.types.Argon2
 import com.xpdustry.imperium.common.async.ImperiumScope
-import kotlinx.coroutines.withContext
 import java.util.Locale
+import kotlinx.coroutines.withContext
 
 data class Argon2Params(
     val memory: Int,
@@ -47,11 +47,14 @@ data class Argon2Params(
     }
 
     enum class Type {
-        ID, I, D
+        ID,
+        I,
+        D
     }
 
     enum class Version {
-        V10, V13
+        V10,
+        V13
     }
 
     companion object {
@@ -60,10 +63,11 @@ data class Argon2Params(
                 throw IllegalArgumentException("Invalid argon2 params: $str")
             }
 
-            val params = str.substring("argon2/".length)
-                .split(",")
-                .map { it.trim().split("=") }
-                .associate { it[0] to it[1] }
+            val params =
+                str.substring("argon2/".length)
+                    .split(",")
+                    .map { it.trim().split("=") }
+                    .associate { it[0] to it[1] }
 
             return Argon2Params(
                 params["m"]!!.toInt(),
@@ -97,27 +101,30 @@ object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
 
     private suspend fun create0(builder: HashBuilder, params: Argon2Params): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            val result = builder.with(
-                Argon2Function.getInstance(
-                    params.memory,
-                    params.iterations,
-                    params.parallelism,
-                    params.length,
-                    params.type.toP4J(),
-                    params.version.toP4J(),
-                ),
-            )
+            val result =
+                builder.with(
+                    Argon2Function.getInstance(
+                        params.memory,
+                        params.iterations,
+                        params.parallelism,
+                        params.length,
+                        params.type.toP4J(),
+                        params.version.toP4J(),
+                    ),
+                )
             Hash(result.bytes, result.saltBytes, params)
         }
 
-    private fun Argon2Params.Type.toP4J() = when (this) {
-        Argon2Params.Type.ID -> Argon2.ID
-        Argon2Params.Type.I -> Argon2.I
-        Argon2Params.Type.D -> Argon2.D
-    }
+    private fun Argon2Params.Type.toP4J() =
+        when (this) {
+            Argon2Params.Type.ID -> Argon2.ID
+            Argon2Params.Type.I -> Argon2.I
+            Argon2Params.Type.D -> Argon2.D
+        }
 
-    private fun Argon2Params.Version.toP4J() = when (this) {
-        Argon2Params.Version.V10 -> Argon2Function.ARGON2_VERSION_10
-        Argon2Params.Version.V13 -> Argon2Function.ARGON2_VERSION_13
-    }
+    private fun Argon2Params.Version.toP4J() =
+        when (this) {
+            Argon2Params.Version.V10 -> Argon2Function.ARGON2_VERSION_10
+            Argon2Params.Version.V13 -> Argon2Function.ARGON2_VERSION_13
+        }
 }

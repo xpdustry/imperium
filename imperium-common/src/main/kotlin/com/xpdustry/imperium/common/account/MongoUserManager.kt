@@ -21,10 +21,11 @@ import com.mongodb.client.model.Filters
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
-import kotlinx.coroutines.flow.firstOrNull
 import java.net.InetAddress
+import kotlinx.coroutines.flow.firstOrNull
 
-internal class MongoUserManager(private val mongo: MongoProvider) : UserManager, ImperiumApplication.Listener {
+internal class MongoUserManager(private val mongo: MongoProvider) :
+    UserManager, ImperiumApplication.Listener {
 
     private lateinit var users: MongoEntityCollection<User, String>
 
@@ -32,14 +33,18 @@ internal class MongoUserManager(private val mongo: MongoProvider) : UserManager,
         users = mongo.getCollection("users", User::class)
     }
 
-    override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User = users.findById(uuid) ?: User(uuid)
+    override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User =
+        users.findById(uuid) ?: User(uuid)
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? = users.findById(uuid)
 
     override suspend fun findByLastAddress(address: InetAddress): User? =
         users.find(Filters.eq(User::lastAddress.name, address)).firstOrNull()
 
-    override suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit) {
+    override suspend fun updateOrCreateByUuid(
+        uuid: MindustryUUID,
+        updater: suspend (User) -> Unit
+    ) {
         val user = users.findById(uuid) ?: User(uuid)
         updater(user)
         users.save(user)

@@ -27,16 +27,16 @@ import arc.graphics.g2d.TextureAtlas.AtlasRegion
 import arc.graphics.g2d.TextureRegion
 import arc.struct.Seq
 import com.xpdustry.imperium.common.misc.logger
-import mindustry.Vars
-import mindustry.game.Team
-import mindustry.world.blocks.ConstructBlock
-import mindustry.world.blocks.environment.OreBlock
-import mindustry.world.blocks.legacy.LegacyBlock
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.io.path.nameWithoutExtension
 import kotlin.time.measureTime
+import mindustry.Vars
+import mindustry.game.Team
+import mindustry.world.blocks.ConstructBlock
+import mindustry.world.blocks.environment.OreBlock
+import mindustry.world.blocks.legacy.LegacyBlock
 
 // TODO
 //  - Move to MindustryContentHandler
@@ -49,62 +49,62 @@ class MindustryImagePacker(private val directory: Path) {
             .filter { it.extension == "png" }
             .forEach { cache[it.nameWithoutExtension] = PackIndex(Fi(it.toFile())) }
 
-        Core.atlas = object : TextureAtlas() {
-            override fun find(name: String): AtlasRegion {
-                if (!cache.containsKey(name)) {
-                    val region = GenRegion(name)
-                    region.invalid = true
-                    return region
+        Core.atlas =
+            object : TextureAtlas() {
+                override fun find(name: String): AtlasRegion {
+                    if (!cache.containsKey(name)) {
+                        val region = GenRegion(name)
+                        region.invalid = true
+                        return region
+                    }
+
+                    val index = cache[name]!!
+                    if (index.pixmap == null) {
+                        index.pixmap = Pixmap(index.file)
+                        index.region =
+                            object : GenRegion(name) {
+                                init {
+                                    width = index.pixmap!!.width
+                                    height = index.pixmap!!.height
+                                    v2 = 1f
+                                    u2 = v2
+                                    v = 0f
+                                    u = v
+                                }
+                            }
+                    }
+                    return index.region!!
                 }
 
-                val index = cache[name]!!
-                if (index.pixmap == null) {
-                    index.pixmap = Pixmap(index.file)
-                    index.region = object : GenRegion(name) {
-                        init {
-                            width = index.pixmap!!.width
-                            height = index.pixmap!!.height
-                            v2 = 1f
-                            u2 = v2
-                            v = 0f
-                            u = v
-                        }
+                override fun find(name: String, def: TextureRegion): AtlasRegion {
+                    return if (!cache.containsKey(name)) {
+                        def as AtlasRegion
+                    } else {
+                        find(name)
                     }
                 }
-                return index.region!!
-            }
 
-            override fun find(name: String, def: TextureRegion): AtlasRegion {
-                return if (!cache.containsKey(name)) {
-                    def as AtlasRegion
-                } else {
-                    find(name)
+                override fun find(name: String, def: String): AtlasRegion {
+                    return if (!cache.containsKey(name)) {
+                        find(def)
+                    } else {
+                        find(name)
+                    }
+                }
+
+                override fun getPixmap(region: AtlasRegion): PixmapRegion {
+                    return PixmapRegion(get(region.name))
+                }
+
+                override fun has(s: String): Boolean {
+                    return cache.containsKey(s)
                 }
             }
-
-            override fun find(name: String, def: String): AtlasRegion {
-                return if (!cache.containsKey(name)) {
-                    find(def)
-                } else {
-                    find(name)
-                }
-            }
-
-            override fun getPixmap(region: AtlasRegion): PixmapRegion {
-                return PixmapRegion(get(region.name))
-            }
-
-            override fun has(s: String): Boolean {
-                return cache.containsKey(s)
-            }
-        }
 
         Draw.scl = 1f / Core.atlas.find("scale_marker").width
         Vars.content.load()
 
-        val time = measureTime {
-            generateBlockIcons()
-        }
+        val time = measureTime { generateBlockIcons() }
 
         logger.info("Time to generate block images: {}ms", time.inWholeMilliseconds)
     }
@@ -112,7 +112,10 @@ class MindustryImagePacker(private val directory: Path) {
     private fun generateBlockIcons() {
         logger.info("Generating full block images...")
         for (block in Vars.content.blocks()) {
-            if (block.isAir || block is ConstructBlock || block is OreBlock || block is LegacyBlock) {
+            if (block.isAir ||
+                block is ConstructBlock ||
+                block is OreBlock ||
+                block is LegacyBlock) {
                 continue
             }
 
@@ -127,8 +130,15 @@ class MindustryImagePacker(private val directory: Path) {
                     val out = Pixmap(teamRegion.width, teamRegion.height)
                     teamRegion.each { x, y ->
                         val color = teamRegion.getRaw(x, y)
-                        val index = if (color == -0x1) 0 else if (color == -0x23393901) 1 else if (color == -0x62808001) 2 else -1
-                        out.setRaw(x, y, if (index == -1) teamRegion.getRaw(x, y) else Team.sharded.palettei[index])
+                        val index =
+                            if (color == -0x1) 0
+                            else if (color == -0x23393901) 1
+                            else if (color == -0x62808001) 2 else -1
+                        out.setRaw(
+                            x,
+                            y,
+                            if (index == -1) teamRegion.getRaw(x, y)
+                            else Team.sharded.palettei[index])
                     }
                     shardTeamTop = out
                 }
@@ -140,7 +150,9 @@ class MindustryImagePacker(private val directory: Path) {
 
             var last: Pixmap? = null
             if (block.outlineIcon) {
-                val region = regions[if (block.outlinedIcon >= 0) block.outlinedIcon else regions.size - 1] as GenRegion
+                val region =
+                    regions[if (block.outlinedIcon >= 0) block.outlinedIcon else regions.size - 1]
+                        as GenRegion
                 val base = get(region)
                 last = base.outline(block.outlineColor, block.outlineRadius)
                 val out = last
@@ -181,7 +193,9 @@ class MindustryImagePacker(private val directory: Path) {
                 }
             }
 
-            if (!(regions.size == 1 && regions[0] === Core.atlas.find(block.name) && shardTeamTop == null)) {
+            if (!(regions.size == 1 &&
+                regions[0] === Core.atlas.find(block.name) &&
+                shardTeamTop == null)) {
                 save(image, "block-" + block.name + "-full")
             }
         }
@@ -204,7 +218,11 @@ class MindustryImagePacker(private val directory: Path) {
 
     private open class GenRegion(name: String) : AtlasRegion() {
         var invalid = false
-        init { this.name = name }
+
+        init {
+            this.name = name
+        }
+
         override fun found() = !invalid
     }
 

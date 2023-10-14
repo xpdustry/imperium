@@ -65,19 +65,24 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         pipeline.register("anti-foo-sign", Priority.HIGHEST) { context ->
             val msg = context.message
             // https://github.com/mindustry-antigrief/mindustry-client/blob/23025185c20d102f3fbb9d9a4c20196cc871d94b/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
-            if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2) else msg
+            if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2)
+            else msg
         }
 
         pipeline.register("mute", Priority.HIGH) { ctx ->
-            val muted = punishments.findAllByAddress(ctx.sender.ip().toInetAddress())
-                .filter { !it.expired && it.type == Punishment.Type.MUTE }.firstOrNull()
+            val muted =
+                punishments
+                    .findAllByAddress(ctx.sender.ip().toInetAddress())
+                    .filter { !it.expired && it.type == Punishment.Type.MUTE }
+                    .firstOrNull()
             if (muted != null) {
                 if (ctx.target == ctx.sender) {
                     ctx.sender.showInfoMessage(
                         """
                         [scarlet]You can't talk. You are currently muted for '${muted.reason}'.
                         [orange]You can appeal this decision with the punishment id [cyan]${muted._id.toBase62()}[].
-                        """.trimIndent(),
+                        """
+                            .trimIndent(),
                     )
                 }
                 return@register ""
@@ -86,9 +91,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
 
         pipeline.register("mindustry-filter", Priority.HIGH) {
-            runMindustryThread {
-                Vars.netServer.admins.filterMessage(it.sender, it.message) ?: ""
-            }
+            runMindustryThread { Vars.netServer.admins.filterMessage(it.sender, it.message) ?: "" }
         }
     }
 
@@ -109,7 +112,11 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
     @Command(["w"])
     @ClientSide
-    private suspend fun onWhisperCommand(sender: CommandSender, target: Player, @Greedy message: String) {
+    private suspend fun onWhisperCommand(
+        sender: CommandSender,
+        target: Player,
+        @Greedy message: String
+    ) {
         val filtered = pipeline.pump(ChatMessageContext(sender.player, target, message))
         if (filtered.isBlank()) return
         target.sendMessage(
@@ -122,7 +129,10 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
 private fun interceptChatMessage(sender: Player, message: String, pipeline: ChatMessagePipeline) {
     // do not receive chat messages from clients that are too young or not registered
-    if (Time.timeSinceMillis(sender.con.connectTime) < 500 || !sender.con.hasConnected || !sender.isAdded) return
+    if (Time.timeSinceMillis(sender.con.connectTime) < 500 ||
+        !sender.con.hasConnected ||
+        !sender.isAdded)
+        return
 
     // detect and kick for foul play
     if (!sender.con.chatRate.allow(2000, Administration.Config.chatSpamLimit.num())) {
@@ -167,8 +177,13 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
             runMindustryThread {
                 target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
                 if (target == null) {
-                    Log.info("&fi@: @", "&lc" + sender.plainName(), "&lw${result.stripMindustryColors()}")
-                    DistributorProvider.get().eventBus.post(ProcessedPlayerChatEvent(sender, result))
+                    Log.info(
+                        "&fi@: @",
+                        "&lc" + sender.plainName(),
+                        "&lw${result.stripMindustryColors()}")
+                    DistributorProvider.get()
+                        .eventBus
+                        .post(ProcessedPlayerChatEvent(sender, result))
                 }
             }
         }

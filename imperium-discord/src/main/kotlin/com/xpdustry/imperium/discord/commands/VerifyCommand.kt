@@ -29,18 +29,19 @@ import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
-import org.bson.types.ObjectId
 import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
+import org.bson.types.ObjectId
 
 class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     // TODO There is an issue with the RateLimiter, the real limit is 3
     private val limiter = RateLimiter<Long>(2, Duration.ofMinutes(10))
     private val messenger = instances.get<Messenger>()
-    private val pending = CacheBuilder.newBuilder()
-        .expireAfterWrite(10.minutes.toJavaDuration())
-        .build<Int, Pair<ObjectId, MindustryUUID>>()
+    private val pending =
+        CacheBuilder.newBuilder()
+            .expireAfterWrite(10.minutes.toJavaDuration())
+            .build<Int, Pair<ObjectId, MindustryUUID>>()
 
     override fun onImperiumInit() {
         messenger.subscribe<VerificationMessage> { message ->

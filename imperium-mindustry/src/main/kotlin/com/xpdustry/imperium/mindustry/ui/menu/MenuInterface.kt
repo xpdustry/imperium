@@ -36,30 +36,31 @@ interface MenuInterface : TransformerInterface<MenuPane> {
 private class MenuInterfaceImpl(plugin: MindustryPlugin) :
     AbstractTransformerInterface<MenuPane>(plugin, ::MenuPane), MenuInterface {
 
-    private val id = Menus.registerMenu { player: Player, option: Int ->
-        val view = views[MUUID.of(player)]
-        if (view == null) {
-            this.plugin.logger.warn(
-                "Received menu response from player {} (uuid: {}) but no view was found",
-                player.plainName(),
-                player.uuid(),
-            )
-        } else if (option == -1) {
-            view.pane.exitAction.accept(view)
-        } else {
-            val choice = view.pane.options.getOption(option)
-            if (choice == null) {
+    private val id =
+        Menus.registerMenu { player: Player, option: Int ->
+            val view = views[MUUID.of(player)]
+            if (view == null) {
                 this.plugin.logger.warn(
-                    "Received invalid menu option {} from player {} (uuid: {})",
-                    option,
+                    "Received menu response from player {} (uuid: {}) but no view was found",
                     player.plainName(),
                     player.uuid(),
                 )
+            } else if (option == -1) {
+                view.pane.exitAction.accept(view)
             } else {
-                choice.action.accept(view)
+                val choice = view.pane.options.getOption(option)
+                if (choice == null) {
+                    this.plugin.logger.warn(
+                        "Received invalid menu option {} from player {} (uuid: {})",
+                        option,
+                        player.plainName(),
+                        player.uuid(),
+                    )
+                } else {
+                    choice.action.accept(view)
+                }
             }
         }
-    }
 
     override fun onViewOpen(view: SimpleView) {
         Call.followUpMenu(

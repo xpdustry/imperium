@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.mindustry.ui
 
 import com.xpdustry.imperium.mindustry.ui.state.State
-import mindustry.gen.Player
 import java.util.function.Consumer
+import mindustry.gen.Player
 
 // Inspired from https://github.com/Incendo/interfaces, best interface library ever :)
 interface Interface {

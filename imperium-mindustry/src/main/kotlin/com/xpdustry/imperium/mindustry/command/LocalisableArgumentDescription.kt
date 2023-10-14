@@ -22,7 +22,11 @@ import fr.xpdustry.distributor.api.DistributorProvider
 import java.util.Locale
 
 // TODO Replace with a component based Description
-class LocalisableArgumentDescription(private val key: String, private val default: Locale) : ArgumentDescription {
-    override fun getDescription(): String = DistributorProvider.get().globalLocalizationSource.format(key, default)
-    fun getDescription(locale: Locale): String = DistributorProvider.get().globalLocalizationSource.format(key, locale)
+class LocalisableArgumentDescription(private val key: String, private val default: Locale) :
+    ArgumentDescription {
+    override fun getDescription(): String =
+        DistributorProvider.get().globalLocalizationSource.format(key, default)
+
+    fun getDescription(locale: Locale): String =
+        DistributorProvider.get().globalLocalizationSource.format(key, locale)
 }

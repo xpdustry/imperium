@@ -42,17 +42,34 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
             val targetLocale = context.target?.let(Players::getLocale) ?: config.language
             val rawMessage = Strings.stripColors(context.message)
 
-            val result = withTimeoutOrNull(3000L) {
-                translator.translate(rawMessage, sourceLocale, targetLocale)
-            }
+            val result =
+                withTimeoutOrNull(3000L) {
+                    translator.translate(rawMessage, sourceLocale, targetLocale)
+                }
 
             when (result) {
-                is TranslatorResult.UnsupportedLanguage -> logger.debug("Warning: The locale {} is not supported by the chat translator", result.locale)
-                is TranslatorResult.Failure -> logger.error("Failed to translate the message '{}' from {} to {}", rawMessage, sourceLocale, targetLocale, result.exception)
-                is TranslatorResult.RateLimited -> logger.debug("Warning: The chat translator is rate limited")
-                null -> logger.error("Failed to translate the message '{}' from {} to {} due to timeout", rawMessage, sourceLocale, targetLocale)
+                is TranslatorResult.UnsupportedLanguage ->
+                    logger.debug(
+                        "Warning: The locale {} is not supported by the chat translator",
+                        result.locale)
+                is TranslatorResult.Failure ->
+                    logger.error(
+                        "Failed to translate the message '{}' from {} to {}",
+                        rawMessage,
+                        sourceLocale,
+                        targetLocale,
+                        result.exception)
+                is TranslatorResult.RateLimited ->
+                    logger.debug("Warning: The chat translator is rate limited")
+                null ->
+                    logger.error(
+                        "Failed to translate the message '{}' from {} to {} due to timeout",
+                        rawMessage,
+                        sourceLocale,
+                        targetLocale)
                 is TranslatorResult.Success -> {
-                    return@register if (rawMessage == result.text) rawMessage else "${context.message} [lightgray](${result.text})"
+                    return@register if (rawMessage == result.text) rawMessage
+                    else "${context.message} [lightgray](${result.text})"
                 }
             }
 
@@ -63,9 +80,11 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
     @EventHandler
     fun onPlayerConnect(event: PlayerJoin) {
         if (translator.isSupportedLanguage(Players.getLocale(event.player))) {
-            event.player.sendMessage("[green]The chat translator supports your language, you can talk in your native tongue!")
+            event.player.sendMessage(
+                "[green]The chat translator supports your language, you can talk in your native tongue!")
         } else {
-            event.player.sendMessage("[scarlet]Warning, your language is not supported by the chat translator. Please talk in english.")
+            event.player.sendMessage(
+                "[scarlet]Warning, your language is not supported by the chat translator. Please talk in english.")
         }
     }
 

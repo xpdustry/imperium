@@ -24,8 +24,8 @@ import com.xpdustry.imperium.common.database.snowflake.timestamp
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.serialization.SerializableJDuration
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
-import kotlinx.serialization.Serializable
 import java.time.Instant
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class Punishment(
@@ -36,20 +36,32 @@ data class Punishment(
     var duration: SerializableJDuration?,
     var pardon: Pardon? = null,
 ) : Entity<Snowflake> {
-    val pardoned: Boolean get() = pardon != null
-    val expired: Boolean get() = pardoned || expiration < Instant.now()
-    val expiration: Instant get() = duration?.let { _id.timestamp.plus(it) } ?: Instant.MAX
-    val permanent: Boolean get() = duration == null
-    val timestamp: Instant get() = _id.timestamp
+    val pardoned: Boolean
+        get() = pardon != null
+
+    val expired: Boolean
+        get() = pardoned || expiration < Instant.now()
+
+    val expiration: Instant
+        get() = duration?.let { _id.timestamp.plus(it) } ?: Instant.MAX
+
+    val permanent: Boolean
+        get() = duration == null
+
+    val timestamp: Instant
+        get() = _id.timestamp
 
     @Serializable
     data class Target(val address: SerializableInetAddress, val uuid: MindustryUUID? = null)
 
-    @Serializable
-    data class Pardon(val timestamp: SerializableJInstant, val reason: String)
+    @Serializable data class Pardon(val timestamp: SerializableJInstant, val reason: String)
+
     enum class Type {
         // TODO Implement Freeze
-        FREEZE, MUTE, KICK, BAN;
+        FREEZE,
+        MUTE,
+        KICK,
+        BAN;
 
         fun isKick() = this == KICK || this == BAN
     }

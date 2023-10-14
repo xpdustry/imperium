@@ -19,16 +19,17 @@ package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.mindustry.processing.Processor
 
-private val CRACKED_CLIENT_USERNAMES = setOf(
-    "valve",
-    "tuttop",
-    "codex",
-    "igggames",
-    "igg-games.com",
-    "igruhaorg",
-    "freetp.org",
-    "goldberg",
-)
+private val CRACKED_CLIENT_USERNAMES =
+    setOf(
+        "valve",
+        "tuttop",
+        "codex",
+        "igggames",
+        "igg-games.com",
+        "igruhaorg",
+        "freetp.org",
+        "goldberg",
+    )
 
 // Go figure why but some people are using cracked clients on a free game... Incredible.
 class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
@@ -39,7 +40,8 @@ class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
                 [green]Mindustry is a free and open source game.
                 [white]It is available on [royal]https://anuke.itch.io/mindustry[].
                 [red]Please, get a legit copy of the game.
-                """.trimIndent(),
+                """
+                    .trimIndent(),
             )
         }
         return GatekeeperResult.Success

@@ -22,16 +22,17 @@ import com.xpdustry.imperium.common.security.Identity
 import kotlinx.serialization.Serializable
 
 @Serializable
-class MindustryPlayerMessage(val serverName: String, val player: Identity.Mindustry, val action: Action) : Message {
+class MindustryPlayerMessage(
+    val serverName: String,
+    val player: Identity.Mindustry,
+    val action: Action
+) : Message {
     @Serializable
     sealed interface Action {
-        @Serializable
-        data object Join : Action
+        @Serializable data object Join : Action
 
-        @Serializable
-        data object Quit : Action
+        @Serializable data object Quit : Action
 
-        @Serializable
-        data class Chat(val message: String) : Action
+        @Serializable data class Chat(val message: String) : Action
     }
 }

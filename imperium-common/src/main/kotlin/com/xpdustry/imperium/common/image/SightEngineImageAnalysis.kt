@@ -23,13 +23,13 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import java.awt.image.BufferedImage
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
-import java.awt.image.BufferedImage
 
 class SightEngineImageAnalysis(
     private val config: ImageAnalysisConfig.SightEngine,
@@ -38,20 +38,32 @@ class SightEngineImageAnalysis(
     private val gson = Gson()
 
     override suspend fun isUnsafe(image: BufferedImage): ImageAnalysis.Result {
-        val bytes = withContext(ImperiumScope.IO.coroutineContext) {
-            image.inputStream(ImageFormat.JPG).readAllBytes()
-        }
-        val request = MultipartBody.Builder()
-            .setType(MultipartBody.FORM)
-            .addFormDataPart("api_user", config.sightEngineClient)
-            .addFormDataPart("api_secret", config.sightEngineSecret.value)
-            .addFormDataPart("models", "nudity-2.0,offensive,gore")
-            .addFormDataPart("media", "image.jpg", bytes.toRequestBody("image/jpeg".toMediaTypeOrNull(), 0, bytes.size))
-            .build()
+        val bytes =
+            withContext(ImperiumScope.IO.coroutineContext) {
+                image.inputStream(ImageFormat.JPG).readAllBytes()
+            }
+        val request =
+            MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("api_user", config.sightEngineClient)
+                .addFormDataPart("api_secret", config.sightEngineSecret.value)
+                .addFormDataPart("models", "nudity-2.0,offensive,gore")
+                .addFormDataPart(
+                    "media",
+                    "image.jpg",
+                    bytes.toRequestBody("image/jpeg".toMediaTypeOrNull(), 0, bytes.size))
+                .build()
 
-        val response = withContext(ImperiumScope.IO.coroutineContext) {
-            http.newCall(Request.Builder().url("https://api.sightengine.com/1.0/check.json").post(request).build()).execute()
-        }
+        val response =
+            withContext(ImperiumScope.IO.coroutineContext) {
+                http
+                    .newCall(
+                        Request.Builder()
+                            .url("https://api.sightengine.com/1.0/check.json")
+                            .post(request)
+                            .build())
+                    .execute()
+            }
 
         val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
         if (json["status"].asString != "success") {
@@ -61,12 +73,17 @@ class SightEngineImageAnalysis(
         logger.trace("SightEngine response: {}", json)
 
         val explicitNudityFields = listOf("sexual_activity", "sexual_display", "sextoy", "erotica")
-        val nudity = json["nudity"].asJsonObject.let { obj -> explicitNudityFields.maxOf { obj[it].asFloat } }
+        val nudity =
+            json["nudity"].asJsonObject.let { obj ->
+                explicitNudityFields.maxOf { obj[it].asFloat }
+            }
         val offensive = json["offensive"].asJsonObject["prob"].asFloat
         val gore = json["gore"].asJsonObject["prob"].asFloat
 
         return ImageAnalysis.Result.Success(
-            nudity >= config.nudityThreshold || offensive >= config.offensiveThreshold || gore >= config.goreThreshold,
+            nudity >= config.nudityThreshold ||
+                offensive >= config.offensiveThreshold ||
+                gore >= config.goreThreshold,
             mapOf(
                 UnsafeImageType.NUDITY to nudity,
                 UnsafeImageType.OFFENSIVE to offensive,

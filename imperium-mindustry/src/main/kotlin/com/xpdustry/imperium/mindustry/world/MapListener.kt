@@ -33,6 +33,10 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import java.nio.file.Path
+import kotlin.io.path.createDirectory
+import kotlin.io.path.notExists
+import kotlin.io.path.outputStream
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -40,10 +44,6 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.io.MapIO
 import mindustry.maps.Map
-import java.nio.file.Path
-import kotlin.io.path.createDirectory
-import kotlin.io.path.notExists
-import kotlin.io.path.outputStream
 
 class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Mindustry>()
@@ -54,9 +54,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()
 
-        messenger.subscribe<MapReloadMessage> {
-            if (config.name in it.servers) reloadMaps()
-        }
+        messenger.subscribe<MapReloadMessage> { if (config.name in it.servers) reloadMaps() }
 
         reloadMaps()
     }
@@ -67,40 +65,50 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         reloadMaps()
     }
 
-    private fun reloadMaps() = ImperiumScope.MAIN.launch {
-        val old = runMindustryThread {
-            val before = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
-            Vars.maps.reload()
-            return@runMindustryThread before
-        }
-
-        val pool = maps.findMapsByServer(config.name)
-            .map {
-                try {
-                    downloadMapFromPool(it)
-                } catch (e: Exception) {
-                    logger.error("Failed to load map from server pool, falling back to local maps.", e)
-                    null
-                }
+    private fun reloadMaps() =
+        ImperiumScope.MAIN.launch {
+            val old = runMindustryThread {
+                val before = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
+                Vars.maps.reload()
+                return@runMindustryThread before
             }
-            .filterNotNull()
-            .toList()
 
-        if (pool.isEmpty()) {
-            logger.warn("No maps found in server pool, falling back to local maps.")
-        }
+            val pool =
+                maps
+                    .findMapsByServer(config.name)
+                    .map {
+                        try {
+                            downloadMapFromPool(it)
+                        } catch (e: Exception) {
+                            logger.error(
+                                "Failed to load map from server pool, falling back to local maps.",
+                                e)
+                            null
+                        }
+                    }
+                    .filterNotNull()
+                    .toList()
 
-        runMindustryThread {
-            Vars.maps.all().addAll(pool)
-            val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
-            logger.info("Reloaded {} maps (added={}, removed={}).", now.size, (now - old).size, (old - now).size)
+            if (pool.isEmpty()) {
+                logger.warn("No maps found in server pool, falling back to local maps.")
+            }
+
+            runMindustryThread {
+                Vars.maps.all().addAll(pool)
+                val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
+                logger.info(
+                    "Reloaded {} maps (added={}, removed={}).",
+                    now.size,
+                    (now - old).size,
+                    (old - now).size)
+            }
         }
-    }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
         val file = cache.resolve("${map._id.toHexString()}_${map.lastUpdate.toEpochMilli()}.msav")
         if (file.notExists()) {
-            logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map._id.toHexString())
+            logger.debug(
+                "Downloading map {} (id={}) from serer pool.", map.name, map._id.toHexString())
             file.outputStream().use { output ->
                 maps.getMapObject(map._id).getData().use { input -> input.copyTo(output) }
             }

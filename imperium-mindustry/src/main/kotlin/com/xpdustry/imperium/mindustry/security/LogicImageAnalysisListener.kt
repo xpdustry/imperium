@@ -44,6 +44,13 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
+import java.awt.Color
+import java.time.Duration
+import java.time.Instant
+import java.util.Queue
+import java.util.concurrent.PriorityBlockingQueue
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -61,13 +68,6 @@ import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.logic.CanvasBlock
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.LogicDisplay
-import java.awt.Color
-import java.time.Duration
-import java.time.Instant
-import java.util.Queue
-import java.util.concurrent.PriorityBlockingQueue
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 
 // TODO
 //  - Different cluster managers for different teams ?
@@ -81,10 +81,12 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     private val config = instances.get<ServerConfig.Mindustry>()
 
     private val drawerQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.Drawer>>>()
-    private val displays = ClusterManager(QueueClusterListener(drawerQueue, ::filterDrawer, ::findDrawerAuthor))
+    private val displays =
+        ClusterManager(QueueClusterListener(drawerQueue, ::filterDrawer, ::findDrawerAuthor))
     private lateinit var drawerJob: Job
     private val pixmapQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.PixMap>>>()
-    private val canvases = ClusterManager(QueueClusterListener(pixmapQueue, ::filterPixMap, ::findPixMapAuthor))
+    private val canvases =
+        ClusterManager(QueueClusterListener(pixmapQueue, ::filterPixMap, ::findPixMapAuthor))
     private lateinit var pixmapJob: Job
 
     private val debugPlayers = PlayerMap<Boolean>(instances.get())
@@ -185,7 +187,9 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         }
 
         var building = event.tile.build
-        if (event.breaking && building is ConstructBlock.ConstructBuild && !building.prevBuild.isEmpty) {
+        if (event.breaking &&
+            building is ConstructBlock.ConstructBuild &&
+            !building.prevBuild.isEmpty) {
             building = building.prevBuild.first()
         }
 
@@ -201,16 +205,22 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             for (x in (building.tileX() - MAX_RANGE)..(building.tileX() + MAX_RANGE)) {
                 for (y in (building.tileY() - MAX_RANGE)..(building.tileY() + MAX_RANGE)) {
                     val build = Vars.world.tile(x, y)?.build as? LogicBlock.LogicBuild ?: continue
-                    if (!covered.add(Point2.pack(x, y)) || build.links.find {
-                            it.active && Vars.world.tile(
-                                it.x,
-                                it.y,
-                            ).build == building
-                        } == null || build.executor.instructions.none { it is LExecutor.DrawFlushI }
-                    ) {
+                    if (!covered.add(Point2.pack(x, y)) ||
+                        build.links.find {
+                            it.active &&
+                                Vars.world
+                                    .tile(
+                                        it.x,
+                                        it.y,
+                                    )
+                                    .build == building
+                        } == null ||
+                        build.executor.instructions.none { it is LExecutor.DrawFlushI }) {
                         continue
                     }
-                    processors += LogicImage.Drawer.Processor(build.rx, build.ry, readInstructions(build.executor))
+                    processors +=
+                        LogicImage.Drawer.Processor(
+                            build.rx, build.ry, readInstructions(build.executor))
                     build.tile.getLinkedTiles {
                         covered.add(Point2.pack(it.x.toInt(), it.y.toInt()))
                     }
@@ -230,21 +240,30 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             )
         }
 
-        // TODO This does not cover processors that are built then bound, but let's be honest, who does that ?
+        // TODO This does not cover processors that are built then bound, but let's be honest, who
+        // does that ?
         if (building is LogicBlock.LogicBuild) {
-            building.links.asSequence().filter { it.active }.forEach { link ->
-                val display = Vars.world.tile(link.x, link.y)?.build as? LogicDisplay.LogicDisplayBuild ?: return@forEach
-                val (cluster, block) = displays.getElement(display.rx, display.ry)!!
-                displays.removeElement(cluster.x, cluster.y)
-                val processors = block.data.processors.toMutableList()
-                if (event.breaking) {
-                    processors.removeIf { it.x == building.rx && it.y == building.ry }
-                } else {
-                    processors += LogicImage.Drawer.Processor(building.rx, building.ry, readInstructions(building.executor))
+            building.links
+                .asSequence()
+                .filter { it.active }
+                .forEach { link ->
+                    val display =
+                        Vars.world.tile(link.x, link.y)?.build as? LogicDisplay.LogicDisplayBuild
+                            ?: return@forEach
+                    val (cluster, block) = displays.getElement(display.rx, display.ry)!!
+                    displays.removeElement(cluster.x, cluster.y)
+                    val processors = block.data.processors.toMutableList()
+                    if (event.breaking) {
+                        processors.removeIf { it.x == building.rx && it.y == building.ry }
+                    } else {
+                        processors +=
+                            LogicImage.Drawer.Processor(
+                                building.rx, building.ry, readInstructions(building.executor))
+                    }
+                    displays.addElement(
+                        block.copy(data = LogicImage.Drawer(block.data.resolution, processors)))
+                    logger.trace("Updated display at ({}, {})", display.rx, display.ry)
                 }
-                displays.addElement(block.copy(data = LogicImage.Drawer(block.data.resolution, processors)))
-                logger.trace("Updated display at ({}, {})", display.rx, display.ry)
-            }
         }
 
         if (building is CanvasBlock.CanvasBuild) {
@@ -295,7 +314,10 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         var result = 0
         for (i in 0 until block.bitsPerPixel) {
             val word = i + bitOffset ushr 3
-            result = result or ((if (data[word].toInt() and (1 shl (i + bitOffset and 7)) == 0) 0 else 1) shl i)
+            result =
+                result or
+                    ((if (data[word].toInt() and (1 shl (i + bitOffset and 7)) == 0) 0 else 1) shl
+                        i)
         }
         return result
     }
@@ -306,32 +328,33 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             if (instruction !is LExecutor.DrawI) {
                 continue
             }
-            instructions += when (instruction.type) {
-                LogicDisplay.commandColor -> {
-                    val r = normalizeColorValue(executor.numi(instruction.x))
-                    val g = normalizeColorValue(executor.numi(instruction.y))
-                    val b = normalizeColorValue(executor.numi(instruction.p1))
-                    val a = normalizeColorValue(executor.numi(instruction.p2))
-                    LogicImage.Drawer.Instruction.Color(r, g, b, a)
+            instructions +=
+                when (instruction.type) {
+                    LogicDisplay.commandColor -> {
+                        val r = normalizeColorValue(executor.numi(instruction.x))
+                        val g = normalizeColorValue(executor.numi(instruction.y))
+                        val b = normalizeColorValue(executor.numi(instruction.p1))
+                        val a = normalizeColorValue(executor.numi(instruction.p2))
+                        LogicImage.Drawer.Instruction.Color(r, g, b, a)
+                    }
+                    LogicDisplay.commandRect -> {
+                        val x = executor.numi(instruction.x)
+                        val y = executor.numi(instruction.y)
+                        val w = executor.numi(instruction.p1)
+                        val h = executor.numi(instruction.p2)
+                        LogicImage.Drawer.Instruction.Rect(x, y, w, h)
+                    }
+                    LogicDisplay.commandTriangle -> {
+                        val x1 = executor.numi(instruction.x)
+                        val y1 = executor.numi(instruction.y)
+                        val x2 = executor.numi(instruction.p1)
+                        val y2 = executor.numi(instruction.p2)
+                        val x3 = executor.numi(instruction.p3)
+                        val y3 = executor.numi(instruction.p4)
+                        LogicImage.Drawer.Instruction.Triangle(x1, y1, x2, y2, x3, y3)
+                    }
+                    else -> continue
                 }
-                LogicDisplay.commandRect -> {
-                    val x = executor.numi(instruction.x)
-                    val y = executor.numi(instruction.y)
-                    val w = executor.numi(instruction.p1)
-                    val h = executor.numi(instruction.p2)
-                    LogicImage.Drawer.Instruction.Rect(x, y, w, h)
-                }
-                LogicDisplay.commandTriangle -> {
-                    val x1 = executor.numi(instruction.x)
-                    val y1 = executor.numi(instruction.y)
-                    val x2 = executor.numi(instruction.p1)
-                    val y2 = executor.numi(instruction.p2)
-                    val x3 = executor.numi(instruction.p3)
-                    val y3 = executor.numi(instruction.p4)
-                    LogicImage.Drawer.Instruction.Triangle(x1, y1, x2, y2, x3, y3)
-                }
-                else -> continue
-            }
         }
         return instructions
     }
@@ -341,67 +364,74 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         return if (result < 0) result + 256 else result
     }
 
-    private fun <T : LogicImage> startProcessing(queue: Queue<Wrapper<Cluster<T>>>) = ImperiumScope.MAIN.launch {
-        while (isActive) {
-            delay(1.seconds)
-            val element = queue.peek()
-            if (element == null || element.instant > Instant.now()) {
-                continue
-            }
-            queue.remove()
+    private fun <T : LogicImage> startProcessing(queue: Queue<Wrapper<Cluster<T>>>) =
+        ImperiumScope.MAIN.launch {
+            while (isActive) {
+                delay(1.seconds)
+                val element = queue.peek()
+                if (element == null || element.instant > Instant.now()) {
+                    continue
+                }
+                queue.remove()
 
-            launch broadcast@{
-                logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
-                val (unsafe, entry) = analyzer.isUnsafe(element.value.blocks)
-                if (unsafe) {
-                    logger.debug("Cluster ({}, {}) is unsafe (entry={}). Destroying.", element.value.x, element.value.y, entry)
+                launch broadcast@{
+                    logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
+                    val (unsafe, entry) = analyzer.isUnsafe(element.value.blocks)
+                    if (unsafe) {
+                        logger.debug(
+                            "Cluster ({}, {}) is unsafe (entry={}). Destroying.",
+                            element.value.x,
+                            element.value.y,
+                            entry)
 
-                    runMindustryThread {
-                        for (block in element.value.blocks) {
-                            Vars.world.tile(block.x, block.y)?.build?.kill()
-                            val data = block.data
-                            if (data is LogicImage.Drawer) {
-                                for (processor in data.processors) {
-                                    Vars.world.tile(processor.x, processor.y)?.build?.kill()
+                        runMindustryThread {
+                            for (block in element.value.blocks) {
+                                Vars.world.tile(block.x, block.y)?.build?.kill()
+                                val data = block.data
+                                if (data is LogicImage.Drawer) {
+                                    for (processor in data.processors) {
+                                        Vars.world.tile(processor.x, processor.y)?.build?.kill()
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    val extra = if (entry != null) PunishmentMessage.Extra.Nsfw(entry) else PunishmentMessage.Extra.None
-                    val player = Groups.player.find { it.uuid() == element.author }
-                    if (player != null) {
-                        punishments.punish(
-                            null,
-                            Punishment.Target(player.ip().toInetAddress(), player.uuid()),
-                            "Placing NSFW images",
-                            Punishment.Type.BAN,
-                            Duration.ofDays(3L),
-                            extra,
-                        )
-                        return@broadcast
-                    }
+                        val extra =
+                            if (entry != null) PunishmentMessage.Extra.Nsfw(entry)
+                            else PunishmentMessage.Extra.None
+                        val player = Groups.player.find { it.uuid() == element.author }
+                        if (player != null) {
+                            punishments.punish(
+                                null,
+                                Punishment.Target(player.ip().toInetAddress(), player.uuid()),
+                                "Placing NSFW images",
+                                Punishment.Type.BAN,
+                                Duration.ofDays(3L),
+                                extra,
+                            )
+                            return@broadcast
+                        }
 
-                    val address = users.findByUuid(element.author)?.lastAddress
-                    if (address != null) {
-                        punishments.punish(
-                            null,
-                            Punishment.Target(address, element.author),
-                            "Placing NSFW images",
-                            Punishment.Type.BAN,
-                            Duration.ofDays(3L),
-                            extra,
-                        )
-                        return@broadcast
-                    }
+                        val address = users.findByUuid(element.author)?.lastAddress
+                        if (address != null) {
+                            punishments.punish(
+                                null,
+                                Punishment.Target(address, element.author),
+                                "Placing NSFW images",
+                                Punishment.Type.BAN,
+                                Duration.ofDays(3L),
+                                extra,
+                            )
+                            return@broadcast
+                        }
 
-                    logger.warn("Could not find player with UUID ${element.author}")
-                } else {
-                    logger.debug("Cluster ({}, {}) is safe", element.value.x, element.value.y)
+                        logger.warn("Could not find player with UUID ${element.author}")
+                    } else {
+                        logger.debug("Cluster ({}, {}) is safe", element.value.x, element.value.y)
+                    }
                 }
             }
         }
-    }
 
     private fun filterDrawer(cluster: Cluster<LogicImage.Drawer>): Boolean =
         cluster.blocks.flatMap { it.data.processors }.flatMap { it.instructions }.size > 128
@@ -410,21 +440,26 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
         cluster.blocks.size >= 9
 
     private fun findDrawerAuthor(cluster: Cluster<LogicImage.Drawer>): MindustryUUID? =
-        cluster.blocks.flatMap { it.data.processors }
+        cluster.blocks
+            .flatMap { it.data.processors }
             .mapNotNull { processor -> history.getLatestPlace(processor.x, processor.y) }
             .filter { it.block is LogicBlock }
             .mapNotNull { it.author.uuid }
             .findMostCommon()
 
     private fun findPixMapAuthor(cluster: Cluster<LogicImage.PixMap>): MindustryUUID? =
-        cluster.blocks.mapNotNull { block -> history.getLatestPlace(block.x, block.y) }
+        cluster.blocks
+            .mapNotNull { block -> history.getLatestPlace(block.x, block.y) }
             .filter { it.block is CanvasBlock }
             .mapNotNull { it.author.uuid }
             .findMostCommon()
 
     // Goofy ass Mindustry coordinate system
-    private val Building.rx: Int get() = tileX() + block.sizeOffset
-    private val Building.ry: Int get() = tileY() + block.sizeOffset
+    private val Building.rx: Int
+        get() = tileX() + block.sizeOffset
+
+    private val Building.ry: Int
+        get() = tileY() + block.sizeOffset
 
     companion object {
         private const val MAX_RANGE = 32

@@ -22,19 +22,21 @@ import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.ArcCollections
 import fr.xpdustry.distributor.api.util.Priority
+import java.time.Instant
+import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import java.time.Instant
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.time.Duration
 
 interface VoteManager<T : Any?> {
     val duration: Duration
-    val session: Session<T>? get() = if (sessions.size == 1) sessions.values.firstOrNull() else null
+    val session: Session<T>?
+        get() = if (sessions.size == 1) sessions.values.firstOrNull() else null
+
     val sessions: Map<UUID, Session<T>>
 
     fun start(starter: Player, vote: Boolean, target: T): Session<T>
@@ -47,11 +49,15 @@ interface VoteManager<T : Any?> {
         val status: Status
         val votes: Int
         val required: Int
-        val remaining: Int get() = required - votes
+        val remaining: Int
+            get() = required - votes
 
         fun setVote(player: Player, vote: Boolean?)
+
         fun getVote(player: Player): Boolean?
+
         fun success()
+
         fun failure()
 
         enum class Status {
@@ -112,11 +118,15 @@ class SimpleVoteManager<T : Any?>(
 
         override val id: UUID = UUID.randomUUID()
         override val start: Instant = Instant.now()
-        override val status: VoteManager.Session.Status get() = _status.get()
+        override val status: VoteManager.Session.Status
+            get() = _status.get()
+
         override var required: Int = threshold(ArcCollections.immutableList(Groups.player))
-        override val votes: Int get() = voters.entries.sumOf { (player, vote) ->
-            (if (vote) 1 else -1) * weight(Groups.player.getByID(player)!!)
-        }
+        override val votes: Int
+            get() =
+                voters.entries.sumOf { (player, vote) ->
+                    (if (vote) 1 else -1) * weight(Groups.player.getByID(player)!!)
+                }
 
         override fun setVote(player: Player, vote: Boolean?) {
             if (vote == null) {
@@ -134,14 +144,15 @@ class SimpleVoteManager<T : Any?>(
         }
 
         override fun getVote(player: Player): Boolean? = voters[player.id()]
+
         override fun success() = tryFinishWithStatus(VoteManager.Session.Status.SUCCESS)
+
         override fun failure() = tryFinishWithStatus(VoteManager.Session.Status.FAILURE)
+
         fun tryFinishWithStatus(status: VoteManager.Session.Status) {
             if (_status.compareAndSet(VoteManager.Session.Status.RUNNING, status)) {
                 this@SimpleVoteManager._sessions.remove(id)
-                ImperiumScope.MAIN.launch {
-                    finished(this@SimpleSession)
-                }
+                ImperiumScope.MAIN.launch { finished(this@SimpleSession) }
             }
         }
     }

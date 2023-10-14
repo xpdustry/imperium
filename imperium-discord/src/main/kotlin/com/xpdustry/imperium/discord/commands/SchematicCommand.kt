@@ -25,12 +25,12 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
-import org.javacord.api.entity.Attachment
-import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import kotlin.random.Random
 import kotlin.random.nextInt
+import org.javacord.api.entity.Attachment
+import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val content = instances.get<MindustryContentHandler>()

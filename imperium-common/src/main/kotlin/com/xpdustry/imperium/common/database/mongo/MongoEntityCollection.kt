@@ -25,36 +25,37 @@ import com.mongodb.kotlin.client.coroutine.AggregateFlow
 import com.mongodb.kotlin.client.coroutine.FindFlow
 import com.mongodb.kotlin.client.coroutine.MongoCollection
 import com.xpdustry.imperium.common.database.Entity
+import kotlin.reflect.KClass
 import kotlinx.coroutines.flow.firstOrNull
 import org.bson.conversions.Bson
-import kotlin.reflect.KClass
 
-internal class MongoEntityCollection<E : Entity<I>, I : Any>(private val collection: MongoCollection<E>) {
+internal class MongoEntityCollection<E : Entity<I>, I : Any>(
+    private val collection: MongoCollection<E>
+) {
     suspend fun save(entity: E) {
-        collection.replaceOne(Filters.eq(ID_FIELD, entity._id), entity, ReplaceOptions().upsert(true))
+        collection.replaceOne(
+            Filters.eq(ID_FIELD, entity._id), entity, ReplaceOptions().upsert(true))
     }
 
     suspend fun saveAll(entities: Iterable<E>) {
-        collection.bulkWrite(entities.map { ReplaceOneModel(Filters.eq(ID_FIELD, it._id), it, ReplaceOptions().upsert(true)) })
+        collection.bulkWrite(
+            entities.map {
+                ReplaceOneModel(Filters.eq(ID_FIELD, it._id), it, ReplaceOptions().upsert(true))
+            })
     }
 
-    fun find(filters: Bson): FindFlow<E> =
-        collection.find(filters)
+    fun find(filters: Bson): FindFlow<E> = collection.find(filters)
 
-    fun findAll(): FindFlow<E> =
-        collection.find()
+    fun findAll(): FindFlow<E> = collection.find()
 
-    suspend fun findById(id: I): E? =
-        collection.find(Filters.eq(ID_FIELD, id)).firstOrNull()
+    suspend fun findById(id: I): E? = collection.find(Filters.eq(ID_FIELD, id)).firstOrNull()
 
     suspend fun exists(entity: E): Boolean =
         collection.countDocuments(Filters.eq(ID_FIELD, entity._id)) > 0
 
-    suspend fun count(filters: Bson): Long =
-        collection.countDocuments(filters)
+    suspend fun count(filters: Bson): Long = collection.countDocuments(filters)
 
-    suspend fun countAll(): Long =
-        collection.countDocuments()
+    suspend fun countAll(): Long = collection.countDocuments()
 
     suspend fun deleteById(id: I) {
         collection.deleteOne(Filters.eq(ID_FIELD, id))

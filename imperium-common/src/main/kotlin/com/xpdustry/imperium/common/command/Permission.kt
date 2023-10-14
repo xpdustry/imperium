@@ -18,5 +18,9 @@
 package com.xpdustry.imperium.common.command
 
 enum class Permission {
-    EVERYONE, VERIFIED, MODERATOR, ADMINISTRATOR, OWNER,
+    EVERYONE,
+    VERIFIED,
+    MODERATOR,
+    ADMINISTRATOR,
+    OWNER,
 }

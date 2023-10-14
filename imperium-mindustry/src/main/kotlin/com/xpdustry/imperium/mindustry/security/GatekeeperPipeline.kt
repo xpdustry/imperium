@@ -21,9 +21,9 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
-import kotlinx.coroutines.withContext
 import java.net.InetAddress
 import java.time.Duration
+import kotlinx.coroutines.withContext
 
 data class GatekeeperContext(
     val name: String,
@@ -34,26 +34,30 @@ data class GatekeeperContext(
 
 sealed interface GatekeeperResult {
     data object Success : GatekeeperResult
+
     data class Failure(val reason: String, val time: Duration = Duration.ZERO) : GatekeeperResult
 }
 
 interface GatekeeperPipeline : ProcessorPipeline<GatekeeperContext, GatekeeperResult>
 
-class SimpleGatekeeperPipeline : GatekeeperPipeline, AbstractProcessorPipeline<GatekeeperContext, GatekeeperResult>() {
-    override suspend fun pump(context: GatekeeperContext) = withContext(ImperiumScope.MAIN.coroutineContext) {
-        for (processor in processors) {
-            val result = try {
-                processor.process(context)
-            } catch (error: Exception) {
-                logger.error("Error while verifying player ${context.name}", error)
-                GatekeeperResult.Success
+class SimpleGatekeeperPipeline :
+    GatekeeperPipeline, AbstractProcessorPipeline<GatekeeperContext, GatekeeperResult>() {
+    override suspend fun pump(context: GatekeeperContext) =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            for (processor in processors) {
+                val result =
+                    try {
+                        processor.process(context)
+                    } catch (error: Exception) {
+                        logger.error("Error while verifying player ${context.name}", error)
+                        GatekeeperResult.Success
+                    }
+                if (result is GatekeeperResult.Failure) {
+                    return@withContext result
+                }
             }
-            if (result is GatekeeperResult.Failure) {
-                return@withContext result
-            }
+            GatekeeperResult.Success
         }
-        GatekeeperResult.Success
-    }
 
     companion object {
         private val logger by LoggerDelegate()

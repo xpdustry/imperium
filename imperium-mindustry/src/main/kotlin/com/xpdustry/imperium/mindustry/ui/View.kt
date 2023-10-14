@@ -26,7 +26,9 @@ interface View {
     val parent: View?
     val state: State
     val isOpen: Boolean
+
     fun open()
+
     fun close()
 
     fun back(depth: Int = 1) {

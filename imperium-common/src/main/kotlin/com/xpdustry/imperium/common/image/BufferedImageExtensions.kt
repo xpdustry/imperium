@@ -24,7 +24,8 @@ import java.io.InputStream
 import javax.imageio.ImageIO
 
 enum class ImageFormat {
-    PNG, JPG
+    PNG,
+    JPG
 }
 
 fun BufferedImage.inputStream(format: ImageFormat = ImageFormat.PNG): InputStream {
@@ -34,6 +35,8 @@ fun BufferedImage.inputStream(format: ImageFormat = ImageFormat.PNG): InputStrea
         image.createGraphics().apply { drawImage(this@inputStream, 0, 0, null) }.dispose()
     }
     return ByteArrayInputStream(
-        ByteArrayOutputStream().also { ImageIO.write(image, format.name.lowercase(), it) }.toByteArray(),
+        ByteArrayOutputStream()
+            .also { ImageIO.write(image, format.name.lowercase(), it) }
+            .toByteArray(),
     )
 }

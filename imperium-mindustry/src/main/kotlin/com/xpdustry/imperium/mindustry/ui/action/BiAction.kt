@@ -21,6 +21,7 @@ import com.xpdustry.imperium.mindustry.ui.View
 
 fun interface BiAction<T : Any> {
     fun accept(view: View, value: T)
+
     fun then(action: BiAction<T>): BiAction<T> {
         return BiAction { view, value ->
             accept(view, value)

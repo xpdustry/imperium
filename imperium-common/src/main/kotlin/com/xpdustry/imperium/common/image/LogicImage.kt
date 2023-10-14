@@ -19,12 +19,23 @@ package com.xpdustry.imperium.common.image
 
 sealed class LogicImage(val resolution: Int) {
     class PixMap(resolution: Int, val pixels: Map<Int, Int>) : LogicImage(resolution)
+
     class Drawer(resolution: Int, val processors: List<Processor>) : LogicImage(resolution) {
         data class Processor(val x: Int, val y: Int, val instructions: List<Instruction>)
+
         sealed interface Instruction {
             data class Color(val r: Int, val g: Int, val b: Int, val a: Int) : Instruction
+
             data class Rect(val x: Int, val y: Int, val w: Int, val h: Int) : Instruction
-            data class Triangle(val x1: Int, val y1: Int, val x2: Int, val y2: Int, val x3: Int, val y3: Int) : Instruction
+
+            data class Triangle(
+                val x1: Int,
+                val y1: Int,
+                val x2: Int,
+                val y2: Int,
+                val x3: Int,
+                val y3: Int
+            ) : Instruction
         }
     }
 }

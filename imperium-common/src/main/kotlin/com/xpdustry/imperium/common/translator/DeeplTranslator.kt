@@ -28,12 +28,13 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.util.Locale
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
-class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Translator, ImperiumApplication.Listener {
+class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) :
+    Translator, ImperiumApplication.Listener {
     private val translator: com.deepl.api.Translator
     private val cache: Cache<TranslatorKey, String>
     private lateinit var sourceLanguages: List<Locale>
@@ -43,20 +44,25 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         if (config.translator !is TranslatorConfig.DeepL) {
             throw IllegalArgumentException("Invalid translator config")
         }
-        translator = com.deepl.api.Translator(
-            config.translator.token.value,
-            TranslatorOptions().setTimeout(Duration.ofSeconds(3L)).setAppInfo("Imperium", metadata.version.toString()),
-        )
-        cache = CacheBuilder.newBuilder()
-            .maximumSize(1000)
-            .expireAfterWrite(Duration.ofMinutes(5))
-            .build()
+        translator =
+            com.deepl.api.Translator(
+                config.translator.token.value,
+                TranslatorOptions()
+                    .setTimeout(Duration.ofSeconds(3L))
+                    .setAppInfo("Imperium", metadata.version.toString()),
+            )
+        cache =
+            CacheBuilder.newBuilder()
+                .maximumSize(1000)
+                .expireAfterWrite(Duration.ofMinutes(5))
+                .build()
     }
 
-    override fun onImperiumInit() = runBlocking(ImperiumScope.MAIN.coroutineContext) {
-        sourceLanguages = fetchLanguages(LanguageType.Source)
-        targetLanguages = fetchLanguages(LanguageType.Target)
-    }
+    override fun onImperiumInit() =
+        runBlocking(ImperiumScope.MAIN.coroutineContext) {
+            sourceLanguages = fetchLanguages(LanguageType.Source)
+            targetLanguages = fetchLanguages(LanguageType.Target)
+        }
 
     override suspend fun translate(text: String, source: Locale, target: Locale): TranslatorResult {
         if (source.language == "router" || target.language == "router") {
@@ -66,10 +72,12 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
             return TranslatorResult.Success(text)
         }
 
-        val sourceLocale = findClosestLanguage(LanguageType.Source, source)
-            ?: return TranslatorResult.UnsupportedLanguage(source)
-        val targetLocale = findClosestLanguage(LanguageType.Target, target)
-            ?: return TranslatorResult.UnsupportedLanguage(target)
+        val sourceLocale =
+            findClosestLanguage(LanguageType.Source, source)
+                ?: return TranslatorResult.UnsupportedLanguage(source)
+        val targetLocale =
+            findClosestLanguage(LanguageType.Target, target)
+                ?: return TranslatorResult.UnsupportedLanguage(target)
 
         if (sourceLocale.language == targetLocale.language) {
             return TranslatorResult.Success(text)
@@ -86,12 +94,18 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         }
 
         return withContext(ImperiumScope.MAIN.coroutineContext) {
-            val result = try {
-                translator
-                    .translateText(key.text, key.source.language, key.target.toLanguageTag(), DEFAULT_OPTIONS).text
-            } catch (e: Exception) {
-                return@withContext TranslatorResult.Failure(e)
-            }
+            val result =
+                try {
+                    translator
+                        .translateText(
+                            key.text,
+                            key.source.language,
+                            key.target.toLanguageTag(),
+                            DEFAULT_OPTIONS)
+                        .text
+                } catch (e: Exception) {
+                    return@withContext TranslatorResult.Failure(e)
+                }
             cache.put(key, result)
             TranslatorResult.Success(result)
         }
@@ -101,10 +115,11 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         findClosestLanguage(LanguageType.Source, locale) != null
 
     private fun findClosestLanguage(type: LanguageType, locale: Locale): Locale? {
-        val languages = when (type) {
-            LanguageType.Source -> sourceLanguages
-            LanguageType.Target -> targetLanguages
-        }
+        val languages =
+            when (type) {
+                LanguageType.Source -> sourceLanguages
+                LanguageType.Target -> targetLanguages
+            }
         val candidates = languages.filter { locale.language == it.language }
         return if (candidates.isEmpty()) {
             null
@@ -115,13 +130,15 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) : Tran
         }
     }
 
-    private suspend fun fetchLanguages(type: LanguageType) = withContext(ImperiumScope.MAIN.coroutineContext) {
-        translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
-    }
+    private suspend fun fetchLanguages(type: LanguageType) =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }
+        }
 
-    private suspend fun fetchRateLimited() = withContext(ImperiumScope.MAIN.coroutineContext) {
-        translator.usage.character!!.limitReached()
-    }
+    private suspend fun fetchRateLimited() =
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            translator.usage.character!!.limitReached()
+        }
 
     data class TranslatorKey(val text: String, val source: Locale, val target: Locale)
 

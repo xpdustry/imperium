@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -39,7 +40,6 @@ import org.testcontainers.containers.RabbitMQContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import kotlin.time.Duration.Companion.seconds
 
 @Testcontainers
 class RabbitmqMessengerTest {
@@ -70,11 +70,10 @@ class RabbitmqMessengerTest {
             }
         }
         Assertions.assertTrue(messenger2.publish(message))
-        val result = withContext(ImperiumScope.MAIN.coroutineContext) {
-            withTimeout(3.seconds) {
-                deferred.await()
+        val result =
+            withContext(ImperiumScope.MAIN.coroutineContext) {
+                withTimeout(3.seconds) { deferred.await() }
             }
-        }
         Assertions.assertEquals(message, result)
     }
 
@@ -101,19 +100,17 @@ class RabbitmqMessengerTest {
         }
 
         Assertions.assertTrue(messenger2.publish(message1))
-        val result = withContext(ImperiumScope.MAIN.coroutineContext) {
-            withTimeout(3.seconds) {
-                deferred1.await()
+        val result =
+            withContext(ImperiumScope.MAIN.coroutineContext) {
+                withTimeout(3.seconds) { deferred1.await() }
             }
-        }
         Assertions.assertEquals(message1, result)
 
         Assertions.assertTrue(messenger2.publish(message2))
-        val result2 = withContext(ImperiumScope.MAIN.coroutineContext) {
-            withTimeout(3.seconds) {
-                deferred2.await()
+        val result2 =
+            withContext(ImperiumScope.MAIN.coroutineContext) {
+                withTimeout(3.seconds) { deferred2.await() }
             }
-        }
         Assertions.assertEquals(message2, result2)
     }
 
@@ -136,44 +133,41 @@ class RabbitmqMessengerTest {
         }
 
         Assertions.assertTrue(messenger1.publish(message, local = true))
-        val result1 = withContext(ImperiumScope.MAIN.coroutineContext) {
-            withTimeout(3.seconds) {
-                deferred1.await()
+        val result1 =
+            withContext(ImperiumScope.MAIN.coroutineContext) {
+                withTimeout(3.seconds) { deferred1.await() }
             }
-        }
         Assertions.assertEquals(message, result1)
 
-        val result2 = withContext(ImperiumScope.MAIN.coroutineContext) {
-            withTimeout(3.seconds) {
-                deferred2.await()
+        val result2 =
+            withContext(ImperiumScope.MAIN.coroutineContext) {
+                withTimeout(3.seconds) { deferred2.await() }
             }
-        }
         Assertions.assertEquals(message, result2)
     }
 
-    @Serializable
-    data class TestMessage(val content: String) : Message
+    @Serializable data class TestMessage(val content: String) : Message
 
     @Serializable
     sealed interface TestSealedMessage : Message {
-        @Serializable
-        data class Number(val number: Int) : TestSealedMessage
+        @Serializable data class Number(val number: Int) : TestSealedMessage
 
-        @Serializable
-        data class Text(val text: String) : TestSealedMessage
+        @Serializable data class Text(val text: String) : TestSealedMessage
     }
 
-    @Serializable
-    data class LocalTestMessage(val content: String) : Message
+    @Serializable data class LocalTestMessage(val content: String) : Message
 
     companion object {
         @Container
         private val RABBITMQ_CONTAINER = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
-        private val MODULE = module("rabbitmq-messenger-test") {
-            include(commonModule())
-            factory<Messenger> {
-                RabbitmqMessenger(MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort), ImperiumMetadata())
+        private val MODULE =
+            module("rabbitmq-messenger-test") {
+                include(commonModule())
+                factory<Messenger> {
+                    RabbitmqMessenger(
+                        MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort),
+                        ImperiumMetadata())
+                }
             }
-        }
     }
 }

@@ -24,12 +24,15 @@ annotation class Command(val path: Array<String>, val permission: Permission = P
 
 private val PATH_ELEMENT_REGEX = Regex("^[a-zA-Z](-?[a-zA-Z0-9])*$")
 
-val Command.name: String get() = path[0]
+val Command.name: String
+    get() = path[0]
 
-fun Command.validate(): Result<Unit> = if (path.isEmpty()) {
-    Result.failure(IllegalArgumentException("Command name cannot be empty"))
-} else if (path.any { !it.matches(PATH_ELEMENT_REGEX) }) {
-    Result.failure(IllegalArgumentException("Command name must be alphanumeric and start with a letter"))
-} else {
-    Result.success(Unit)
-}
+fun Command.validate(): Result<Unit> =
+    if (path.isEmpty()) {
+        Result.failure(IllegalArgumentException("Command name cannot be empty"))
+    } else if (path.any { !it.matches(PATH_ELEMENT_REGEX) }) {
+        Result.failure(
+            IllegalArgumentException("Command name must be alphanumeric and start with a letter"))
+    } else {
+        Result.success(Unit)
+    }

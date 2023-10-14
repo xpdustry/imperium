@@ -20,51 +20,56 @@ package com.xpdustry.imperium.discord.service
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.config.ServerConfig
+import java.util.concurrent.TimeUnit
 import org.javacord.api.DiscordApi
 import org.javacord.api.DiscordApiBuilder
 import org.javacord.api.entity.intent.Intent
 import org.javacord.api.entity.server.Server
 import org.javacord.api.entity.user.User
-import java.util.concurrent.TimeUnit
 
 interface DiscordService {
     val api: DiscordApi
+
     fun getMainServer(): Server
+
     fun isAllowed(user: User, permission: Permission): Boolean
 }
 
-class SimpleDiscordService(private val config: ServerConfig.Discord) : DiscordService, ImperiumApplication.Listener {
+class SimpleDiscordService(private val config: ServerConfig.Discord) :
+    DiscordService, ImperiumApplication.Listener {
     override lateinit var api: DiscordApi
 
     override fun onImperiumInit() {
-        api = DiscordApiBuilder()
-            .setToken(config.token.value)
-            .setUserCacheEnabled(true)
-            .addIntents(
-                Intent.MESSAGE_CONTENT,
-                Intent.GUILDS,
-                Intent.GUILD_MEMBERS,
-                Intent.GUILD_MESSAGES,
-                Intent.GUILD_MESSAGE_REACTIONS,
-                Intent.DIRECT_MESSAGES,
-            )
-            .login()
-            .orTimeout(15L, TimeUnit.SECONDS)
-            .join()
+        api =
+            DiscordApiBuilder()
+                .setToken(config.token.value)
+                .setUserCacheEnabled(true)
+                .addIntents(
+                    Intent.MESSAGE_CONTENT,
+                    Intent.GUILDS,
+                    Intent.GUILD_MEMBERS,
+                    Intent.GUILD_MESSAGES,
+                    Intent.GUILD_MESSAGE_REACTIONS,
+                    Intent.DIRECT_MESSAGES,
+                )
+                .login()
+                .orTimeout(15L, TimeUnit.SECONDS)
+                .join()
     }
 
     override fun isAllowed(user: User, permission: Permission): Boolean {
-        val value = if (getMainServer().isOwner(user)) {
-            Permission.OWNER
-        } else if (getMainServer().getRoles(user).any { it.id == config.roles.administrator }) {
-            Permission.ADMINISTRATOR
-        } else if (getMainServer().getRoles(user).any { it.id == config.roles.moderator }) {
-            Permission.MODERATOR
-        } else if (getMainServer().getRoles(user).any { it.id == config.roles.verified }) {
-            Permission.VERIFIED
-        } else {
-            Permission.EVERYONE
-        }
+        val value =
+            if (getMainServer().isOwner(user)) {
+                Permission.OWNER
+            } else if (getMainServer().getRoles(user).any { it.id == config.roles.administrator }) {
+                Permission.ADMINISTRATOR
+            } else if (getMainServer().getRoles(user).any { it.id == config.roles.moderator }) {
+                Permission.MODERATOR
+            } else if (getMainServer().getRoles(user).any { it.id == config.roles.verified }) {
+                Permission.VERIFIED
+            } else {
+                Permission.EVERYONE
+            }
         return value.ordinal >= permission.ordinal
     }
 

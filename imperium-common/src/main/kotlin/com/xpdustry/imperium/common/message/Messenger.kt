@@ -17,15 +17,18 @@
  */
 package com.xpdustry.imperium.common.message
 
-import kotlinx.coroutines.Job
 import kotlin.reflect.KClass
+import kotlinx.coroutines.Job
 
 interface Messenger {
     suspend fun <M : Message> publish(message: M, local: Boolean = false): Boolean
+
     fun <M : Message> subscribe(type: KClass<M>, listener: Listener<M>): Job
+
     fun interface Listener<M : Message> {
         suspend fun onMessage(message: M)
     }
 }
 
-inline fun <reified M : Message> Messenger.subscribe(listener: Messenger.Listener<M>) = subscribe(M::class, listener)
+inline fun <reified M : Message> Messenger.subscribe(listener: Messenger.Listener<M>) =
+    subscribe(M::class, listener)

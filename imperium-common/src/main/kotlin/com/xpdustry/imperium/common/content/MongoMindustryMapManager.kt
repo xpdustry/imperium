@@ -28,6 +28,8 @@ import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.storage.StorageBucket
+import java.io.InputStream
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
@@ -36,8 +38,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.bson.BsonDocument
 import org.bson.types.ObjectId
-import java.io.InputStream
-import kotlin.math.roundToInt
 
 internal class MongoMindustryMapManager(
     private val mongo: MongoProvider,
@@ -58,14 +58,14 @@ internal class MongoMindustryMapManager(
         }
     }
 
-    override suspend fun findMapById(id: ObjectId): MindustryMap? =
-        maps.findById(id)
+    override suspend fun findMapById(id: ObjectId): MindustryMap? = maps.findById(id)
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         maps.find(Filters.eq("name", name)).firstOrNull()
 
     override suspend fun findMaps(server: String?): Flow<MindustryMap> {
-        return maps.find(if (server == null) Filters.empty() else Filters.`in`(server, "servers"))
+        return maps
+            .find(if (server == null) Filters.empty() else Filters.`in`(server, "servers"))
             .sort(Sorts.descending("name"))
     }
 
@@ -73,17 +73,20 @@ internal class MongoMindustryMapManager(
         maps.find(Filters.`in`("servers", server))
 
     override suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating? =
-        ratings.find(Filters.and(Filters.eq("map", map), Filters.eq("player", player))).firstOrNull()
+        ratings
+            .find(Filters.and(Filters.eq("map", map), Filters.eq("player", player)))
+            .firstOrNull()
 
     override suspend fun computeAverageScoreByMap(map: ObjectId): Double {
         if (ratings.count(Filters.eq("map", map)) == 0L) {
             return 3.0
         }
-        return ratings.aggregate(
-            Aggregates.match(Filters.eq("map", map)),
-            Aggregates.group("\$map", Accumulators.avg("average", "\$score")),
-            result = BsonDocument::class,
-        )
+        return ratings
+            .aggregate(
+                Aggregates.match(Filters.eq("map", map)),
+                Aggregates.group("\$map", Accumulators.avg("average", "\$score")),
+                result = BsonDocument::class,
+            )
             .map { it.getDouble("average").value }
             .first()
     }
@@ -92,17 +95,23 @@ internal class MongoMindustryMapManager(
         if (ratings.count(Filters.eq("map", map)) == 0L) {
             return Rating.Difficulty.NORMAL
         }
-        val difficulties = ratings.aggregate(
-            Aggregates.match(Filters.eq("map", map)),
-            Aggregates.group("\$difficulty", Accumulators.sum("count", 1)),
-            result = BsonDocument::class,
-        )
-            .toList()
-            .associateBy({ Rating.Difficulty.valueOf(it.getString("_id").value) }, { it.getInt32("count").value })
+        val difficulties =
+            ratings
+                .aggregate(
+                    Aggregates.match(Filters.eq("map", map)),
+                    Aggregates.group("\$difficulty", Accumulators.sum("count", 1)),
+                    result = BsonDocument::class,
+                )
+                .toList()
+                .associateBy(
+                    { Rating.Difficulty.valueOf(it.getString("_id").value) },
+                    { it.getInt32("count").value })
         if (difficulties.isEmpty()) {
             return Rating.Difficulty.NORMAL
         }
-        val average = difficulties.entries.sumOf { it.value * it.key.ordinal }.toDouble() / difficulties.values.sum().toDouble()
+        val average =
+            difficulties.entries.sumOf { it.value * it.key.ordinal }.toDouble() /
+                difficulties.values.sum().toDouble()
         return Rating.Difficulty.entries[average.roundToInt()]
     }
 

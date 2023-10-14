@@ -23,10 +23,11 @@ import com.password4j.Password
 import com.password4j.SecureString
 import com.password4j.types.Hmac
 import com.xpdustry.imperium.common.async.ImperiumScope
-import kotlinx.coroutines.withContext
 import java.util.Locale
+import kotlinx.coroutines.withContext
 
-data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, val saltLength: Int) : HashParams {
+data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, val saltLength: Int) :
+    HashParams {
     init {
         require(iterations > 0) { "iterations must be positive" }
         require(length > 0) { "length must be positive" }
@@ -37,7 +38,11 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
     }
 
     enum class Hmac {
-        SHA1, SHA224, SHA256, SHA384, SHA512
+        SHA1,
+        SHA224,
+        SHA256,
+        SHA384,
+        SHA512
     }
 
     companion object {
@@ -46,10 +51,11 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
                 throw IllegalArgumentException("Invalid pbkdf2 params: $str")
             }
 
-            val params = str.substring("pbkdf2/".length)
-                .split(",")
-                .map { it.trim().split("=") }
-                .associate { it[0] to it[1] }
+            val params =
+                str.substring("pbkdf2/".length)
+                    .split(",")
+                    .map { it.trim().split("=") }
+                    .associate { it[0] to it[1] }
 
             return PBKDF2Params(
                 Hmac.valueOf(params["h"]!!.uppercase(Locale.ROOT)),
@@ -80,15 +86,19 @@ object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
 
     private suspend fun create0(builder: HashBuilder, params: PBKDF2Params): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            val result = builder.with(PBKDF2Function.getInstance(params.hmac.toP4J(), params.iterations, params.length))
+            val result =
+                builder.with(
+                    PBKDF2Function.getInstance(
+                        params.hmac.toP4J(), params.iterations, params.length))
             Hash(result.bytes, result.saltBytes, params)
         }
 
-    private fun PBKDF2Params.Hmac.toP4J() = when (this) {
-        PBKDF2Params.Hmac.SHA1 -> Hmac.SHA1
-        PBKDF2Params.Hmac.SHA224 -> Hmac.SHA224
-        PBKDF2Params.Hmac.SHA256 -> Hmac.SHA256
-        PBKDF2Params.Hmac.SHA384 -> Hmac.SHA384
-        PBKDF2Params.Hmac.SHA512 -> Hmac.SHA512
-    }
+    private fun PBKDF2Params.Hmac.toP4J() =
+        when (this) {
+            PBKDF2Params.Hmac.SHA1 -> Hmac.SHA1
+            PBKDF2Params.Hmac.SHA224 -> Hmac.SHA224
+            PBKDF2Params.Hmac.SHA256 -> Hmac.SHA256
+            PBKDF2Params.Hmac.SHA384 -> Hmac.SHA384
+            PBKDF2Params.Hmac.SHA512 -> Hmac.SHA512
+        }
 }

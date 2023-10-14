@@ -19,5 +19,6 @@ package com.xpdustry.imperium.common.network
 
 interface Discovery {
     fun heartbeat()
+
     val servers: List<ServerInfo>
 }

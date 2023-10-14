@@ -24,9 +24,7 @@ import java.time.Duration
 //  - Use kotlin Duration
 //  - Behavior is not consistent in terms of limit, fix this
 class RateLimiter<T : Any>(private val limit: Int, period: Duration) {
-    private val cache = CacheBuilder.newBuilder()
-        .expireAfterWrite(period)
-        .build<T, Int>()
+    private val cache = CacheBuilder.newBuilder().expireAfterWrite(period).build<T, Int>()
 
     fun increment(key: T) {
         val attempts = cache.getIfPresent(key) ?: 0

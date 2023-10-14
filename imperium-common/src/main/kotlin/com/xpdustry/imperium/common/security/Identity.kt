@@ -25,8 +25,12 @@ sealed interface Identity {
     val name: String
 
     @Serializable
-    data class Mindustry(override val name: String, val uuid: String, val usid: String, val address: SerializableInetAddress) : Identity
+    data class Mindustry(
+        override val name: String,
+        val uuid: String,
+        val usid: String,
+        val address: SerializableInetAddress
+    ) : Identity
 
-    @Serializable
-    data class Discord(override val name: String, val id: Long) : Identity
+    @Serializable data class Discord(override val name: String, val id: Long) : Identity
 }

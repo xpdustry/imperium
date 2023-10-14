@@ -33,6 +33,8 @@ import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
+import java.io.ByteArrayOutputStream
+import java.io.DataOutputStream
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.core.Version
@@ -46,8 +48,6 @@ import mindustry.net.NetConnection
 import mindustry.net.Packets
 import mindustry.net.Packets.KickReason
 import okhttp3.OkHttpClient
-import java.io.ByteArrayOutputStream
-import java.io.DataOutputStream
 
 class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline = instances.get<GatekeeperPipeline>()
@@ -76,7 +76,12 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     }
 }
 
-private fun interceptPlayerConnection(con: NetConnection, packet: Packets.ConnectPacket, pipeline: GatekeeperPipeline, config: ServerConfig.Mindustry) {
+private fun interceptPlayerConnection(
+    con: NetConnection,
+    packet: Packets.ConnectPacket,
+    pipeline: GatekeeperPipeline,
+    config: ServerConfig.Mindustry
+) {
     if (con.kicked) return
 
     if (con.address.startsWith("steam:")) {
@@ -87,7 +92,11 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
 
     con.connectTime = Time.millis()
 
-    if (Vars.netServer.admins.isIPBanned(con.address) || Vars.netServer.admins.isSubnetBanned(con.address) || con.kicked || !con.isConnected) return
+    if (Vars.netServer.admins.isIPBanned(con.address) ||
+        Vars.netServer.admins.isSubnetBanned(con.address) ||
+        con.kicked ||
+        !con.isConnected)
+        return
 
     if (con.hasBegunConnecting) {
         con.kick(KickReason.idInUse)
@@ -95,8 +104,9 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     }
 
     // We do not want to save the data of DDOSers, so we postpone the saving of the player info
-    val info = Vars.netServer.admins.getInfoOptional(packet.uuid)
-        ?: PlayerInfo().apply { id = packet.uuid }
+    val info =
+        Vars.netServer.admins.getInfoOptional(packet.uuid)
+            ?: PlayerInfo().apply { id = packet.uuid }
 
     con.hasBegunConnecting = true
     con.mobile = packet.mobile
@@ -117,11 +127,9 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
     }
 
     // CHECK: Player limit
-    if (
-        Vars.netServer.admins.playerLimit > 0 &&
+    if (Vars.netServer.admins.playerLimit > 0 &&
         Groups.player.size() >= Vars.netServer.admins.playerLimit &&
-        !Vars.netServer.admins.isAdmin(packet.uuid, packet.usid)
-    ) {
+        !Vars.netServer.admins.isAdmin(packet.uuid, packet.usid)) {
         con.kick(KickReason.playerLimit)
         return
     }
@@ -137,7 +145,10 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
             result.append("[]\n")
         }
         if (!mods.isEmpty) {
-            result.append("Unnecessary mods:[lightgray]\n").append("> ").append(mods.toString("\n> "))
+            result
+                .append("Unnecessary mods:[lightgray]\n")
+                .append("> ")
+                .append(mods.toString("\n> "))
         }
         con.kick(result.toString(), 0)
         return
@@ -150,25 +161,37 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
         info.id = packet.uuid
         Vars.netServer.admins.save()
         Call.infoMessage(con, "You are not whitelisted here.")
-        Log.info("&lcDo &lywhitelist-add @&lc to whitelist the player &lb'@'", packet.uuid, packet.name)
+        Log.info(
+            "&lcDo &lywhitelist-add @&lc to whitelist the player &lb'@'", packet.uuid, packet.name)
         con.kick(KickReason.whitelist)
         return
     }
 
     // CHECK: Custom client
-    if (packet.versionType == null || (packet.version == -1 || packet.versionType != Version.type) && Version.build != -1 && Vars.netServer.admins.allowsCustomClients().not()) {
-        con.kick(if (Version.type != packet.versionType) KickReason.typeMismatch else KickReason.customClient)
+    if (packet.versionType == null ||
+        (packet.version == -1 || packet.versionType != Version.type) &&
+            Version.build != -1 &&
+            Vars.netServer.admins.allowsCustomClients().not()) {
+        con.kick(
+            if (Version.type != packet.versionType) KickReason.typeMismatch
+            else KickReason.customClient)
         return
     }
 
     // CHECK: Duplicate names
-    if (Groups.player.contains { player -> Strings.stripColors(player.name).trim().equals(Strings.stripColors(packet.name).trim(), ignoreCase = true) }) {
+    if (Groups.player.contains { player ->
+        Strings.stripColors(player.name)
+            .trim()
+            .equals(Strings.stripColors(packet.name).trim(), ignoreCase = true)
+    }) {
         con.kick(KickReason.nameInUse)
         return
     }
 
     // CHECK: Duplicate ids
-    if (Groups.player.contains { player -> player.uuid() == packet.uuid || player.usid() == packet.usid }) {
+    if (Groups.player.contains { player ->
+        player.uuid() == packet.uuid || player.usid() == packet.usid
+    }) {
         con.uuid = packet.uuid
         con.kick(KickReason.idInUse)
         return
@@ -198,7 +221,9 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
 
     // CHECK: Version
     if (packet.version != Version.build && Version.build != -1 && packet.version != -1) {
-        con.kick(if (packet.version > Version.build) KickReason.serverOutdated else KickReason.clientOutdated)
+        con.kick(
+            if (packet.version > Version.build) KickReason.serverOutdated
+            else KickReason.clientOutdated)
         return
     }
 
@@ -206,13 +231,20 @@ private fun interceptPlayerConnection(con: NetConnection, packet: Packets.Connec
         con.modclient = true
     }
 
-    // To not spam the clients, we do our own verification through the pipeline, then we can safely create the player
+    // To not spam the clients, we do our own verification through the pipeline, then we can safely
+    // create the player
     ImperiumScope.MAIN.launch {
-        val result = if (config.security.gatekeeper) {
-            pipeline.pump(GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)))
-        } else {
-            GatekeeperResult.Success
-        }
+        val result =
+            if (config.security.gatekeeper) {
+                pipeline.pump(
+                    GatekeeperContext(
+                        packet.name,
+                        packet.uuid,
+                        packet.usid,
+                        InetAddresses.forString(con.address)))
+            } else {
+                GatekeeperResult.Success
+            }
         runMindustryThread {
             if (result is GatekeeperResult.Failure) {
                 con.kick(result.reason, result.time.toMillis())

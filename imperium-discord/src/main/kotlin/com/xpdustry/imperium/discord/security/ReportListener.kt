@@ -38,17 +38,25 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
     override fun onImperiumInit() {
         messenger.subscribe<ReportMessage> { report ->
-            getNotificationChannel().sendMessage(
-                EmbedBuilder()
-                    .setTitle("Report from ${report.serverName}")
-                    .addField("Sender", "${report.sender.name} / `${report.sender.uuid}`", false)
-                    .addField("Target", "${report.target.name} / `${report.target.uuid}`", false)
-                    .addField("Reason", "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})", false),
-            ).await()
+            getNotificationChannel()
+                .sendMessage(
+                    EmbedBuilder()
+                        .setTitle("Report from ${report.serverName}")
+                        .addField(
+                            "Sender", "${report.sender.name} / `${report.sender.uuid}`", false)
+                        .addField(
+                            "Target", "${report.target.name} / `${report.target.uuid}`", false)
+                        .addField(
+                            "Reason",
+                            "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})",
+                            false),
+                )
+                .await()
         }
     }
 
-    private fun getNotificationChannel(): ServerTextChannel = discord.getMainServer()
-        .getTextChannelById(config.channels.notifications)
-        .orElseThrow { RuntimeException("The notifications channel is not found") }
+    private fun getNotificationChannel(): ServerTextChannel =
+        discord.getMainServer().getTextChannelById(config.channels.notifications).orElseThrow {
+            RuntimeException("The notifications channel is not found")
+        }
 }

@@ -38,43 +38,40 @@ private class SimpleTextInputInterface(
 ) : AbstractTransformerInterface<TextInputPane>(plugin, ::TextInputPane), TextInputInterface {
     private val visible: MutableSet<MUUID> = HashSet()
 
-    private val id: Int = Menus.registerTextInput { player: Player, text: String? ->
-        val view = views[MUUID.of(player)]
-        if (view == null) {
-            this.plugin
-                .logger
-                .warn(
+    private val id: Int =
+        Menus.registerTextInput { player: Player, text: String? ->
+            val view = views[MUUID.of(player)]
+            if (view == null) {
+                this.plugin.logger.warn(
                     "Received text input from player {} (uuid: {}) but no view was found",
                     player.plainName(),
                     player.uuid(),
                 )
-            return@registerTextInput
-        }
+                return@registerTextInput
+            }
 
-        // Simple trick to not reopen an interface when an action already does it.
-        visible.remove(MUUID.of(player))
-        if (text == null) {
-            view.pane.exitAction.accept(view)
-        } else if (text.length > view.pane.length) {
-            this.plugin
-                .logger
-                .warn(
+            // Simple trick to not reopen an interface when an action already does it.
+            visible.remove(MUUID.of(player))
+            if (text == null) {
+                view.pane.exitAction.accept(view)
+            } else if (text.length > view.pane.length) {
+                this.plugin.logger.warn(
                     "Received text input from player {} (uuid: {}) with length {} but the maximum length is {}",
                     player.plainName(),
                     player.uuid(),
                     text.length,
                     view.pane.length,
                 )
-            view.close()
-        } else {
-            view.pane.inputAction.accept(view, text)
+                view.close()
+            } else {
+                view.pane.inputAction.accept(view, text)
+            }
+            // The text input closes automatically when the player presses enter,
+            // so reopen if it was not explicitly closed by the server.
+            if (view.isOpen && !visible.contains(MUUID.of(player))) {
+                view.open()
+            }
         }
-        // The text input closes automatically when the player presses enter,
-        // so reopen if it was not explicitly closed by the server.
-        if (view.isOpen && !visible.contains(MUUID.of(player))) {
-            view.open()
-        }
-    }
 
     override fun onViewOpen(view: SimpleView) {
         if (visible.add(MUUID.of(view.viewer))) {

@@ -30,10 +30,10 @@ import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.discord.service.DiscordService
-import kotlinx.coroutines.future.await
-import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.awt.Color
 import kotlin.jvm.optionals.getOrNull
+import kotlinx.coroutines.future.await
+import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
@@ -55,14 +55,15 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 user = users.findByLastAddress(punishment.target.address)
             }
 
-            val embed = EmbedBuilder()
-                .setTimestampToNow()
-                .setColor(Color.RED)
-                .setTitle("Punishment `${id.toBase62()}`")
-                .addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
-                .addField("Type", punishment.type.toString(), true)
-                .addField("Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)
-                .addField("Reason", punishment.reason, false)
+            val embed =
+                EmbedBuilder()
+                    .setTimestampToNow()
+                    .setColor(Color.RED)
+                    .setTitle("Punishment `${id.toBase62()}`")
+                    .addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
+                    .addField("Type", punishment.type.toString(), true)
+                    .addField("Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)
+                    .addField("Reason", punishment.reason, false)
             if (extra is PunishmentMessage.Extra.Nsfw) {
                 embed.addField("NSFW Entry ID", extra.entry.toHexString(), false)
             }
@@ -72,7 +73,11 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 null -> embed.setAuthor("SYSTEM")
             }
 
-            val channel = discord.getMainServer().getTextChannelById(config.channels.notifications).getOrNull()
+            val channel =
+                discord
+                    .getMainServer()
+                    .getTextChannelById(config.channels.notifications)
+                    .getOrNull()
             if (channel == null) {
                 logger.error("Could not find notifications channel")
                 return@subscribe

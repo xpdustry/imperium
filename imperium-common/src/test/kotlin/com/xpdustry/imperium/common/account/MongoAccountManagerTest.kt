@@ -25,6 +25,9 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.security.Identity
+import java.net.InetAddress
+import java.util.Base64
+import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -34,9 +37,6 @@ import org.testcontainers.containers.MongoDBContainer
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.utility.DockerImageName
-import java.net.InetAddress
-import java.util.Base64
-import kotlin.random.Random
 
 // TODO: Finish writing tests
 @Testcontainers
@@ -126,16 +126,17 @@ class MongoAccountManagerTest {
         return String(chars)
     }
 
-    private fun createModule() = module("account-test") {
-        include(com.xpdustry.imperium.common.commonModule())
-        single<ImperiumConfig> {
-            ImperiumConfig(database = DatabaseConfig.Mongo(port = MONGO_CONTAINER.firstMappedPort))
+    private fun createModule() =
+        module("account-test") {
+            include(com.xpdustry.imperium.common.commonModule())
+            single<ImperiumConfig> {
+                ImperiumConfig(
+                    database = DatabaseConfig.Mongo(port = MONGO_CONTAINER.firstMappedPort))
+            }
         }
-    }
 
     companion object {
-        @Container
-        private val MONGO_CONTAINER = MongoDBContainer(DockerImageName.parse("mongo:6"))
+        @Container private val MONGO_CONTAINER = MongoDBContainer(DockerImageName.parse("mongo:6"))
 
         private val TEST_PASSWORD_1 = "ABc123!#".toCharArray()
         private val TEST_PASSWORD_2 = "123ABc!#".toCharArray()

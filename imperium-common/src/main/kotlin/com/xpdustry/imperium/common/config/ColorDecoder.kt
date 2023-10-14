@@ -30,13 +30,18 @@ import kotlin.reflect.KType
 
 class ColorDecoder : NonNullableLeafDecoder<Color> {
     override fun supports(type: KType) = type.classifier == Color::class
-    override fun safeLeafDecode(node: Node, type: KType, context: DecoderContext) = when (node) {
-        is StringNode -> runCatching { Color(node.value.toInt(16)) }.toValidated {
-            when (it) {
-                is NumberFormatException -> ConfigFailure.NumberConversionError(node, type)
-                else -> ThrowableFailure(it)
-            }
+
+    override fun safeLeafDecode(node: Node, type: KType, context: DecoderContext) =
+        when (node) {
+            is StringNode ->
+                runCatching { Color(node.value.toInt(16)) }
+                    .toValidated {
+                        when (it) {
+                            is NumberFormatException ->
+                                ConfigFailure.NumberConversionError(node, type)
+                            else -> ThrowableFailure(it)
+                        }
+                    }
+            else -> ConfigFailure.DecodeError(node, type).invalid()
         }
-        else -> ConfigFailure.DecodeError(node, type).invalid()
-    }
 }

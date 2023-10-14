@@ -23,11 +23,11 @@ import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
 import fr.xpdustry.distributor.api.util.ArcCollections
+import java.util.Objects
+import java.util.function.Function
 import mindustry.gen.Groups
 import mindustry.gen.Iconc
 import mindustry.gen.Player
-import java.util.Objects
-import java.util.function.Function
 
 class ListTransformer<E : Any>(
     var provider: Function<View, List<E>> = Function<View, List<E>> { emptyList() },
@@ -38,7 +38,8 @@ class ListTransformer<E : Any>(
     var fill: Boolean = false,
 ) : Transformer<MenuPane> {
 
-    val pageSize: Int get() = height * width
+    val pageSize: Int
+        get() = height * width
 
     override fun transform(view: View, pane: MenuPane) {
         val elements = provider.apply(view)
@@ -105,14 +106,15 @@ class ListTransformer<E : Any>(
     }
 }
 
-fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> = ListTransformer(
-    provider = { view ->
-        ArcCollections.mutableList(Groups.player).apply {
-            remove(view.viewer)
-            sortBy(Player::plainName)
-        }
-    },
-    renderer = { it.plainName() },
-    height = 8,
-    onChoice = action,
-)
+fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> =
+    ListTransformer(
+        provider = { view ->
+            ArcCollections.mutableList(Groups.player).apply {
+                remove(view.viewer)
+                sortBy(Player::plainName)
+            }
+        },
+        renderer = { it.plainName() },
+        height = 8,
+        onChoice = action,
+    )

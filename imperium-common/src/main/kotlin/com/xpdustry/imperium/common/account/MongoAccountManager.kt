@@ -35,14 +35,15 @@ import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
-import kotlinx.coroutines.flow.firstOrNull
-import org.bson.types.ObjectId
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 import java.util.Base64
+import kotlinx.coroutines.flow.firstOrNull
+import org.bson.types.ObjectId
 
-internal class MongoAccountManager(private val mongo: MongoProvider) : AccountManager, ImperiumApplication.Listener {
+internal class MongoAccountManager(private val mongo: MongoProvider) :
+    AccountManager, ImperiumApplication.Listener {
 
     private val limiter = RateLimiter<AccountRateLimitKey>(5, Duration.ofMinutes(5L))
     private lateinit var accounts: MongoEntityCollection<Account, ObjectId>
@@ -61,7 +62,10 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     override suspend fun findByUsername(username: String): Account? =
         accounts.find(Filters.eq("username", username)).firstOrNull()
 
-    override suspend fun updateByIdentity(identity: Identity.Mindustry, updater: suspend (Account) -> Unit) {
+    override suspend fun updateByIdentity(
+        identity: Identity.Mindustry,
+        updater: suspend (Account) -> Unit
+    ) {
         findByIdentity(identity)?.let {
             updater(it)
             accounts.save(it)
@@ -75,7 +79,11 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         }
     }
 
-    override suspend fun register(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult {
+    override suspend fun register(
+        username: String,
+        password: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult {
         if (isRateLimited("register", identity)) {
             return AccountOperationResult.RateLimit
         }
@@ -87,15 +95,18 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         }
 
         if (findLegacyAccountByUsername(normalizedUsername) != null) {
-            return AccountOperationResult.InvalidUsername(listOf(UsernameRequirement.Reserved(normalizedUsername)))
+            return AccountOperationResult.InvalidUsername(
+                listOf(UsernameRequirement.Reserved(normalizedUsername)))
         }
 
-        val missingPwdRequirements = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
+        val missingPwdRequirements =
+            DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
         if (missingPwdRequirements.isNotEmpty()) {
             return AccountOperationResult.InvalidPassword(missingPwdRequirements)
         }
 
-        val missingUsrRequirements = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(normalizedUsername)
+        val missingUsrRequirements =
+            DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(normalizedUsername)
         if (missingUsrRequirements.isNotEmpty()) {
             return AccountOperationResult.InvalidUsername(missingUsrRequirements)
         }
@@ -110,13 +121,19 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         return AccountOperationResult.Success
     }
 
-    override suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult {
+    override suspend fun migrate(
+        oldUsername: String,
+        newUsername: String,
+        password: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult {
         if (isRateLimited("migrate", identity)) {
             return AccountOperationResult.RateLimit
         }
 
-        val legacy = findLegacyAccountByUsername(oldUsername.normalizeUsername())
-            ?: return AccountOperationResult.NotRegistered
+        val legacy =
+            findLegacyAccountByUsername(oldUsername.normalizeUsername())
+                ?: return AccountOperationResult.NotRegistered
 
         if (!GenericSaltyHashFunction.equals(password, legacy.password)) {
             return AccountOperationResult.WrongPassword
@@ -127,7 +144,8 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
             return AccountOperationResult.AlreadyRegistered
         }
 
-        val missing = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(normalizedUsername)
+        val missing =
+            DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(normalizedUsername)
         if (missing.isNotEmpty()) {
             return AccountOperationResult.InvalidUsername(missing)
         }
@@ -140,9 +158,12 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
                 playtime = legacy.playtime,
                 rank = legacy.rank,
                 games = legacy.games,
-                achievements = legacy.achievements
-                    .map { it.name.lowercase() }
-                    .associateWithTo(mutableMapOf()) { Achievement.Progression(completed = true) },
+                achievements =
+                    legacy.achievements
+                        .map { it.name.lowercase() }
+                        .associateWithTo(mutableMapOf()) {
+                            Achievement.Progression(completed = true)
+                        },
             ),
         )
 
@@ -151,13 +172,18 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
         return AccountOperationResult.Success
     }
 
-    override suspend fun login(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult {
+    override suspend fun login(
+        username: String,
+        password: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult {
         if (isRateLimited("login", identity)) {
             return AccountOperationResult.RateLimit
         }
 
-        val account = findByUsername(username.normalizeUsername())
-            ?: return AccountOperationResult.NotRegistered
+        val account =
+            findByUsername(username.normalizeUsername())
+                ?: return AccountOperationResult.NotRegistered
 
         if (!GenericSaltyHashFunction.equals(password, account.password)) {
             return AccountOperationResult.WrongPassword
@@ -165,7 +191,8 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
 
         val now = Instant.now()
         account.sessions.values.removeIf { it.expiration.isBefore(now) }
-        account.sessions[createSessionToken(identity)] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
+        account.sessions[createSessionToken(identity)] =
+            Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
         accounts.save(account)
 
         return AccountOperationResult.Success
@@ -179,17 +206,21 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
 
     override suspend fun refresh(identity: Identity.Mindustry) {
         val account = findByIdentity(identity) ?: return
-        account.sessions[createSessionToken(identity)] = Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
+        account.sessions[createSessionToken(identity)] =
+            Account.Session(Instant.now().plus(SESSION_TOKEN_DURATION))
         accounts.save(account)
     }
 
-    override suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: Identity.Mindustry): AccountOperationResult {
+    override suspend fun changePassword(
+        oldPassword: CharArray,
+        newPassword: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult {
         if (isRateLimited("changePassword", identity)) {
             return AccountOperationResult.RateLimit
         }
 
-        val account = findByIdentity(identity)
-            ?: return AccountOperationResult.NotLogged
+        val account = findByIdentity(identity) ?: return AccountOperationResult.NotLogged
 
         if (!GenericSaltyHashFunction.equals(oldPassword, account.password)) {
             return AccountOperationResult.WrongPassword
@@ -212,7 +243,9 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     }
 
     internal suspend fun createSessionToken(identity: Identity.Mindustry): String {
-        val hash = Argon2HashFunction.create(identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toCharArray())
+        val hash =
+            Argon2HashFunction.create(
+                identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toCharArray())
         return Base64.getEncoder().encodeToString(hash.hash)
     }
 
@@ -224,32 +257,35 @@ internal class MongoAccountManager(private val mongo: MongoProvider) : AccountMa
     companion object {
         private val SESSION_TOKEN_DURATION = Duration.ofDays(7L)
 
-        private val SESSION_TOKEN_PARAMS = Argon2Params(
-            memory = 19,
-            iterations = 2,
-            length = 32,
-            saltLength = 8,
-            parallelism = 8,
-            type = Argon2Params.Type.ID,
-            version = Argon2Params.Version.V13,
-        )
+        private val SESSION_TOKEN_PARAMS =
+            Argon2Params(
+                memory = 19,
+                iterations = 2,
+                length = 32,
+                saltLength = 8,
+                parallelism = 8,
+                type = Argon2Params.Type.ID,
+                version = Argon2Params.Version.V13,
+            )
 
-        private val PASSWORD_PARAMS = Argon2Params(
-            memory = 64 * 1024,
-            iterations = 3,
-            parallelism = 2,
-            length = 64,
-            type = Argon2Params.Type.ID,
-            version = Argon2Params.Version.V13,
-            saltLength = 64,
-        )
+        private val PASSWORD_PARAMS =
+            Argon2Params(
+                memory = 64 * 1024,
+                iterations = 3,
+                parallelism = 2,
+                length = 64,
+                type = Argon2Params.Type.ID,
+                version = Argon2Params.Version.V13,
+                saltLength = 64,
+            )
 
-        private val LEGACY_PASSWORD_PARAMS = PBKDF2Params(
-            hmac = PBKDF2Params.Hmac.SHA256,
-            iterations = 10000,
-            length = 256,
-            saltLength = 16,
-        )
+        private val LEGACY_PASSWORD_PARAMS =
+            PBKDF2Params(
+                hmac = PBKDF2Params.Hmac.SHA256,
+                iterations = 10000,
+                length = 256,
+                saltLength = 16,
+            )
     }
 
     private data class AccountRateLimitKey(val operation: String, val address: InetAddress)

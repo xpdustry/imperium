@@ -32,12 +32,12 @@ import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.discord.command.InteractionSender
+import java.time.Duration
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import org.javacord.api.entity.message.embed.EmbedBuilder
-import java.time.Duration
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
@@ -46,13 +46,18 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val analysis = instances.get<LogicImageAnalysis>()
 
     @Command(["punishment", "list"], Permission.MODERATOR)
-    private suspend fun onPunishmentListCommand(actor: InteractionSender, target: String, @Min(0) page: Int = 0) {
-        val flow = try {
-            val address = target.toInetAddress()
-            punishments.findAllByAddress(address)
-        } catch (e: Exception) {
-            punishments.findAllByUuid(target)
-        }
+    private suspend fun onPunishmentListCommand(
+        actor: InteractionSender,
+        target: String,
+        @Min(0) page: Int = 0
+    ) {
+        val flow =
+            try {
+                val address = target.toInetAddress()
+                punishments.findAllByAddress(address)
+            } catch (e: Exception) {
+                punishments.findAllByUuid(target)
+            }
 
         val result = flow.drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
@@ -60,30 +65,38 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             return
         }
 
-        val embeds = Array<EmbedBuilder>(result.size) {
-            val punishment = result[it]
-            val embed = EmbedBuilder()
-                .setTitle("Punishment ${punishment._id.toBase62()}")
-                .addField("Target IP", punishment.target.address.hostAddress, true)
-                .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
-                .addField("Type", punishment.type.toString(), true)
-                .addField("Reason", punishment.reason, false)
-                .addField("Timestamp", punishment.timestamp.toString(), true)
-                .addField("Duration", punishment.duration?.toString() ?: "Permanent", true)
-                .addField("Pardoned", if (punishment.pardoned) "Yes" else "No", true)
-                .setTimestamp(punishment.timestamp)
-            if (punishment.pardoned) {
-                embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
-                embed.addField("Pardon Timestamp", punishment.pardon!!.timestamp.toString(), true)
+        val embeds =
+            Array<EmbedBuilder>(result.size) {
+                val punishment = result[it]
+                val embed =
+                    EmbedBuilder()
+                        .setTitle("Punishment ${punishment._id.toBase62()}")
+                        .addField("Target IP", punishment.target.address.hostAddress, true)
+                        .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
+                        .addField("Type", punishment.type.toString(), true)
+                        .addField("Reason", punishment.reason, false)
+                        .addField("Timestamp", punishment.timestamp.toString(), true)
+                        .addField("Duration", punishment.duration?.toString() ?: "Permanent", true)
+                        .addField("Pardoned", if (punishment.pardoned) "Yes" else "No", true)
+                        .setTimestamp(punishment.timestamp)
+                if (punishment.pardoned) {
+                    embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
+                    embed.addField(
+                        "Pardon Timestamp", punishment.pardon!!.timestamp.toString(), true)
+                }
+                embed
             }
-            embed
-        }
 
         actor.respond(*embeds)
     }
 
     @Command(["kick"], Permission.MODERATOR)
-    private suspend fun onKickCommand(actor: InteractionSender, target: String, reason: String, duration: Duration? = null) {
+    private suspend fun onKickCommand(
+        actor: InteractionSender,
+        target: String,
+        reason: String,
+        duration: Duration? = null
+    ) {
         onPunishCommand("Kicked", Punishment.Type.KICK, actor, target, reason, duration)
     }
 
@@ -93,34 +106,49 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     }
 
     @Command(["mute"], Permission.MODERATOR)
-    private suspend fun onMuteCommand(actor: InteractionSender, target: String, reason: String, duration: Duration? = null) {
+    private suspend fun onMuteCommand(
+        actor: InteractionSender,
+        target: String,
+        reason: String,
+        duration: Duration? = null
+    ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration)
     }
 
-    private suspend fun onPunishCommand(verb: String, type: Punishment.Type, actor: InteractionSender, target: String, reason: String, duration: Duration?) {
-        val lookup = try {
-            Punishment.Target(target.toInetAddress())
-        } catch (e: Exception) {
-            val user = users.findByUuid(target)
-            if (user?.lastAddress == null) {
-                actor.respond("Target is not a valid IP address or a valid UUID.")
-                return
+    private suspend fun onPunishCommand(
+        verb: String,
+        type: Punishment.Type,
+        actor: InteractionSender,
+        target: String,
+        reason: String,
+        duration: Duration?
+    ) {
+        val lookup =
+            try {
+                Punishment.Target(target.toInetAddress())
+            } catch (e: Exception) {
+                val user = users.findByUuid(target)
+                if (user?.lastAddress == null) {
+                    actor.respond("Target is not a valid IP address or a valid UUID.")
+                    return
+                }
+                Punishment.Target(user.lastAddress!!, user._id)
             }
-            Punishment.Target(user.lastAddress!!, user._id)
-        }
 
-        punishments.punish(Identity.Discord(actor.user.name, actor.user.id), lookup, reason, type, duration)
+        punishments.punish(
+            Identity.Discord(actor.user.name, actor.user.id), lookup, reason, type, duration)
         actor.respond("$verb user $target.")
     }
 
     @Command(["pardon"], Permission.MODERATOR)
     private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
-        val snowflake = try {
-            id.toLongFromBase62()
-        } catch (e: Exception) {
-            actor.respond("Invalid ID.")
-            return
-        }
+        val snowflake =
+            try {
+                id.toLongFromBase62()
+            } catch (e: Exception) {
+                actor.respond("Invalid ID.")
+                return
+            }
 
         val punishment = punishments.findById(snowflake)
         if (punishment == null) {
@@ -157,7 +185,11 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     }
 
     @Command(["punishment", "nsfw", "safety"], Permission.MODERATOR)
-    private suspend fun onPunishmentNsfwMark(actor: InteractionSender, id: ObjectId, unsafe: Boolean) {
+    private suspend fun onPunishmentNsfwMark(
+        actor: InteractionSender,
+        id: ObjectId,
+        unsafe: Boolean
+    ) {
         val result = analysis.findHashedImageById(id)
         if (result == null) {
             actor.respond("NSFW Image not found.")

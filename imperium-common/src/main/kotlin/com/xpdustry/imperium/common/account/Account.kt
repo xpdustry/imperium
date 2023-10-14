@@ -22,9 +22,9 @@ import com.xpdustry.imperium.common.hash.Hash
 import com.xpdustry.imperium.common.serialization.SerializableJDuration
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import com.xpdustry.imperium.common.serialization.SerializableObjectId
+import java.time.Duration
 import kotlinx.serialization.Serializable
 import org.bson.types.ObjectId
-import java.time.Duration
 
 @Serializable
 data class Account(
@@ -41,14 +41,16 @@ data class Account(
 ) : Entity<ObjectId> {
     fun progress(achievement: Achievement) {
         if (completed(achievement)) return
-        val progression = achievements.getOrPut(achievement.name.lowercase(), Achievement::Progression)
+        val progression =
+            achievements.getOrPut(achievement.name.lowercase(), Achievement::Progression)
         progression.progress++
         if (progression.progress >= achievement.goal) {
             progression.completed = true
         }
     }
 
-    fun completed(achievement: Achievement): Boolean = achievements[achievement.name.lowercase()]?.completed == true
+    fun completed(achievement: Achievement): Boolean =
+        achievements[achievement.name.lowercase()]?.completed == true
 
     enum class Rank {
         NORMAL,
@@ -58,9 +60,7 @@ data class Account(
         OWNER,
     }
 
-    @Serializable
-    data class Session(val expiration: SerializableJInstant)
+    @Serializable data class Session(val expiration: SerializableJInstant)
 
-    @Serializable
-    data class Friend(var pending: Boolean)
+    @Serializable data class Friend(var pending: Boolean)
 }

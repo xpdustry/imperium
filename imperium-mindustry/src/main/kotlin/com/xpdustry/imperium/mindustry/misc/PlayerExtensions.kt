@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.security.Identity
 import mindustry.gen.Call
 import mindustry.gen.Player
 
-val Player.identity: Identity.Mindustry get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
+val Player.identity: Identity.Mindustry
+    get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
 
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)

@@ -30,13 +30,13 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Groups
 import mindustry.gen.Player
-import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.ConcurrentHashMap
 
 class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline: GatekeeperPipeline = instances.get()
@@ -72,18 +72,17 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     fun onGameOver(event: EventType.GameOverEvent) {
         Groups.player.forEach { player ->
             ImperiumScope.MAIN.launch {
-                accounts.updateByIdentity(player.identity) { account ->
-                    account.games++
-                }
+                accounts.updateByIdentity(player.identity) { account -> account.games++ }
             }
         }
     }
 
     @EventHandler
-    fun onPlayerLeave(event: EventType.PlayerLeave) = ImperiumScope.MAIN.launch {
-        val now = System.currentTimeMillis()
-        accounts.updateByIdentity(event.player.identity) { account ->
-            account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
+    fun onPlayerLeave(event: EventType.PlayerLeave) =
+        ImperiumScope.MAIN.launch {
+            val now = System.currentTimeMillis()
+            accounts.updateByIdentity(event.player.identity) { account ->
+                account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
+            }
         }
-    }
 }

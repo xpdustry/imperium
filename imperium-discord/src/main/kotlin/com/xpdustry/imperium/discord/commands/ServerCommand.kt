@@ -32,7 +32,6 @@ import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
-import org.javacord.api.entity.message.embed.EmbedBuilder
 import java.net.InetAddress
 import java.time.Instant
 import java.time.ZoneOffset
@@ -43,6 +42,7 @@ import java.util.Locale
 import java.util.Queue
 import kotlin.random.Random
 import kotlin.random.nextInt
+import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
@@ -53,7 +53,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     override fun onImperiumInit() {
         messenger.subscribe<MindustryPlayerMessage> {
             if (it.action != MindustryPlayerMessage.Action.Join) return@subscribe
-            history.computeIfAbsent(it.serverName) { LimitedList(30) }
+            history
+                .computeIfAbsent(it.serverName) { LimitedList(30) }
                 .add(PlayerJoinEntry(it.player, Random.nextInt(100000..999999)))
         }
     }
@@ -64,7 +65,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(
             EmbedBuilder()
                 .setTitle("Server List")
-                .setDescription(discovery.servers.joinToString(separator = "\n\n") { " - " + it.serverName }),
+                .setDescription(
+                    discovery.servers.joinToString(separator = "\n\n") { " - " + it.serverName }),
         )
 
     // TODO Make a better system that can list joins, current and left players
@@ -124,23 +126,38 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 .addField("Last Name", user.lastName, true)
                 .addField("Last Address", user.lastAddress?.hostAddress!!, true)
                 .addField("Uuid", "`${user._id}`", true)
-                .addField("First Join", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(user.firstJoin.atOffset(ZoneOffset.UTC)), true)
-                .addField("Last Join", DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(user.lastJoin.atOffset(ZoneOffset.UTC)), true)
+                .addField(
+                    "First Join",
+                    DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+                        user.firstJoin.atOffset(ZoneOffset.UTC)),
+                    true)
+                .addField(
+                    "Last Join",
+                    DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
+                        user.lastJoin.atOffset(ZoneOffset.UTC)),
+                    true)
                 .addField("Times Joined", user.timesJoined.toString(), true)
                 .addField("Names", user.names.joinToString())
-                .addField("Addresses", user.addresses.joinToString(transform = InetAddress::getHostAddress)),
+                .addField(
+                    "Addresses",
+                    user.addresses.joinToString(transform = InetAddress::getHostAddress)),
         )
     }
 
-    data class PlayerJoinEntry(val player: Identity.Mindustry, val tid: Int, val timestamp: Instant = Instant.now())
+    data class PlayerJoinEntry(
+        val player: Identity.Mindustry,
+        val tid: Int,
+        val timestamp: Instant = Instant.now()
+    )
 
     companion object {
-        private val TIME_FORMAT = DateTimeFormatterBuilder()
-            .appendValue(ChronoField.HOUR_OF_DAY, 2)
-            .appendLiteral(':')
-            .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
-            .appendLiteral(':')
-            .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
-            .toFormatter(Locale.ENGLISH)
+        private val TIME_FORMAT =
+            DateTimeFormatterBuilder()
+                .appendValue(ChronoField.HOUR_OF_DAY, 2)
+                .appendLiteral(':')
+                .appendValue(ChronoField.MINUTE_OF_HOUR, 2)
+                .appendLiteral(':')
+                .appendValue(ChronoField.SECOND_OF_MINUTE, 2)
+                .toFormatter(Locale.ENGLISH)
     }
 }

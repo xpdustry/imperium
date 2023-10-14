@@ -33,45 +33,47 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.ArcCollections
+import kotlin.time.Duration.Companion.minutes
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.maps.Map
-import kotlin.time.Duration.Companion.minutes
 
 class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
 
-    private val manager = SimpleVoteManager<Map?>(
-        plugin = instances.get(),
-        duration = 1.minutes,
-        finished = {
-            if (it.status != VoteManager.Session.Status.SUCCESS) {
-                Call.sendMessage("[orange]The RTV vote failed.")
-            } else {
-                Call.sendMessage("[orange]The RTV vote passed. The map will be changed.")
-                if (it.target != null) Vars.maps.setNextMapOverride(it.target)
-                Events.fire(EventType.GameOverEvent(Team.derelict))
-            }
-        },
-    )
-
-    private val mapListInterface: Interface = MenuInterface.create(plugin).apply {
-        addTransformer(
-            ListTransformer(
-                provider = { ArcCollections.immutableList(Vars.maps.customMaps()) },
-                renderer = { it.name() },
-                onChoice = { view, map -> start(view, map) },
-                fill = true,
-            ),
+    private val manager =
+        SimpleVoteManager<Map?>(
+            plugin = instances.get(),
+            duration = 1.minutes,
+            finished = {
+                if (it.status != VoteManager.Session.Status.SUCCESS) {
+                    Call.sendMessage("[orange]The RTV vote failed.")
+                } else {
+                    Call.sendMessage("[orange]The RTV vote passed. The map will be changed.")
+                    if (it.target != null) Vars.maps.setNextMapOverride(it.target)
+                    Events.fire(EventType.GameOverEvent(Team.derelict))
+                }
+            },
         )
-        addTransformer { _, pane ->
-            pane.title = "Choose a map"
-            pane.options.addRow(MenuOption("[yellow]Random") { view -> start(view, null) })
+
+    private val mapListInterface: Interface =
+        MenuInterface.create(plugin).apply {
+            addTransformer(
+                ListTransformer(
+                    provider = { ArcCollections.immutableList(Vars.maps.customMaps()) },
+                    renderer = { it.name() },
+                    onChoice = { view, map -> start(view, map) },
+                    fill = true,
+                ),
+            )
+            addTransformer { _, pane ->
+                pane.title = "Choose a map"
+                pane.options.addRow(MenuOption("[yellow]Random") { view -> start(view, null) })
+            }
         }
-    }
 
     @Command(["rtv"])
     @ClientSide
@@ -106,7 +108,8 @@ class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Liste
         view.closeAll()
         if (manager.session == null) {
             manager.start(view.viewer, true, map)
-            Call.sendMessage("[orange]A vote to change the map has started. Type [accent]/rtv y[] to vote.")
+            Call.sendMessage(
+                "[orange]A vote to change the map has started. Type [accent]/rtv y[] to vote.")
         } else {
             view.viewer.sendMessage("[orange]A RTV is already in progress.")
         }
@@ -118,7 +121,8 @@ class RockTheVoteCommand(instances: InstanceManager) : ImperiumApplication.Liste
         } else if (session.getVote(player) != null) {
             player.sendMessage("[orange]You have already voted.")
         } else {
-            Call.sendMessage("${player.name()} [orange] has voted to${if (value) " " else " not "}change the map.")
+            Call.sendMessage(
+                "${player.name()} [orange] has voted to${if (value) " " else " not "}change the map.")
             session.setVote(player, value)
         }
     }

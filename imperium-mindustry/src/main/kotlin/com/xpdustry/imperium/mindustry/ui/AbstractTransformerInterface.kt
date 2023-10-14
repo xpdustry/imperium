@@ -25,17 +25,20 @@ import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.MUUID
 import fr.xpdustry.distributor.api.util.Priority
+import java.util.function.Supplier
 import mindustry.game.EventType.PlayerLeave
 import mindustry.gen.Player
-import java.util.function.Supplier
 
-abstract class AbstractTransformerInterface<P : Pane> protected constructor(
+abstract class AbstractTransformerInterface<P : Pane>
+protected constructor(
     protected val plugin: MindustryPlugin,
     private val paneProvider: Supplier<P>,
 ) : TransformerInterface<P> {
 
     private val _views: MutableMap<MUUID, SimpleView> = mutableMapOf()
-    protected val views: Map<MUUID, SimpleView> get() = _views
+    protected val views: Map<MUUID, SimpleView>
+        get() = _views
+
     override val transformers: MutableList<PriorityTransformer<P>> = mutableListOf()
 
     init {
@@ -57,9 +60,11 @@ abstract class AbstractTransformerInterface<P : Pane> protected constructor(
     }
 
     protected abstract fun onViewOpen(view: SimpleView)
+
     protected open fun onViewClose(view: SimpleView) = Unit
 
-    protected inner class SimpleView(override val viewer: Player, override val parent: View?) : View {
+    protected inner class SimpleView(override val viewer: Player, override val parent: View?) :
+        View {
         override val state: State = parent?.state ?: stateOf()
 
         lateinit var pane: P
@@ -84,7 +89,10 @@ abstract class AbstractTransformerInterface<P : Pane> protected constructor(
             }
         }
 
-        override val isOpen: Boolean get() = views.containsKey(MUUID.of(viewer))
-        override val owner: Interface get() = this@AbstractTransformerInterface
+        override val isOpen: Boolean
+            get() = views.containsKey(MUUID.of(viewer))
+
+        override val owner: Interface
+            get() = this@AbstractTransformerInterface
     }
 }

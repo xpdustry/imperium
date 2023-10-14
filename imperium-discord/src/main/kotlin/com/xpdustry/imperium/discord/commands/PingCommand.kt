@@ -27,5 +27,6 @@ class PingCommand : ImperiumApplication.Listener {
     @Command(["ping"])
     @NonEphemeral
     suspend fun onPingCommand(actor: InteractionSender) =
-        actor.respond("pong with **${actor.discord.measureRestLatency().await().toMillis()}** milliseconds of latency!")
+        actor.respond(
+            "pong with **${actor.discord.measureRestLatency().await().toMillis()}** milliseconds of latency!")
 }

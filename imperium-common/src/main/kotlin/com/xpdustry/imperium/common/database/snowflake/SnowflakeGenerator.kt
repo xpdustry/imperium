@@ -25,17 +25,23 @@ import de.mkammerer.snowflakeid.SnowflakeIdGenerator
 import de.mkammerer.snowflakeid.options.Options
 import de.mkammerer.snowflakeid.structure.Structure
 import de.mkammerer.snowflakeid.time.MonotonicTimeSource
-import kotlinx.coroutines.withContext
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.withContext
 
 typealias Snowflake = Long
 
 // Given the fact that the snowflake is structured as (timestamp, generatorId, sequenceId),
-// we can extract the timestamp by shifting the snowflake to the right by the number of bits used by the generatorId
+// we can extract the timestamp by shifting the snowflake to the right by the number of bits used by
+// the generatorId
 // and sequenceId, and then converting it to an Instant.
 val Snowflake.timestamp: Instant
-    get() = Instant.ofEpochMilli(this shr (SimpleSnowflakeGenerator.STRUCTURE.generatorBits + SimpleSnowflakeGenerator.STRUCTURE.sequenceBits)).plus(IMPERIUM_EPOCH_OFFSET)
+    get() =
+        Instant.ofEpochMilli(
+                this shr
+                    (SimpleSnowflakeGenerator.STRUCTURE.generatorBits +
+                        SimpleSnowflakeGenerator.STRUCTURE.sequenceBits))
+            .plus(IMPERIUM_EPOCH_OFFSET)
 
 interface SnowflakeGenerator {
     suspend fun generate(): Snowflake
@@ -43,12 +49,13 @@ interface SnowflakeGenerator {
 
 class SimpleSnowflakeGenerator(config: ImperiumConfig) : SnowflakeGenerator {
 
-    private val generator = SnowflakeIdGenerator.createCustom(
-        config.generatorId.toLong(),
-        MonotonicTimeSource(IMPERIUM_EPOCH),
-        STRUCTURE,
-        Options(Options.SequenceOverflowStrategy.SPIN_WAIT),
-    )
+    private val generator =
+        SnowflakeIdGenerator.createCustom(
+            config.generatorId.toLong(),
+            MonotonicTimeSource(IMPERIUM_EPOCH),
+            STRUCTURE,
+            Options(Options.SequenceOverflowStrategy.SPIN_WAIT),
+        )
 
     init {
         if (config.generatorId == 0) {

@@ -19,8 +19,8 @@ package com.xpdustry.imperium.common.application
 
 import com.xpdustry.imperium.common.serialization.SerializableUUID
 import com.xpdustry.imperium.common.version.ImperiumVersion
-import kotlinx.serialization.Serializable
 import java.util.UUID
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class ImperiumMetadata(

@@ -30,7 +30,8 @@ data class MenuPane(
 class MenuOptionGrid {
     private val _grid: MutableList<MutableList<MenuOption>> = mutableListOf()
 
-    val grid: List<List<MenuOption>> get() = _grid
+    val grid: List<List<MenuOption>>
+        get() = _grid
 
     fun getRow(index: Int): List<MenuOption> = _grid[index]
 

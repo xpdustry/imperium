@@ -46,10 +46,6 @@ import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import io.leangen.geantyref.GenericTypeReflector
 import io.leangen.geantyref.TypeToken
-import kotlinx.coroutines.runBlocking
-import mindustry.Vars
-import mindustry.net.Administration.PlayerInfo
-import mindustry.server.ServerControl
 import java.util.function.Function
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
@@ -62,6 +58,10 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaType
+import kotlinx.coroutines.runBlocking
+import mindustry.Vars
+import mindustry.net.Administration.PlayerInfo
+import mindustry.server.ServerControl
 
 // TODO Add permission support
 class MindustryCommandRegistry(
@@ -91,50 +91,69 @@ class MindustryCommandRegistry(
                 marked = true
             }
             if (!marked) {
-                error("Command function must be marked with either @ClientSide or @ServerSide: $function")
+                error(
+                    "Command function must be marked with either @ClientSide or @ServerSide: $function")
             }
         }
     }
 
-    private fun parse(manager: ArcCommandManager<CommandSender>, container: Any, function: KFunction<*>, annotation: Command) {
+    private fun parse(
+        manager: ArcCommandManager<CommandSender>,
+        container: Any,
+        function: KFunction<*>,
+        annotation: Command
+    ) {
         val base = mutableListOf(annotation.name)
-        var builder = manager.commandBuilder(annotation.name, createLiteralDescription(base))
-            .permission(createPermission(annotation.permission))
+        var builder =
+            manager
+                .commandBuilder(annotation.name, createLiteralDescription(base))
+                .permission(createPermission(annotation.permission))
         for (rest in annotation.path.drop(1)) {
             base += rest
             builder = builder.literal(rest, createLiteralDescription(base))
         }
         for (argument in function.parameters.drop(1)) {
             if (argument.type.classifier == CommandSender::class) continue
-            builder = builder.argument(
-                createCommandArgument(manager, argument, TypeToken.get(argument.type.javaType)),
-                createArgumentDescription(base, argument.name!!),
-            )
+            builder =
+                builder.argument(
+                    createCommandArgument(manager, argument, TypeToken.get(argument.type.javaType)),
+                    createArgumentDescription(base, argument.name!!),
+                )
         }
-        builder = builder.handler(
-            SuspendingExecutionHandler.createCommandExecutionHandler(
-                ImperiumScope.MAIN,
-                ImperiumScope.MAIN.coroutineContext,
-            ) { ctx -> callCommandFunction(container, function, ctx) },
-        )
+        builder =
+            builder.handler(
+                SuspendingExecutionHandler.createCommandExecutionHandler(
+                    ImperiumScope.MAIN,
+                    ImperiumScope.MAIN.coroutineContext,
+                ) { ctx ->
+                    callCommandFunction(container, function, ctx)
+                },
+            )
         manager.command(builder)
     }
 
-    private fun createPermission(permission: Permission) = PredicatePermission.of<CommandSender>(
-        SimpleCloudKey.of("imperium"),
-    ) { sender ->
-        if (permission == Permission.EVERYONE || sender.isConsole || sender.player.admin) return@of true
-        val account = runBlocking { accounts.findByIdentity(sender.player.identity) } ?: return@of false
-        return@of when (permission) {
-            Permission.OWNER -> account.rank > Account.Rank.OWNER
-            Permission.ADMINISTRATOR -> account.rank > Account.Rank.ADMINISTRATOR
-            Permission.MODERATOR -> account.rank > Account.Rank.MODERATOR
-            Permission.VERIFIED -> account.verified
-            else -> false
+    private fun createPermission(permission: Permission) =
+        PredicatePermission.of<CommandSender>(
+            SimpleCloudKey.of("imperium"),
+        ) { sender ->
+            if (permission == Permission.EVERYONE || sender.isConsole || sender.player.admin)
+                return@of true
+            val account =
+                runBlocking { accounts.findByIdentity(sender.player.identity) } ?: return@of false
+            return@of when (permission) {
+                Permission.OWNER -> account.rank > Account.Rank.OWNER
+                Permission.ADMINISTRATOR -> account.rank > Account.Rank.ADMINISTRATOR
+                Permission.MODERATOR -> account.rank > Account.Rank.MODERATOR
+                Permission.VERIFIED -> account.verified
+                else -> false
+            }
         }
-    }
 
-    private fun <T : Any> createCommandArgument(manager: ArcCommandManager<CommandSender>, parameter: KParameter, token: TypeToken<T>): CommandArgument<CommandSender, T> {
+    private fun <T : Any> createCommandArgument(
+        manager: ArcCommandManager<CommandSender>,
+        parameter: KParameter,
+        token: TypeToken<T>
+    ): CommandArgument<CommandSender, T> {
         val parameters = manager.parserRegistry().parseAnnotations(token, parameter.annotations)
         return CommandArgument.ofType<CommandSender, T>(token, parameter.name!!)
             .withParser(manager.parserRegistry().createParser(token, parameters).get())
@@ -142,17 +161,23 @@ class MindustryCommandRegistry(
             .build()
     }
 
-    private fun createLiteralDescription(path: List<String>) = LocalisableArgumentDescription(
-        "imperium.command.[${path.joinToString(".")}].description",
-        config.language,
-    )
+    private fun createLiteralDescription(path: List<String>) =
+        LocalisableArgumentDescription(
+            "imperium.command.[${path.joinToString(".")}].description",
+            config.language,
+        )
 
-    private fun createArgumentDescription(path: List<String>, name: String) = LocalisableArgumentDescription(
-        "imperium.command.[${path.joinToString(".")}].argument.$name.description",
-        config.language,
-    )
+    private fun createArgumentDescription(path: List<String>, name: String) =
+        LocalisableArgumentDescription(
+            "imperium.command.[${path.joinToString(".")}].argument.$name.description",
+            config.language,
+        )
 
-    private suspend fun callCommandFunction(container: Any, function: KFunction<*>, context: CommandContext<CommandSender>) {
+    private suspend fun callCommandFunction(
+        container: Any,
+        function: KFunction<*>,
+        context: CommandContext<CommandSender>
+    ) {
         val arguments = mutableMapOf<KParameter, Any>()
         for (parameter in function.parameters) {
             if (parameter.index == 0) {
@@ -180,29 +205,39 @@ class MindustryCommandRegistry(
     }
 }
 
-private fun createArcCommandManager(plugin: MindustryPlugin) = ArcCommandManager(
-    plugin,
-    Function.identity(),
-    Function.identity(),
-    true,
-).apply {
-    setSetting(CommandManager.ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
-    parserRegistry().registerAnnotationMapper<Greedy, String>(Greedy::class.java) { _, _ ->
-        ParserParameters.single(StandardParameters.GREEDY, true)
-    }
-    parserRegistry().registerAnnotationMapper<Min, Number>(Min::class.java) { annotation, token ->
-        val number = getNumber(annotation.value, token) ?: return@registerAnnotationMapper ParserParameters.empty()
-        ParserParameters.single(StandardParameters.RANGE_MIN, number)
-    }
-    parserRegistry().registerAnnotationMapper<Max, Number>(Max::class.java) { annotation, token ->
-        val number = getNumber(annotation.value, token) ?: return@registerAnnotationMapper ParserParameters.empty()
-        ParserParameters.single(StandardParameters.RANGE_MAX, number)
-    }
-    // TODO ADD MISSING PARSER IN DISTRIBUTOR
-    parserRegistry().registerParserSupplier(TypeToken.get(PlayerInfo::class.java)) {
-        PlayerInfoArgument.PlayerInfoParser()
-    }
-}
+private fun createArcCommandManager(plugin: MindustryPlugin) =
+    ArcCommandManager(
+            plugin,
+            Function.identity(),
+            Function.identity(),
+            true,
+        )
+        .apply {
+            setSetting(CommandManager.ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
+            parserRegistry().registerAnnotationMapper<Greedy, String>(Greedy::class.java) { _, _ ->
+                ParserParameters.single(StandardParameters.GREEDY, true)
+            }
+            parserRegistry().registerAnnotationMapper<Min, Number>(Min::class.java) {
+                annotation,
+                token ->
+                val number =
+                    getNumber(annotation.value, token)
+                        ?: return@registerAnnotationMapper ParserParameters.empty()
+                ParserParameters.single(StandardParameters.RANGE_MIN, number)
+            }
+            parserRegistry().registerAnnotationMapper<Max, Number>(Max::class.java) {
+                annotation,
+                token ->
+                val number =
+                    getNumber(annotation.value, token)
+                        ?: return@registerAnnotationMapper ParserParameters.empty()
+                ParserParameters.single(StandardParameters.RANGE_MAX, number)
+            }
+            // TODO ADD MISSING PARSER IN DISTRIBUTOR
+            parserRegistry().registerParserSupplier(TypeToken.get(PlayerInfo::class.java)) {
+                PlayerInfoArgument.PlayerInfoParser()
+            }
+        }
 
 private fun getNumber(value: Number, token: TypeToken<*>): Number? =
     when (GenericTypeReflector.erase(token.type).kotlin) {

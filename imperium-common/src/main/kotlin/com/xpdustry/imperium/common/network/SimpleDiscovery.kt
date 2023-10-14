@@ -29,16 +29,16 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import java.util.concurrent.TimeUnit
+import java.util.function.Supplier
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.util.concurrent.TimeUnit
-import java.util.function.Supplier
-import kotlin.random.Random
-import kotlin.time.Duration.Companion.seconds
 
 class SimpleDiscovery(
     private val messenger: Messenger,
@@ -47,12 +47,14 @@ class SimpleDiscovery(
     private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
 
-    override val servers: List<ServerInfo> get() = this._servers.asMap().values.toList()
+    override val servers: List<ServerInfo>
+        get() = this._servers.asMap().values.toList()
 
-    private val _servers: Cache<String, ServerInfo> = CacheBuilder.newBuilder()
-        .expireAfterWrite(45L, TimeUnit.SECONDS)
-        .removalListener(DiscoveryRemovalListener())
-        .build()
+    private val _servers: Cache<String, ServerInfo> =
+        CacheBuilder.newBuilder()
+            .expireAfterWrite(45L, TimeUnit.SECONDS)
+            .removalListener(DiscoveryRemovalListener())
+            .build()
 
     private lateinit var heartbeatJob: Job
 
@@ -71,13 +73,14 @@ class SimpleDiscovery(
             }
         }
 
-        heartbeatJob = ImperiumScope.MAIN.launch {
-            delay(Random.nextLong(5).seconds)
-            while (isActive) {
-                sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-                delay(5.seconds)
+        heartbeatJob =
+            ImperiumScope.MAIN.launch {
+                delay(Random.nextLong(5).seconds)
+                while (isActive) {
+                    sendDiscovery(DiscoveryMessage.Type.DISCOVER)
+                    delay(5.seconds)
+                }
             }
-        }
     }
 
     override fun onImperiumExit() = runBlocking {
@@ -85,13 +88,16 @@ class SimpleDiscovery(
         sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER)
     }
 
-    override fun heartbeat() = runBlocking(ImperiumScope.MAIN.coroutineContext) {
-        sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-    }
+    override fun heartbeat() =
+        runBlocking(ImperiumScope.MAIN.coroutineContext) {
+            sendDiscovery(DiscoveryMessage.Type.DISCOVER)
+        }
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
         logger.trace("Sending {} discovery message", type.name)
-        messenger.publish(DiscoveryMessage(ServerInfo(config.server.name, metadata, mindustryServerProvider.get()), type))
+        messenger.publish(
+            DiscoveryMessage(
+                ServerInfo(config.server.name, metadata, mindustryServerProvider.get()), type))
     }
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {

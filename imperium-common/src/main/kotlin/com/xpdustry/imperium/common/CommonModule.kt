@@ -54,89 +54,72 @@ import com.xpdustry.imperium.common.storage.MinioStorageBucket
 import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
-import okhttp3.OkHttpClient
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import okhttp3.OkHttpClient
 
-fun commonModule() = module("common") {
-    single(ImperiumConfigFactory())
+fun commonModule() =
+    module("common") {
+        single(ImperiumConfigFactory())
 
-    single<Translator> {
-        val config = get<ImperiumConfig>().translator
-        when (config) {
-            is TranslatorConfig.None -> Translator.Noop
-            is TranslatorConfig.DeepL -> DeeplTranslator(get(), get())
+        single<Translator> {
+            val config = get<ImperiumConfig>().translator
+            when (config) {
+                is TranslatorConfig.None -> Translator.Noop
+                is TranslatorConfig.DeepL -> DeeplTranslator(get(), get())
+            }
         }
-    }
 
-    single<Discovery> {
-        SimpleDiscovery(get(), get(), get(), get())
-    }
+        single<Discovery> { SimpleDiscovery(get(), get(), get(), get()) }
 
-    single<VpnDetection> {
-        when (val config = get<ImperiumConfig>().network.vpnDetection) {
-            is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
-            is NetworkConfig.VpnDetectionConfig.IPHub -> IPHubVpnDetection(config, get())
+        single<VpnDetection> {
+            when (val config = get<ImperiumConfig>().network.vpnDetection) {
+                is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
+                is NetworkConfig.VpnDetectionConfig.IPHub -> IPHubVpnDetection(config, get())
+            }
         }
-    }
 
-    single<Messenger> {
-        when (val config = get<ImperiumConfig>().messenger) {
-            is MessengerConfig.RabbitMQ -> RabbitmqMessenger(config, get())
+        single<Messenger> {
+            when (val config = get<ImperiumConfig>().messenger) {
+                is MessengerConfig.RabbitMQ -> RabbitmqMessenger(config, get())
+            }
         }
-    }
 
-    single<StorageBucket> {
-        when (val config = get<ImperiumConfig>().storage) {
-            is StorageConfig.Minio -> MinioStorageBucket(config, get())
+        single<StorageBucket> {
+            when (val config = get<ImperiumConfig>().storage) {
+                is StorageConfig.Minio -> MinioStorageBucket(config, get())
+            }
         }
-    }
 
-    single {
-        ImperiumMetadata()
-    }
+        single { ImperiumMetadata() }
 
-    single<MongoProvider> {
-        SimpleMongoProvider(get())
-    }
+        single<MongoProvider> { SimpleMongoProvider(get()) }
 
-    single<AccountManager> {
-        MongoAccountManager(get())
-    }
+        single<AccountManager> { MongoAccountManager(get()) }
 
-    single<MindustryMapManager> {
-        MongoMindustryMapManager(get(), get(), get())
-    }
+        single<MindustryMapManager> { MongoMindustryMapManager(get(), get(), get()) }
 
-    single<PunishmentManager> {
-        MongoBanManager(get(), get(), get())
-    }
+        single<PunishmentManager> { MongoBanManager(get(), get(), get()) }
 
-    single<UserManager> {
-        MongoUserManager(get())
-    }
+        single<UserManager> { MongoUserManager(get()) }
 
-    single<ImageAnalysis> {
-        when (val config = get<ImperiumConfig>().imageAnalysis) {
-            is ImageAnalysisConfig.None -> ImageAnalysis.Noop
-            is ImageAnalysisConfig.SightEngine -> SightEngineImageAnalysis(config, get())
+        single<ImageAnalysis> {
+            when (val config = get<ImperiumConfig>().imageAnalysis) {
+                is ImageAnalysisConfig.None -> ImageAnalysis.Noop
+                is ImageAnalysisConfig.SightEngine -> SightEngineImageAnalysis(config, get())
+            }
         }
-    }
 
-    single<LogicImageAnalysis> {
-        SimpleLogicImageAnalysis(get(), get(), get())
-    }
+        single<LogicImageAnalysis> { SimpleLogicImageAnalysis(get(), get(), get()) }
 
-    single<OkHttpClient> {
-        OkHttpClient.Builder()
-            .connectTimeout(20.seconds.toJavaDuration())
-            .connectTimeout(20.seconds.toJavaDuration())
-            .readTimeout(20.seconds.toJavaDuration())
-            .writeTimeout(20.seconds.toJavaDuration())
-            .build()
-    }
+        single<OkHttpClient> {
+            OkHttpClient.Builder()
+                .connectTimeout(20.seconds.toJavaDuration())
+                .connectTimeout(20.seconds.toJavaDuration())
+                .readTimeout(20.seconds.toJavaDuration())
+                .writeTimeout(20.seconds.toJavaDuration())
+                .build()
+        }
 
-    single<SnowflakeGenerator> {
-        SimpleSnowflakeGenerator(get())
+        single<SnowflakeGenerator> { SimpleSnowflakeGenerator(get()) }
     }
-}

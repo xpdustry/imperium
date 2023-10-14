@@ -24,24 +24,57 @@ import org.bson.types.ObjectId
 
 interface AccountManager {
     suspend fun findByIdentity(identity: Identity.Mindustry): Account?
+
     suspend fun findByUsername(username: String): Account?
+
     suspend fun updateByIdentity(identity: Identity.Mindustry, updater: suspend (Account) -> Unit)
+
     suspend fun updateById(id: ObjectId, updater: suspend (Account) -> Unit)
-    suspend fun register(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult
-    suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult
-    suspend fun login(username: String, password: CharArray, identity: Identity.Mindustry): AccountOperationResult
+
+    suspend fun register(
+        username: String,
+        password: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult
+
+    suspend fun migrate(
+        oldUsername: String,
+        newUsername: String,
+        password: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult
+
+    suspend fun login(
+        username: String,
+        password: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult
+
     suspend fun logout(identity: Identity.Mindustry, all: Boolean = false)
+
     suspend fun refresh(identity: Identity.Mindustry)
-    suspend fun changePassword(oldPassword: CharArray, newPassword: CharArray, identity: Identity.Mindustry): AccountOperationResult
+
+    suspend fun changePassword(
+        oldPassword: CharArray,
+        newPassword: CharArray,
+        identity: Identity.Mindustry
+    ): AccountOperationResult
 }
 
 sealed interface AccountOperationResult {
     data object Success : AccountOperationResult
+
     data object AlreadyRegistered : AccountOperationResult
+
     data object NotRegistered : AccountOperationResult
+
     data object NotLogged : AccountOperationResult
+
     data object WrongPassword : AccountOperationResult
+
     data object RateLimit : AccountOperationResult
+
     data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountOperationResult
+
     data class InvalidUsername(val missing: List<UsernameRequirement>) : AccountOperationResult
 }

@@ -34,6 +34,13 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
+import java.util.concurrent.atomic.AtomicInteger
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -47,38 +54,38 @@ import mindustry.gen.Groups
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.Sounds
-import java.util.concurrent.atomic.AtomicInteger
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val pitchSequence = AtomicInteger(0)
     private val config = instances.get<ServerConfig.Mindustry>()
-    private val manager = SimpleVoteManager(
-        plugin = instances.get(),
-        duration = 1.minutes,
-        finished = {
-            if (it.status == VoteManager.Session.Status.SUCCESS) {
-                excavate(it.target)
-            } else {
-                Call.sendMessage("The excavation has failed!")
-            }
-        },
-        threshold = {
-            when (Groups.player.size()) {
-                0 -> 0
-                1 -> 1
-                2, 3, 4, 5 -> 2
-                6, 7, 8, 9 -> 3
-                else -> 4
-            }
-        },
-    )
+    private val manager =
+        SimpleVoteManager(
+            plugin = instances.get(),
+            duration = 1.minutes,
+            finished = {
+                if (it.status == VoteManager.Session.Status.SUCCESS) {
+                    excavate(it.target)
+                } else {
+                    Call.sendMessage("The excavation has failed!")
+                }
+            },
+            threshold = {
+                when (Groups.player.size()) {
+                    0 -> 0
+                    1 -> 1
+                    2,
+                    3,
+                    4,
+                    5 -> 2
+                    6,
+                    7,
+                    8,
+                    9 -> 3
+                    else -> 4
+                }
+            },
+        )
 
     @Command(["excavate", "begin"])
     @ClientSide
@@ -125,7 +132,8 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
             """
             ${sender.player.name} has started an excavation at between (${area.p1.x}, ${area.p1.y}) and (${area.p2.x}, ${area.p2.y})!
             Vote using [accent]/excavate y[] or [accent]/excavate n[]. [accent]${session.remaining}[] votes are required to pass.
-            """.trimIndent(),
+            """
+                .trimIndent(),
         )
     }
 
@@ -164,7 +172,8 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
     }
 
     private suspend fun excavate(area: ExcavateArea) {
-        Call.sendMessage("The excavation has passed! The area between (${area.x1}, ${area.y1}) and (${area.x2}, ${area.y2}) will be excavated.")
+        Call.sendMessage(
+            "The excavation has passed! The area between (${area.x1}, ${area.y1}) and (${area.x2}, ${area.y2}) will be excavated.")
         for (y in area.y1..area.y2) {
             delay(100.milliseconds)
             runMindustryThread {
@@ -176,7 +185,12 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
                     }
                     Call.setTile(tile, Blocks.air, Team.derelict, 0)
                     Call.setFloor(tile, getFloorOfWall(block), Blocks.air)
-                    Call.effect(Fx.flakExplosion, x.toFloat() * Vars.tilesize, y.toFloat() * Vars.tilesize, 0F, Color.white)
+                    Call.effect(
+                        Fx.flakExplosion,
+                        x.toFloat() * Vars.tilesize,
+                        y.toFloat() * Vars.tilesize,
+                        0F,
+                        Color.white)
                 }
                 val cx = area.x1 + ((area.x2 - area.x1) / 2F) * Vars.tilesize
                 Call.soundAt(Sounds.place, cx, y.toFloat() * Vars.tilesize, 1F, getNextPitch())
@@ -225,7 +239,11 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
         val mx = area.x1 + ((area.x2 - area.x1) / 2)
         val my = area.y1 + ((area.y2 - area.y1) / 2)
         val half = Vars.tilesize / 2F
-        Call.label("EXCAVATION SITE", 1F, mx.toFloat() * Vars.tilesize + half, my.toFloat() * Vars.tilesize + half)
+        Call.label(
+            "EXCAVATION SITE",
+            1F,
+            mx.toFloat() * Vars.tilesize + half,
+            my.toFloat() * Vars.tilesize + half)
     }
 
     @EventHandler
@@ -243,12 +261,14 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
             val dy = abs(point.y - other.y)
             if (dx >= config.world.maxExcavateSize || dy >= config.world.maxExcavateSize) {
                 areas[event.player] = ExcavateArea()
-                event.player.sendMessage("The chosen excavate point is too far from the other point, try again!")
+                event.player.sendMessage(
+                    "The chosen excavate point is too far from the other point, try again!")
                 return
             }
             if (dx == 0 || dy == 0) {
                 areas[event.player] = ExcavateArea()
-                event.player.sendMessage("The chosen excavate point is on the same axis as the other point, try again!")
+                event.player.sendMessage(
+                    "The chosen excavate point is on the same axis as the other point, try again!")
                 return
             }
         }
@@ -274,7 +294,8 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
             player.sendMessage("You have already voted!")
             return
         }
-        Call.sendMessage("${player.name} has voted ${if (value) "yes" else "no"}! ${session.remaining - 1} more votes are required to pass.")
+        Call.sendMessage(
+            "${player.name} has voted ${if (value) "yes" else "no"}! ${session.remaining - 1} more votes are required to pass.")
         session.setVote(player, value)
     }
 
@@ -286,17 +307,22 @@ class ExcavateCommand(instances: InstanceManager) : ImperiumApplication.Listener
         return 1f + Mathf.clamp(pitchSequence.get() / 30f) * 1.9f
     }
 
-    private fun getFloorOfWall(block: mindustry.world.Block) = when (block) {
-        Blocks.stoneWall -> Blocks.stone
-        Blocks.sandWall -> Blocks.sand
-        Blocks.iceWall -> Blocks.ice
-        Blocks.snowWall -> Blocks.snow
-        Blocks.dirtWall -> Blocks.dirt
-        Blocks.shaleWall -> Blocks.shale
-        else -> Blocks.stone
-    }
+    private fun getFloorOfWall(block: mindustry.world.Block) =
+        when (block) {
+            Blocks.stoneWall -> Blocks.stone
+            Blocks.sandWall -> Blocks.sand
+            Blocks.iceWall -> Blocks.ice
+            Blocks.snowWall -> Blocks.snow
+            Blocks.dirtWall -> Blocks.dirt
+            Blocks.shaleWall -> Blocks.shale
+            else -> Blocks.stone
+        }
 
-    data class ExcavateArea(val p1: ImmutablePoint = UNSET_POINT, val p2: ImmutablePoint = UNSET_POINT, val first: Boolean = true) {
+    data class ExcavateArea(
+        val p1: ImmutablePoint = UNSET_POINT,
+        val p2: ImmutablePoint = UNSET_POINT,
+        val first: Boolean = true
+    ) {
         val x1 = min(p1.x, p2.x)
         val x2 = max(p1.x, p2.x)
         val y1 = min(p1.y, p2.y)

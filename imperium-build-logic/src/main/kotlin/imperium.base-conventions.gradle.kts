@@ -49,7 +49,7 @@ dependencies {
 
 spotless {
     kotlin {
-        ktlint(libs.versions.ktlint.get())
+        ktfmt().dropboxStyle()
         licenseHeader(toLongComment(rootProject.file("LICENSE_HEADER.md").readText()))
         indentWithSpaces(4)
         trimTrailingWhitespace()

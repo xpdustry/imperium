@@ -18,10 +18,10 @@
 package com.xpdustry.imperium.mindustry.history
 
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
-import mindustry.ctype.UnlockableContent
-import mindustry.gen.Building
 import java.awt.Color
 import java.nio.ByteBuffer
+import mindustry.ctype.UnlockableContent
+import mindustry.gen.Building
 
 sealed interface HistoryConfig {
 
@@ -30,16 +30,24 @@ sealed interface HistoryConfig {
     data class Content(val value: UnlockableContent?) : HistoryConfig
 
     data class Link(val positions: List<ImmutablePoint>, val type: Type) : HistoryConfig {
-        constructor(positions: List<ImmutablePoint>, connection: Boolean) : this(positions, if (connection) Type.CONNECT else Type.DISCONNECT)
+        constructor(
+            positions: List<ImmutablePoint>,
+            connection: Boolean
+        ) : this(positions, if (connection) Type.CONNECT else Type.DISCONNECT)
+
         enum class Type {
-            CONNECT, DISCONNECT, RESET
+            CONNECT,
+            DISCONNECT,
+            RESET
         }
     }
 
     data class Composite(val configurations: List<HistoryConfig>) : HistoryConfig {
         init {
             for (configuration in configurations) {
-                require(configuration !is Composite) { "A Composite configuration cannot contain another." }
+                require(configuration !is Composite) {
+                    "A Composite configuration cannot contain another."
+                }
             }
         }
     }
@@ -48,7 +56,8 @@ sealed interface HistoryConfig {
 
     data class Text(val text: String, val type: Type) : HistoryConfig {
         enum class Type {
-            MESSAGE, CODE,
+            MESSAGE,
+            CODE,
         }
     }
 

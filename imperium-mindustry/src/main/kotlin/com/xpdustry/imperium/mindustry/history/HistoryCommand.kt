@@ -39,25 +39,33 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @Command(["history", "player"])
     @ClientSide
     @ServerSide
-    private fun onPlayerHistoryCommand(sender: CommandSender, info: PlayerInfo, @Min(1) @Max(50) limit: Int = 10) {
+    private fun onPlayerHistoryCommand(
+        sender: CommandSender,
+        info: PlayerInfo,
+        @Min(1) @Max(50) limit: Int = 10
+    ) {
         val entries = normalize(history.getHistory(info.id), limit)
         if (entries.none()) {
             sender.sendWarning("No history found.")
             return
         }
-        val builder = StringBuilder("[accent]History of player [white]").append(info.plainLastName())
+        val builder =
+            StringBuilder("[accent]History of player [white]").append(info.plainLastName())
         if (canSeeUuid(sender)) {
             builder.append(" [accent](").append(info.id).append(")")
         }
         builder.append(":")
         for (entry in entries) {
-            builder.append("\n[accent] > ").append(
-                renderEntry(entry, name = false, uuid = false, position = true, indent = 3),
-            )
+            builder
+                .append("\n[accent] > ")
+                .append(
+                    renderEntry(entry, name = false, uuid = false, position = true, indent = 3),
+                )
         }
 
         // TODO I really need this Component API
-        sender.sendMessage(if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
+        sender.sendMessage(
+            if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }
 
     @Command(["history", "tile"])
@@ -74,45 +82,61 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             sender.sendWarning("No history found.")
             return
         }
-        val builder = StringBuilder("[accent]History of tile [white]")
-            .append("(")
-            .append(x)
-            .append(", ")
-            .append(y)
-            .append(")[]:")
+        val builder =
+            StringBuilder("[accent]History of tile [white]")
+                .append("(")
+                .append(x)
+                .append(", ")
+                .append(y)
+                .append(")[]:")
         for (entry in entries) {
-            builder.append("\n[accent] > ").append(renderEntry(entry, true, canSeeUuid(sender), false, 3))
+            builder
+                .append("\n[accent] > ")
+                .append(renderEntry(entry, true, canSeeUuid(sender), false, 3))
         }
 
         // TODO I really need this Component API
-        sender.sendMessage(if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
+        sender.sendMessage(
+            if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }
 
-    private fun renderEntry(entry: HistoryEntry, name: Boolean, uuid: Boolean, position: Boolean, indent: Int): String {
+    private fun renderEntry(
+        entry: HistoryEntry,
+        name: Boolean,
+        uuid: Boolean,
+        position: Boolean,
+        indent: Int
+    ): String {
         val builder = StringBuilder("[white]")
         if (name) {
             builder.append(getName(entry.author))
             if (uuid && entry.author.uuid != null) {
-                builder.append(" [gray](")
-                    .append(entry.author.uuid)
-                    .append(")")
+                builder.append(" [gray](").append(entry.author.uuid).append(")")
             }
             builder.append("[white]: ")
         }
         when (entry.type) {
-            HistoryEntry.Type.PLACING -> builder.append("Began construction of [accent]").append(entry.block.name)
-            HistoryEntry.Type.PLACE -> builder.append("Constructed [accent]").append(entry.block.name)
-            HistoryEntry.Type.BREAKING -> builder.append("Began deconstruction of [accent]").append(entry.block.name)
-            HistoryEntry.Type.BREAK -> builder.append("Deconstructed [accent]").append(entry.block.name)
-            HistoryEntry.Type.ROTATE -> builder.append("Set direction of [accent]").append(entry.block.name)
-                .append(" [white]to [accent]")
-                .append(getOrientation(entry.rotation))
-            HistoryEntry.Type.CONFIGURE -> renderConfiguration(
-                builder,
-                entry,
-                entry.configuration!!,
-                indent,
-            )
+            HistoryEntry.Type.PLACING ->
+                builder.append("Began construction of [accent]").append(entry.block.name)
+            HistoryEntry.Type.PLACE ->
+                builder.append("Constructed [accent]").append(entry.block.name)
+            HistoryEntry.Type.BREAKING ->
+                builder.append("Began deconstruction of [accent]").append(entry.block.name)
+            HistoryEntry.Type.BREAK ->
+                builder.append("Deconstructed [accent]").append(entry.block.name)
+            HistoryEntry.Type.ROTATE ->
+                builder
+                    .append("Set direction of [accent]")
+                    .append(entry.block.name)
+                    .append(" [white]to [accent]")
+                    .append(getOrientation(entry.rotation))
+            HistoryEntry.Type.CONFIGURE ->
+                renderConfiguration(
+                    builder,
+                    entry,
+                    entry.configuration!!,
+                    indent,
+                )
         }
         if (entry.type !== HistoryEntry.Type.CONFIGURE && entry.configuration != null) {
             renderConfiguration(
@@ -124,11 +148,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
         builder.append("[white]")
         if (position) {
-            builder.append(" at [accent](")
-                .append(entry.x)
-                .append(", ")
-                .append(entry.y)
-                .append(")")
+            builder.append(" at [accent](").append(entry.x).append(", ").append(entry.y).append(")")
         }
         return builder.toString()
     }
@@ -152,7 +172,8 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 }
             }
             is HistoryConfig.Text -> {
-                builder.append("Changed the [accent]")
+                builder
+                    .append("Changed the [accent]")
                     .append(config.type.name.lowercase())
                     .append("[white] of [accent]")
                     .append(entry.block.name)
@@ -165,7 +186,10 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     builder.append("Reset the links of [accent]").append(entry.block.name)
                     return
                 }
-                builder.append(if (config.type === HistoryConfig.Link.Type.CONNECT) "Connected" else "Disconnected")
+                builder
+                    .append(
+                        if (config.type === HistoryConfig.Link.Type.CONNECT) "Connected"
+                        else "Disconnected")
                     .append(" [accent]")
                     .append(entry.block.name)
                     .append("[white] ")
@@ -185,24 +209,28 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     builder.append("Reset the content of [accent]").append(entry.block.name)
                     return
                 }
-                builder.append("Configured [accent]")
+                builder
+                    .append("Configured [accent]")
                     .append(entry.block.name)
                     .append("[white] to [accent]")
                     .append(config.value.name)
             }
             is HistoryConfig.Enable -> {
-                builder.append(if (config.value) "Enabled" else "Disabled")
+                builder
+                    .append(if (config.value) "Enabled" else "Disabled")
                     .append(" [accent]")
                     .append(entry.block.name)
             }
             is HistoryConfig.Light -> {
-                builder.append("Configured [accent]")
+                builder
+                    .append("Configured [accent]")
                     .append(entry.block.name)
                     .append("[white] to [accent]")
                     .append(config.color.toHexString())
             }
             is HistoryConfig.Simple -> {
-                builder.append("Configured [accent]")
+                builder
+                    .append("Configured [accent]")
                     .append(entry.block.name)
                     .append("[white] to [accent]")
                     .append(config.value?.toString() ?: "null")
@@ -211,23 +239,28 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     }
 
     private fun getName(author: HistoryAuthor): String {
-        return if (author.uuid != null) Vars.netServer.admins.getInfo(author.uuid).lastName else author.team.name.lowercase() + " " + author.unit.name
+        return if (author.uuid != null) Vars.netServer.admins.getInfo(author.uuid).lastName
+        else author.team.name.lowercase() + " " + author.unit.name
     }
 
-    private fun canSeeUuid(sender: CommandSender): Boolean = sender.isConsole || sender.player.admin()
+    private fun canSeeUuid(sender: CommandSender): Boolean =
+        sender.isConsole || sender.player.admin()
 
     // First we sort by timestamp from latest to earliest, then we take the first N elements,
     // then we reverse the list so the latest entries are at the end
-    private fun normalize(entries: List<HistoryEntry>, limit: Int) = entries.asSequence()
-        .sortedByDescending(HistoryEntry::timestamp)
-        .take(limit)
-        .sortedBy(HistoryEntry::timestamp)
+    private fun normalize(entries: List<HistoryEntry>, limit: Int) =
+        entries
+            .asSequence()
+            .sortedByDescending(HistoryEntry::timestamp)
+            .take(limit)
+            .sortedBy(HistoryEntry::timestamp)
 
-    private fun getOrientation(rotation: Int): String = when (rotation % 4) {
-        0 -> "right"
-        1 -> "top"
-        2 -> "left"
-        3 -> "bottom"
-        else -> error("This should never happen")
-    }
+    private fun getOrientation(rotation: Int): String =
+        when (rotation % 4) {
+            0 -> "right"
+            1 -> "top"
+            2 -> "left"
+            3 -> "bottom"
+            else -> error("This should never happen")
+        }
 }

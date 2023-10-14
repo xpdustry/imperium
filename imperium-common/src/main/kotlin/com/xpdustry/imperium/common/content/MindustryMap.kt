@@ -22,9 +22,9 @@ import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.serialization.SerializableJDuration
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import com.xpdustry.imperium.common.serialization.SerializableObjectId
+import java.time.Duration
 import kotlinx.serialization.Serializable
 import org.bson.types.ObjectId
-import java.time.Duration
 
 @Serializable
 data class MindustryMap(
@@ -49,6 +49,9 @@ data class Rating(
     var difficulty: Difficulty,
 ) : Entity<ObjectId> {
     enum class Difficulty {
-        EASY, NORMAL, HARD, EXPERT
+        EASY,
+        NORMAL,
+        HARD,
+        EXPERT
     }
 }

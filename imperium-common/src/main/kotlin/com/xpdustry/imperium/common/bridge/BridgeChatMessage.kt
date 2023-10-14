@@ -21,4 +21,5 @@ import com.xpdustry.imperium.common.message.Message
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class BridgeChatMessage(val serverName: String, val senderName: String, val message: String) : Message
+data class BridgeChatMessage(val serverName: String, val senderName: String, val message: String) :
+    Message

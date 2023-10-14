@@ -28,17 +28,6 @@ import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
-import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
-import org.bson.types.ObjectId
-import org.javacord.api.entity.Attachment
-import org.javacord.api.entity.channel.ServerChannel
-import org.javacord.api.entity.user.User
-import org.javacord.api.interaction.SlashCommandBuilder
-import org.javacord.api.interaction.SlashCommandInteractionOption
-import org.javacord.api.interaction.SlashCommandOption
-import org.javacord.api.interaction.SlashCommandOptionBuilder
-import org.javacord.api.interaction.SlashCommandOptionType
 import java.time.Duration
 import java.util.function.Consumer
 import java.util.regex.Pattern
@@ -53,8 +42,20 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
+import org.bson.types.ObjectId
+import org.javacord.api.entity.Attachment
+import org.javacord.api.entity.channel.ServerChannel
+import org.javacord.api.entity.user.User
+import org.javacord.api.interaction.SlashCommandBuilder
+import org.javacord.api.interaction.SlashCommandInteractionOption
+import org.javacord.api.interaction.SlashCommandOption
+import org.javacord.api.interaction.SlashCommandOptionBuilder
+import org.javacord.api.interaction.SlashCommandOptionType
 
-class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistry, ImperiumApplication.Listener {
+class SlashCommandRegistry(private val discord: DiscordService) :
+    CommandRegistry, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
     private val tree = CommandNode("root", parent = null)
@@ -77,11 +78,14 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
             ImperiumScope.MAIN.launch {
                 val node = tree.resolve(event.slashCommandInteraction.fullCommandName.split(" "))
                 val command = node.edge!!
-                val responder = event.slashCommandInteraction.respondLater(command.ephemeral).await()
+                val responder =
+                    event.slashCommandInteraction.respondLater(command.ephemeral).await()
 
                 if (!discord.isAllowed(event.slashCommandInteraction.user, command.permission)) {
-                    responder.setContent(":warning: **You do not have permission to use this command.**")
-                        .update().await()
+                    responder
+                        .setContent(":warning: **You do not have permission to use this command.**")
+                        .update()
+                        .await()
                     return@launch
                 }
 
@@ -101,14 +105,19 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
                         }
 
                         val argument = command.arguments.find { it.name == parameter.name!! }!!
-                        val option = try {
-                            event.slashCommandInteraction.arguments.find { it.name == parameter.name!! }
-                                ?.let { argument.handler.parse(it) }
-                        } catch (e: OptionParsingException) {
-                            responder.setContent(":warning: Failed to parse the **${argument.name}** argument: ${e.message}")
-                                .update().await()
-                            return@launch
-                        }
+                        val option =
+                            try {
+                                event.slashCommandInteraction.arguments
+                                    .find { it.name == parameter.name!! }
+                                    ?.let { argument.handler.parse(it) }
+                            } catch (e: OptionParsingException) {
+                                responder
+                                    .setContent(
+                                        ":warning: Failed to parse the **${argument.name}** argument: ${e.message}")
+                                    .update()
+                                    .await()
+                                return@launch
+                            }
 
                         if (option != null) {
                             arguments[parameter] = option
@@ -116,13 +125,17 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
                         }
 
                         if (!argument.optional) {
-                            throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
+                            throw IllegalArgumentException(
+                                "Missing required parameter: ${parameter.name}")
                         }
                     }
                 } catch (e: Exception) {
                     logger.error("Error while parsing arguments for command ${node.fullName}", e)
-                    responder.setContent(":warning: **An unexpected error occurred while parsing your command.**")
-                        .update().await()
+                    responder
+                        .setContent(
+                            ":warning: **An unexpected error occurred while parsing your command.**")
+                        .update()
+                        .await()
                     return@launch
                 }
 
@@ -130,8 +143,11 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
                     command.function.callSuspendBy(arguments)
                 } catch (e: Exception) {
                     logger.error("Error while executing command ${node.fullName}", e)
-                    responder.setContent(":warning: **An unexpected error occurred while executing your command.**")
-                        .update().await()
+                    responder
+                        .setContent(
+                            ":warning: **An unexpected error occurred while executing your command.**")
+                        .update()
+                        .await()
                 }
             }
         }
@@ -160,35 +176,40 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
 
                 if (parameter.index == 1) {
                     if (!isSupportedActor(parameter.type.classifier!!)) {
-                        throw IllegalArgumentException("$function first parameter is not a InteractionActor")
+                        throw IllegalArgumentException(
+                            "$function first parameter is not a InteractionActor")
                     }
                     continue
                 }
 
                 val optional = parameter.isOptional || parameter.type.isMarkedNullable
                 if (wasOptional && !optional) {
-                    throw IllegalArgumentException("$function optional parameters must be at the end of the parameter list.")
+                    throw IllegalArgumentException(
+                        "$function optional parameters must be at the end of the parameter list.")
                 }
                 wasOptional = optional
 
                 val classifier = parameter.type.classifier
                 if (classifier !is KClass<*> || classifier !in handlers) {
-                    throw IllegalArgumentException("$function has unsupported parameter type $classifier")
+                    throw IllegalArgumentException(
+                        "$function has unsupported parameter type $classifier")
                 }
 
-                arguments += CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
+                arguments +=
+                    CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
             }
 
             function.isAccessible = true
             tree.resolve(
                 path = command.path.toList(),
-                edge = CommandEdge(
-                    container,
-                    function,
-                    command.permission,
-                    arguments,
-                    !function.hasAnnotation<NonEphemeral>(),
-                ),
+                edge =
+                    CommandEdge(
+                        container,
+                        function,
+                        command.permission,
+                        arguments,
+                        !function.hasAnnotation<NonEphemeral>(),
+                    ),
             )
         }
     }
@@ -196,9 +217,7 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
     private fun compile() {
         val compiled = mutableSetOf<SlashCommandBuilder>()
         for (entry in tree.children) {
-            val builder = SlashCommandBuilder()
-                .setName(entry.key)
-                .setDescription("No description.")
+            val builder = SlashCommandBuilder().setName(entry.key).setDescription("No description.")
 
             for (child in entry.value.children.values) {
                 compile(builder::addOption, child)
@@ -215,16 +234,17 @@ class SlashCommandRegistry(private val discord: DiscordService) : CommandRegistr
     }
 
     private fun compile(options: Consumer<SlashCommandOption>, node: CommandNode) {
-        val builder = SlashCommandOptionBuilder()
-            .setName(node.name)
-            .setDescription("No description.")
+        val builder =
+            SlashCommandOptionBuilder().setName(node.name).setDescription("No description.")
 
-        val type = when (node.type) {
-            CommandNode.Type.COMMAND -> null
-            CommandNode.Type.SUB_COMMAND_GROUP -> SlashCommandOptionType.SUB_COMMAND_GROUP
-            CommandNode.Type.SUB_COMMAND -> SlashCommandOptionType.SUB_COMMAND
-            CommandNode.Type.ROOT -> throw IllegalStateException("Root node cannot be compiled.")
-        }
+        val type =
+            when (node.type) {
+                CommandNode.Type.COMMAND -> null
+                CommandNode.Type.SUB_COMMAND_GROUP -> SlashCommandOptionType.SUB_COMMAND_GROUP
+                CommandNode.Type.SUB_COMMAND -> SlashCommandOptionType.SUB_COMMAND
+                CommandNode.Type.ROOT ->
+                    throw IllegalStateException("Root node cannot be compiled.")
+            }
 
         if (type != null) {
             builder.setType(type)
@@ -270,7 +290,8 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
     val children = mutableMapOf<String, CommandNode>()
     var edge: CommandEdge? = null
     var type: Type = if (parent == null) Type.ROOT else Type.COMMAND
-    val fullName: String get() = if (parent == null) name else "${parent.fullName}.$name"
+    val fullName: String
+        get() = if (parent == null) name else "${parent.fullName}.$name"
 
     fun resolve(path: List<String>, edge: CommandEdge? = null): CommandNode {
         if (path.isEmpty()) {
@@ -279,7 +300,8 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
                     throw IllegalArgumentException("$fullName already has a registered command")
                 }
                 if (!(type == Type.SUB_COMMAND || (type == Type.COMMAND && children.isEmpty()))) {
-                    throw IllegalArgumentException("$fullName is not valid for registering a command")
+                    throw IllegalArgumentException(
+                        "$fullName is not valid for registering a command")
                 }
                 this.edge = edge
             }
@@ -290,13 +312,14 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
             throw IllegalArgumentException("Invalid path size for node type $type: $path")
         }
 
-        val next = if (path[0] in children) {
-            children[path[0]]!!
-        } else if (edge != null) {
-            children.computeIfAbsent(path[0]) { CommandNode(it, this) }
-        } else {
-            throw IllegalArgumentException("Element does not exist in node $this: $path")
-        }
+        val next =
+            if (path[0] in children) {
+                children[path[0]]!!
+            } else if (edge != null) {
+                children.computeIfAbsent(path[0]) { CommandNode(it, this) }
+            } else {
+                throw IllegalArgumentException("Element does not exist in node $this: $path")
+            }
 
         if (edge != null && type != Type.ROOT) {
             next.type = if (path.size == 2) Type.SUB_COMMAND_GROUP else Type.SUB_COMMAND
@@ -306,7 +329,10 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
     }
 
     enum class Type {
-        SUB_COMMAND, SUB_COMMAND_GROUP, COMMAND, ROOT
+        SUB_COMMAND,
+        SUB_COMMAND_GROUP,
+        COMMAND,
+        ROOT
     }
 }
 
@@ -322,81 +348,97 @@ private data class CommandEdge(
 
 private abstract class TypeHandler<T : Any>(val type: SlashCommandOptionType) {
     abstract fun parse(option: SlashCommandInteractionOption): T?
+
     open fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) = Unit
 }
 
-private val STRING_TYPE_HANDLER = object : TypeHandler<String>(SlashCommandOptionType.STRING) {
-    override fun parse(option: SlashCommandInteractionOption) = option.stringValue.getOrNull()
-    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
-        annotation.findAnnotation<Min>()?.value?.let { builder.setMinLength(it) }
-        annotation.findAnnotation<Max>()?.value?.let { builder.setMaxLength(it) }
+private val STRING_TYPE_HANDLER =
+    object : TypeHandler<String>(SlashCommandOptionType.STRING) {
+        override fun parse(option: SlashCommandInteractionOption) = option.stringValue.getOrNull()
+
+        override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+            annotation.findAnnotation<Min>()?.value?.let { builder.setMinLength(it) }
+            annotation.findAnnotation<Max>()?.value?.let { builder.setMaxLength(it) }
+        }
     }
-}
 
-private val INT_TYPE_HANDLER = object : TypeHandler<Int>(SlashCommandOptionType.LONG) {
-    override fun parse(option: SlashCommandInteractionOption) = option.longValue.getOrNull()?.toInt()
-    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
-        builder.setLongMinValue(annotation.findAnnotation<Min>()?.value ?: Int.MAX_VALUE.toLong())
-        builder.setLongMaxValue(annotation.findAnnotation<Max>()?.value ?: Int.MIN_VALUE.toLong())
+private val INT_TYPE_HANDLER =
+    object : TypeHandler<Int>(SlashCommandOptionType.LONG) {
+        override fun parse(option: SlashCommandInteractionOption) =
+            option.longValue.getOrNull()?.toInt()
+
+        override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+            builder.setLongMinValue(
+                annotation.findAnnotation<Min>()?.value ?: Int.MAX_VALUE.toLong())
+            builder.setLongMaxValue(
+                annotation.findAnnotation<Max>()?.value ?: Int.MIN_VALUE.toLong())
+        }
     }
-}
 
-private val BOOLEAN_TYPE_HANDLER = object : TypeHandler<Boolean>(SlashCommandOptionType.BOOLEAN) {
-    override fun parse(option: SlashCommandInteractionOption) = option.booleanValue.getOrNull()
-}
+private val BOOLEAN_TYPE_HANDLER =
+    object : TypeHandler<Boolean>(SlashCommandOptionType.BOOLEAN) {
+        override fun parse(option: SlashCommandInteractionOption) = option.booleanValue.getOrNull()
+    }
 
-private val USER_TYPE_HANDLER = object : TypeHandler<User>(SlashCommandOptionType.USER) {
-    override fun parse(option: SlashCommandInteractionOption) = option.userValue.getOrNull()
-}
+private val USER_TYPE_HANDLER =
+    object : TypeHandler<User>(SlashCommandOptionType.USER) {
+        override fun parse(option: SlashCommandInteractionOption) = option.userValue.getOrNull()
+    }
 
-private val CHANNEL_TYPE_HANDLER = object : TypeHandler<ServerChannel>(SlashCommandOptionType.CHANNEL) {
-    override fun parse(option: SlashCommandInteractionOption) = option.channelValue.getOrNull()
-}
+private val CHANNEL_TYPE_HANDLER =
+    object : TypeHandler<ServerChannel>(SlashCommandOptionType.CHANNEL) {
+        override fun parse(option: SlashCommandInteractionOption) = option.channelValue.getOrNull()
+    }
 
-private val ATTACHMENT_TYPE_HANDLER = object : TypeHandler<Attachment>(SlashCommandOptionType.ATTACHMENT) {
-    override fun parse(option: SlashCommandInteractionOption) = option.attachmentValue.getOrNull()
-}
+private val ATTACHMENT_TYPE_HANDLER =
+    object : TypeHandler<Attachment>(SlashCommandOptionType.ATTACHMENT) {
+        override fun parse(option: SlashCommandInteractionOption) =
+            option.attachmentValue.getOrNull()
+    }
 
 // https://github.com/Incendo/cloud/blob/fda52448c20f5537c8f03aaf6a3b844119c20463/cloud-core/src/main/java/cloud/commandframework/arguments/standard/DurationArgument.java
-private val DURATION_TYPE_HANDLER = object : TypeHandler<Duration>(SlashCommandOptionType.STRING) {
-    private val DURATION_PATTERN = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
+private val DURATION_TYPE_HANDLER =
+    object : TypeHandler<Duration>(SlashCommandOptionType.STRING) {
+        private val DURATION_PATTERN = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
 
-    override fun parse(option: SlashCommandInteractionOption): Duration? {
-        val input = option.stringValue.getOrNull() ?: return null
-        val matcher = DURATION_PATTERN.matcher(input)
-        var duration = Duration.ZERO
+        override fun parse(option: SlashCommandInteractionOption): Duration? {
+            val input = option.stringValue.getOrNull() ?: return null
+            val matcher = DURATION_PATTERN.matcher(input)
+            var duration = Duration.ZERO
 
-        while (matcher.find()) {
-            val group = matcher.group()
-            val unit = group[group.length - 1].toString()
-            val value = group.substring(0, group.length - 1)
-            if (value.toIntOrNull() == null) {
-                throw OptionParsingException("$value is not a valid number")
+            while (matcher.find()) {
+                val group = matcher.group()
+                val unit = group[group.length - 1].toString()
+                val value = group.substring(0, group.length - 1)
+                if (value.toIntOrNull() == null) {
+                    throw OptionParsingException("$value is not a valid number")
+                }
+                duration =
+                    when (unit) {
+                        "d" -> duration.plusDays(value.toLong())
+                        "h" -> duration.plusHours(value.toLong())
+                        "m" -> duration.plusMinutes(value.toLong())
+                        "s" -> duration.plusSeconds(value.toLong())
+                        else -> throw OptionParsingException("Invalid time unit $unit")
+                    }
             }
-            duration = when (unit) {
-                "d" -> duration.plusDays(value.toLong())
-                "h" -> duration.plusHours(value.toLong())
-                "m" -> duration.plusMinutes(value.toLong())
-                "s" -> duration.plusSeconds(value.toLong())
-                else -> throw OptionParsingException("Invalid time unit $unit")
+
+            if (duration.isZero) {
+                throw OptionParsingException("The duration is zero")
             }
+            return duration
         }
-
-        if (duration.isZero) {
-            throw OptionParsingException("The duration is zero")
-        }
-        return duration
     }
-}
 
-private val OBJECT_ID_TYPE_HANDLER = object : TypeHandler<ObjectId>(SlashCommandOptionType.STRING) {
-    override fun parse(option: SlashCommandInteractionOption): ObjectId? {
-        val input = option.stringValue.getOrNull() ?: return null
-        if (ObjectId.isValid(input)) {
-            return ObjectId(input)
+private val OBJECT_ID_TYPE_HANDLER =
+    object : TypeHandler<ObjectId>(SlashCommandOptionType.STRING) {
+        override fun parse(option: SlashCommandInteractionOption): ObjectId? {
+            val input = option.stringValue.getOrNull() ?: return null
+            if (ObjectId.isValid(input)) {
+                return ObjectId(input)
+            }
+            throw OptionParsingException("Invalid ObjectId")
         }
-        throw OptionParsingException("Invalid ObjectId")
     }
-}
 
 class OptionParsingException(message: String) : Exception(message)

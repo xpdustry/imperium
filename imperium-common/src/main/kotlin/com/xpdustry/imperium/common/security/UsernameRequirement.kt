@@ -22,7 +22,9 @@ fun interface UsernameRequirement {
 
     data class InvalidSymbol(val allowed: Set<Char>) : UsernameRequirement {
         constructor(vararg allowed: Char) : this(allowed.toSet())
-        override fun check(username: String) = username.all { it.isLetterOrDigit() || it in allowed }
+
+        override fun check(username: String) =
+            username.all { it.isLetterOrDigit() || it in allowed }
     }
 
     data class Length(val min: Int, val max: Int) : UsernameRequirement {
@@ -31,22 +33,28 @@ fun interface UsernameRequirement {
 
     data class Reserved(val reserved: Set<String>) : UsernameRequirement {
         constructor(vararg reserved: String) : this(reserved.toSet())
+
         override fun check(username: String) = username !in reserved
     }
 }
 
-fun List<UsernameRequirement>.findMissingUsernameRequirements(username: String): List<UsernameRequirement> {
+fun List<UsernameRequirement>.findMissingUsernameRequirements(
+    username: String
+): List<UsernameRequirement> {
     return filter { !it.check(username) }
 }
 
-val DEFAULT_USERNAME_REQUIREMENTS = listOf(
-    UsernameRequirement.InvalidSymbol('_'),
-    UsernameRequirement.Length(3, 32),
-    UsernameRequirement.Reserved(
-        UsernameRequirement::class.java.getResourceAsStream("/reserved-usernames.txt")!!
-            .bufferedReader()
-            .use { it.readLines() }
-            .filter { it.isNotBlank() && !it.startsWith('#') }
-            .toSet(),
-    ),
-)
+val DEFAULT_USERNAME_REQUIREMENTS =
+    listOf(
+        UsernameRequirement.InvalidSymbol('_'),
+        UsernameRequirement.Length(3, 32),
+        UsernameRequirement.Reserved(
+            UsernameRequirement::class
+                .java
+                .getResourceAsStream("/reserved-usernames.txt")!!
+                .bufferedReader()
+                .use { it.readLines() }
+                .filter { it.isNotBlank() && !it.startsWith('#') }
+                .toSet(),
+        ),
+    )

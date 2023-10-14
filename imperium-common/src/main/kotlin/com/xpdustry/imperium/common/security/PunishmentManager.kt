@@ -19,14 +19,25 @@ package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
-import kotlinx.coroutines.flow.Flow
 import java.net.InetAddress
 import java.time.Duration
+import kotlinx.coroutines.flow.Flow
 
 interface PunishmentManager {
-    suspend fun punish(author: Identity?, target: Punishment.Target, reason: String, type: Punishment.Type, duration: Duration?, extra: PunishmentMessage.Extra = PunishmentMessage.Extra.None)
+    suspend fun punish(
+        author: Identity?,
+        target: Punishment.Target,
+        reason: String,
+        type: Punishment.Type,
+        duration: Duration?,
+        extra: PunishmentMessage.Extra = PunishmentMessage.Extra.None
+    )
+
     suspend fun pardon(author: Identity?, id: Snowflake, reason: String)
+
     suspend fun findById(id: Snowflake): Punishment?
+
     suspend fun findAllByAddress(target: InetAddress): Flow<Punishment>
+
     suspend fun findAllByUuid(uuid: MindustryUUID): Flow<Punishment>
 }
