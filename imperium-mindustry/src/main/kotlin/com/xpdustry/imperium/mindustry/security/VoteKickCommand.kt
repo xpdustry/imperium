@@ -61,16 +61,22 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
     private val punishments = instances.get<PunishmentManager>()
     private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
     private val votekickInterface = createVotekickInterface(plugin)
-    private val manager = SimpleVoteManager<Player>(
+    private val manager = SimpleVoteManager<Pair<Player, String>>(
         plugin = plugin,
         duration = 1.minutes,
         finished = {
             if (it.status == VoteManager.Session.Status.TIMEOUT) {
-                Call.sendMessage("[lightgray]Vote failed. Not enough votes to kick[orange] ${it.target.name}[lightgray].")
+                Call.sendMessage("[lightgray]Vote failed. Not enough votes to kick[orange] ${it.target.first.name}[lightgray].")
             } else if (it.status == VoteManager.Session.Status.SUCCESS) {
                 val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
-                Call.sendMessage("[orange]Vote passed.[scarlet] ${it.target.name}[orange] will be banned from the server for ${duration.toMinutes()} minutes.")
-                punishments.punish(null, Punishment.Target(it.target.ip().toInetAddress(), it.target.uuid()), "Votekick", Punishment.Type.KICK, duration)
+                Call.sendMessage("[orange]Vote passed.[scarlet] ${it.target.first.name}[orange] will be banned from the server for ${duration.toMinutes()} minutes.")
+                punishments.punish(
+                    null,
+                    Punishment.Target(it.target.first.ip().toInetAddress(), it.target.first.uuid()),
+                    "Votekick: ${it.target.second}",
+                    Punishment.Type.KICK,
+                    duration,
+                )
             }
         },
         threshold = {
@@ -108,7 +114,7 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
         }
     }
 
-    @Command(["votekick"], Permission.MODERATOR)
+    @Command(["votekick"])
     @ClientSide
     private fun onVotekickCommand(sender: CommandSender, target: Player? = null, @Greedy reason: String? = null) {
         if (!Administration.Config.enableVotekick.bool()) {
@@ -160,7 +166,7 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
             sender.player.sendMessage("[scarlet]You are limited to one votekick per minute. Please try again later.")
             return
         }
-        val session = manager.start(sender.player, true, target)
+        val session = manager.start(sender.player, true, target to reason)
         Call.sendMessage(
             """
             [lightgray]${sender.player.name}[lightgray] has voted on kicking [orange]${target.name}[lightgray].[accent] (${session.votes}/${session.required})
@@ -170,21 +176,21 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
         )
     }
 
-    private fun vote(player: Player, session: VoteManager.Session<Player>?, value: Boolean) {
+    private fun vote(player: Player, session: VoteManager.Session<Pair<Player, String>>?, value: Boolean) {
         if (session == null) {
             player.sendMessage("[scarlet]Nobody is being voted on.")
         } else if (player.isLocal) {
             player.sendMessage("[scarlet]Local players can't vote. Kick the player yourself instead.")
         } else if (session.getVote(player) != null) {
             player.sendMessage("[scarlet]You've already voted. Sit down.")
-        } else if (session.target === player) {
+        } else if (session.target.first === player) {
             player.sendMessage("[scarlet]You can't vote on your own trial.")
-        } else if (session.target.team() !== player.team()) {
+        } else if (session.target.first.team() !== player.team()) {
             player.sendMessage("[scarlet]You can't vote for other teams.")
         } else {
             Call.sendMessage(
                 """
-                [lightgray]${player.name}[lightgray] has voted on kicking[orange] ${session.target.name}.[lightgray].[accent] (${session.votes}/${session.required})
+                [lightgray]${player.name}[lightgray] has voted on kicking[orange] ${session.target.first.name}.[lightgray].[accent] (${session.votes}/${session.required})
                 [lightgray]Type[orange] /vote <y/n>[] to agree.
                 """.trimIndent(),
             )
