@@ -82,8 +82,8 @@ class VoteKickCommand(instances: InstanceManager) :
 
     @Command(["vote", "c"], Permission.MODERATOR)
     @ClientSide
-    private fun onVoteCancelCommand(sender: CommandSender) {
-        onPlayerCancel(sender.player, getSession(sender.player.team()))
+    private fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
+        onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))
     }
 
     @Command(["votekick"])
@@ -137,14 +137,11 @@ class VoteKickCommand(instances: InstanceManager) :
         if (objective.target == player) {
             player.sendMessage("[scarlet]You can't start a votekick on yourself.")
             return false
-        } else if (objective.target.team() != player.team()) {
+        } else if (objective.target.team() != player.team() && Vars.state.rules.pvp) {
             player.sendMessage("[scarlet]You can't start a votekick on players from other teams.")
             return false
         } else if (objective.target.admin) {
             player.sendMessage("[scarlet]You can't start a votekick on an admin.")
-            return false
-        } else if (objective.target.isLocal) {
-            player.sendMessage("[scarlet]You can't start a votekick on a local player.")
             return false
         } else if (limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage(
