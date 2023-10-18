@@ -15,18 +15,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.misc
+package com.xpdustry.imperium.common.collection
 
-import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Identity
-import java.time.Instant
-import mindustry.gen.Call
-import mindustry.gen.Player
+import java.util.function.Predicate
 
-val Player.identity: Identity.Mindustry
-    get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
+fun <T : Any> List<T>.findMostCommon(): T? {
+    val map = mutableMapOf<T, Int>()
+    var max: T? = null
+    for (key in this) {
+        val value = (map[key] ?: 0) + 1
+        map[key] = value
+        if (max == null || value > map[max]!!) {
+            max = key
+            map[max] = value
+        }
+    }
+    return max
+}
 
-val Player.joinTime: Instant
-    get() = Instant.ofEpochMilli(con.connectTime)
-
-fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
+fun <T> Iterable<T>.isPresent(predicate: Predicate<T>): Boolean {
+    for (element in this) {
+        if (predicate.test(element)) {
+            return true
+        }
+    }
+    return false
+}

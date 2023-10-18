@@ -25,12 +25,14 @@ import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.collection.isPresent
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
 import java.io.ByteArrayOutputStream
@@ -41,7 +43,6 @@ import mindustry.core.Version
 import mindustry.game.EventType.ConnectPacketEvent
 import mindustry.game.EventType.PlayerConnect
 import mindustry.gen.Call
-import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.net.Administration.PlayerInfo
 import mindustry.net.NetConnection
@@ -128,7 +129,7 @@ private fun interceptPlayerConnection(
 
     // CHECK: Player limit
     if (Vars.netServer.admins.playerLimit > 0 &&
-        Groups.player.size() >= Vars.netServer.admins.playerLimit &&
+        Entities.PLAYERS.size >= Vars.netServer.admins.playerLimit &&
         !Vars.netServer.admins.isAdmin(packet.uuid, packet.usid)) {
         con.kick(KickReason.playerLimit)
         return
@@ -179,8 +180,8 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Duplicate names
-    if (Groups.player.contains { player ->
-        Strings.stripColors(player.name)
+    if (Entities.PLAYERS.isPresent {
+        Strings.stripColors(it.name)
             .trim()
             .equals(Strings.stripColors(packet.name).trim(), ignoreCase = true)
     }) {
@@ -189,7 +190,7 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Duplicate ids
-    if (Groups.player.contains { player ->
+    if (Entities.PLAYERS.isPresent { player ->
         player.uuid() == packet.uuid || player.usid() == packet.usid
     }) {
         con.uuid = packet.uuid

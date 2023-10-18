@@ -33,7 +33,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
-import com.xpdustry.imperium.mindustry.game.KillCommand
+import com.xpdustry.imperium.mindustry.game.KillAllCommand
 import com.xpdustry.imperium.mindustry.game.WaveCommand
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
@@ -96,7 +96,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 CoreBlockListener::class,
                 HelpCommand::class,
                 WaveCommand::class,
-                KillCommand::class,
+                KillAllCommand::class,
             )) {
             application.register(listener)
         }

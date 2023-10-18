@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
@@ -35,7 +36,6 @@ import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
-import mindustry.gen.Groups
 import mindustry.gen.Player
 
 class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -70,7 +70,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
 
     @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {
-        Groups.player.forEach { player ->
+        Entities.PLAYERS.forEach { player ->
             ImperiumScope.MAIN.launch {
                 accounts.updateByIdentity(player.identity) { account -> account.games++ }
             }

@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.history.factory
 import com.xpdustry.imperium.mindustry.history.HistoryConfig
 import com.xpdustry.imperium.mindustry.history.HistoryEntry
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
-import fr.xpdustry.distributor.api.util.ArcCollections
+import com.xpdustry.imperium.mindustry.misc.toList
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.IOException
@@ -56,7 +56,8 @@ object LogicProcessorConfigurationFactory :
     private fun getConfiguration(building: LogicBlock.LogicBuild): HistoryConfig? {
         val configurations = mutableListOf<HistoryConfig>()
         val links =
-            ArcCollections.immutableList(building.links)
+            building.links
+                .toList()
                 .filter { it.active }
                 .map { link ->
                     ImmutablePoint(link.x - building.tileX(), link.y - building.tileY())

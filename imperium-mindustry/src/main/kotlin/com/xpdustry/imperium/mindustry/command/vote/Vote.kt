@@ -15,18 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.misc
+package com.xpdustry.imperium.mindustry.command.vote
 
-import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Identity
-import java.time.Instant
-import mindustry.gen.Call
-import mindustry.gen.Player
+enum class Vote {
+    YES,
+    NO;
 
-val Player.identity: Identity.Mindustry
-    get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
+    fun asBoolean() = this == YES
 
-val Player.joinTime: Instant
-    get() = Instant.ofEpochMilli(con.connectTime)
+    fun asInt(): Int = if (this == YES) 1 else -1
 
-fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
+    companion object {
+        operator fun invoke(boolean: Boolean) = if (boolean) YES else NO
+    }
+}

@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
@@ -48,7 +49,6 @@ import kotlin.time.toJavaDuration
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import mindustry.gen.Groups
 import mindustry.gen.Player
 import org.bson.types.ObjectId
 
@@ -164,8 +164,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 ImperiumScope.MAIN.launch {
                     manager.updateById(message.account) { account -> account.verified = true }
                     runMindustryThread {
-                        Groups.player
-                            .find { it.uuid() == message.uuid }
+                        Entities.PLAYERS.find { it.uuid() == message.uuid }
                             ?.showInfoMessage("You have been verified!")
                     }
                 }

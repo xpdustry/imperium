@@ -29,11 +29,11 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Call
-import mindustry.gen.Groups
 
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val messenger = instances.get<Messenger>()
@@ -47,7 +47,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
             runMindustryThread {
                 Events.fire(PlayerIpBanEvent(punishment.target.address.hostAddress))
-                for (player in Groups.player) {
+                for (player in Entities.PLAYERS) {
                     if (player.ip().toInetAddress() != punishment.target.address &&
                         player.uuid() != punishment.target.uuid) {
                         continue

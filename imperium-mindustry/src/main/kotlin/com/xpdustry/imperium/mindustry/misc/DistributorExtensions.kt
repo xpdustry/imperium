@@ -15,18 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.collection
+package com.xpdustry.imperium.mindustry.misc
 
-fun <T : Any> List<T>.findMostCommon(): T? {
-    val map = mutableMapOf<T, Int>()
-    var max: T? = null
-    for (key in this) {
-        val value = (map[key] ?: 0) + 1
-        map[key] = value
-        if (max == null || value > map[max]!!) {
-            max = key
-            map[max] = value
-        }
-    }
-    return max
-}
+import arc.struct.ObjectMap
+import arc.struct.ObjectSet
+import arc.struct.Seq
+import fr.xpdustry.distributor.api.util.ArcCollections
+import mindustry.entities.EntityGroup
+import mindustry.gen.Entityc
+
+fun <T> Seq<T>.toList(): List<T> = ArcCollections.immutableList(this)
+
+fun <T : Entityc> EntityGroup<T>.toList(): List<T> = ArcCollections.immutableList(this)
+
+fun <K, V> ObjectMap<K, V>.toMap(): Map<K, V> = ArcCollections.immutableMap(this)
+
+fun <T> ObjectSet<T>.toSet(): Set<T> = ArcCollections.immutableSet(this)

@@ -32,6 +32,7 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import fr.xpdustry.distributor.api.DistributorProvider
@@ -42,7 +43,6 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
-import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.SendChatMessageCallPacket
 import mindustry.net.Administration
@@ -98,7 +98,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     @Command(["t"])
     @ClientSide
     private suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
-        for (target in Groups.player.toList()) {
+        for (target in Entities.PLAYERS) {
             if (sender.player.team() != target.team()) continue
             val filtered = pipeline.pump(ChatMessageContext(sender.player, target, message))
             if (filtered.isBlank()) continue
@@ -170,7 +170,7 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
     }
 
     // The null target represents the server, for logging and event purposes
-    (Groups.player.toList() + listOf(null)).forEach { target ->
+    (Entities.PLAYERS + listOf(null)).forEach { target ->
         ImperiumScope.MAIN.launch {
             val result = pipeline.pump(ChatMessageContext(sender, target, escaped))
             if (result.isBlank()) return@launch

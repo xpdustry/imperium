@@ -21,18 +21,18 @@ import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.Priority
 import mindustry.game.EventType.PlayerLeave
-import mindustry.gen.Groups
 import mindustry.gen.Player
 
 // TODO Delegate the creation to a factory?
 class PlayerMap<V>(plugin: MindustryPlugin) {
     private val players = mutableMapOf<Int, V>()
+    @Suppress("UNCHECKED_CAST")
     val entries: Sequence<Pair<Player, V>>
         get() =
             players.entries
                 .asSequence()
-                .map { entry -> Groups.player.getByID(entry.key) to entry.value }
-                .filter { it.first != null }
+                .map { entry -> Entities.findPlayerByID(entry.key) to entry.value }
+                .filter { it.first != null } as Sequence<Pair<Player, V>>
 
     init {
         DistributorProvider.get().eventBus.subscribe(

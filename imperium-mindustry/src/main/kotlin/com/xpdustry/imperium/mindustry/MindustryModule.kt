@@ -33,6 +33,7 @@ import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.command.MindustryCommandRegistry
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
@@ -44,7 +45,6 @@ import java.util.function.Supplier
 import mindustry.Vars
 import mindustry.core.Version
 import mindustry.game.Gamemode
-import mindustry.gen.Groups
 import mindustry.net.Administration
 
 fun mindustryModule(plugin: ImperiumPlugin) =
@@ -89,7 +89,7 @@ private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo?
         Vars.state.map.name(),
         Administration.Config.desc.string(),
         Vars.state.wave,
-        Groups.player.size(),
+        Entities.PLAYERS.size,
         Vars.netServer.admins.playerLimit,
         getVersion(),
         getGameMode(),

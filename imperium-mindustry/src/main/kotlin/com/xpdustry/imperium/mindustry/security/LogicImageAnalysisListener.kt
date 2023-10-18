@@ -40,6 +40,7 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.history.BlockHistory
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
@@ -61,7 +62,6 @@ import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Building
 import mindustry.gen.Call
-import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.logic.LExecutor
 import mindustry.world.blocks.ConstructBlock
@@ -399,7 +399,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                         val extra =
                             if (entry != null) PunishmentMessage.Extra.Nsfw(entry)
                             else PunishmentMessage.Extra.None
-                        val player = Groups.player.find { it.uuid() == element.author }
+                        val player = Entities.PLAYERS.find { it.uuid() == element.author }
                         if (player != null) {
                             punishments.punish(
                                 null,

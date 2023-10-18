@@ -19,7 +19,7 @@ package com.xpdustry.imperium.mindustry.history.factory
 
 import com.xpdustry.imperium.mindustry.history.HistoryConfig
 import com.xpdustry.imperium.mindustry.history.HistoryEntry
-import fr.xpdustry.distributor.api.util.ArcCollections
+import com.xpdustry.imperium.mindustry.misc.toMap
 import mindustry.ctype.UnlockableContent
 import mindustry.gen.Building
 
@@ -50,7 +50,7 @@ object CommonConfigurationFactory : HistoryConfig.Factory<Building> {
     }
 
     private fun isEnablingBlockOnly(building: Building): Boolean {
-        val keys = ArcCollections.immutableMap(building.block().configurations).keys
+        val keys = building.block().configurations.toMap().keys
         return keys.size == 1 && keys.contains(Boolean::class.java)
     }
 }

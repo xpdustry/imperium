@@ -23,9 +23,10 @@ import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.mindustry.command.SimpleVoteManager
-import com.xpdustry.imperium.mindustry.command.VoteManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
+import com.xpdustry.imperium.mindustry.command.vote.Vote
+import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
@@ -36,23 +37,9 @@ import kotlin.time.Duration.Companion.seconds
 import mindustry.Vars
 import mindustry.gen.Call
 
-class WaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val voteNewWave =
-        SimpleVoteManager<Int>(
-            plugin = instances.get(),
-            duration = 45.seconds,
-            finished = {
-                if (it.status != VoteManager.Session.Status.SUCCESS) {
-                    Call.sendMessage("[scarlet]Vote to skip the wave failed.")
-                    return@SimpleVoteManager
-                }
-                runMindustryThread {
-                    Vars.state.wave += it.target
-                    Vars.state.wavetime = Vars.state.rules.waveSpacing
-                    Call.sendMessage("[green]Skipped ${it.target} wave(s).")
-                }
-            })
-
+class WaveCommand(instances: InstanceManager) :
+    AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds),
+    ImperiumApplication.Listener {
     private val waveSkipInterface =
         MenuInterface.create(instances.get()).apply {
             addTransformer { _, pane ->
@@ -61,13 +48,8 @@ class WaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 pane.options.addRow(
                     listOf(3, 5, 10, 15).map { skip ->
                         MenuOption("[orange]$skip") { view ->
-                            view.close()
-                            if (voteNewWave.session != null)
-                                return@MenuOption view.viewer.sendMessage(
-                                    "A vote is already running.")
-                            val session = voteNewWave.start(view.viewer, true, skip)
-                            Call.sendMessage(
-                                "[green]${view.viewer.name} started a vote to skip the $skip wave(s). ${session.required} are required.")
+                            view.closeAll()
+                            onVoteSessionStart(view.viewer, manager.session, skip)
                         }
                     })
                 pane.options.addRow(MenuOption("[lightgray]Cancel", View::closeAll))
@@ -105,20 +87,23 @@ class WaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command(["ws", "y"])
     @ClientSide
     private fun onWaveSkipYes(sender: CommandSender) {
-        val session = voteNewWave.session ?: return sender.sendMessage("No vote is running.")
-        if (session.getVote(sender.player) != null) return sender.sendMessage("You already voted.")
-        Call.sendMessage(
-            "[green]${sender.player.name} voted to skip the wave. (${session.votes + 1}/${session.required})")
-        session.setVote(sender.player, true)
+        onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @Command(["ws", "n"])
     @ClientSide
     private fun onWaveSkipNo(sender: CommandSender) {
-        val session = voteNewWave.session ?: return sender.sendMessage("No vote is running.")
-        if (session.getVote(sender.player) != null) return sender.sendMessage("You already voted.")
-        Call.sendMessage(
-            "[green]${sender.player.name} voted to not skip the wave. (${session.votes - 1}/${session.required})")
-        session.setVote(sender.player, false)
+        onPlayerVote(sender.player, manager.session, Vote.NO)
+    }
+
+    override fun getVoteSessionDetails(session: VoteManager.Session<Int>): String =
+        "Type [accent]/ws y[] to vote to skip ${session.objective} wave(s)."
+
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) {
+        runMindustryThread {
+            Vars.state.wave += session.objective
+            Vars.state.wavetime = Vars.state.rules.waveSpacing
+            Call.sendMessage("[green]Skipped ${session.objective} wave(s).")
+        }
     }
 }

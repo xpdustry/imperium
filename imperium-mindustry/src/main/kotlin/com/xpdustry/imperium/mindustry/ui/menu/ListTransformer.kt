@@ -17,15 +17,16 @@
  */
 package com.xpdustry.imperium.mindustry.ui.menu
 
+import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
-import fr.xpdustry.distributor.api.util.ArcCollections
 import java.util.Objects
 import java.util.function.Function
-import mindustry.gen.Groups
+import kotlin.random.Random
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 
@@ -38,6 +39,7 @@ class ListTransformer<E : Any>(
     var fill: Boolean = false,
 ) : Transformer<MenuPane> {
 
+    val pageKey = stateKey<Int>("nucleus:pagination-transformer-page:${Random.nextLong()}")
     val pageSize: Int
         get() = height * width
 
@@ -48,7 +50,7 @@ class ListTransformer<E : Any>(
             renderNavigation(pane, 0, false)
             return
         }
-        var page = view.state[PAGE] ?: 0
+        var page = view.state[pageKey] ?: 0
         while (page > 0 && page * pageSize >= elements.size) {
             page -= 1
         }
@@ -83,13 +85,13 @@ class ListTransformer<E : Any>(
             enableIf(
                 page > 0,
                 Iconc.left,
-                Action.open { state -> state[PAGE] = page - 1 },
+                Action.open { state -> state[pageKey] = page - 1 },
             ),
             MenuOption(Iconc.cancel.toString()) { it.back() },
             enableIf(
                 hasNext,
                 Iconc.right,
-                Action.open { state -> state[PAGE] = page + 1 },
+                Action.open { state -> state[pageKey] = page + 1 },
             ),
         )
     }
@@ -100,21 +102,17 @@ class ListTransformer<E : Any>(
             (if (active) action else Action.open()),
         )
     }
-
-    companion object {
-        val PAGE = stateKey<Int>("nucleus:pagination-transformer-page")
-    }
 }
 
 fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> =
     ListTransformer(
         provider = { view ->
-            ArcCollections.mutableList(Groups.player).apply {
-                remove(view.viewer)
-                sortBy(Player::plainName)
-            }
+            Entities.PLAYERS.asSequence()
+                .filter { it != view.viewer }
+                .sortedBy { it.name().stripMindustryColors() }
+                .toList()
         },
-        renderer = { it.plainName() },
+        renderer = { it.name().stripMindustryColors() },
         height = 8,
         onChoice = action,
     )

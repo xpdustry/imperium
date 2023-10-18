@@ -23,13 +23,16 @@ import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.RateLimiter
-import com.xpdustry.imperium.mindustry.command.SimpleVoteManager
-import com.xpdustry.imperium.mindustry.command.VoteManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
+import com.xpdustry.imperium.mindustry.command.vote.Vote
+import com.xpdustry.imperium.mindustry.command.vote.VoteManager
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -39,84 +42,48 @@ import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import java.net.InetAddress
 import java.time.Duration
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.minutes
+import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
-import mindustry.gen.Call
-import mindustry.gen.Groups
+import mindustry.game.Team
 import mindustry.gen.Player
 import mindustry.net.Administration
 
-private val VOTEKICK_TARGET = stateKey<Player>("votekick_target")
+class VoteKickCommand(instances: InstanceManager) :
+    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", 1.minutes),
+    ImperiumApplication.Listener {
 
-// TODO
-//  - Implement Session per team for PVP
-//  - Implement rate limit (FIX RATELIMITER)
-class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
     private val punishments = instances.get<PunishmentManager>()
     private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
-    private val votekickInterface = createVotekickInterface(plugin)
-    private val manager =
-        SimpleVoteManager<Pair<Player, String>>(
-            plugin = plugin,
-            duration = 1.minutes,
-            finished = {
-                if (it.status == VoteManager.Session.Status.TIMEOUT) {
-                    Call.sendMessage(
-                        "[lightgray]Vote failed. Not enough votes to kick[orange] ${it.target.first.name}[lightgray].")
-                } else if (it.status == VoteManager.Session.Status.SUCCESS) {
-                    val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
-                    Call.sendMessage(
-                        "[orange]Vote passed.[scarlet] ${it.target.first.name}[orange] will be banned from the server for ${duration.toMinutes()} minutes.")
-                    punishments.punish(
-                        null,
-                        Punishment.Target(
-                            it.target.first.ip().toInetAddress(), it.target.first.uuid()),
-                        "Votekick: ${it.target.second}",
-                        Punishment.Type.KICK,
-                        duration,
-                    )
-                }
-            },
-            threshold = {
-                val players = Groups.player.size()
-                if (players < 5) {
-                    2
-                } else if (players < 21) {
-                    (players / 2F).roundToInt()
-                } else {
-                    10
-                }
-            },
-        )
+    private val votekickInterface = createVotekickInterface()
+
+    @EventHandler
+    internal fun onPlayerLeave(event: EventType.PlayerLeave) {
+        manager.sessions.values
+            .filter { it.objective.target == event.player }
+            .forEach(VoteManager.Session<Context>::success)
+    }
 
     @Command(["vote", "y"])
     @ClientSide
     private fun onVoteYesCommand(sender: CommandSender) {
-        vote(sender.player, manager.session, true)
+        onPlayerVote(sender.player, getSession(sender.player.team()), Vote.YES)
     }
 
     @Command(["vote", "n"])
     @ClientSide
     private fun onVoteNoCommand(sender: CommandSender) {
-        vote(sender.player, manager.session, false)
+        onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
     @Command(["vote", "c"], Permission.MODERATOR)
     @ClientSide
     private fun onVoteCancelCommand(sender: CommandSender) {
-        if (manager.session != null) {
-            Call.sendMessage(
-                "[lightgray]Vote canceled by admin[orange] ${sender.player.name}[lightgray].")
-            manager.session!!.failure()
-        } else {
-            sender.sendMessage("[scarlet]Nobody is being voted on.")
-        }
+        onPlayerCancel(sender.player, getSession(sender.player.team()))
     }
 
     @Command(["votekick"])
@@ -130,25 +97,19 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
             sender.player.sendMessage("[scarlet]Vote-kick is disabled on this server.")
             return
         }
-        if (Groups.player.size() < 3) {
+        if (target == null) {
+            votekickInterface.open(sender.player)
+            return
+        }
+        if (Entities.PLAYERS.filter { !Vars.state.rules.pvp || it.team() == sender.player.team() }
+            .size < 3) {
             sender.player.sendMessage(
                 """
                 [scarlet]At least 3 players are needed to start a votekick.
                 Use the [orange]/report[] command instead.
-                """,
+                """
+                    .trimIndent(),
             )
-            return
-        }
-        if (sender.player.isLocal) {
-            sender.player.sendMessage("[scarlet]Just kick them yourself if you're the host.")
-            return
-        }
-        if (manager.session != null) {
-            sender.player.sendMessage("[scarlet]A vote is already in progress.")
-            return
-        }
-        if (target == null) {
-            votekickInterface.open(sender.player)
             return
         }
         if (reason == null) {
@@ -156,99 +117,110 @@ class VoteKickCommand(instances: InstanceManager) : ImperiumApplication.Listener
                 "[orange]You need a valid reason to kick the player. Add a reason after the player name.")
             return
         }
-        if (sender.player == target) {
-            sender.player.sendMessage("[scarlet]You can't vote to kick yourself.")
-            return
-        }
-        if (target.admin) {
-            sender.player.sendMessage("[scarlet]Did you really expect to be able to kick an admin?")
-            return
-        }
-        if (target.isLocal) {
-            sender.player.sendMessage("[scarlet]Local players cannot be kicked.")
-            return
-        }
-        if (target.team() != sender.player.team()) {
-            sender.player.sendMessage("[scarlet]Only players on your team can be kicked.")
-            return
-        }
-        if (limiter.incrementAndCheck(sender.player.ip().toInetAddress())) {
-            sender.player.sendMessage(
-                "[scarlet]You are limited to one votekick per minute. Please try again later.")
-            return
-        }
-        val session = manager.start(sender.player, true, target to reason)
-        Call.sendMessage(
-            """
-            [lightgray]${sender.player.name}[lightgray] has voted on kicking [orange]${target.name}[lightgray].[accent] (${session.votes}/${session.required})
-            [lightgray]Reason: [orange]$reason[lightgray].
-            [lightgray]Type[orange] /vote <y/n>[] to agree."
-            """
-                .trimIndent(),
+        onVoteSessionStart(
+            sender.player, getSession(target.team()), Context(target, reason, sender.player.team()))
+    }
+
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
+        val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
+        punishments.punish(
+            null,
+            Punishment.Target(
+                session.objective.target.ip().toInetAddress(), session.objective.target.uuid()),
+            "Votekick: ${session.objective.reason}",
+            Punishment.Type.KICK,
+            duration,
         )
     }
 
-    private fun vote(
-        player: Player,
-        session: VoteManager.Session<Pair<Player, String>>?,
-        value: Boolean
-    ) {
-        if (session == null) {
-            player.sendMessage("[scarlet]Nobody is being voted on.")
-        } else if (player.isLocal) {
+    override fun canParticipantStart(player: Player, objective: Context): Boolean {
+        if (objective.target == player) {
+            player.sendMessage("[scarlet]You can't start a votekick on yourself.")
+            return false
+        } else if (objective.target.team() != player.team()) {
+            player.sendMessage("[scarlet]You can't start a votekick on players from other teams.")
+            return false
+        } else if (objective.target.admin) {
+            player.sendMessage("[scarlet]You can't start a votekick on an admin.")
+            return false
+        } else if (objective.target.isLocal) {
+            player.sendMessage("[scarlet]You can't start a votekick on a local player.")
+            return false
+        } else if (limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage(
-                "[scarlet]Local players can't vote. Kick the player yourself instead.")
-        } else if (session.getVote(player) != null) {
-            player.sendMessage("[scarlet]You've already voted. Sit down.")
-        } else if (session.target.first === player) {
+                "[scarlet]You are limited to one votekick per minute. Please try again later.")
+            return false
+        }
+        return super.canParticipantStart(player, objective)
+    }
+
+    override fun canParticipantVote(
+        player: Player,
+        session: VoteManager.Session<Context>
+    ): Boolean {
+        if (session.objective.target == player) {
             player.sendMessage("[scarlet]You can't vote on your own trial.")
-        } else if (session.target.first.team() !== player.team()) {
+            return false
+        } else if (session.objective.team != player.team() && Vars.state.rules.pvp) {
             player.sendMessage("[scarlet]You can't vote for other teams.")
+            return false
+        }
+        return super.canParticipantVote(player, session)
+    }
+
+    override fun getParticipants(session: VoteManager.Session<Context>): Sequence<Player> =
+        super.getParticipants(session).filter {
+            !Vars.state.rules.pvp || it.team() == session.objective.team
+        }
+
+    override fun getRequiredVotes(players: Int): Int =
+        if (players < 5) {
+            2
+        } else if (players < 21) {
+            (players / 2F).roundToInt()
         } else {
-            Call.sendMessage(
-                """
-                [lightgray]${player.name}[lightgray] has voted on kicking[orange] ${session.target.first.name}.[lightgray].[accent] (${session.votes}/${session.required})
-                [lightgray]Type[orange] /vote <y/n>[] to agree.
-                """
-                    .trimIndent(),
-            )
-            session.setVote(player, value)
+            10
         }
-    }
 
-    @EventHandler
-    internal fun onPlayerLeave(event: EventType.PlayerLeave) {
-        if (manager.session?.target == event.player) {
-            manager.session!!.success()
-        }
-    }
-}
+    override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
+        "Type [accent]/vote y[] to kick ${session.objective.target.name.stripMindustryColors()} from the game. Reason being [accent]${session.objective.reason}[]."
 
-private fun createVotekickInterface(plugin: MindustryPlugin): Interface {
-    val reasonInterface =
-        TextInputInterface.create(plugin).apply {
-            addTransformer { _, pane ->
-                pane.title = "Votekick (2/2)"
-                pane.description = "Enter a reason for the votekick"
-                pane.inputAction = BiAction { view, input ->
-                    Action.command("votekick", "#" + view.state[VOTEKICK_TARGET]!!.id, input)
+    private fun getSession(team: Team): VoteManager.Session<Context>? =
+        manager.sessions.values.firstOrNull { it.objective.team == team }
+
+    private fun createVotekickInterface(): Interface {
+        val reasonInterface =
+            TextInputInterface.create(plugin).apply {
+                addTransformer { _, pane ->
+                    pane.title = "Votekick (2/2)"
+                    pane.description = "Enter a reason for the votekick"
+                    pane.inputAction = BiAction { view, input ->
+                        view.closeAll()
+                        Action.command("votekick", "#" + view.state[VOTEKICK_TARGET]!!.id, input)
+                            .accept(view)
+                    }
                 }
             }
-        }
 
-    val playerListInterface =
-        MenuInterface.create(plugin).apply {
-            addTransformer { _, pane ->
-                pane.title = "Votekick (1/2)"
-                pane.content = "Select a player to votekick"
+        val playerListInterface =
+            MenuInterface.create(plugin).apply {
+                addTransformer { _, pane ->
+                    pane.title = "Votekick (1/2)"
+                    pane.content = "Select a player to votekick"
+                }
+                addTransformer(
+                    createPlayerListTransformer { view, player ->
+                        view.state[VOTEKICK_TARGET] = player
+                        reasonInterface.open(view)
+                    })
             }
-            addTransformer(
-                createPlayerListTransformer { view, player ->
-                    view.state[VOTEKICK_TARGET] = player
-                    reasonInterface.open(player)
-                },
-            )
-        }
 
-    return playerListInterface
+        return playerListInterface
+    }
+
+    data class Context(val target: Player, val reason: String, val team: Team)
+
+    companion object {
+        private val VOTEKICK_TARGET = stateKey<Player>("votekick_target")
+    }
 }

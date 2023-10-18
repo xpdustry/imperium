@@ -17,16 +17,15 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
-import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Identity
-import java.time.Instant
-import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.gen.Player
 
-val Player.identity: Identity.Mindustry
-    get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
+/*
+ * Read only lists of the entities
+ */
+object Entities {
+    val PLAYERS = Groups.player.toList()
+    val UNITS = Groups.unit.toList()
 
-val Player.joinTime: Instant
-    get() = Instant.ofEpochMilli(con.connectTime)
-
-fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
+    fun findPlayerByID(id: Int): Player? = Groups.player.getByID(id)
+}
