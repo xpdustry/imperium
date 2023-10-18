@@ -89,24 +89,29 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             }
             ctx.message
         }
-
-        pipeline.register("mindustry-filter", Priority.HIGH) {
-            runMindustryThread { Vars.netServer.admins.filterMessage(it.sender, it.message) ?: "" }
-        }
     }
 
     @Command(["t"])
     @ClientSide
     private suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
+        val filtered1 = runMindustryThread {
+            Vars.netServer.admins.filterMessage(sender.player, message)
+        }
+        if (filtered1.isNullOrBlank()) return
+
         for (target in Entities.PLAYERS) {
             if (sender.player.team() != target.team()) continue
-            val filtered = pipeline.pump(ChatMessageContext(sender.player, target, message))
-            if (filtered.isBlank()) continue
-            target.sendMessage(
-                "[#${sender.player.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender.player, filtered)}",
-                sender.player,
-                filtered,
-            )
+            ImperiumScope.MAIN.launch {
+                val filtered2 =
+                    pipeline.pump(ChatMessageContext(sender.player, sender.player, message))
+                if (filtered2.isBlank()) return@launch
+
+                target.sendMessage(
+                    "[#${sender.player.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender.player, filtered2)}",
+                    sender.player,
+                    filtered2,
+                )
+            }
         }
     }
 
@@ -117,13 +122,17 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         target: Player,
         @Greedy message: String
     ) {
-        val filtered = pipeline.pump(ChatMessageContext(sender.player, target, message))
-        if (filtered.isBlank()) return
-        target.sendMessage(
-            "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender.player, filtered)}",
-            sender.player,
-            filtered,
-        )
+        val filtered1 = runMindustryThread {
+            Vars.netServer.admins.filterMessage(sender.player, message)
+        }
+        if (filtered1.isNullOrBlank()) return
+        val filtered2 = pipeline.pump(ChatMessageContext(sender.player, target, message))
+        if (filtered2.isBlank()) return
+
+        val formatted =
+            "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender.player, filtered2)}"
+        sender.player.sendMessage(formatted, sender.player, filtered2)
+        target.sendMessage(formatted, sender.player, filtered2)
     }
 }
 
@@ -169,21 +178,24 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
         return
     }
 
+    val filtered1 = Vars.netServer.admins.filterMessage(sender, escaped)
+    if (filtered1.isNullOrBlank()) return
+
     // The null target represents the server, for logging and event purposes
     (Entities.PLAYERS + listOf(null)).forEach { target ->
         ImperiumScope.MAIN.launch {
-            val result = pipeline.pump(ChatMessageContext(sender, target, escaped))
-            if (result.isBlank()) return@launch
-            runMindustryThread {
-                target?.sendMessage(Vars.netServer.chatFormatter.format(sender, result))
-                if (target == null) {
+            val filtered2 = pipeline.pump(ChatMessageContext(sender, target, filtered1))
+            if (filtered2.isBlank()) return@launch
+            target?.sendMessage(Vars.netServer.chatFormatter.format(sender, filtered2))
+            if (target == null) {
+                runMindustryThread {
                     Log.info(
                         "&fi@: @",
-                        "&lc" + sender.plainName(),
-                        "&lw${result.stripMindustryColors()}")
+                        "&lc${sender.name().stripMindustryColors()}",
+                        "&lw${filtered2.stripMindustryColors()}")
                     DistributorProvider.get()
                         .eventBus
-                        .post(ProcessedPlayerChatEvent(sender, result))
+                        .post(ProcessedPlayerChatEvent(sender, filtered2))
                 }
             }
         }
