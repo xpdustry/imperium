@@ -32,6 +32,7 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
@@ -70,6 +71,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
 
         pipeline.register("mute", Priority.HIGH) { ctx ->
+            if (ctx.sender == null) {
+                return@register ctx.message
+            }
             val muted =
                 punishments
                     .findAllByAddress(ctx.sender.ip().toInetAddress())
@@ -133,6 +137,27 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender.player, filtered2)}"
         sender.player.sendMessage(formatted, sender.player, filtered2)
         target.sendMessage(formatted, sender.player, filtered2)
+    }
+
+    @Command(["say"])
+    @ServerSide
+    private suspend fun onServerMessageCommand(sender: CommandSender, @Greedy message: String) {
+        if (!Vars.state.isGame) {
+            sender.sendWarning("Not hosting. Host a game first.")
+            return
+        }
+
+        // The null target represents the server, for logging purposes
+        (Entities.PLAYERS + listOf(null)).forEach { target ->
+            ImperiumScope.MAIN.launch {
+                val processed = pipeline.pump(ChatMessageContext(null, target, message))
+                if (processed.isBlank()) return@launch
+                target?.sendMessage("[scarlet][[Server]:[] $processed")
+                if (target == null) {
+                    sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
+                }
+            }
+        }
     }
 }
 

@@ -38,7 +38,7 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
 
     override fun onImperiumInit() {
         pipeline.register("translator", Priority.LOW) { context ->
-            val sourceLocale = Players.getLocale(context.sender)
+            val sourceLocale = context.sender?.let(Players::getLocale) ?: config.language
             val targetLocale = context.target?.let(Players::getLocale) ?: config.language
             val rawMessage = Strings.stripColors(context.message)
 

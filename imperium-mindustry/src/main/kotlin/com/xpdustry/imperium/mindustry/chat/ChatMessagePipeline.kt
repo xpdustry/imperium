@@ -18,12 +18,13 @@
 package com.xpdustry.imperium.mindustry.chat
 
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
 import mindustry.gen.Player
 
 data class ChatMessageContext(
-    val sender: Player,
+    val sender: Player?,
     val target: Player?,
     val message: String,
 )
@@ -39,9 +40,11 @@ class SimpleChatMessagePipeline :
                 try {
                     processor.process(context.copy(message = result))
                 } catch (error: Throwable) {
-                    logger.error(
-                        "Error while processing chat message for player ${context.sender.name()}",
-                        error)
+                    val author =
+                        if (context.sender != null)
+                            "player ${context.sender.name().stripMindustryColors()}"
+                        else "server"
+                    logger.error("Error while processing chat message of $author", error)
                     result
                 }
             if (result.isEmpty()) break
