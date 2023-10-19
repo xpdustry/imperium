@@ -43,7 +43,9 @@ data class NetworkConfig(
     sealed interface VpnDetectionConfig {
         data object None : VpnDetectionConfig
 
-        data class IPHub(val token: Secret) : VpnDetectionConfig
+        data class VpnApiIo(val vpnApiIoToken: Secret) : VpnDetectionConfig
+
+        data class IPHub(val ipHubToken: Secret) : VpnDetectionConfig
     }
 }
 

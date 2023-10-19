@@ -47,6 +47,7 @@ import com.xpdustry.imperium.common.message.RabbitmqMessenger
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.IPHubVpnDetection
 import com.xpdustry.imperium.common.network.SimpleDiscovery
+import com.xpdustry.imperium.common.network.VpnApiIoDetection
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.MongoBanManager
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -75,6 +76,7 @@ fun commonModule() =
         single<VpnDetection> {
             when (val config = get<ImperiumConfig>().network.vpnDetection) {
                 is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
+                is NetworkConfig.VpnDetectionConfig.VpnApiIo -> VpnApiIoDetection(config, get())
                 is NetworkConfig.VpnDetectionConfig.IPHub -> IPHubVpnDetection(config, get())
             }
         }

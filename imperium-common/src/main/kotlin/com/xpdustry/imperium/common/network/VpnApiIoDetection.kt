@@ -25,8 +25,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-class IPHubVpnDetection(
-    private val config: NetworkConfig.VpnDetectionConfig.IPHub,
+class VpnApiIoDetection(
+    private val config: NetworkConfig.VpnDetectionConfig.VpnApiIo,
     private val http: OkHttpClient
 ) : VpnDetection {
     private val gson = Gson()
@@ -38,10 +38,10 @@ class IPHubVpnDetection(
         }
 
         val url =
-            "https://v2.api.iphub.info/ip/${address.hostAddress}"
+            "https://vpnapi.io/api/${address.hostAddress}"
                 .toHttpUrl()
                 .newBuilder()
-                .addQueryParameter("key", config.ipHubToken.value)
+                .addQueryParameter("key", config.vpnApiIoToken.value)
                 .build()
 
         val response = http.newCall(Request.Builder().url(url).build()).await()
@@ -53,11 +53,7 @@ class IPHubVpnDetection(
                 IllegalStateException("Unexpected status code: ${response.code}"))
         }
 
-        // https://iphub.info/api
-        // block: 0 - Residential or business IP (i.e. safe IP)
-        // block: 1 - Non-residential IP (hosting provider, proxy, etc.)
-        // block: 2 - Non-residential & residential IP (warning, may flag innocent people)
         val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
-        return VpnDetection.Result.Success(json["block"].asInt != 0)
+        return VpnDetection.Result.Success(json["security"].asJsonObject["vpn"].asBoolean)
     }
 }
