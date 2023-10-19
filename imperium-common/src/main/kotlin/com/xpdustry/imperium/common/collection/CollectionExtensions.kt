@@ -17,8 +17,6 @@
  */
 package com.xpdustry.imperium.common.collection
 
-import java.util.function.Predicate
-
 fun <T : Any> List<T>.findMostCommon(): T? {
     val map = mutableMapOf<T, Int>()
     var max: T? = null
@@ -31,13 +29,4 @@ fun <T : Any> List<T>.findMostCommon(): T? {
         }
     }
     return max
-}
-
-fun <T> Iterable<T>.isPresent(predicate: Predicate<T>): Boolean {
-    for (element in this) {
-        if (predicate.test(element)) {
-            return true
-        }
-    }
-    return false
 }

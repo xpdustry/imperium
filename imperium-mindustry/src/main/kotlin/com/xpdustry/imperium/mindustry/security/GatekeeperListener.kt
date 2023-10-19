@@ -23,7 +23,6 @@ import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.collection.isPresent
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -184,7 +183,7 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Duplicate names
-    if (Entities.PLAYERS.isPresent {
+    if (Entities.PLAYERS.any {
         it.name
             .stripMindustryColors()
             .trim()
@@ -195,7 +194,7 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Duplicate ids
-    if (Entities.PLAYERS.isPresent { player ->
+    if (Entities.PLAYERS.any { player ->
         player.uuid() == packet.uuid || player.usid() == packet.usid
     }) {
         con.uuid = packet.uuid
