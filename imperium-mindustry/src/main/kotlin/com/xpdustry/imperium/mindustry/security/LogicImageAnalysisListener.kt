@@ -250,8 +250,8 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                     val display =
                         Vars.world.tile(link.x, link.y)?.build as? LogicDisplay.LogicDisplayBuild
                             ?: return@forEach
-                    val (cluster, block) = displays.getElement(display.rx, display.ry)!!
-                    displays.removeElement(cluster.x, cluster.y)
+                    val (_, block) = displays.getElement(display.rx, display.ry)!!
+                    displays.removeElement(block.x, block.y)
                     val processors = block.data.processors.toMutableList()
                     if (event.breaking) {
                         processors.removeIf { it.x == building.rx && it.y == building.ry }
