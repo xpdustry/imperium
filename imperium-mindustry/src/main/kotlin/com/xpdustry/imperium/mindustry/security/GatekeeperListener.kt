@@ -18,8 +18,6 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
-import arc.util.Log
-import arc.util.Strings
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
@@ -30,6 +28,8 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -49,6 +49,8 @@ import mindustry.net.NetConnection
 import mindustry.net.Packets
 import mindustry.net.Packets.KickReason
 import okhttp3.OkHttpClient
+
+private val logger = logger("ROOT")
 
 class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline = instances.get<GatekeeperPipeline>()
@@ -162,8 +164,10 @@ private fun interceptPlayerConnection(
         info.id = packet.uuid
         Vars.netServer.admins.save()
         Call.infoMessage(con, "You are not whitelisted here.")
-        Log.info(
-            "&lcDo &lywhitelist-add @&lc to whitelist the player &lb'@'", packet.uuid, packet.name)
+        logger.info(
+            "&lcDo &lywhitelist-add {}&lc to whitelist the player &lb'{}'",
+            packet.uuid,
+            packet.name)
         con.kick(KickReason.whitelist)
         return
     }
@@ -181,9 +185,10 @@ private fun interceptPlayerConnection(
 
     // CHECK: Duplicate names
     if (Entities.PLAYERS.isPresent {
-        Strings.stripColors(it.name)
+        it.name
+            .stripMindustryColors()
             .trim()
-            .equals(Strings.stripColors(packet.name).trim(), ignoreCase = true)
+            .equals(packet.name.stripMindustryColors().trim(), ignoreCase = true)
     }) {
         con.kick(KickReason.nameInUse)
         return
@@ -210,7 +215,7 @@ private fun interceptPlayerConnection(
     packet.name = Vars.netServer.fixName(packet.name)
 
     // CHECK: Empty name
-    if (Strings.stripColors(packet.name.trim()).isBlank()) {
+    if (packet.name.trim().stripMindustryColors().isBlank()) {
         con.kick(KickReason.nameEmpty)
         return
     }
@@ -277,7 +282,7 @@ private fun interceptPlayerConnection(
                 player.write(output)
             } catch (error: Throwable) {
                 con.kick(KickReason.nameEmpty)
-                Log.err(error)
+                logger.error("Failed to write player data", error)
                 return@runMindustryThread
             }
 

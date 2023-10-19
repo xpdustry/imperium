@@ -27,23 +27,39 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
-import mindustry.gen.Call
 import mindustry.gen.Iconc
+
+private val logger = logger("ROOT")
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val messenger = instances.get<Messenger>()
+    private val pipeline = instances.get<ChatMessagePipeline>()
 
     override fun onImperiumInit() {
         messenger.subscribe<BridgeChatMessage> {
             if (it.serverName != config.server.name) return@subscribe
-            Call.sendMessage(
-                "[coral][[[white]${Iconc.discord}[]][[[orange]${it.senderName}[coral]]:[white] ${it.message}",
-            )
+            // The null target represents the server, for logging purposes
+            (Entities.PLAYERS + listOf(null)).forEach { target ->
+                ImperiumScope.MAIN.launch {
+                    val processed = pipeline.pump(ChatMessageContext(null, target, it.message))
+                    if (processed.isBlank()) return@launch
+                    target?.sendMessage(
+                        "[coral][[[white]${Iconc.discord}[]][[[orange]${it.senderName}[coral]]:[white] $processed")
+                    if (target == null) {
+                        logger.info(
+                            "&fi&lcDiscord ({}): &fr&lw${processed.stripMindustryColors()}",
+                            it.senderName)
+                    }
+                }
+            }
         }
     }
 

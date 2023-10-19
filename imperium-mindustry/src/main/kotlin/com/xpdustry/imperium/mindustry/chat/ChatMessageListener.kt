@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.CommandHandler.ResponseType
-import arc.util.Log
 import arc.util.Time
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -26,6 +25,7 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
@@ -49,6 +49,8 @@ import mindustry.gen.SendChatMessageCallPacket
 import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
+
+private val logger = logger("ROOT")
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline = instances.get<ChatMessagePipeline>()
@@ -186,7 +188,7 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
     // log commands before they are handled
     if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
         // log with brackets
-        Log.info("<&fi@: @&fr>", "&lk" + sender.plainName(), "&lw$escaped")
+        logger.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$escaped")
     }
 
     // check if it's a command
@@ -213,11 +215,11 @@ private fun interceptChatMessage(sender: Player, message: String, pipeline: Chat
             if (filtered2.isBlank()) return@launch
             target?.sendMessage(Vars.netServer.chatFormatter.format(sender, filtered2))
             if (target == null) {
+                logger.info(
+                    "&fi{}: {}",
+                    "&lc${sender.name().stripMindustryColors()}",
+                    "&lw${filtered2.stripMindustryColors()}")
                 runMindustryThread {
-                    Log.info(
-                        "&fi@: @",
-                        "&lc${sender.name().stripMindustryColors()}",
-                        "&lw${filtered2.stripMindustryColors()}")
                     DistributorProvider.get()
                         .eventBus
                         .post(ProcessedPlayerChatEvent(sender, filtered2))

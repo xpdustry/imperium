@@ -85,7 +85,6 @@ import mindustry.core.World
 import mindustry.ctype.ContentType
 import mindustry.entities.units.BuildPlan
 import mindustry.game.Schematic
-import mindustry.game.Schematic.Stile
 import mindustry.game.Team
 import mindustry.io.JsonIO
 import mindustry.io.MapIO
