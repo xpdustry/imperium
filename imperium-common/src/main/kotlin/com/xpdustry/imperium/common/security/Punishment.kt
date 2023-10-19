@@ -57,12 +57,7 @@ data class Punishment(
     @Serializable data class Pardon(val timestamp: SerializableJInstant, val reason: String)
 
     enum class Type {
-        // TODO Implement Freeze
-        FREEZE,
         MUTE,
-        KICK,
-        BAN;
-
-        fun isKick() = this == KICK || this == BAN
+        BAN
     }
 }

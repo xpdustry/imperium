@@ -32,17 +32,16 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
         val punishment =
             bans
                 .findAllByAddress(context.address)
-                .filter { it.expired.not() && it.type.isKick() }
+                .filter { !it.expired && it.type == Punishment.Type.BAN }
                 .toList()
                 .maxByOrNull(Punishment::timestamp)
 
         return if (punishment == null) {
             GatekeeperResult.Success
         } else {
-            val verb = if (punishment.type == Punishment.Type.KICK) "kicked" else "banned"
             GatekeeperResult.Failure(
                 """
-                [red]Oh no! You are currently $verb from Chaotic Neutral!
+                [red]Oh no! You are currently banned from Chaotic Neutral!
                 [accent]Reason:[white] ${punishment.reason}
                 [accent]Duration:[white] ${formatDuration(punishment.duration)}
                 [accent]Expires:[white] ${punishment.expiration}

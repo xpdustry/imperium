@@ -95,13 +95,17 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender,
         target: String,
         reason: String,
-        duration: Duration? = Duration.ofHours(6)
+        duration: Duration = Duration.ofHours(6)
     ) {
-        onPunishCommand("Kicked", Punishment.Type.KICK, actor, target, reason, duration)
+        onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration)
     }
 
     @Command(["ban"], Permission.MODERATOR)
-    private suspend fun onBanCommand(actor: InteractionSender, target: String, reason: String) {
+    private suspend fun onBanCommand(
+        actor: InteractionSender,
+        target: String,
+        reason: String,
+    ) {
         onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, null)
     }
 
@@ -110,7 +114,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender,
         target: String,
         reason: String,
-        duration: Duration? = Duration.ofHours(1)
+        duration: Duration = Duration.ofHours(1)
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration)
     }

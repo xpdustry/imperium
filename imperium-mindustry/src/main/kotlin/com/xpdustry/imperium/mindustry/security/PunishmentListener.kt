@@ -42,7 +42,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { message ->
             val punishment = bans.findById(message.punishment) ?: return@subscribe
-            if (!punishment.type.isKick()) {
+            if (punishment.type != Punishment.Type.BAN) {
                 return@subscribe
             }
             runMindustryThread {
@@ -52,11 +52,10 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         player.uuid() != punishment.target.uuid) {
                         continue
                     }
-                    val verb = if (punishment.type == Punishment.Type.BAN) "banned" else "kicked"
                     Events.fire(PlayerBanEvent(player, player.uuid()))
                     player.kick(
                         """
-                        [scarlet]You have been $verb for '${punishment.reason}'.
+                        [scarlet]You have been banned for '${punishment.reason}'.
                         [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
                         [accent]Your punishment id is [white]${punishment._id.toBase62()}[].
                         """
@@ -69,7 +68,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         player.uuid(),
                         punishment.reason,
                     )
-                    Call.sendMessage("[scarlet]Player " + player.plainName() + " has been $verb")
+                    Call.sendMessage("[scarlet]Player " + player.plainName() + " has been banned.")
                 }
             }
         }

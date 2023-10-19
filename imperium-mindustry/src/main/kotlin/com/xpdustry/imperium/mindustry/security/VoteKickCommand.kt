@@ -128,7 +128,7 @@ class VoteKickCommand(instances: InstanceManager) :
             Punishment.Target(
                 session.objective.target.ip().toInetAddress(), session.objective.target.uuid()),
             "Votekick: ${session.objective.reason}",
-            Punishment.Type.KICK,
+            Punishment.Type.BAN,
             duration,
         )
     }
