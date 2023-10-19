@@ -118,7 +118,7 @@ sealed interface ServerConfig {
 
     data class Discord(
         val token: Secret,
-        val roles: Map<Role, Long>,
+        val roles: Map<Role, Long> = emptyMap(),
         val categories: Categories,
         val channels: Channels,
         val mindustryVersion: String = "145",

@@ -17,23 +17,22 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import ch.qos.logback.classic.Level
+import ch.qos.logback.classic.Logger as LogbackLogger
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.discord.command.InteractionSender
-import org.slf4j.event.Level
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class DebugCommand : ImperiumApplication.Listener {
     @Command(["debug", "log-level"], Role.OWNER)
     private suspend fun onLogLevelCommand(sender: InteractionSender.Slash, level: String) {
-        val value =
-            try {
-                Level.valueOf(level.uppercase())
-            } catch (e: IllegalArgumentException) {
-                sender.respond("Invalid log level.")
-                return
-            }
-        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", value.name)
+        val value = Level.valueOf(level)
+        val root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME) as LogbackLogger
+        root.setLevel(value)
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", value.toString())
         sender.respond("Log level set to $value.")
     }
 }

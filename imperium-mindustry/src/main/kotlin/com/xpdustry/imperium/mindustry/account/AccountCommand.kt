@@ -149,8 +149,8 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
         sender.sendMessage(
             """
-            To go forward with the verification process, you need to verify yourself with discord.
-            Join it using the [cyan]/discord[] command and run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
+            To go forward with the verification process, join our discord server using the [cyan]/discord[].
+            Then use the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
             The code will expire in 10 minutes.
             """
                 .trimIndent(),

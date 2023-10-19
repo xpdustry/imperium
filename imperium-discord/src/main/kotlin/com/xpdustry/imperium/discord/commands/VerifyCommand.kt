@@ -36,10 +36,11 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import org.bson.types.ObjectId
 
-class VerifyCommand(instances: InstanceManager, private val accounts: AccountManager) :
-    ImperiumApplication.Listener {
-    // TODO There is an issue with the RateLimiter, the real limit is 3
+class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val accounts = instances.get<AccountManager>()
     private val api = instances.get<DiscordService>()
+    // TODO There is an issue with the RateLimiter, the real limit is 3
     private val limiter = RateLimiter<Long>(2, Duration.ofMinutes(10))
     private val messenger = instances.get<Messenger>()
     private val pending =

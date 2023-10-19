@@ -11,7 +11,7 @@ dependencies {
     implementation(libs.javacord.api)
     runtimeOnly(libs.javacord.core)
     runtimeOnly(libs.log4j.to.slf4j)
-    runtimeOnly(libs.slf4j.simple)
+    implementation(libs.logback.classic)
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
 }
@@ -48,6 +48,7 @@ tasks.shadowJar {
     minimize {
         exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
         exclude(dependency("org.slf4j:slf4j-.*:.*"))
+        exclude(dependency("ch.qos.logback:logback-.*:.*"))
         exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
