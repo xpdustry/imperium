@@ -117,15 +117,15 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         changePasswordInterface.open(sender.player)
     }
 
-    @Command(["verify"])
+    @Command(["verify", "discord"])
     @ClientSide
     private suspend fun onVerifyCommand(sender: CommandSender) {
         val account = manager.findByIdentity(sender.player.identity)
         if (account == null) {
             sender.sendWarning("You are not logged in!")
             return
-        } else if (account.verified) {
-            sender.sendWarning("Your account is already verified.")
+        } else if (account.discord != null) {
+            sender.sendWarning("Your account is already discord verified.")
             return
         }
 
@@ -161,12 +161,9 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         messenger.subscribe<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
-                ImperiumScope.MAIN.launch {
-                    manager.updateById(message.account) { account -> account.verified = true }
-                    runMindustryThread {
-                        Entities.PLAYERS.find { it.uuid() == message.uuid }
-                            ?.showInfoMessage("You have been verified!")
-                    }
+                runMindustryThread {
+                    Entities.PLAYERS.find { it.uuid() == message.uuid }
+                        ?.showInfoMessage("You have been verified!")
                 }
             }
         }

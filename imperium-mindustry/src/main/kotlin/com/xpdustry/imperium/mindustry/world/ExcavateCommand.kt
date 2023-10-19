@@ -19,10 +19,10 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.graphics.Color
 import arc.math.Mathf
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -163,7 +163,7 @@ class ExcavateCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["excavate", "cancel"], Permission.MODERATOR)
+    @Command(["excavate", "cancel"], Role.MODERATOR)
     @ClientSide
     private fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)

@@ -62,6 +62,9 @@ internal class MongoAccountManager(private val mongo: MongoProvider) :
     override suspend fun findByUsername(username: String): Account? =
         accounts.find(Filters.eq("username", username)).firstOrNull()
 
+    override suspend fun findByDiscordId(discordId: Long): Account? =
+        accounts.find(Filters.eq("discord", discordId)).firstOrNull()
+
     override suspend fun updateByIdentity(
         identity: Identity.Mindustry,
         updater: suspend (Account) -> Unit
@@ -154,9 +157,8 @@ internal class MongoAccountManager(private val mongo: MongoProvider) :
             Account(
                 username = normalizedUsername,
                 password = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS),
-                verified = legacy.rank > Account.Rank.NORMAL,
                 playtime = legacy.playtime,
-                rank = legacy.rank,
+                roles = mutableSetOf(legacy.role),
                 games = legacy.games,
                 achievements =
                     legacy.achievements

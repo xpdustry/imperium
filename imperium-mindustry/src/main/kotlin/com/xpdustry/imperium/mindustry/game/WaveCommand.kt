@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -56,14 +56,14 @@ class WaveCommand(instances: InstanceManager) :
             }
         }
 
-    @Command(["wave", "set", "time"], Permission.MODERATOR)
+    @Command(["wave", "set", "time"], Role.MODERATOR)
     @ClientSide
     private fun onWaveSetTime(sender: CommandSender, time: Duration) {
         Vars.state.wavetime = time.seconds.toFloat() * 60F
         sender.sendMessage("Set wave time to $time")
     }
 
-    @Command(["wave", "set", "counter"], Permission.MODERATOR)
+    @Command(["wave", "set", "counter"], Role.MODERATOR)
     @ClientSide
     private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
         Vars.state.wave = wave
@@ -71,7 +71,7 @@ class WaveCommand(instances: InstanceManager) :
         sender.sendMessage("Set wave to counter $wave")
     }
 
-    @Command(["wave", "run"], Permission.MODERATOR)
+    @Command(["wave", "run"], Role.MODERATOR)
     @ClientSide
     private fun onWaveRun(sender: CommandSender, @Min(0) waves: Int = 0) {
         repeat(waves) { Vars.logic.runWave() }

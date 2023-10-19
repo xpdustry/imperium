@@ -27,6 +27,8 @@ interface AccountManager {
 
     suspend fun findByUsername(username: String): Account?
 
+    suspend fun findByDiscordId(discordId: Long): Account?
+
     suspend fun updateByIdentity(identity: Identity.Mindustry, updater: suspend (Account) -> Unit)
 
     suspend fun updateById(id: ObjectId, updater: suspend (Account) -> Unit)

@@ -25,13 +25,13 @@ import cloud.commandframework.context.CommandContext
 import cloud.commandframework.keys.SimpleCloudKey
 import cloud.commandframework.kotlin.coroutines.SuspendingExecutionHandler
 import cloud.commandframework.permission.PredicatePermission
-import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.CommandRegistry
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
@@ -107,7 +107,7 @@ class MindustryCommandRegistry(
         var builder =
             manager
                 .commandBuilder(annotation.name, createLiteralDescription(base))
-                .permission(createPermission(annotation.permission))
+                .permission(createPermission(annotation.role))
         for (rest in annotation.path.drop(1)) {
             base += rest
             builder = builder.literal(rest, createLiteralDescription(base))
@@ -132,21 +132,17 @@ class MindustryCommandRegistry(
         manager.command(builder)
     }
 
-    private fun createPermission(permission: Permission) =
+    private fun createPermission(role: Role) =
         PredicatePermission.of<CommandSender>(
             SimpleCloudKey.of("imperium"),
         ) { sender ->
-            if (permission == Permission.EVERYONE || sender.isConsole || sender.player.admin)
-                return@of true
-            val account =
-                runBlocking { accounts.findByIdentity(sender.player.identity) } ?: return@of false
-            return@of when (permission) {
-                Permission.OWNER -> account.rank > Account.Rank.OWNER
-                Permission.ADMINISTRATOR -> account.rank > Account.Rank.ADMINISTRATOR
-                Permission.MODERATOR -> account.rank > Account.Rank.MODERATOR
-                Permission.VERIFIED -> account.verified
-                else -> false
-            }
+            role == Role.EVERYONE ||
+                sender.isConsole ||
+                sender.player.admin ||
+                runBlocking {
+                    accounts.findByIdentity(sender.player.identity)?.roles?.containsRole(role)
+                        ?: false
+                }
         }
 
     private fun <T : Any> createCommandArgument(

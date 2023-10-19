@@ -18,7 +18,9 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
+import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -54,7 +56,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     }
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) {
+    internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
         ImperiumScope.MAIN.launch {
             users.updateOrCreateByUuid(event.player.uuid()) { user ->
@@ -65,11 +67,16 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                 user.addresses += event.player.ip().toInetAddress()
                 user.lastJoin = Instant.now()
             }
+
+            // Grants admin to moderators
+            event.player.admin =
+                accounts.findByIdentity(event.player.identity)?.roles?.containsRole(Role.MODERATOR)
+                    ?: false
         }
     }
 
     @EventHandler
-    fun onGameOver(event: EventType.GameOverEvent) {
+    internal fun onGameOver(event: EventType.GameOverEvent) {
         Entities.PLAYERS.forEach { player ->
             ImperiumScope.MAIN.launch {
                 accounts.updateByIdentity(player.identity) { account -> account.games++ }
@@ -78,7 +85,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     }
 
     @EventHandler
-    fun onPlayerLeave(event: EventType.PlayerLeave) =
+    internal fun onPlayerLeave(event: EventType.PlayerLeave) =
         ImperiumScope.MAIN.launch {
             val now = System.currentTimeMillis()
             accounts.updateByIdentity(event.player.identity) { account ->

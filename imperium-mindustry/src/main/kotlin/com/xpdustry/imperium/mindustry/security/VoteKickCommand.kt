@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -80,7 +80,7 @@ class VoteKickCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
-    @Command(["vote", "c"], Permission.MODERATOR)
+    @Command(["vote", "c"], Role.MODERATOR)
     @ClientSide
     private fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))

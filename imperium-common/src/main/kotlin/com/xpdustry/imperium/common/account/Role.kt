@@ -17,20 +17,32 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.hash.Hash
-import com.xpdustry.imperium.common.serialization.SerializableJDuration
-import java.time.Duration
-import kotlinx.serialization.Serializable
+enum class Role(vararg parents: Role = emptyArray()) {
+    EVERYONE,
+    VERIFIED(EVERYONE),
+    MAP_MANAGER,
+    MODERATOR(VERIFIED),
+    ADMINISTRATOR(MODERATOR, MAP_MANAGER),
+    OWNER(ADMINISTRATOR);
 
-typealias HashedUsername = String
+    val parents = parents.toSet()
+}
 
-@Serializable
-data class LegacyAccount(
-    override val _id: HashedUsername,
-    var password: Hash,
-    var role: Role = Role.EVERYONE,
-    var games: Int = 0,
-    var playtime: SerializableJDuration = Duration.ZERO,
-    val achievements: MutableSet<Achievement> = mutableSetOf(),
-) : Entity<HashedUsername>
+fun Collection<Role>.containsRole(role: Role): Boolean {
+    if (role == Role.EVERYONE) return true
+
+    // Find the permission while flattening the tree
+    val queue = ArrayDeque<Role>()
+    queue.addAll(this)
+    val resolved = mutableSetOf<Role>()
+    resolved.add(Role.EVERYONE)
+    while (queue.isNotEmpty()) {
+        val current = queue.removeFirst()
+        if (current == role) return true
+        if (current in resolved) continue
+        resolved.add(current)
+        queue.addAll(current.parents)
+    }
+
+    return false
+}

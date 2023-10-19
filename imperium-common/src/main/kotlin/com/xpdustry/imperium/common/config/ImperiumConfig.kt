@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.misc.capitalize
 import java.awt.Color
 import java.util.Locale
@@ -117,18 +118,12 @@ sealed interface ServerConfig {
 
     data class Discord(
         val token: Secret,
-        val roles: Roles,
+        val roles: Map<Role, Long>,
         val categories: Categories,
         val channels: Channels,
         val mindustryVersion: String = "145",
     ) : ServerConfig {
         override val name: String = "discord"
-
-        data class Roles(
-            val administrator: Long,
-            val moderator: Long,
-            val verified: Long,
-        )
 
         data class Categories(
             val liveChat: Long,

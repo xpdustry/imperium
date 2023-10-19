@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.google.common.cache.CacheBuilder
+import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
@@ -29,13 +30,16 @@ import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.service.DiscordService
 import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import org.bson.types.ObjectId
 
-class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+class VerifyCommand(instances: InstanceManager, private val accounts: AccountManager) :
+    ImperiumApplication.Listener {
     // TODO There is an issue with the RateLimiter, the real limit is 3
+    private val api = instances.get<DiscordService>()
     private val limiter = RateLimiter<Long>(2, Duration.ofMinutes(10))
     private val messenger = instances.get<Messenger>()
     private val pending =
@@ -65,6 +69,15 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
+        val bound = accounts.findByDiscordId(actor.user.id)
+        if (bound != null) {
+            actor.respond(
+                "Your discord account is already bound to the cn account ${bound.username}.")
+            return
+        }
+
+        accounts.updateById(data.first) { it.discord = actor.user.id }
+        api.syncRoles(actor.user, data.first)
         messenger.publish(VerificationMessage(data.first, data.second, code, true))
         actor.respond("You have been verified!")
     }

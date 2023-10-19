@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.discord.account.RoleSynchronizationListener
 import com.xpdustry.imperium.discord.bridge.BridgeListener
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
@@ -56,7 +57,7 @@ fun main() {
             VerifyCommand::class,
             ModerationCommand::class,
             PunishmentListener::class,
-        )) {
+            RoleSynchronizationListener::class)) {
         application.register(listener)
     }
 

@@ -30,20 +30,23 @@ import org.bson.types.ObjectId
 data class Account(
     var username: String,
     var password: Hash,
-    var rank: Rank = Rank.NORMAL,
-    var verified: Boolean = false,
+    var discord: Long? = null,
+    val roles: MutableSet<Role> = mutableSetOf(),
     val sessions: MutableMap<String, Session> = mutableMapOf(),
-    val friends: MutableMap<String, Friend> = mutableMapOf(),
     val achievements: MutableMap<String, Achievement.Progression> = mutableMapOf(),
     var playtime: SerializableJDuration = Duration.ZERO,
     var games: Int = 0,
     override val _id: SerializableObjectId = ObjectId(),
 ) : Entity<ObjectId> {
-    fun progress(achievement: Achievement) {
+
+    val verified: Boolean
+        get() = discord != null || roles.containsRole(Role.VERIFIED)
+
+    fun progress(achievement: Achievement, value: Int = 1) {
         if (completed(achievement)) return
         val progression =
             achievements.getOrPut(achievement.name.lowercase(), Achievement::Progression)
-        progression.progress++
+        progression.progress += value
         if (progression.progress >= achievement.goal) {
             progression.completed = true
         }
@@ -52,15 +55,5 @@ data class Account(
     fun completed(achievement: Achievement): Boolean =
         achievements[achievement.name.lowercase()]?.completed == true
 
-    enum class Rank {
-        NORMAL,
-        OVERSEER,
-        MODERATOR,
-        ADMINISTRATOR,
-        OWNER,
-    }
-
     @Serializable data class Session(val expiration: SerializableJInstant)
-
-    @Serializable data class Friend(var pending: Boolean)
 }

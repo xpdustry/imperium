@@ -17,10 +17,12 @@
  */
 package com.xpdustry.imperium.discord.service
 
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.config.ServerConfig
 import java.util.concurrent.TimeUnit
+import org.bson.types.ObjectId
 import org.javacord.api.DiscordApi
 import org.javacord.api.DiscordApiBuilder
 import org.javacord.api.entity.intent.Intent
@@ -32,11 +34,15 @@ interface DiscordService {
 
     fun getMainServer(): Server
 
-    fun isAllowed(user: User, permission: Permission): Boolean
+    suspend fun syncRoles(user: User, account: ObjectId)
+
+    fun isAllowed(user: User, role: Role): Boolean
 }
 
-class SimpleDiscordService(private val config: ServerConfig.Discord) :
-    DiscordService, ImperiumApplication.Listener {
+class SimpleDiscordService(
+    private val config: ServerConfig.Discord,
+    private val accounts: AccountManager
+) : DiscordService, ImperiumApplication.Listener {
     override lateinit var api: DiscordApi
 
     override fun onImperiumInit() {
@@ -57,23 +63,28 @@ class SimpleDiscordService(private val config: ServerConfig.Discord) :
                 .join()
     }
 
-    override fun isAllowed(user: User, permission: Permission): Boolean {
-        val value =
-            if (getMainServer().isOwner(user)) {
-                Permission.OWNER
-            } else if (getMainServer().getRoles(user).any { it.id == config.roles.administrator }) {
-                Permission.ADMINISTRATOR
-            } else if (getMainServer().getRoles(user).any { it.id == config.roles.moderator }) {
-                Permission.MODERATOR
-            } else if (getMainServer().getRoles(user).any { it.id == config.roles.verified }) {
-                Permission.VERIFIED
-            } else {
-                Permission.EVERYONE
+    override fun getMainServer(): Server = api.servers.first()
+
+    override suspend fun syncRoles(user: User, account: ObjectId) {
+        val roles =
+            user.getRoles(getMainServer()).mapNotNullTo(mutableSetOf()) { role ->
+                config.roles.entries.find { (_, id) -> id == role.id }?.key
             }
-        return value.ordinal >= permission.ordinal
+        roles += Role.VERIFIED
+        roles += Role.EVERYONE
+
+        accounts.updateById(account) {
+            it.roles.clear()
+            it.roles += roles
+        }
     }
 
-    override fun getMainServer(): Server = api.servers.first()
+    override fun isAllowed(user: User, role: Role): Boolean {
+        if (role == Role.EVERYONE) {
+            return true
+        }
+        return getMainServer().getRoles(user).any { it.id == config.roles.getOrDefault(role, 0) }
+    }
 
     override fun onImperiumExit() {
         api.disconnect().orTimeout(15L, TimeUnit.SECONDS).join()

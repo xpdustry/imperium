@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -45,7 +45,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val users = instances.get<UserManager>()
     private val analysis = instances.get<LogicImageAnalysis>()
 
-    @Command(["punishment", "list"], Permission.MODERATOR)
+    @Command(["punishment", "list"], Role.MODERATOR)
     private suspend fun onPunishmentListCommand(
         actor: InteractionSender,
         target: String,
@@ -90,7 +90,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(*embeds)
     }
 
-    @Command(["kick"], Permission.MODERATOR)
+    @Command(["kick"], Role.MODERATOR)
     private suspend fun onKickCommand(
         actor: InteractionSender,
         target: String,
@@ -100,7 +100,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration)
     }
 
-    @Command(["ban"], Permission.MODERATOR)
+    @Command(["ban"], Role.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender,
         target: String,
@@ -109,7 +109,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, null)
     }
 
-    @Command(["mute"], Permission.MODERATOR)
+    @Command(["mute"], Role.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender,
         target: String,
@@ -144,7 +144,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("$verb user $target.")
     }
 
-    @Command(["pardon"], Permission.MODERATOR)
+    @Command(["pardon"], Role.MODERATOR)
     private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
         val snowflake =
             try {
@@ -169,7 +169,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("Pardoned user.")
     }
 
-    @Command(["punishment", "image", "show"], Permission.MODERATOR)
+    @Command(["punishment", "image", "show"], Role.MODERATOR)
     private suspend fun onPunishmentNsfwShow(actor: InteractionSender, id: ObjectId) {
         val result = analysis.findHashedImageById(id)
         if (result == null) {
@@ -188,7 +188,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         }
     }
 
-    @Command(["punishment", "image", "set"], Permission.MODERATOR)
+    @Command(["punishment", "image", "set"], Role.MODERATOR)
     private suspend fun onPunishmentNsfwMark(
         actor: InteractionSender,
         id: ObjectId,

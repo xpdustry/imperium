@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryMap
@@ -115,13 +115,13 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
     }
 
-    @ButtonCommand(MAP_REJECT_BUTTON, Permission.ADMINISTRATOR)
+    @ButtonCommand(MAP_REJECT_BUTTON, Role.MAP_MANAGER)
     private suspend fun onMapReject(actor: InteractionSender.Button) {
         updateSubmissionEmbed(actor, Color.RED, "rejected")
         actor.respond("Map submission rejected!")
     }
 
-    @ButtonCommand(MAP_UPLOAD_BUTTON, Permission.ADMINISTRATOR)
+    @ButtonCommand(MAP_UPLOAD_BUTTON, Role.MAP_MANAGER)
     private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
         val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
@@ -272,7 +272,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             "Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
     }
 
-    @Command(["map", "edit", "servers"], Permission.ADMINISTRATOR)
+    @Command(["map", "edit", "servers"], Role.MAP_MANAGER)
     private suspend fun onMapServersChange(
         actor: InteractionSender,
         id: ObjectId,
@@ -299,7 +299,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("Map servers updated to $list!")
     }
 
-    @Command(["map", "delete"], Permission.ADMINISTRATOR)
+    @Command(["map", "delete"], Role.MAP_MANAGER)
     private suspend fun onMapDelete(actor: InteractionSender, id: ObjectId) {
         if (maps.deleteMapById(id)) {
             actor.respond("Map deleted!")

@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.User
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.Permission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -70,7 +70,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
 
     // TODO Make a better system that can list joins, current and left players
-    @Command(["server", "player", "joins"], Permission.MODERATOR)
+    @Command(["server", "player", "joins"], Role.MODERATOR)
     suspend fun onServerPlayerJoin(actor: InteractionSender, server: String) {
         val joins = history[server]
         if (joins == null) {
@@ -99,7 +99,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     // TODO Move into a dedicated command PlayerCommand
-    @Command(["player", "info"], Permission.MODERATOR)
+    @Command(["player", "info"], Role.MODERATOR)
     suspend fun onPlayerInfo(actor: InteractionSender, id: String) {
         val user: User?
         val tid = id.toIntOrNull()
