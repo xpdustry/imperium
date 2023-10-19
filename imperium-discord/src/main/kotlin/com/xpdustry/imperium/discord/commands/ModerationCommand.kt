@@ -70,7 +70,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                 val punishment = result[it]
                 val embed =
                     EmbedBuilder()
-                        .setTitle("Punishment ${punishment._id.toBase62()}")
+                        .setTitle("Punishment `${punishment._id.toBase62()}`")
                         .addField("Target IP", punishment.target.address.hostAddress, true)
                         .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
                         .addField("Type", punishment.type.toString(), true)
@@ -95,7 +95,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender,
         target: String,
         reason: String,
-        duration: Duration? = null
+        duration: Duration? = Duration.ofHours(6)
     ) {
         onPunishCommand("Kicked", Punishment.Type.KICK, actor, target, reason, duration)
     }
@@ -110,7 +110,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender,
         target: String,
         reason: String,
-        duration: Duration? = null
+        duration: Duration? = Duration.ofHours(1)
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration)
     }
@@ -165,7 +165,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("Pardoned user.")
     }
 
-    @Command(["punishment", "nsfw", "show"], Permission.MODERATOR)
+    @Command(["punishment", "image", "show"], Permission.MODERATOR)
     private suspend fun onPunishmentNsfwShow(actor: InteractionSender, id: ObjectId) {
         val result = analysis.findHashedImageById(id)
         if (result == null) {
@@ -184,7 +184,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         }
     }
 
-    @Command(["punishment", "nsfw", "safety"], Permission.MODERATOR)
+    @Command(["punishment", "image", "set"], Permission.MODERATOR)
     private suspend fun onPunishmentNsfwMark(
         actor: InteractionSender,
         id: ObjectId,
