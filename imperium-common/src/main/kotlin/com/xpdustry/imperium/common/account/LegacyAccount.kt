@@ -29,7 +29,7 @@ typealias HashedUsername = String
 data class LegacyAccount(
     override val _id: HashedUsername,
     var password: Hash,
-    var role: Role = Role.EVERYONE,
+    var verified: Boolean = false,
     var games: Int = 0,
     var playtime: SerializableJDuration = Duration.ZERO,
     val achievements: MutableSet<Achievement> = mutableSetOf(),

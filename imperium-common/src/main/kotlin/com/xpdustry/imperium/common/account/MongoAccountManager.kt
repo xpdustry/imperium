@@ -158,7 +158,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) :
                 username = normalizedUsername,
                 password = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS),
                 playtime = legacy.playtime,
-                roles = mutableSetOf(legacy.role),
+                roles = if (legacy.verified) mutableSetOf(Role.VERIFIED) else mutableSetOf(),
                 games = legacy.games,
                 achievements =
                     legacy.achievements
