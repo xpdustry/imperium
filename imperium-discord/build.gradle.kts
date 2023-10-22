@@ -5,6 +5,10 @@ plugins {
     id("fr.xpdustry.toxopid")
 }
 
+toxopid {
+    compileVersion.set(libs.versions.mindustry.map { "v$it" })
+}
+
 dependencies {
     implementation(projects.imperiumCommon)
     runtimeOnly(kotlin("stdlib"))
@@ -14,16 +18,6 @@ dependencies {
     implementation(libs.logback.classic)
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
-}
-
-project.afterEvaluate {
-    project.configurations.all {
-        resolutionStrategy.eachDependency {
-            if (requested.group == "com.github.Anuken.Arc") {
-                useVersion("v" + libs.versions.mindustry.get())
-            }
-        }
-    }
 }
 
 tasks.shadowJar {
