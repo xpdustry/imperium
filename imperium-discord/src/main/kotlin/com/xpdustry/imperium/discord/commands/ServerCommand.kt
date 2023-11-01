@@ -17,47 +17,23 @@
  */
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.User
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
-import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.network.Discovery
-import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.discord.bridge.PlayerHistory
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
-import java.net.InetAddress
-import java.time.Instant
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.Locale
-import java.util.Queue
-import kotlin.random.Random
-import kotlin.random.nextInt
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
-    private val messenger = instances.get<Messenger>()
-    private val history = mutableMapOf<String, Queue<PlayerJoinEntry>>()
-    private val users = instances.get<UserManager>()
-
-    override fun onImperiumInit() {
-        messenger.subscribe<MindustryPlayerMessage> {
-            if (it.action != MindustryPlayerMessage.Action.Join) return@subscribe
-            history
-                .computeIfAbsent(it.serverName) { LimitedList(30) }
-                .add(PlayerJoinEntry(it.player, Random.nextInt(100000..999999)))
-        }
-    }
+    private val history = instances.get<PlayerHistory>()
 
     @Command(["server", "list"])
     @NonEphemeral
@@ -66,25 +42,40 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             EmbedBuilder()
                 .setTitle("Server List")
                 .setDescription(
-                    discovery.servers.joinToString(separator = "\n\n") { " - " + it.serverName }),
+                    discovery.servers.joinToString(separator = "\n") { " - " + it.serverName }),
         )
 
-    // TODO Make a better system that can list joins, current and left players
-    @Command(["server", "player", "joins"], Role.MODERATOR)
+    @Command(["server", "player", "joins"])
     suspend fun onServerPlayerJoin(actor: InteractionSender, server: String) {
-        val joins = history[server]
+        val joins = history.getPlayerJoins(server)
         if (joins == null) {
             actor.respond("Server not found.")
             return
         }
+        onServerPlayerList(actor, joins, "Join")
+    }
 
+    @Command(["server", "player", "quits"])
+    suspend fun onServerPlayerQuit(actor: InteractionSender, server: String) {
+        val quits = history.getPlayerQuits(server)
+        if (quits == null) {
+            actor.respond("Server not found.")
+            return
+        }
+        onServerPlayerList(actor, quits, "Quit")
+    }
+
+    private suspend fun onServerPlayerList(
+        actor: InteractionSender,
+        list: List<PlayerHistory.Entry>,
+        name: String
+    ) {
         val text = buildString {
             append("```\n")
-            if (joins.isEmpty()) {
-                append("No players have joined this server yet.\n")
+            if (list.isEmpty()) {
+                append("No players found.\n")
             }
-            for (entry in joins) {
-                DateTimeFormatter.ISO_LOCAL_TIME
+            for (entry in list) {
                 append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
                 append(" #")
                 append(entry.tid)
@@ -95,60 +86,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             append("```")
         }
 
-        actor.respond(EmbedBuilder().setTitle("Player Join List").setDescription(text))
+        actor.respond(EmbedBuilder().setTitle("Player $name List").setDescription(text))
     }
-
-    // TODO Move into a dedicated command PlayerCommand
-    @Command(["player", "info"], Role.MODERATOR)
-    suspend fun onPlayerInfo(actor: InteractionSender, id: String) {
-        val user: User?
-        val tid = id.toIntOrNull()
-        if (tid in 100000..999999) {
-            val entry = history.values.flatten().firstOrNull { it.tid == tid }
-            if (entry == null) {
-                actor.respond("Player temporary id not found.")
-                return
-            }
-            user = users.findByUuidOrCreate(entry.player.uuid)
-        } else {
-            user = users.findByUuid(id)
-            if (user == null) {
-                actor.respond("Player uuid not found.")
-                return
-            }
-        }
-
-        DateTimeFormatter.ISO_LOCAL_DATE_TIME
-
-        actor.respond(
-            EmbedBuilder()
-                .setTitle("Player Info")
-                .addField("Last Name", user.lastName, true)
-                .addField("Last Address", user.lastAddress?.hostAddress!!, true)
-                .addField("Uuid", "`${user._id}`", true)
-                .addField(
-                    "First Join",
-                    DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-                        user.firstJoin.atOffset(ZoneOffset.UTC)),
-                    true)
-                .addField(
-                    "Last Join",
-                    DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-                        user.lastJoin.atOffset(ZoneOffset.UTC)),
-                    true)
-                .addField("Times Joined", user.timesJoined.toString(), true)
-                .addField("Names", user.names.joinToString())
-                .addField(
-                    "Addresses",
-                    user.addresses.joinToString(transform = InetAddress::getHostAddress)),
-        )
-    }
-
-    data class PlayerJoinEntry(
-        val player: Identity.Mindustry,
-        val tid: Int,
-        val timestamp: Instant = Instant.now()
-    )
 
     companion object {
         private val TIME_FORMAT =

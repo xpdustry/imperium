@@ -28,6 +28,7 @@ import com.xpdustry.imperium.discord.commands.DebugCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
 import com.xpdustry.imperium.discord.commands.PingCommand
+import com.xpdustry.imperium.discord.commands.PlayerCommand
 import com.xpdustry.imperium.discord.commands.SchematicCommand
 import com.xpdustry.imperium.discord.commands.ServerCommand
 import com.xpdustry.imperium.discord.commands.VerifyCommand
@@ -59,7 +60,8 @@ fun main() {
             ModerationCommand::class,
             PunishmentListener::class,
             RoleSynchronizationListener::class,
-            DebugCommand::class)) {
+            DebugCommand::class,
+            PlayerCommand::class)) {
         application.register(listener)
     }
 

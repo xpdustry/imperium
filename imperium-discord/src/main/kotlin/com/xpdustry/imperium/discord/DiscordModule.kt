@@ -25,6 +25,8 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.network.MindustryServerInfo
+import com.xpdustry.imperium.discord.bridge.PlayerHistory
+import com.xpdustry.imperium.discord.bridge.SimplePlayerHistory
 import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
 import com.xpdustry.imperium.discord.command.SlashCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
@@ -55,4 +57,6 @@ fun discordModule() =
             get<ImperiumConfig>().server as? ServerConfig.Discord
                 ?: error("The current server configuration is not Discord")
         }
+
+        single<PlayerHistory> { SimplePlayerHistory(get()) }
     }
