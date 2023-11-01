@@ -17,7 +17,6 @@ dependencies {
     api(libs.rabbitmq.client)
     api(libs.minio)
     api(libs.snowflake.id)
-    api(libs.base32)
     api(libs.okhttp)
     runtimeOnly(libs.okio) // Fixes CVE in okhttp
 

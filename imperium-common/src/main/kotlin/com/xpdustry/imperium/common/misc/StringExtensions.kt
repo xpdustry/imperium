@@ -20,10 +20,8 @@ package com.xpdustry.imperium.common.misc
 import com.google.common.net.InetAddresses
 import java.awt.Color
 import java.net.InetAddress
-import java.nio.LongBuffer
 import java.util.Base64
 import java.util.Locale
-import org.unbrokendome.base62.Base62
 
 fun String.capitalize(locale: Locale = Locale.ROOT, all: Boolean = false): String {
     if (all) {
@@ -39,8 +37,3 @@ fun Color.toHexString(): String =
 fun String.toInetAddress(): InetAddress = InetAddresses.forString(this)
 
 fun ByteArray.toBase64(): String = Base64.getEncoder().encodeToString(this)
-
-fun Long.toBase62(): String = Base62.encode(this)
-
-fun String.toLongFromBase62(): Long =
-    LongBuffer.allocate(1).also { buffer -> Base62.decode(this, buffer) }.get(0)

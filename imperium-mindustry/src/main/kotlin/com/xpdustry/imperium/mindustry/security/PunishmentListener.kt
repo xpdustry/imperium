@@ -24,7 +24,6 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -57,7 +56,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         """
                         [scarlet]You have been banned for '${punishment.reason}'.
                         [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
-                        [accent]Your punishment id is [white]${punishment._id.toBase62()}[].
+                        [accent]Your punishment id is [white]${punishment._id}[].
                         """
                             .trimIndent(),
                         0,

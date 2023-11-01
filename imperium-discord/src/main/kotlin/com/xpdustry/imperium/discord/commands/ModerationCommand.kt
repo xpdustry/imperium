@@ -25,9 +25,7 @@ import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.misc.toLongFromBase62
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -70,7 +68,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                 val punishment = result[it]
                 val embed =
                     EmbedBuilder()
-                        .setTitle("Punishment `${punishment._id.toBase62()}`")
+                        .setTitle("Punishment `${punishment._id}`")
                         .addField("Target IP", punishment.target.address.hostAddress, true)
                         .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
                         .addField("Type", punishment.type.toString(), true)
@@ -146,13 +144,11 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @Command(["pardon"], Role.MODERATOR)
     private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
-        val snowflake =
-            try {
-                id.toLongFromBase62()
-            } catch (e: Exception) {
-                actor.respond("Invalid ID.")
-                return
-            }
+        val snowflake = id.toLongOrNull()
+        if (snowflake == null) {
+            actor.respond("Invalid ID.")
+            return
+        }
 
         val punishment = punishments.findById(snowflake)
         if (punishment == null) {

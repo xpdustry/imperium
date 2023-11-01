@@ -27,7 +27,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -86,7 +85,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     ctx.sender.showInfoMessage(
                         """
                         [scarlet]You can't talk. You are currently muted for '${muted.reason}'.
-                        [orange]You can appeal this decision with the punishment id [cyan]${muted._id.toBase62()}[].
+                        [orange]You can appeal this decision with the punishment id [cyan]${muted._id}[].
                         """
                             .trimIndent(),
                     )

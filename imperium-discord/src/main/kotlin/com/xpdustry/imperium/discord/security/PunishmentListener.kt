@@ -25,7 +25,6 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
@@ -59,7 +58,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 EmbedBuilder()
                     .setTimestampToNow()
                     .setColor(Color.RED)
-                    .setTitle("Punishment `${id.toBase62()}`")
+                    .setTitle("Punishment `$id`")
                     .addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
                     .addField("Type", punishment.type.toString(), true)
                     .addField("Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)

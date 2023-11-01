@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.misc.toBase62
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.processing.Processor
@@ -45,7 +44,7 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
                 [accent]Reason:[white] ${punishment.reason}
                 [accent]Duration:[white] ${formatDuration(punishment.duration)}
                 [accent]Expires:[white] ${punishment.expiration}
-                [accent]Punishment id:[white] ${punishment._id.toBase62()}
+                [accent]Punishment id:[white] ${punishment._id}
 
                 [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
                 """
