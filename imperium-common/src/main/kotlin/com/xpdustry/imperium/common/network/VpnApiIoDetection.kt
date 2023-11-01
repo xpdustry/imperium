@@ -31,7 +31,6 @@ class VpnApiIoDetection(
 ) : VpnDetection {
     private val gson = Gson()
 
-    @Suppress("DuplicatedCode")
     override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
             return VpnDetection.Result.Success(false)
@@ -44,16 +43,18 @@ class VpnApiIoDetection(
                 .addQueryParameter("key", config.vpnApiIoToken.value)
                 .build()
 
-        val response = http.newCall(Request.Builder().url(url).build()).await()
-        if (response.code == 429) {
-            return VpnDetection.Result.RateLimited
+        return http.newCall(Request.Builder().url(url).build()).await().use { response ->
+            if (response.code == 429) {
+                return@use VpnDetection.Result.RateLimited
+            }
+            if (response.code != 200) {
+                return@use VpnDetection.Result.Failure(
+                    IllegalStateException("Unexpected status code: ${response.code}"))
+            }
+            response.body!!.charStream().use { reader ->
+                val json = gson.fromJson(reader, JsonObject::class.java)
+                VpnDetection.Result.Success(json["security"].asJsonObject["vpn"].asBoolean)
+            }
         }
-        if (response.code != 200) {
-            return VpnDetection.Result.Failure(
-                IllegalStateException("Unexpected status code: ${response.code}"))
-        }
-
-        val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
-        return VpnDetection.Result.Success(json["security"].asJsonObject["vpn"].asBoolean)
     }
 }

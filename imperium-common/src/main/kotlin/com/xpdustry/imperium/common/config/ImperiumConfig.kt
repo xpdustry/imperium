@@ -45,8 +45,6 @@ data class NetworkConfig(
         data object None : VpnDetectionConfig
 
         data class VpnApiIo(val vpnApiIoToken: Secret) : VpnDetectionConfig
-
-        data class IPHub(val ipHubToken: Secret) : VpnDetectionConfig
     }
 }
 
