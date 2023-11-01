@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.network.await
 import java.awt.image.BufferedImage
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
@@ -54,18 +55,18 @@ class SightEngineImageAnalysis(
                     bytes.toRequestBody("image/jpeg".toMediaTypeOrNull(), 0, bytes.size))
                 .build()
 
-        val response =
-            withContext(ImperiumScope.IO.coroutineContext) {
-                http
-                    .newCall(
-                        Request.Builder()
-                            .url("https://api.sightengine.com/1.0/check.json")
-                            .post(request)
-                            .build())
-                    .execute()
-            }
+        val json =
+            http
+                .newCall(
+                    Request.Builder()
+                        .url("https://api.sightengine.com/1.0/check.json")
+                        .post(request)
+                        .build())
+                .await()
+                .use { response ->
+                    gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
+                }
 
-        val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
         if (json["status"].asString != "success") {
             return ImageAnalysis.Result.Failure("SightEngine API returned error: ${json["error"]}")
         }

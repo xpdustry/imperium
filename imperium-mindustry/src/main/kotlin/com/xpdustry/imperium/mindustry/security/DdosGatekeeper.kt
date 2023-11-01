@@ -109,14 +109,13 @@ private abstract class JsonAddressProvider protected constructor(override val na
     AddressProvider {
 
     override suspend fun fetchAddressRanges(http: OkHttpClient): List<Range<BigInteger>> =
-        http.newCall(Request.Builder().url(fetchUrl()).build()).await().use {
-            if (it.code != 200) {
+        http.newCall(Request.Builder().url(fetchUrl()).build()).await().use { response ->
+            if (response.code != 200) {
                 throw IOException(
-                    "Failed to download '$name' public addresses file (status-code: ${it.code}, url: ${it.request.url}).")
+                    "Failed to download '$name' public addresses file (status-code: ${response.code}, url: ${response.request.url}).")
             }
-            it.body!!.charStream().use { reader ->
-                extractAddressRanges(GSON.fromJson(reader, JsonObject::class.java))
-            }
+            extractAddressRanges(
+                GSON.fromJson(response.body!!.charStream(), JsonObject::class.java))
         }
 
     protected abstract suspend fun fetchUrl(): URL

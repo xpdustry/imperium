@@ -51,10 +51,8 @@ class VpnApiIoDetection(
                 return@use VpnDetection.Result.Failure(
                     IllegalStateException("Unexpected status code: ${response.code}"))
             }
-            response.body!!.charStream().use { reader ->
-                val json = gson.fromJson(reader, JsonObject::class.java)
-                VpnDetection.Result.Success(json["security"].asJsonObject["vpn"].asBoolean)
-            }
+            val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
+            VpnDetection.Result.Success(json["security"].asJsonObject["vpn"].asBoolean)
         }
     }
 }
