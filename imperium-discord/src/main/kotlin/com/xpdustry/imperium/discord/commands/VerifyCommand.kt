@@ -19,13 +19,13 @@ package com.xpdustry.imperium.discord.commands
 
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.command.InteractionSender

@@ -25,7 +25,7 @@ import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.misc.toBase64
+import com.xpdustry.imperium.common.misc.encodeBase64
 import com.xpdustry.imperium.common.storage.StorageBucket
 import java.awt.Color
 import java.awt.geom.AffineTransform
@@ -121,7 +121,9 @@ internal class SimpleLogicImageAnalysis(
                         val buffer = ByteBuffer.allocate(integers.size * 4)
                         for (integer in integers) buffer.putInt(integer)
                         result +=
-                            ShaHashFunction.create(buffer.array(), ShaType.SHA256).hash.toBase64()
+                            ShaHashFunction.create(buffer.array(), ShaType.SHA256)
+                                .hash
+                                .encodeBase64()
                     }
                     is LogicImage.Drawer -> {
                         for (processor in image.processors) {
@@ -157,7 +159,7 @@ internal class SimpleLogicImageAnalysis(
                             result +=
                                 ShaHashFunction.create(stream.toByteArray(), ShaType.SHA256)
                                     .hash
-                                    .toBase64()
+                                    .encodeBase64()
                         }
                     }
                 }

@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.serialization.SerializableJDuration
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import com.xpdustry.imperium.common.serialization.SerializableObjectId

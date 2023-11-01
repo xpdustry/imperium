@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
 import com.xpdustry.imperium.common.hash.PBKDF2Params
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
-import com.xpdustry.imperium.common.misc.toBase64
+import com.xpdustry.imperium.common.misc.encodeBase64
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
 import com.xpdustry.imperium.common.security.Identity
@@ -241,7 +241,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) :
 
     private suspend fun findLegacyAccountByUsername(username: String): LegacyAccount? {
         val hash = ShaHashFunction.create(username.toCharArray(), ShaType.SHA256)
-        return legacyAccounts.findById(hash.hash.toBase64())
+        return legacyAccounts.findById(hash.hash.encodeBase64())
     }
 
     internal suspend fun createSessionToken(identity: Identity.Mindustry): String {

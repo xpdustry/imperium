@@ -43,3 +43,7 @@ fun CharSequence.stripMindustryColors(): String {
     }
     return out.toString()
 }
+
+typealias MindustryUUID = String
+
+typealias MindustryUSID = String

@@ -18,13 +18,13 @@
 package com.xpdustry.imperium.common.security
 
 import com.mongodb.client.model.Filters
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.database.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant

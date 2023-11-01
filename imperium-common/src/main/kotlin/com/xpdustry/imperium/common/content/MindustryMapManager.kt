@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.account.MindustryUUID
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
 import kotlinx.coroutines.flow.Flow

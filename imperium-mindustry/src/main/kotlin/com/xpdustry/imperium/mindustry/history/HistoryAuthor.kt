@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
-import com.xpdustry.imperium.common.account.MindustryUUID
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import mindustry.game.Team
 import mindustry.gen.Unit
 import mindustry.type.UnitType

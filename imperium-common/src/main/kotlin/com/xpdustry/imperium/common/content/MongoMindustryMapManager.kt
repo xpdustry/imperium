@@ -22,11 +22,11 @@ import com.mongodb.client.model.Aggregates
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Indexes
 import com.mongodb.client.model.Sorts
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
 import kotlin.math.roundToInt

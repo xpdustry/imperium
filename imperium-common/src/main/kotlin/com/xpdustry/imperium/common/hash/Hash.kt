@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.hash
 
-import com.xpdustry.imperium.common.misc.toBase64
+import com.xpdustry.imperium.common.misc.encodeBase64
 import com.xpdustry.imperium.common.serialization.ByteArrayAsBsonBinary
 import java.util.Objects
 import kotlinx.serialization.SerialName
@@ -48,7 +48,7 @@ internal constructor(
     override fun hashCode() = Objects.hash(_hash.contentHashCode(), _salt.contentHashCode(), params)
 
     override fun toString() =
-        "Hash(hash=${_hash.toBase64()}, salt=${_salt.toBase64()}, params=$params)"
+        "Hash(hash=${_hash.encodeBase64()}, salt=${_salt.encodeBase64()}, params=$params)"
 }
 
 // Stolen from password4j

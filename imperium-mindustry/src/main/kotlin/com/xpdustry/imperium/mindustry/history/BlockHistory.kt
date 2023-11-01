@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
-import com.xpdustry.imperium.common.account.MindustryUUID
+import com.xpdustry.imperium.common.misc.MindustryUUID
 
 interface BlockHistory {
     fun getHistory(x: Int, y: Int): List<HistoryEntry>

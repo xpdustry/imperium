@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.serialization.SerializableObjectId
 import kotlinx.serialization.Serializable
 

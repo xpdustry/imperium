@@ -19,7 +19,6 @@ package com.xpdustry.imperium.mindustry.security
 
 import arc.math.geom.Point2
 import arc.struct.IntSet
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -33,6 +32,7 @@ import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment

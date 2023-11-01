@@ -18,14 +18,11 @@
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.database.Entity
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import java.time.Instant
 import kotlinx.serialization.Serializable
-
-typealias MindustryUUID = String
-
-typealias MindustryUSID = String
 
 @Serializable
 data class User(

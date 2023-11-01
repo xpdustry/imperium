@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.account.MindustryUUID
 import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.database.snowflake.Snowflake
 import com.xpdustry.imperium.common.database.snowflake.timestamp
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.serialization.SerializableJDuration
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
