@@ -58,6 +58,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
 
     @Command(["map", "submit"])
+    @NonEphemeral
     suspend fun onSubmitCommand(actor: InteractionSender, map: Attachment, notes: String? = null) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")

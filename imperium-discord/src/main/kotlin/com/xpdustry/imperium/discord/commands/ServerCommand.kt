@@ -46,6 +46,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
 
     @Command(["server", "player", "joins"])
+    @NonEphemeral
     suspend fun onServerPlayerJoin(actor: InteractionSender, server: String) {
         val joins = history.getPlayerJoins(server)
         if (joins == null) {
@@ -56,6 +57,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command(["server", "player", "quits"])
+    @NonEphemeral
     suspend fun onServerPlayerQuit(actor: InteractionSender, server: String) {
         val quits = history.getPlayerQuits(server)
         if (quits == null) {
