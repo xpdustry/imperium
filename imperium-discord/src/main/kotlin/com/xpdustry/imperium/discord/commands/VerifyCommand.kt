@@ -26,12 +26,11 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.security.RateLimiter
+import com.xpdustry.imperium.common.security.SmoothRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
-import java.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import org.bson.types.ObjectId
@@ -40,8 +39,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val accounts = instances.get<AccountManager>()
     private val api = instances.get<DiscordService>()
-    // TODO There is an issue with the RateLimiter, the real limit is 3
-    private val limiter = RateLimiter<Long>(2, Duration.ofMinutes(10))
+    private val limiter = SmoothRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
     private val pending =
         CacheBuilder.newBuilder()
@@ -58,7 +56,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command(["verify"])
     @NonEphemeral
     private suspend fun onVerifyCommand(actor: InteractionSender, code: Int) {
-        if (!limiter.check(actor.user.id)) {
+        if (!limiter.incrementAndCheck(actor.user.id)) {
             actor.respond("You made too many attempts! Wait 10 minutes and try again.")
             return
         }
@@ -66,7 +64,6 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         val data = pending.getIfPresent(code)
         if (data == null) {
             actor.respond("Invalid code.")
-            limiter.increment(actor.user.id)
             return
         }
 

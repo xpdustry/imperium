@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.security.RateLimiter
+import com.xpdustry.imperium.common.security.SmoothRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -46,6 +46,7 @@ import java.net.InetAddress
 import java.time.Duration
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
@@ -58,7 +59,7 @@ class VoteKickCommand(instances: InstanceManager) :
     ImperiumApplication.Listener {
 
     private val punishments = instances.get<PunishmentManager>()
-    private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
+    private val limiter = SmoothRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
 
     @EventHandler
@@ -143,7 +144,7 @@ class VoteKickCommand(instances: InstanceManager) :
         } else if (objective.target.admin) {
             player.sendMessage("[scarlet]You can't start a votekick on an admin.")
             return false
-        } else if (limiter.incrementAndCheck(player.ip().toInetAddress())) {
+        } else if (!limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage(
                 "[scarlet]You are limited to one votekick per minute. Please try again later.")
             return false

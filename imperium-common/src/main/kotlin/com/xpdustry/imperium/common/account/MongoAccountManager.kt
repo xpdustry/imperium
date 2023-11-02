@@ -31,7 +31,7 @@ import com.xpdustry.imperium.common.misc.encodeBase64
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.RateLimiter
+import com.xpdustry.imperium.common.security.SmoothRateLimiter
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
@@ -39,13 +39,14 @@ import java.net.InetAddress
 import java.time.Duration
 import java.time.Instant
 import java.util.Base64
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.firstOrNull
 import org.bson.types.ObjectId
 
 internal class MongoAccountManager(private val mongo: MongoProvider) :
     AccountManager, ImperiumApplication.Listener {
 
-    private val limiter = RateLimiter<AccountRateLimitKey>(5, Duration.ofMinutes(5L))
+    private val limiter = SmoothRateLimiter<AccountRateLimitKey>(5, 5.minutes)
     private lateinit var accounts: MongoEntityCollection<Account, ObjectId>
     private lateinit var legacyAccounts: MongoEntityCollection<LegacyAccount, HashedUsername>
 
@@ -254,7 +255,7 @@ internal class MongoAccountManager(private val mongo: MongoProvider) :
     private fun String.normalizeUsername(): String = trim().lowercase()
 
     private fun isRateLimited(operation: String, identity: Identity.Mindustry): Boolean =
-        !limiter.checkAndIncrement(AccountRateLimitKey(operation, identity.address))
+        !limiter.incrementAndCheck(AccountRateLimitKey(operation, identity.address))
 
     companion object {
         private val SESSION_TOKEN_DURATION = Duration.ofDays(7L)

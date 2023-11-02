@@ -27,8 +27,8 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.ReportMessage
+import com.xpdustry.imperium.common.security.SmoothRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
@@ -44,12 +44,12 @@ import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import java.net.InetAddress
-import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
 private val logger = logger<ReportCommand>()
-private val limiter = RateLimiter<InetAddress>(1, Duration.ofSeconds(60))
+private val limiter = SmoothRateLimiter<InetAddress>(1, 60.seconds)
 
 // TODO
 //  - Implement tile reporting ?
@@ -85,7 +85,7 @@ fun createReportInterface(
             "Are you sure you want to report [accent]${view.state[REPORT_PLAYER]!!.plainName()}[] for [accent]${view.state[REPORT_REASON]!!.name.lowercase().capitalize()}[]?"
         pane.options.addRow(
             MenuOption("[green]Yes") { _ ->
-                if (!limiter.checkAndIncrement(view.viewer.ip().toInetAddress())) {
+                if (!limiter.incrementAndCheck(view.viewer.ip().toInetAddress())) {
                     view.viewer.showInfoMessage(
                         "[red]You are limited to one report per minute. Please try again later.")
                     return@MenuOption

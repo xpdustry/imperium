@@ -54,7 +54,6 @@ import org.bson.types.ObjectId
 
 // TODO
 //  - Replace sequential interfaces with a proper form interface
-//  - Add rate limit warning BEFORE running the command
 private val logger = logger<AccountCommand>()
 
 private val USERNAME = stateKey<String>("username")

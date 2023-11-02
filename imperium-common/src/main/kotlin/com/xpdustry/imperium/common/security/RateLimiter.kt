@@ -18,32 +18,31 @@
 package com.xpdustry.imperium.common.security
 
 import com.google.common.cache.CacheBuilder
-import java.time.Duration
+import com.google.common.util.concurrent.RateLimiter as GuavaRateLimiter
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
-// TODO
-//  - Use kotlin Duration
-//  - Behavior is not consistent in terms of limit, fix this
-class RateLimiter<T : Any>(private val limit: Int, period: Duration) {
-    private val cache = CacheBuilder.newBuilder().expireAfterWrite(period).build<T, Int>()
+interface RateLimiter<K : Any> {
+    fun incrementAndCheck(key: K): Boolean
+}
 
-    fun increment(key: T) {
-        val attempts = cache.getIfPresent(key) ?: 0
-        cache.put(key, attempts + 1)
+@Suppress("UnstableApiUsage")
+class SmoothRateLimiter<K : Any>(private val limit: Int, private val period: Duration) :
+    RateLimiter<K> {
+
+    init {
+        require(limit > 0) { "Limit must be positive" }
+        require(period > Duration.ZERO) { "Period must be positive" }
     }
 
-    fun check(key: T): Boolean {
-        val attempts = cache.getIfPresent(key) ?: 0
-        return attempts <= limit
-    }
+    private val cache =
+        CacheBuilder.newBuilder()
+            .expireAfterWrite(period.toJavaDuration())
+            .build<K, GuavaRateLimiter>()
 
-    fun checkAndIncrement(key: T): Boolean {
-        val check = check(key)
-        increment(key)
-        return check
-    }
+    override fun incrementAndCheck(key: K): Boolean =
+        cache.get(key, ::createRateLimiter).tryAcquire()
 
-    fun incrementAndCheck(key: T): Boolean {
-        increment(key)
-        return check(key)
-    }
+    private fun createRateLimiter(): GuavaRateLimiter =
+        GuavaRateLimiter.create((limit.toDouble() * 1000) / period.inWholeMilliseconds.toDouble())
 }
