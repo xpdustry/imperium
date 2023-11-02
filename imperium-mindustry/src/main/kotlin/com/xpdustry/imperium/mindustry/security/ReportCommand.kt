@@ -25,7 +25,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.capitalize
-import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.security.SmoothRateLimiter
@@ -48,13 +47,10 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
-private val logger = logger<ReportCommand>()
-private val limiter = SmoothRateLimiter<InetAddress>(1, 60.seconds)
-
 // TODO
 //  - Implement tile reporting ?
-//  - Add rate limit warning BEFORE running the command
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val limiter = SmoothRateLimiter<InetAddress>(1, 60.seconds)
     private val reportInterface =
         createReportInterface(
             instances.get<MindustryPlugin>(),
@@ -65,6 +61,11 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command(["report"])
     @ClientSide
     private fun onPlayerReport(sender: CommandSender) {
+        if (!limiter.incrementAndCheck(sender.player.ip().toInetAddress())) {
+            sender.player.showInfoMessage(
+                "[red]You are limited to one report per minute. Please try again later.")
+            return
+        }
         reportInterface.open(sender.player)
     }
 }
@@ -85,11 +86,6 @@ fun createReportInterface(
             "Are you sure you want to report [accent]${view.state[REPORT_PLAYER]!!.plainName()}[] for [accent]${view.state[REPORT_REASON]!!.name.lowercase().capitalize()}[]?"
         pane.options.addRow(
             MenuOption("[green]Yes") { _ ->
-                if (!limiter.incrementAndCheck(view.viewer.ip().toInetAddress())) {
-                    view.viewer.showInfoMessage(
-                        "[red]You are limited to one report per minute. Please try again later.")
-                    return@MenuOption
-                }
                 view.closeAll()
                 ImperiumScope.MAIN.launch {
                     val sent =

@@ -63,7 +63,6 @@ import mindustry.Vars
 import mindustry.net.Administration.PlayerInfo
 import mindustry.server.ServerControl
 
-// TODO Add permission support
 class MindustryCommandRegistry(
     plugin: MindustryPlugin,
     private val config: ImperiumConfig,

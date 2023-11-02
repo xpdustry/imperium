@@ -43,10 +43,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { message ->
-            // TODO Implement pardon notification ?
-            if (message.type != PunishmentMessage.Type.CREATE) {
-                return@subscribe
-            }
             val (author, _, id, extra) = message
             val punishment = punishments.findById(id)!!
             var user = punishment.target.uuid?.let { users.findByUuid(it) }
@@ -55,17 +51,30 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
 
             val embed =
-                EmbedBuilder()
-                    .setTimestampToNow()
-                    .setColor(Color.RED)
-                    .setTitle("Punishment `$id`")
-                    .addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
-                    .addField("Type", punishment.type.toString(), true)
-                    .addField("Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)
-                    .addField("Reason", punishment.reason, false)
-            if (extra is PunishmentMessage.Extra.Nsfw) {
-                embed.addField("NSFW Entry ID", extra.entry.toHexString(), false)
-            }
+                EmbedBuilder().setTimestampToNow().apply {
+                    when (message.type) {
+                        PunishmentMessage.Type.CREATE -> {
+                            setColor(Color.RED)
+                            setTitle("Punishment `$id`")
+                            addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
+                            addField("Type", punishment.type.toString(), true)
+                            addField(
+                                "Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)
+                            addField("Reason", punishment.reason, false)
+                            if (extra is PunishmentMessage.Extra.Nsfw) {
+                                addField("NSFW Entry ID", extra.entry.toHexString(), false)
+                            }
+                        }
+                        PunishmentMessage.Type.PARDON -> {
+                            setColor(Color.GREEN)
+                            setTitle("Pardoned `$id`")
+                            addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
+                            addField("Type", punishment.type.toString(), true)
+                            addField("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)
+                        }
+                    }
+                }
+
             when (author) {
                 is Identity.Discord -> embed.setAuthor(discord.api.getUserById(author.id).await())
                 is Identity.Mindustry -> embed.setAuthor(author.name)
