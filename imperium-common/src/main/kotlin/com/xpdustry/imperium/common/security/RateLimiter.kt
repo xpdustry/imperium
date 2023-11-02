@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.common.security
 
 import com.google.common.cache.CacheBuilder
-import com.google.common.util.concurrent.RateLimiter as GuavaRateLimiter
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
@@ -26,9 +25,7 @@ interface RateLimiter<K : Any> {
     fun incrementAndCheck(key: K): Boolean
 }
 
-@Suppress("UnstableApiUsage")
-class SmoothRateLimiter<K : Any>(private val limit: Int, private val period: Duration) :
-    RateLimiter<K> {
+class SimpleRateLimiter<K : Any>(private val limit: Int, period: Duration) : RateLimiter<K> {
 
     init {
         require(limit > 0) { "Limit must be positive" }
@@ -36,13 +33,14 @@ class SmoothRateLimiter<K : Any>(private val limit: Int, private val period: Dur
     }
 
     private val cache =
-        CacheBuilder.newBuilder()
-            .expireAfterWrite(period.toJavaDuration())
-            .build<K, GuavaRateLimiter>()
+        CacheBuilder.newBuilder().expireAfterWrite(period.toJavaDuration()).build<K, Int>()
 
-    override fun incrementAndCheck(key: K): Boolean =
-        cache.get(key, ::createRateLimiter).tryAcquire()
-
-    private fun createRateLimiter(): GuavaRateLimiter =
-        GuavaRateLimiter.create((limit.toDouble() * 1000) / period.inWholeMilliseconds.toDouble())
+    override fun incrementAndCheck(key: K): Boolean {
+        val attempts = cache.getIfPresent(key) ?: 0
+        if (attempts >= limit) {
+            return false
+        }
+        cache.put(key, attempts + 1)
+        return true
+    }
 }

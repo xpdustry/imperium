@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.security.SmoothRateLimiter
+import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -59,7 +59,7 @@ class VoteKickCommand(instances: InstanceManager) :
     ImperiumApplication.Listener {
 
     private val punishments = instances.get<PunishmentManager>()
-    private val limiter = SmoothRateLimiter<InetAddress>(1, 60.seconds)
+    private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
 
     @EventHandler

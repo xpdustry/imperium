@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.ReportMessage
-import com.xpdustry.imperium.common.security.SmoothRateLimiter
+import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
@@ -50,7 +50,7 @@ import mindustry.gen.Player
 // TODO
 //  - Implement tile reporting ?
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val limiter = SmoothRateLimiter<InetAddress>(1, 60.seconds)
+    private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val reportInterface =
         createReportInterface(
             instances.get<MindustryPlugin>(),

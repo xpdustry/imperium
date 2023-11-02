@@ -26,7 +26,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.security.SmoothRateLimiter
+import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
@@ -39,7 +39,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val accounts = instances.get<AccountManager>()
     private val api = instances.get<DiscordService>()
-    private val limiter = SmoothRateLimiter<Long>(3, 10.minutes)
+    private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
     private val pending =
         CacheBuilder.newBuilder()

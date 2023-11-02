@@ -31,7 +31,7 @@ import com.xpdustry.imperium.common.misc.encodeBase64
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.SmoothRateLimiter
+import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
@@ -46,7 +46,7 @@ import org.bson.types.ObjectId
 internal class MongoAccountManager(private val mongo: MongoProvider) :
     AccountManager, ImperiumApplication.Listener {
 
-    private val limiter = SmoothRateLimiter<AccountRateLimitKey>(5, 5.minutes)
+    private val limiter = SimpleRateLimiter<AccountRateLimitKey>(5, 5.minutes)
     private lateinit var accounts: MongoEntityCollection<Account, ObjectId>
     private lateinit var legacyAccounts: MongoEntityCollection<LegacyAccount, HashedUsername>
 
