@@ -20,9 +20,13 @@ package com.xpdustry.imperium.mindustry.world
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -31,14 +35,18 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Building
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.storage.CoreBlock
 
 // TODO
 //  - Add Core Alerts option to not interfere with other plugins
 //  - Add Core damage alerts
-class CoreBlockListener : ImperiumApplication.Listener {
+class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
+    private val damageRateLimiter =
+        SimpleRateLimiter<CoreDamageKey>(
+            1, instances.get<ServerConfig.Mindustry>().world.coreDamageAlertDelay)
 
     @Command(["core", "list"])
     @ClientSide
@@ -78,7 +86,21 @@ class CoreBlockListener : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onWorldLoad(event: EventType.WorldLoadEvent) {
+    fun onBuildDamageEvent(event: EventType.BuildDamageEvent) {
+        val building = event.build
+        if (building !is CoreBlock.CoreBuild) return
+        val key = CoreDamageKey(building.team, building.rx, building.ry)
+        if (!damageRateLimiter.incrementAndCheck(key)) return
+        for (player in Groups.player) {
+            if (player.team() == building.team) {
+                player.sendMessage(
+                    "[scarlet]WARNING:[] Your core at (${building.rx}, ${building.ry}) is under attack!")
+            }
+        }
+    }
+
+    @EventHandler
+    fun onWorldLoadEvent(event: EventType.WorldLoadEvent) {
         managers.clear()
     }
 
@@ -181,4 +203,6 @@ class CoreBlockListener : ImperiumApplication.Listener {
     companion object {
         private val logger by LoggerDelegate()
     }
+
+    data class CoreDamageKey(val team: Team, val x: Int, val y: Int)
 }
