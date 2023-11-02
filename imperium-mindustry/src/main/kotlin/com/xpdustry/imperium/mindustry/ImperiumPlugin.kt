@@ -42,6 +42,7 @@ import com.xpdustry.imperium.mindustry.security.LogicImageAnalysisListener
 import com.xpdustry.imperium.mindustry.security.PunishmentListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
 import com.xpdustry.imperium.mindustry.security.VoteKickCommand
+import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
@@ -97,6 +98,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 HelpCommand::class,
                 WaveCommand::class,
                 KillAllCommand::class,
+                DumpCommand::class,
             )) {
             application.register(listener)
         }
