@@ -19,6 +19,7 @@ package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
 import java.util.concurrent.TimeUnit
@@ -83,7 +84,13 @@ class SimpleDiscordService(
         if (role == Role.EVERYONE) {
             return true
         }
-        return getMainServer().getRoles(user).any { it.id == config.roles.getOrDefault(role, 0) }
+        // TODO This is awful, use a reverse map
+        return getMainServer()
+            .getRoles(user)
+            .mapNotNull { discordRole ->
+                config.roles.entries.find { it.value == discordRole.id }?.key
+            }
+            .containsRole(role)
     }
 
     override fun onImperiumExit() {
