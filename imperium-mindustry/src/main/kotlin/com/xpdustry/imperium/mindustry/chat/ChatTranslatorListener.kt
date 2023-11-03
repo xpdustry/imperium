@@ -32,9 +32,9 @@ import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.game.EventType.PlayerJoin
 
 class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val translator: Translator = instances.get()
-    private val pipeline: ChatMessagePipeline = instances.get()
     private val config = instances.get<ImperiumConfig>()
+    private val translator = instances.get<Translator>()
+    private val pipeline = instances.get<ChatMessagePipeline>()
 
     override fun onImperiumInit() {
         pipeline.register("translator", Priority.LOW) { context ->
@@ -68,7 +68,9 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
                         sourceLocale,
                         targetLocale)
                 is TranslatorResult.Success -> {
-                    return@register if (rawMessage == result.text) rawMessage
+                    return@register if (rawMessage.lowercase(sourceLocale) ==
+                        result.text.lowercase(targetLocale))
+                        rawMessage
                     else "${context.message} [lightgray](${result.text})"
                 }
             }
