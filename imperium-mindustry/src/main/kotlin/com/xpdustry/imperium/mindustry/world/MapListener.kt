@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -54,7 +54,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()
 
-        messenger.subscribe<MapReloadMessage> { if (config.name in it.servers) reloadMaps() }
+        messenger.consumer<MapReloadMessage> { if (config.name in it.servers) reloadMaps() }
 
         reloadMaps()
     }

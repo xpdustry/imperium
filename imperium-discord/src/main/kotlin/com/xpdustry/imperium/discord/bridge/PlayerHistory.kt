@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.security.Identity
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -49,12 +49,12 @@ class SimplePlayerHistory(private val messenger: Messenger) :
     private val quits = ConcurrentHashMap<String, LimitedList<PlayerHistory.Entry>>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<MindustryPlayerMessage> {
+        messenger.consumer<MindustryPlayerMessage> {
             val map =
                 when (it.action) {
                     MindustryPlayerMessage.Action.Join -> joins
                     MindustryPlayerMessage.Action.Quit -> quits
-                    else -> return@subscribe
+                    else -> return@consumer
                 }
             val entry = PlayerHistory.Entry(it.player, Random.nextInt(100000..999999))
             map.computeIfAbsent(it.serverName) { LimitedList(30) }.add(entry)

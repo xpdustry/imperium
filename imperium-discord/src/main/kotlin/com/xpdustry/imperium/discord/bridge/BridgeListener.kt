@@ -25,7 +25,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.jvm.optionals.getOrNull
@@ -55,7 +55,7 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-        messenger.subscribe<MindustryPlayerMessage> { message ->
+        messenger.consumer<MindustryPlayerMessage> { message ->
             val channel =
                 getLiveChatCategory().channels.find { it.name == message.serverName }
                     ?: discord
@@ -69,7 +69,7 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
             val textChannel = channel.asServerTextChannel().getOrNull()
             if (textChannel == null) {
                 logger.error("Channel ${channel.name} (${channel.id}) is not a text channel")
-                return@subscribe
+                return@consumer
             }
 
             val text =

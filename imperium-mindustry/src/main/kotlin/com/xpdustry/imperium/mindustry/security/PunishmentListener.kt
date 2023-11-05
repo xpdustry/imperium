@@ -22,7 +22,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
@@ -39,10 +39,10 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val bans = instances.get<PunishmentManager>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<PunishmentMessage> { message ->
-            val punishment = bans.findById(message.punishment) ?: return@subscribe
+        messenger.consumer<PunishmentMessage> { message ->
+            val punishment = bans.findById(message.punishment) ?: return@consumer
             if (punishment.type != Punishment.Type.BAN) {
-                return@subscribe
+                return@consumer
             }
             runMindustryThread {
                 Events.fire(PlayerIpBanEvent(punishment.target.address.hostAddress))

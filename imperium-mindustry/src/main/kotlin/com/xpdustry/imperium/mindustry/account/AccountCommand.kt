@@ -26,7 +26,7 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -157,7 +157,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     }
 
     override fun onImperiumInit() {
-        messenger.subscribe<VerificationMessage> { message ->
+        messenger.consumer<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
                 runMindustryThread {

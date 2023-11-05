@@ -30,28 +30,33 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.SSLContext
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.jvmName
+import kotlin.time.Duration
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializer
+
+private typealias MessageOrRequest<T> = Pair<T, RabbitmqMessenger.RequestData?>
 
 class RabbitmqMessenger(
     private val config: MessengerConfig.RabbitMQ,
     private val metadata: ImperiumMetadata
 ) : Messenger, ImperiumApplication.Listener {
-    private val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
+    internal val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
     private lateinit var connection: Connection
 
@@ -82,13 +87,41 @@ class RabbitmqMessenger(
         connection.close()
     }
 
+    override suspend fun publish(message: Message, local: Boolean) = publish0(message, local, null)
+
+    override suspend fun <R : Message> request(
+        message: Message,
+        timeout: Duration,
+        responseKlass: KClass<R>
+    ): R? =
+        withContext(ImperiumScope.IO.coroutineContext) {
+            val request = RequestData(UUID.randomUUID(), false)
+            val deferred = CompletableDeferred<R>()
+            val job =
+                handle(responseKlass) { (response, incoming) ->
+                    if (incoming?.id == request.id && incoming.reply && deferred.isActive) {
+                        deferred.complete(response)
+                    }
+                }
+            if (!publish0(message, false, request)) {
+                job.cancelAndJoin()
+                return@withContext null
+            }
+            try {
+                withTimeout(timeout) { deferred.await() }
+            } catch (e: Exception) {
+                job.cancelAndJoin()
+                null
+            }
+        }
+
     @OptIn(InternalSerializationApi::class)
-    override suspend fun <M : Message> publish(message: M, local: Boolean) =
+    private suspend fun <M : Message> publish0(message: M, local: Boolean, request: RequestData?) =
         withContext(ImperiumScope.IO.coroutineContext) {
             try {
                 if (local) {
                     forEachMessageSuperclass(message::class) { klass ->
-                        handleIncomingMessage(klass, message)
+                        handleIncomingMessage(klass, message, request)
                     }
                 }
 
@@ -97,16 +130,17 @@ class RabbitmqMessenger(
                 logger.trace(
                     "Publishing ${message::class.simpleName ?: message::class.jvmName} message: $json")
                 val bytes = json.encodeToByteArray()
+                val headers =
+                    mutableMapOf(
+                        SENDER_HEADER to metadata.identifier.toString(),
+                        JAVA_CLASS_HEADER to message::class.jvmName,
+                    )
+                if (request != null) {
+                    headers[REQUEST_ID_HEADER] = request.id.toString()
+                    headers[REQUEST_REPLY_HEADER] = request.reply.toString()
+                }
                 val properties =
-                    AMQP.BasicProperties.Builder()
-                        .headers(
-                            mapOf(
-                                SENDER_HEADER to metadata.identifier.toString(),
-                                JAVA_CLASS_HEADER to message::class.jvmName,
-                            ),
-                        )
-                        .build()
-
+                    AMQP.BasicProperties.Builder().headers(headers as Map<String, Any>).build()
                 forEachMessageSuperclass(message::class) { klass ->
                     channel.basicPublish(IMPERIUM_EXCHANGE, klass.jvmName, properties, bytes)
                 }
@@ -120,7 +154,24 @@ class RabbitmqMessenger(
             }
         }
 
-    override fun <M : Message> subscribe(type: KClass<M>, listener: Messenger.Listener<M>): Job {
+    override fun <M : Message> consumer(
+        type: KClass<M>,
+        listener: Messenger.ConsumerListener<M>
+    ): Job {
+        return handle(type) { (message, _) -> listener.onMessage(message) }
+    }
+
+    override fun <M : Message, R : Message> function(
+        type: KClass<M>,
+        function: Messenger.FunctionListener<M, R>
+    ): Job {
+        return handle(type) { (message, request) ->
+            val response = function.onMessage(message)
+            publish0(response, false, request!!.copy(reply = true))
+        }
+    }
+
+    private fun <M : Message> handle(type: KClass<M>, handler: Handler<M>): Job {
         @Suppress("UNCHECKED_CAST")
         val flow =
             flows.getOrPut(type) {
@@ -128,10 +179,8 @@ class RabbitmqMessenger(
                 channel.queueBind(queue, IMPERIUM_EXCHANGE, type.jvmName)
                 FlowWithCTag(channel.basicConsume(queue, true, RabbitmqAdapter(type)))
             } as FlowWithCTag<M>
-        return flow.inner
-            .onEach { listener.onMessage(it) }
-            .onCompletion { onFlowComplete(type) }
-            .launchIn(ImperiumScope.IO)
+        return ImperiumScope.IO.launch { flow.inner.collect { handler.handle(it) } }
+            .apply { invokeOnCompletion { onFlowComplete(type) } }
     }
 
     private fun onFlowComplete(type: KClass<out Message>) {
@@ -146,8 +195,12 @@ class RabbitmqMessenger(
         }
     }
 
-    private class FlowWithCTag<T : Message>(val tag: String) {
-        val inner = MutableSharedFlow<T>()
+    internal class FlowWithCTag<T : Message>(val tag: String) {
+        val inner = MutableSharedFlow<MessageOrRequest<T>>()
+    }
+
+    private fun interface Handler<T : Message> {
+        suspend fun handle(messageOrRequest: MessageOrRequest<T>)
     }
 
     private inner class RabbitmqAdapter<T : Message>(private val type: KClass<T>) : Consumer {
@@ -231,14 +284,26 @@ class RabbitmqMessenger(
                     return@runBlocking
                 }
 
+            val request =
+                if (properties.headers.containsKey(REQUEST_ID_HEADER)) {
+                    val uuid = UUID.fromString(properties.headers[REQUEST_ID_HEADER].toString())
+                    val reply = properties.headers[REQUEST_REPLY_HEADER].toString().toBoolean()
+                    RequestData(uuid, reply)
+                } else null
+
             logger.trace("Received ${type.simpleName ?: type.jvmName} message from $sender: $json")
-            handleIncomingMessage(type, parsed)
+            handleIncomingMessage(type, parsed, request)
         }
     }
 
-    private suspend fun <T : Message> handleIncomingMessage(klass: KClass<out T>, message: T) {
+    private suspend fun <T : Message> handleIncomingMessage(
+        klass: KClass<out T>,
+        message: T,
+        request: RequestData?
+    ) {
         val flow = flows[klass] ?: return
-        @Suppress("UNCHECKED_CAST") (flow.inner as MutableSharedFlow<Message>).emit(message)
+        @Suppress("UNCHECKED_CAST")
+        (flow.inner as MutableSharedFlow<MessageOrRequest<T>>).emit(message to request)
     }
 
     private suspend fun forEachMessageSuperclass(
@@ -253,11 +318,15 @@ class RabbitmqMessenger(
         }
     }
 
+    internal data class RequestData(val id: UUID, val reply: Boolean)
+
     companion object {
         private val logger by LoggerDelegate()
         const val IMPERIUM_EXCHANGE = "imperium"
         const val SENDER_HEADER = "Imperium-Sender"
         const val JAVA_CLASS_HEADER = "Imperium-Java-Class"
+        const val REQUEST_ID_HEADER = "Imperium-Request-Id"
+        const val REQUEST_REPLY_HEADER = "Imperium-Request-Reply"
         const val MAX_OBJECT_SIZE = 2 * 1024 * 1024
     }
 }

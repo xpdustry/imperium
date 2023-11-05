@@ -24,7 +24,7 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
@@ -47,8 +47,8 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .build<Int, Pair<ObjectId, MindustryUUID>>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<VerificationMessage> { message ->
-            if (message.response) return@subscribe
+        messenger.consumer<VerificationMessage> { message ->
+            if (message.response) return@consumer
             pending.put(message.code, message.account to message.uuid)
         }
     }

@@ -26,7 +26,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -44,8 +44,8 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     private val pipeline = instances.get<ChatMessagePipeline>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<BridgeChatMessage> {
-            if (it.serverName != config.server.name) return@subscribe
+        messenger.consumer<BridgeChatMessage> {
+            if (it.serverName != config.server.name) return@consumer
             // The null target represents the server, for logging purposes
             (Entities.PLAYERS + listOf(null)).forEach { target ->
                 ImperiumScope.MAIN.launch {

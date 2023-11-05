@@ -23,7 +23,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -42,7 +42,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<PunishmentMessage> { message ->
+        messenger.consumer<PunishmentMessage> { message ->
             val (author, _, id, extra) = message
             val punishment = punishments.findById(id)!!
             var user = punishment.target.uuid?.let { users.findByUuid(it) }
@@ -88,7 +88,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                     .getOrNull()
             if (channel == null) {
                 logger.error("Could not find notifications channel")
-                return@subscribe
+                return@consumer
             }
 
             channel.sendMessage(embed)

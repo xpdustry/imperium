@@ -22,7 +22,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -37,7 +37,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<ReportMessage> { report ->
+        messenger.consumer<ReportMessage> { report ->
             getNotificationChannel()
                 .sendMessage(
                     EmbedBuilder()

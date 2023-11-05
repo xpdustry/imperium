@@ -26,8 +26,10 @@ import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
+import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -64,11 +66,13 @@ class RabbitmqMessengerTest {
     fun `test pubsub simple`() = runTest {
         val message = TestMessage("Hello World!")
         val deferred = CompletableDeferred<TestMessage>()
-        messenger1.subscribe<TestMessage> {
+
+        messenger1.consumer<TestMessage> {
             if (!deferred.complete(it)) {
                 Assertions.fail<Unit>("Received message $it twice")
             }
         }
+
         Assertions.assertTrue(messenger2.publish(message))
         val result =
             withContext(ImperiumScope.MAIN.coroutineContext) {
@@ -84,7 +88,7 @@ class RabbitmqMessengerTest {
         val deferred1 = CompletableDeferred<TestSealedMessage.Number>()
         val deferred2 = CompletableDeferred<TestSealedMessage.Text>()
 
-        messenger1.subscribe<TestSealedMessage> {
+        messenger1.consumer<TestSealedMessage> {
             when (it) {
                 is TestSealedMessage.Number -> {
                     if (!deferred1.complete(it)) {
@@ -116,23 +120,23 @@ class RabbitmqMessengerTest {
 
     @Test
     fun `test pubsub local`() = runTest {
-        val message = LocalTestMessage("Hello World!")
-        val deferred1 = CompletableDeferred<LocalTestMessage>()
-        val deferred2 = CompletableDeferred<LocalTestMessage>()
+        val message = TestMessage("Hello World!")
+        val deferred1 = CompletableDeferred<TestMessage>()
+        val deferred2 = CompletableDeferred<TestMessage>()
 
-        messenger1.subscribe<LocalTestMessage> {
+        messenger1.consumer<TestMessage> {
             if (!deferred1.complete(it)) {
                 Assertions.fail<Unit>("Received message $it twice")
             }
         }
-
-        messenger2.subscribe<LocalTestMessage> {
+        messenger2.consumer<TestMessage> {
             if (!deferred2.complete(it)) {
                 Assertions.fail<Unit>("Received message $it twice")
             }
         }
 
         Assertions.assertTrue(messenger1.publish(message, local = true))
+
         val result1 =
             withContext(ImperiumScope.MAIN.coroutineContext) {
                 withTimeout(3.seconds) { deferred1.await() }
@@ -146,6 +150,70 @@ class RabbitmqMessengerTest {
         Assertions.assertEquals(message, result2)
     }
 
+    @Test
+    fun `test cancel`() = runTest {
+        val set = CopyOnWriteArraySet<String>()
+        val job1 = messenger1.consumer<TestMessage> { set += "A${it.content}" }
+        val job2 = messenger1.consumer<TestMessage> { set += "B${it.content}" }
+
+        withContext(ImperiumScope.MAIN.coroutineContext) {
+            messenger2.publish(TestMessage("1"))
+            delay(500)
+            job1.cancel()
+
+            messenger2.publish(TestMessage("2"))
+            delay(500)
+            job2.cancel()
+
+            messenger2.publish(TestMessage("3"))
+            delay(500)
+        }
+
+        Assertions.assertEquals(setOf("A1", "B1", "B2"), set)
+        Assertions.assertTrue(messenger1.flows.isEmpty())
+    }
+
+    @Test
+    fun `test request simple`() = runTest {
+        val message = TestMessage("hello")
+        messenger1.function<TestMessage, TestMessage> { TestMessage(it.content.reversed()) }
+        val result = messenger2.request<TestMessage>(message)
+        Assertions.assertEquals(TestMessage("olleh"), result)
+    }
+
+    @Test
+    fun `test request type not matching`() = runTest {
+        val message = TestMessage("hello")
+        messenger1.function<TestMessage, TestMessage> { TestMessage(it.content.reversed()) }
+        val result = messenger2.request<TestSealedMessage>(message, timeout = 1.seconds)
+        Assertions.assertNull(result)
+    }
+
+    @Test
+    fun `test request timeout`() = runTest {
+        val message = TestMessage("hello")
+        val deferred = CompletableDeferred<TestMessage>()
+
+        messenger1.function<TestMessage, TestMessage> {
+            delay(2.seconds)
+            TestMessage(it.content.reversed())
+        }
+        messenger1.consumer<TestMessage> {
+            if (!deferred.complete(it)) {
+                Assertions.fail<Unit>("Received message $it twice")
+            }
+        }
+
+        val result = messenger2.request<TestMessage>(message, timeout = 1.seconds)
+        Assertions.assertNull(result)
+
+        val received =
+            withContext(ImperiumScope.MAIN.coroutineContext) {
+                withTimeout(3.seconds) { deferred.await() }
+            }
+        Assertions.assertEquals(message, received)
+    }
+
     @Serializable data class TestMessage(val content: String) : Message
 
     @Serializable
@@ -154,8 +222,6 @@ class RabbitmqMessengerTest {
 
         @Serializable data class Text(val text: String) : TestSealedMessage
     }
-
-    @Serializable data class LocalTestMessage(val content: String) : Message
 
     companion object {
         @Container

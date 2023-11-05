@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
@@ -61,7 +61,7 @@ class SimpleDiscovery(
     override fun onImperiumInit() {
         logger.debug("Starting discovery as {}", metadata.identifier)
 
-        messenger.subscribe<DiscoveryMessage> {
+        messenger.consumer<DiscoveryMessage> {
             if (it.info.serverName == config.server.name) {
                 logger.warn("Received discovery message from another server with the same name.")
             } else if (it.type === DiscoveryMessage.Type.DISCOVER) {
