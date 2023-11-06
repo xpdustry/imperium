@@ -71,8 +71,9 @@ private class SimpleModule(override val name: String) : Module {
         }
 
     override fun include(module: Module) {
-        if (module in modules) {
-            throw IllegalArgumentException("Module ${module.name} already included")
+        if (modules.any { it.name == module.name }) {
+            throw IllegalArgumentException(
+                "Module ${module.name} already included in super module ${this.name}")
         }
         modules += module
     }
@@ -90,7 +91,7 @@ private class SimpleModule(override val name: String) : Module {
         if (!_instances.containsKey(key)) {
             _instances[key] = creator
         } else {
-            throw IllegalArgumentException("Instance $key already exists in module $name")
+            throw IllegalArgumentException("Instance $key already exists in module ${this.name}")
         }
     }
 }

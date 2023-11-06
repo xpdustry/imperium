@@ -28,7 +28,7 @@ interface InstanceManager {
         getOrNull(clazz, name)
             ?: throw IllegalArgumentException("No instance of $clazz (name=$name) found")
 
-    interface Listener {
+    fun interface Listener {
         fun onInstanceProvision(instance: Any)
     }
 }
