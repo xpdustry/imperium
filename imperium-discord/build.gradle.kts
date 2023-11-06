@@ -33,9 +33,13 @@ tasks.shadowJar {
     }
 
     doFirst {
-        val file = temporaryDir.resolve("VERSION.txt")
+        val file = temporaryDir.resolve("imperium-version.txt")
         file.writeText(project.version.toString())
         from(file)
+    }
+
+    from(rootProject.fileTree("imperium-bundles")) {
+        into("com/xpdustry/imperium/bundles/")
     }
 
     mergeServiceFiles()

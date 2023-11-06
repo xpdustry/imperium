@@ -40,7 +40,7 @@ interface Messenger {
     }
 
     fun interface FunctionListener<M : Message, R : Message> {
-        suspend fun onMessage(message: M): R
+        suspend fun onMessage(message: M): R?
     }
 }
 

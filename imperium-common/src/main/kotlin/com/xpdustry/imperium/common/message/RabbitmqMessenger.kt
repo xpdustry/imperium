@@ -26,7 +26,6 @@ import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -54,7 +53,7 @@ private typealias MessageOrRequest<T> = Pair<T, RabbitmqMessenger.RequestData?>
 
 class RabbitmqMessenger(
     private val config: MessengerConfig.RabbitMQ,
-    private val metadata: ImperiumMetadata
+    private val identifier: String
 ) : Messenger, ImperiumApplication.Listener {
     internal val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
@@ -77,7 +76,7 @@ class RabbitmqMessenger(
                 }
             }
 
-        connection = factory.newConnection(metadata.identifier.toString())
+        connection = factory.newConnection(identifier)
         channel = connection.createChannel()
         channel.exchangeDeclare(IMPERIUM_EXCHANGE, BuiltinExchangeType.DIRECT, false, true, null)
     }
@@ -132,7 +131,7 @@ class RabbitmqMessenger(
                 val bytes = json.encodeToByteArray()
                 val headers =
                     mutableMapOf(
-                        SENDER_HEADER to metadata.identifier.toString(),
+                        SENDER_HEADER to identifier,
                         JAVA_CLASS_HEADER to message::class.jvmName,
                     )
                 if (request != null) {
@@ -166,7 +165,7 @@ class RabbitmqMessenger(
         function: Messenger.FunctionListener<M, R>
     ): Job {
         return handle(type) { (message, request) ->
-            val response = function.onMessage(message)
+            val response = function.onMessage(message) ?: return@handle
             publish0(response, false, request!!.copy(reply = true))
         }
     }
@@ -236,7 +235,7 @@ class RabbitmqMessenger(
                     "Received ${type.simpleName ?: type.jvmName} message without sender header from $envelope")
                 return@runBlocking
             }
-            if (sender == metadata.identifier.toString()) {
+            if (sender == identifier) {
                 return@runBlocking
             }
 

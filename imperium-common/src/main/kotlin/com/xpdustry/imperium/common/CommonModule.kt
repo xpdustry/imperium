@@ -21,7 +21,8 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.MongoAccountManager
 import com.xpdustry.imperium.common.account.MongoUserManager
 import com.xpdustry.imperium.common.account.UserManager
-import com.xpdustry.imperium.common.application.ImperiumMetadata
+import com.xpdustry.imperium.common.bridge.PlayerTracker
+import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
@@ -54,6 +55,9 @@ import com.xpdustry.imperium.common.storage.MinioStorageBucket
 import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
+import com.xpdustry.imperium.common.version.ImperiumVersion
+import java.util.function.Supplier
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import okhttp3.OkHttpClient
@@ -70,7 +74,7 @@ fun commonModule() =
             }
         }
 
-        single<Discovery> { SimpleDiscovery(get(), get(), get(), get()) }
+        single<Discovery> { SimpleDiscovery(get(), get("identifier"), get("discovery"), get()) }
 
         single<VpnDetection> {
             when (val config = get<ImperiumConfig>().network.vpnDetection) {
@@ -81,7 +85,7 @@ fun commonModule() =
 
         single<Messenger> {
             when (val config = get<ImperiumConfig>().messenger) {
-                is MessengerConfig.RabbitMQ -> RabbitmqMessenger(config, get())
+                is MessengerConfig.RabbitMQ -> RabbitmqMessenger(config, get("identifier"))
             }
         }
 
@@ -90,8 +94,6 @@ fun commonModule() =
                 is StorageConfig.Minio -> MinioStorageBucket(config, get())
             }
         }
-
-        single { ImperiumMetadata() }
 
         single<MongoProvider> { SimpleMongoProvider(get()) }
 
@@ -122,4 +124,14 @@ fun commonModule() =
         }
 
         single<SnowflakeGenerator> { SimpleSnowflakeGenerator(get()) }
+
+        single<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Unknown } }
+
+        single<String>("identifier") {
+            get<ImperiumConfig>().server.name + "-" + Random.nextInt(0, 1000)
+        }
+
+        single<ImperiumVersion> { ImperiumVersion(1, 1, 1) }
+
+        single<PlayerTracker> { RequestingPlayerTracker(get()) }
     }

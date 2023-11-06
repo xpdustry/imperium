@@ -17,8 +17,52 @@
  */
 package com.xpdustry.imperium.common.network
 
+import com.xpdustry.imperium.common.serialization.SerializableInetAddress
+import com.xpdustry.imperium.common.version.MindustryVersion
+import kotlinx.serialization.Serializable
+
 interface Discovery {
+    val servers: Collection<Server>
+
     fun heartbeat()
 
-    val servers: List<ServerInfo>
+    @Serializable data class Server(val name: String, val identifier: String, val data: Data)
+
+    @Serializable
+    sealed interface Data {
+        @Serializable data object Unknown : Data
+
+        @Serializable data object Discord : Data
+
+        @Serializable
+        data class Mindustry(
+            val name: String,
+            val host: SerializableInetAddress,
+            val port: Int,
+            val mapName: String,
+            val description: String,
+            val wave: Int,
+            val playerCount: Int,
+            val playerLimit: Int,
+            val gameVersion: MindustryVersion,
+            val gameMode: GameMode,
+            val gameModeName: String?,
+            val state: State,
+        ) : Data {
+
+            enum class State {
+                PLAYING,
+                PAUSED,
+                STOPPED
+            }
+
+            enum class GameMode {
+                SURVIVAL,
+                SANDBOX,
+                ATTACK,
+                PVP,
+                EDITOR,
+            }
+        }
+    }
 }

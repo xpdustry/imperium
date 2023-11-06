@@ -17,17 +17,19 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.network.MindustryServerInfo
+import com.xpdustry.imperium.common.network.Discovery
+import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.common.version.MindustryVersion
+import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.command.MindustryCommandRegistry
@@ -43,6 +45,7 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.util.function.Supplier
 import mindustry.Vars
+import mindustry.core.GameState
 import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.net.Administration
@@ -50,11 +53,6 @@ import mindustry.net.Administration
 fun mindustryModule(plugin: ImperiumPlugin) =
     module("mindustry") {
         include(commonModule())
-
-        factory<Supplier<MindustryServerInfo?>> {
-            val config = get<ImperiumConfig>()
-            Supplier { getMindustryServerInfo(config) }
-        }
 
         single<BlockHistory> { SimpleBlockHistory(get()) }
 
@@ -74,14 +72,17 @@ fun mindustryModule(plugin: ImperiumPlugin) =
         }
 
         single<CommandRegistry> { MindustryCommandRegistry(get(), get(), get()) }
+
+        single<Supplier<Discovery.Data>>("discovery") { Supplier { getMindustryServerInfo() } }
+
+        single<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().descriptor.version) }
+
+        single<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
     }
 
-private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo? {
-    if (Vars.state.isMenu) {
-        return null
-    }
-    return MindustryServerInfo(
-        config.server.name,
+private fun getMindustryServerInfo(): Discovery.Data =
+    Discovery.Data.Mindustry(
+        Administration.Config.serverName.string(),
         // Our servers run within a pterodactyl container, so we can use the SERVER_IP environment
         // variable
         System.getenv("SERVER_IP")?.toInetAddress() ?: InetAddress.getLocalHost(),
@@ -94,16 +95,19 @@ private fun getMindustryServerInfo(config: ImperiumConfig): MindustryServerInfo?
         getVersion(),
         getGameMode(),
         Vars.state.rules.modeName,
-    )
-}
+        when (Vars.state.state!!) {
+            GameState.State.playing -> Discovery.Data.Mindustry.State.PLAYING
+            GameState.State.paused -> Discovery.Data.Mindustry.State.PAUSED
+            GameState.State.menu -> Discovery.Data.Mindustry.State.STOPPED
+        })
 
-private fun getGameMode(): MindustryServerInfo.GameMode =
+private fun getGameMode(): Discovery.Data.Mindustry.GameMode =
     when (Vars.state.rules.mode()!!) {
-        Gamemode.attack -> MindustryServerInfo.GameMode.ATTACK
-        Gamemode.pvp -> MindustryServerInfo.GameMode.PVP
-        Gamemode.sandbox -> MindustryServerInfo.GameMode.SANDBOX
-        Gamemode.survival -> MindustryServerInfo.GameMode.SURVIVAL
-        Gamemode.editor -> MindustryServerInfo.GameMode.EDITOR
+        Gamemode.attack -> Discovery.Data.Mindustry.GameMode.ATTACK
+        Gamemode.pvp -> Discovery.Data.Mindustry.GameMode.PVP
+        Gamemode.sandbox -> Discovery.Data.Mindustry.GameMode.SANDBOX
+        Gamemode.survival -> Discovery.Data.Mindustry.GameMode.SURVIVAL
+        Gamemode.editor -> Discovery.Data.Mindustry.GameMode.EDITOR
     }
 
 private fun getVersion(): MindustryVersion =

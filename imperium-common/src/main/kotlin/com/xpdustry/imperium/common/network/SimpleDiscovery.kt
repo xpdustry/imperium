@@ -23,7 +23,6 @@ import com.google.common.cache.RemovalCause
 import com.google.common.cache.RemovalListener
 import com.google.common.cache.RemovalNotification
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.message.Messenger
@@ -42,15 +41,15 @@ import kotlinx.coroutines.runBlocking
 
 class SimpleDiscovery(
     private val messenger: Messenger,
-    private val metadata: ImperiumMetadata,
-    private val mindustryServerProvider: Supplier<MindustryServerInfo?>,
+    private val identifier: String,
+    private val discoveryDataProvider: Supplier<Discovery.Data>,
     private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
 
-    override val servers: List<ServerInfo>
-        get() = this._servers.asMap().values.toList()
+    override val servers: Collection<Discovery.Server>
+        get() = this._servers.asMap().values
 
-    private val _servers: Cache<String, ServerInfo> =
+    private val _servers: Cache<String, Discovery.Server> =
         CacheBuilder.newBuilder()
             .expireAfterWrite(45L, TimeUnit.SECONDS)
             .removalListener(DiscoveryRemovalListener())
@@ -59,17 +58,17 @@ class SimpleDiscovery(
     private lateinit var heartbeatJob: Job
 
     override fun onImperiumInit() {
-        logger.debug("Starting discovery as {}", metadata.identifier)
+        logger.debug("Starting discovery as {}", identifier)
 
         messenger.consumer<DiscoveryMessage> {
-            if (it.info.serverName == config.server.name) {
+            if (it.info.name == config.server.name) {
                 logger.warn("Received discovery message from another server with the same name.")
             } else if (it.type === DiscoveryMessage.Type.DISCOVER) {
-                logger.trace("Received discovery message from {}", it.info.metadata.identifier)
-                this._servers.put(it.info.metadata.identifier.toString(), it.info)
+                logger.trace("Received discovery message from {}", it.info.identifier)
+                this._servers.put(it.info.identifier, it.info)
             } else if (it.type === DiscoveryMessage.Type.UN_DISCOVER) {
-                this._servers.invalidate(it.info.metadata.identifier.toString())
-                logger.debug("Undiscovered server {}", it.info.metadata.identifier)
+                this._servers.invalidate(it.info.identifier)
+                logger.debug("Undiscovered server {}", it.info.identifier)
             }
         }
 
@@ -97,11 +96,12 @@ class SimpleDiscovery(
         logger.trace("Sending {} discovery message", type.name)
         messenger.publish(
             DiscoveryMessage(
-                ServerInfo(config.server.name, metadata, mindustryServerProvider.get()), type))
+                Discovery.Server(config.server.name, identifier, discoveryDataProvider.get()),
+                type))
     }
 
-    private inner class DiscoveryRemovalListener : RemovalListener<String, ServerInfo> {
-        override fun onRemoval(notification: RemovalNotification<String, ServerInfo>) {
+    private inner class DiscoveryRemovalListener : RemovalListener<String, Discovery.Server> {
+        override fun onRemoval(notification: RemovalNotification<String, Discovery.Server>) {
             if (notification.cause === RemovalCause.EXPIRED) {
                 logger.debug("Server {} has timeout.", notification.key)
             }

@@ -24,16 +24,16 @@ import com.deepl.api.TranslatorOptions
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.application.ImperiumMetadata
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
+import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.time.Duration
 import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
-class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) :
+class DeeplTranslator(config: ImperiumConfig, version: ImperiumVersion) :
     Translator, ImperiumApplication.Listener {
     private val translator: com.deepl.api.Translator
     private val cache: Cache<TranslatorKey, String>
@@ -49,7 +49,7 @@ class DeeplTranslator(config: ImperiumConfig, metadata: ImperiumMetadata) :
                 config.translator.token.value,
                 TranslatorOptions()
                     .setTimeout(Duration.ofSeconds(3L))
-                    .setAppInfo("Imperium", metadata.version.toString()),
+                    .setAppInfo("Imperium", version.toString()),
             )
         cache =
             CacheBuilder.newBuilder()

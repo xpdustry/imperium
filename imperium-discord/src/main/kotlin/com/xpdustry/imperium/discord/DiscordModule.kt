@@ -24,9 +24,8 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
-import com.xpdustry.imperium.common.network.MindustryServerInfo
-import com.xpdustry.imperium.discord.bridge.PlayerHistory
-import com.xpdustry.imperium.discord.bridge.SimplePlayerHistory
+import com.xpdustry.imperium.common.network.Discovery
+import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
 import com.xpdustry.imperium.discord.command.SlashCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
@@ -49,8 +48,6 @@ fun discordModule() =
 
         single<CommandRegistry>("button") { ButtonCommandRegistry(get()) }
 
-        single<Supplier<MindustryServerInfo?>> { Supplier { null } }
-
         single<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
 
         single<ServerConfig.Discord> {
@@ -58,5 +55,10 @@ fun discordModule() =
                 ?: error("The current server configuration is not Discord")
         }
 
-        single<PlayerHistory> { SimplePlayerHistory(get()) }
+        single<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
+
+        single<ImperiumVersion> {
+            ImperiumVersion.parse(
+                this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
+        }
     }

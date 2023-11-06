@@ -20,10 +20,10 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.discord.bridge.PlayerHistory
 import com.xpdustry.imperium.discord.command.InteractionSender
 import java.net.InetAddress
 import java.time.ZoneOffset
@@ -31,7 +31,7 @@ import java.time.format.DateTimeFormatter
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val history = instances.get<PlayerHistory>()
+    private val tracker = instances.get<PlayerTracker>()
     private val users = instances.get<UserManager>()
 
     // TODO
@@ -40,9 +40,10 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     suspend fun onPlayerInfo(actor: InteractionSender, query: String) {
         val user =
             users.findByUuid(query)
-                ?: query.toIntOrNull()?.let(history::getPlayerEntry)?.let {
-                    users.findByUuid(it.player.uuid)
-                }
+                ?: query
+                    .toLongOrNull()
+                    ?.let { tracker.getPlayerEntry(it) }
+                    ?.let { users.findByUuid(it.player.uuid) }
         if (user == null) {
             actor.respond("Player not found.")
             return
