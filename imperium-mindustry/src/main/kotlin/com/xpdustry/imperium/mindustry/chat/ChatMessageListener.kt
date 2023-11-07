@@ -52,26 +52,26 @@ import mindustry.net.ValidateException
 private val logger = logger("ROOT")
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline = instances.get<ChatMessagePipeline>()
+    private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
     private val punishments = instances.get<PunishmentManager>()
 
     override fun onImperiumInit() {
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
             if (con.player == null || packet.message == null) return@handleServer
-            interceptChatMessage(con.player, packet.message, pipeline)
+            interceptChatMessage(con.player, packet.message, chatMessagePipeline)
         }
 
         // I don't know why but Foo client appends invisible characters to the end of messages,
         // this is very annoying for the discord bridge.
-        pipeline.register("anti-foo-sign", Priority.HIGHEST) { context ->
+        chatMessagePipeline.register("anti-foo-sign", Priority.HIGHEST) { context ->
             val msg = context.message
             // https://github.com/mindustry-antigrief/mindustry-client/blob/23025185c20d102f3fbb9d9a4c20196cc871d94b/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
             if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2)
             else msg
         }
 
-        pipeline.register("mute", Priority.HIGH) { ctx ->
+        chatMessagePipeline.register("mute", Priority.HIGH) { ctx ->
             if (ctx.sender == null) {
                 return@register ctx.message
             }
@@ -108,7 +108,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             if (sender.player.team() != target.team()) continue
             ImperiumScope.MAIN.launch {
                 val filtered2 =
-                    pipeline.pump(ChatMessageContext(sender.player, sender.player, message))
+                    chatMessagePipeline.pump(
+                        ChatMessageContext(sender.player, sender.player, message))
                 if (filtered2.isBlank()) return@launch
 
                 target.sendMessage(
@@ -131,7 +132,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             Vars.netServer.admins.filterMessage(sender.player, message)
         }
         if (filtered1.isNullOrBlank()) return
-        val filtered2 = pipeline.pump(ChatMessageContext(sender.player, target, message))
+        val filtered2 = chatMessagePipeline.pump(ChatMessageContext(sender.player, target, message))
         if (filtered2.isBlank()) return
 
         val formatted =
@@ -151,7 +152,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         // The null target represents the server, for logging purposes
         (Entities.PLAYERS + listOf(null)).forEach { target ->
             ImperiumScope.MAIN.launch {
-                val processed = pipeline.pump(ChatMessageContext(null, target, message))
+                val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
                 target?.sendMessage("[scarlet][[Server]:[] $processed")
                 if (target == null) {

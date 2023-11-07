@@ -39,7 +39,7 @@ class SimplePlaceholderPipeline :
                 .toSet()
                 .map { placeholder ->
                     async {
-                        val parts = placeholder.split("_", limit = 2)
+                        val parts = placeholder.split(":", limit = 2)
                         val processor = processor(parts[0]) ?: return@async null
                         val query = parts.getOrNull(1) ?: ""
                         try {
