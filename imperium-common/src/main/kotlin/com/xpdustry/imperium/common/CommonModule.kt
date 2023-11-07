@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.MongoAccountManager
 import com.xpdustry.imperium.common.account.MongoUserManager
@@ -56,9 +57,11 @@ import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.version.ImperiumVersion
+import java.util.concurrent.Executors
 import java.util.function.Supplier
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
 @Suppress("FunctionName")
@@ -120,6 +123,15 @@ fun CommonModule() =
                 .connectTimeout(20.seconds.toJavaDuration())
                 .readTimeout(20.seconds.toJavaDuration())
                 .writeTimeout(20.seconds.toJavaDuration())
+                .dispatcher(
+                    Dispatcher(
+                        // The default executor blocks the exit in Mindustry
+                        Executors.newFixedThreadPool(
+                            Runtime.getRuntime().availableProcessors(),
+                            ThreadFactoryBuilder()
+                                .setDaemon(true)
+                                .setNameFormat("OkHttpClient-Dispatcher-Thread-%d")
+                                .build())))
                 .build()
         }
 
