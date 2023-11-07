@@ -43,7 +43,7 @@ internal class MongoBanManager(
     }
 
     override suspend fun punish(
-        author: Identity?,
+        author: Identity,
         target: Punishment.Target,
         reason: String,
         type: Punishment.Type,
@@ -57,7 +57,7 @@ internal class MongoBanManager(
             local = true)
     }
 
-    override suspend fun pardon(author: Identity?, id: Snowflake, reason: String) {
+    override suspend fun pardon(author: Identity, id: Snowflake, reason: String) {
         val punishment = findById(id) ?: return
         punishment.pardon = Punishment.Pardon(Instant.now(), reason)
         bans.save(punishment)

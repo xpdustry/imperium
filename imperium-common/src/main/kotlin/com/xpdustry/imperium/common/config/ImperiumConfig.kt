@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.config
 import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.misc.capitalize
+import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration
@@ -81,6 +82,9 @@ sealed interface ServerConfig {
     val displayName: String
         get() = name.capitalize()
 
+    val identity: Identity
+        get() = Identity.Server(name)
+
     data object None : ServerConfig {
         override val name: String = "none"
     }
@@ -97,6 +101,9 @@ sealed interface ServerConfig {
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }
+            require(NAME_REGEX.matches(name)) {
+                "Mindustry Server name must match regex ${NAME_REGEX.pattern}"
+            }
         }
 
         data class History(
@@ -113,6 +120,10 @@ sealed interface ServerConfig {
             val gatekeeper: Boolean = true,
             val imageProcessingDelay: Duration = 3.seconds,
         )
+
+        companion object {
+            private val NAME_REGEX = Regex("^[a-z0-9](-?[a-z0-9])+\$")
+        }
     }
 
     data class Discord(

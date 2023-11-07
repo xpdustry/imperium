@@ -78,7 +78,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             when (author) {
                 is Identity.Discord -> embed.setAuthor(discord.api.getUserById(author.id).await())
                 is Identity.Mindustry -> embed.setAuthor(author.name)
-                null -> embed.setAuthor("SYSTEM")
+                is Identity.Server -> embed.setAuthor("SYSTEM")
             }
 
             val channel =

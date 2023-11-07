@@ -402,7 +402,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                         val player = Entities.PLAYERS.find { it.uuid() == element.author }
                         if (player != null) {
                             punishments.punish(
-                                null,
+                                config.identity,
                                 Punishment.Target(player.ip().toInetAddress(), player.uuid()),
                                 "Placing NSFW images",
                                 Punishment.Type.BAN,
@@ -415,7 +415,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                         val address = users.findByUuid(element.author)?.lastAddress
                         if (address != null) {
                             punishments.punish(
-                                null,
+                                config.identity,
                                 Punishment.Target(address, element.author),
                                 "Placing NSFW images",
                                 Punishment.Type.BAN,

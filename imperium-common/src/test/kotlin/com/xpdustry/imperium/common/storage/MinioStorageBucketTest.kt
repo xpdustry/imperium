@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.common.storage
 
+import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
-import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.inject.get
@@ -91,7 +91,7 @@ class MinioStorageBucketTest {
                 )
         private val MODULE =
             module("minio-storage-test") {
-                include(commonModule())
+                include(CommonModule())
                 single<ImperiumConfig> {
                     ImperiumConfig(
                         storage = StorageConfig.Minio(port = MINIO_CONTAINER.firstMappedPort))

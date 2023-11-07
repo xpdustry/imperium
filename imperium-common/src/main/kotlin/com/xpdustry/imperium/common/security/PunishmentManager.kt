@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface PunishmentManager {
     suspend fun punish(
-        author: Identity?,
+        author: Identity,
         target: Punishment.Target,
         reason: String,
         type: Punishment.Type,
@@ -33,7 +33,7 @@ interface PunishmentManager {
         extra: PunishmentMessage.Extra = PunishmentMessage.Extra.None
     )
 
-    suspend fun pardon(author: Identity?, id: Snowflake, reason: String)
+    suspend fun pardon(author: Identity, id: Snowflake, reason: String)
 
     suspend fun findById(id: Snowflake): Punishment?
 

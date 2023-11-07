@@ -24,7 +24,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class PunishmentMessage(
-    val author: Identity?,
+    val author: Identity,
     val type: Type,
     val punishment: Snowflake,
     val extra: Extra

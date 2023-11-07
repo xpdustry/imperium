@@ -41,7 +41,6 @@ import kotlinx.coroutines.runBlocking
 
 class SimpleDiscovery(
     private val messenger: Messenger,
-    private val identifier: String,
     private val discoveryDataProvider: Supplier<Discovery.Data>,
     private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
@@ -58,7 +57,7 @@ class SimpleDiscovery(
     private lateinit var heartbeatJob: Job
 
     override fun onImperiumInit() {
-        logger.debug("Starting discovery as {}", identifier)
+        logger.debug("Starting discovery as {}", config.server.name)
 
         messenger.consumer<DiscoveryMessage> {
             if (it.info.name == config.server.name) {
@@ -96,7 +95,8 @@ class SimpleDiscovery(
         logger.trace("Sending {} discovery message", type.name)
         messenger.publish(
             DiscoveryMessage(
-                Discovery.Server(config.server.name, identifier, discoveryDataProvider.get()),
+                Discovery.Server(
+                    config.server.name, config.server.name, discoveryDataProvider.get()),
                 type))
     }
 

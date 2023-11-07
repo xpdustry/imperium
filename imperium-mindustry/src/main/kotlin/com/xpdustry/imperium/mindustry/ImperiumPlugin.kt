@@ -114,7 +114,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 }
 
 private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
-    SimpleImperiumApplication(mindustryModule(plugin)) {
+    SimpleImperiumApplication(MindustryModule(plugin)) {
     private var exited = false
 
     override fun exit(status: ExitStatus) {
