@@ -26,15 +26,15 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
 import mindustry.gen.Player
 
-data class PlaceholderContext(val player: Player, val message: String)
+data class PlaceholderContext(val player: Player?, val query: String)
 
 interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String>
 
-class SimplePlaceholderManager :
+class SimplePlaceholderPipeline :
     PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
     override suspend fun pump(context: PlaceholderContext): String =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            PLACEHOLDER_REGEX.findAll(context.message)
+            PLACEHOLDER_REGEX.findAll(context.query)
                 .map { it.groupValues[1] }
                 .toSet()
                 .map { placeholder ->
@@ -53,7 +53,7 @@ class SimplePlaceholderManager :
                 }
                 .awaitAll()
                 .filterNotNull()
-                .fold(context.message) { message, result ->
+                .fold(context.query) { message, result ->
                     message.replace("%${result.first}%", result.second)
                 }
         }
