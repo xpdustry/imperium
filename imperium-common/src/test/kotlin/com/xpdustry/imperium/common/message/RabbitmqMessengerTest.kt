@@ -17,11 +17,13 @@
  */
 package com.xpdustry.imperium.common.message
 
+import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.commonModule
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
@@ -228,11 +230,14 @@ class RabbitmqMessengerTest {
         private val RABBITMQ_CONTAINER = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
         private val MODULE =
             module("rabbitmq-messenger-test") {
-                include(commonModule())
+                include(CommonModule())
                 factory<Messenger> {
                     RabbitmqMessenger(
-                        MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort),
-                        UUID.randomUUID().toString())
+                        ImperiumConfig(
+                            server = ServerConfig.Mindustry("test-${UUID.randomUUID()}"),
+                            messenger =
+                                MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort)),
+                    )
                 }
             }
     }

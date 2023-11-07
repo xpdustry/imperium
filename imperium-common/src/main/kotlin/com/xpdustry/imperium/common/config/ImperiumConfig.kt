@@ -97,6 +97,9 @@ sealed interface ServerConfig {
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }
+            require(NAME_REGEX.matches(name)) {
+                "Mindustry Server name must match regex ${NAME_REGEX.pattern}"
+            }
         }
 
         data class History(
@@ -113,6 +116,10 @@ sealed interface ServerConfig {
             val gatekeeper: Boolean = true,
             val imageProcessingDelay: Duration = 3.seconds,
         )
+
+        companion object {
+            private val NAME_REGEX = Regex("^[a-z0-9](-?[a-z0-9])+\$")
+        }
     }
 
     data class Discord(

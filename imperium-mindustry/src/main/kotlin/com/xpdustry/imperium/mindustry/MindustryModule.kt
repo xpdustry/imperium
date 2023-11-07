@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.CommandRegistry
-import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
@@ -50,9 +50,10 @@ import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.net.Administration
 
-fun mindustryModule(plugin: ImperiumPlugin) =
+@Suppress("FunctionName")
+fun MindustryModule(plugin: ImperiumPlugin) =
     module("mindustry") {
-        include(commonModule())
+        include(CommonModule())
 
         single<BlockHistory> { SimpleBlockHistory(get()) }
 
@@ -119,18 +120,16 @@ private fun getVersion(): MindustryVersion =
     )
 
 // Yes, this is a mess
-private fun getVersionType(): MindustryVersion.Type {
+private fun getVersionType(): MindustryVersion.Type =
     if (Version.build == -1) {
-        return MindustryVersion.Type.CUSTOM
-    }
-    return when (Version.modifier.lowercase()) {
-        "alpha" -> MindustryVersion.Type.ALPHA
-        else -> {
-            when (Version.type) {
-                "official" -> MindustryVersion.Type.OFFICIAL
-                "bleeding-edge" -> MindustryVersion.Type.BLEEDING_EDGE
-                else -> MindustryVersion.Type.CUSTOM
-            }
+        MindustryVersion.Type.CUSTOM
+    } else
+        when (Version.modifier.lowercase()) {
+            "alpha" -> MindustryVersion.Type.ALPHA
+            else ->
+                when (Version.type) {
+                    "official" -> MindustryVersion.Type.OFFICIAL
+                    "bleeding-edge" -> MindustryVersion.Type.BLEEDING_EDGE
+                    else -> MindustryVersion.Type.CUSTOM
+                }
         }
-    }
-}

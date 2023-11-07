@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common.account
 
+import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
@@ -128,7 +129,7 @@ class MongoAccountManagerTest {
 
     private fun createModule() =
         module("account-test") {
-            include(com.xpdustry.imperium.common.commonModule())
+            include(CommonModule())
             single<ImperiumConfig> {
                 ImperiumConfig(
                     database = DatabaseConfig.Mongo(port = MONGO_CONTAINER.firstMappedPort))

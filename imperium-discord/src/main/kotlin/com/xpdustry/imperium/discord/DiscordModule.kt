@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.discord
 
+import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.command.CommandRegistry
-import com.xpdustry.imperium.common.commonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
@@ -36,9 +36,10 @@ import java.nio.file.Path
 import java.util.function.Supplier
 import kotlin.io.path.Path
 
-fun discordModule() =
+@Suppress("FunctionName")
+fun DiscordModule() =
     module("discord") {
-        include(commonModule())
+        include(CommonModule())
 
         single<DiscordService> { SimpleDiscordService(get(), get()) }
 

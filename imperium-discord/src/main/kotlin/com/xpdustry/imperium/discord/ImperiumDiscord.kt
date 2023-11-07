@@ -37,7 +37,7 @@ import com.xpdustry.imperium.discord.security.ReportListener
 import java.util.Scanner
 import kotlin.system.exitProcess
 
-class ImperiumDiscord : SimpleImperiumApplication(discordModule()) {
+class ImperiumDiscord : SimpleImperiumApplication(DiscordModule()) {
     override fun exit(status: ExitStatus) {
         super.exit(status)
         exitProcess(status.ordinal)

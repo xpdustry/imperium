@@ -27,6 +27,7 @@ import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.UUID
@@ -51,32 +52,31 @@ import kotlinx.serialization.serializer
 
 private typealias MessageOrRequest<T> = Pair<T, RabbitmqMessenger.RequestData?>
 
-class RabbitmqMessenger(
-    private val config: MessengerConfig.RabbitMQ,
-    private val identifier: String
-) : Messenger, ImperiumApplication.Listener {
+class RabbitmqMessenger(private val config: ImperiumConfig) :
+    Messenger, ImperiumApplication.Listener {
     internal val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
     private lateinit var connection: Connection
 
     override fun onImperiumInit() {
+        val rabbit = config.messenger as MessengerConfig.RabbitMQ
         val factory =
             ConnectionFactory().apply {
-                host = config.host
-                port = config.port
+                host = rabbit.host
+                port = rabbit.port
                 isAutomaticRecoveryEnabled = true
 
                 if (username.isNotBlank()) {
-                    username = config.username
-                    password = config.password.value
+                    username = rabbit.username
+                    password = rabbit.password.value
                 }
 
-                if (config.ssl) {
+                if (rabbit.ssl) {
                     useSslProtocol(SSLContext.getDefault())
                 }
             }
 
-        connection = factory.newConnection(identifier)
+        connection = factory.newConnection(config.server.name)
         channel = connection.createChannel()
         channel.exchangeDeclare(IMPERIUM_EXCHANGE, BuiltinExchangeType.DIRECT, false, true, null)
     }
@@ -131,7 +131,7 @@ class RabbitmqMessenger(
                 val bytes = json.encodeToByteArray()
                 val headers =
                     mutableMapOf(
-                        SENDER_HEADER to identifier,
+                        SENDER_HEADER to config.server.name,
                         JAVA_CLASS_HEADER to message::class.jvmName,
                     )
                 if (request != null) {
@@ -235,7 +235,7 @@ class RabbitmqMessenger(
                     "Received ${type.simpleName ?: type.jvmName} message without sender header from $envelope")
                 return@runBlocking
             }
-            if (sender == identifier) {
+            if (sender == config.server.name) {
                 return@runBlocking
             }
 
