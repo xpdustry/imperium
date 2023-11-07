@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -61,6 +62,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val punishments = instances.get<PunishmentManager>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
+    private val config = instances.get<ImperiumConfig>()
 
     @EventHandler
     internal fun onPlayerLeave(event: EventType.PlayerLeave) {
@@ -125,7 +127,7 @@ class VoteKickCommand(instances: InstanceManager) :
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
         val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
         punishments.punish(
-            null,
+            config.server.identity,
             Punishment.Target(
                 session.objective.target.ip().toInetAddress(), session.objective.target.uuid()),
             "Votekick: ${session.objective.reason}",

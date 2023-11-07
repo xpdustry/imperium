@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.config
 import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.misc.capitalize
+import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration
@@ -80,6 +81,9 @@ sealed interface ServerConfig {
     val name: String
     val displayName: String
         get() = name.capitalize()
+
+    val identity: Identity
+        get() = Identity.Server(name)
 
     data object None : ServerConfig {
         override val name: String = "none"

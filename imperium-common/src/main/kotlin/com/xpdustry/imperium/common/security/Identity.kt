@@ -33,4 +33,6 @@ sealed interface Identity {
     ) : Identity
 
     @Serializable data class Discord(override val name: String, val id: Long) : Identity
+
+    @Serializable data class Server(override val name: String) : Identity
 }
