@@ -17,11 +17,15 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
+import arc.util.Log
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
 import java.time.Instant
+import kotlin.time.Duration
+import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Player
+import mindustry.net.NetConnection
 
 val Player.identity: Identity.Mindustry
     get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
@@ -30,3 +34,22 @@ val Player.joinTime: Instant
     get() = Instant.ofEpochMilli(con.connectTime)
 
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
+
+fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = false) {
+    if (kicked) return
+
+    if (!silent) {
+        Log.info("Kicking connection @ / @; Reason: @", address, uuid, reason.replace("\n", " "))
+    }
+
+    if (duration.isPositive()) {
+        Vars.netServer.admins.handleKicked(uuid, address, duration.inWholeMilliseconds)
+    }
+
+    Call.kick(this, reason)
+    // STEAM: Will break if the connection closes now
+    close()
+
+    Vars.netServer.admins.save()
+    kicked = true
+}

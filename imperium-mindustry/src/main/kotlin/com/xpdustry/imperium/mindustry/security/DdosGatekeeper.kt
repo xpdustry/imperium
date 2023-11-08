@@ -58,8 +58,7 @@ class DdosGatekeeper(private val http: OkHttpClient) :
 
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         return if (addresses.await().contains(BigInteger(1, context.address.address))) {
-            GatekeeperResult.Failure(
-                "You address has been marked by our anti-VPN system. Please disable it.")
+            GatekeeperResult.Failure("DDOS attack detected. Go fuck yourself.", silent = true)
         } else {
             GatekeeperResult.Success
         }

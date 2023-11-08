@@ -32,6 +32,7 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
 import java.io.ByteArrayOutputStream
@@ -250,9 +251,10 @@ private fun interceptPlayerConnection(
             } else {
                 GatekeeperResult.Success
             }
+
         runMindustryThread {
             if (result is GatekeeperResult.Failure) {
-                con.kick(result.reason, result.time.toMillis())
+                con.kick(result.reason, result.time, result.silent)
                 return@runMindustryThread
             }
 

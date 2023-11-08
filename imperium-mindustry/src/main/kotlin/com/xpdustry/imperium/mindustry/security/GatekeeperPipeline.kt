@@ -22,7 +22,7 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
 import java.net.InetAddress
-import java.time.Duration
+import kotlin.time.Duration
 import kotlinx.coroutines.withContext
 
 data class GatekeeperContext(
@@ -35,7 +35,11 @@ data class GatekeeperContext(
 sealed interface GatekeeperResult {
     data object Success : GatekeeperResult
 
-    data class Failure(val reason: String, val time: Duration = Duration.ZERO) : GatekeeperResult
+    data class Failure(
+        val reason: String,
+        val time: Duration = Duration.ZERO,
+        val silent: Boolean = false
+    ) : GatekeeperResult
 }
 
 interface GatekeeperPipeline : ProcessorPipeline<GatekeeperContext, GatekeeperResult>
