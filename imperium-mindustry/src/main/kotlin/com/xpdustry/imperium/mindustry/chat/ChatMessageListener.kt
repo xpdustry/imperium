@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
+import com.xpdustry.imperium.common.misc.MINDUSTRY_ORANGE_COLOR
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
@@ -48,22 +48,22 @@ import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Priority
 import java.awt.Color
+import java.text.DecimalFormat
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
+import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.SendChatMessageCallPacket
 import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
-private val BLURPLE = Color(0x5865F2)
 private val rootLogger = logger("ROOT")
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
     private val placeholderPipeline = instances.get<PlaceholderPipeline>()
     private val accounts = instances.get<AccountManager>()
@@ -120,6 +120,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     ?: return@register ""
             when (query) {
                 "hours" -> playtime.toHours().toString()
+                "chaotic" -> DecimalFormat("000").format(playtime.toHours())
                 else -> invalidQueryError(query)
             }
         }
@@ -148,8 +149,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         ?.color
                         ?.toString()
                         ?.let { "#$it" }
-                        ?: MINDUSTRY_ACCENT_COLOR.toHexString()
-                is Identity.Discord -> BLURPLE.toHexString()
+                        ?: MINDUSTRY_ORANGE_COLOR.toHexString()
+                is Identity.Discord -> MINDUSTRY_ORANGE_COLOR.toHexString()
                 else -> Color.RED.toHexString()
             }
         }
@@ -172,7 +173,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 if (filtered2.isBlank()) return@launch
 
                 target.sendMessage(
-                    "[#${sender.player.team().color}]<T> ${formatChatMessage(sender.player.identity, filtered2)}",
+                    "[#${sender.player.team().color}]${getChatPrefix("T")} ${getChatFormat(sender.player.identity, filtered2)}",
                     sender.player,
                     filtered2,
                 )
@@ -198,7 +199,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         val filtered2 = chatMessagePipeline.pump(ChatMessageContext(sender.player, target, message))
         if (filtered2.isBlank()) return
 
-        val formatted = "[gray]<W>[] ${formatChatMessage(sender.player.identity, filtered2)}"
+        val formatted =
+            "[gray]${getChatPrefix("W")}[] ${getChatFormat(sender.player.identity, filtered2)}"
         sender.player.sendMessage(formatted, sender.player, filtered2)
         target.sendMessage(formatted, sender.player, filtered2)
     }
@@ -216,7 +218,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             ImperiumScope.MAIN.launch {
                 val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
-                target?.sendMessage(formatChatMessage(config.identity, processed))
+                target?.sendMessage(
+                    "[${Color.RED}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(config.identity, processed)}")
                 if (target == null) {
                     sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
                 }
@@ -224,9 +227,14 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
-    private suspend fun formatChatMessage(subject: Identity, message: String): String {
-        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatMessage)) +
+    private suspend fun getChatFormat(subject: Identity, message: String): String {
+        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatFormat)) +
+            " " +
             message
+    }
+
+    private fun getChatPrefix(prefix: String): String {
+        return config.templates.chatPrefix.replace("%prefix%", prefix)
     }
 
     private fun interceptChatMessage(sender: Player, message: String) {
@@ -280,7 +288,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val filtered2 =
                     chatMessagePipeline.pump(ChatMessageContext(sender, target, filtered1))
                 if (filtered2.isBlank()) return@launch
-                target?.sendMessage(formatChatMessage(sender.identity, filtered2))
+                target?.sendMessage(getChatFormat(sender.identity, filtered2))
                 if (target == null) {
                     rootLogger.info(
                         "&fi{}: {}",

@@ -123,8 +123,9 @@ sealed interface ServerConfig {
         )
 
         data class Templates(
-            val chatMessage: String =
-                "[cyan]<%subject_playtime:hours%[cyan]> [%subject_color:hex%]%subject_name:display% [cyan]> [white]",
+            val chatPrefix: String = "<%prefix%>",
+            val chatFormat: String =
+                "[cyan]<[white]%subject_playtime:chaotic%[cyan]> [%subject_color:hex%]%subject_name:display% [cyan]>[white]",
         )
 
         companion object {

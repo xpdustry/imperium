@@ -29,15 +29,19 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import fr.xpdustry.distributor.api.event.EventHandler
+import java.awt.Color
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
+import mindustry.gen.Iconc
 
+private val BLURPLE = Color(0x5865F2)
 private val logger = logger("ROOT")
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -55,7 +59,8 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                     val processed =
                         chatMessagePipeline.pump(ChatMessageContext(null, target, it.message))
                     if (processed.isBlank()) return@launch
-                    target?.sendMessage(formatChatMessage(it.sender, processed))
+                    target?.sendMessage(
+                        "[${BLURPLE.toHexString()}]${getDiscordChatPrefix()} ${formatChatMessage(it.sender, processed)}")
                     if (target == null) {
                         logger.info(
                             "&fi&lcDiscord ({}): &fr&lw${processed.stripMindustryColors()}",
@@ -94,7 +99,12 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         }
 
     private suspend fun formatChatMessage(subject: Identity, message: String): String {
-        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatMessage)) +
+        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatFormat)) +
+            " " +
             message
+    }
+
+    private fun getDiscordChatPrefix(): String {
+        return config.templates.chatPrefix.replace("%prefix%", Iconc.discord.toString())
     }
 }
