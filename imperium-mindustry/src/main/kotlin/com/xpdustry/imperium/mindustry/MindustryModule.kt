@@ -37,7 +37,7 @@ import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
-import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderManager
+import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -63,7 +63,7 @@ fun MindustryModule(plugin: ImperiumPlugin) =
 
         single<ChatMessagePipeline> { SimpleChatMessagePipeline() }
 
-        single<PlaceholderPipeline> { SimplePlaceholderManager() }
+        single<PlaceholderPipeline> { SimplePlaceholderPipeline() }
 
         single<Path>("directory") { plugin.directory }
 

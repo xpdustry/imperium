@@ -98,6 +98,7 @@ sealed interface ServerConfig {
         val color: Color = Color.WHITE,
         val world: World = World(),
         val security: Security = Security(),
+        val templates: Templates = Templates(),
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }
@@ -119,6 +120,12 @@ sealed interface ServerConfig {
         data class Security(
             val gatekeeper: Boolean = true,
             val imageProcessingDelay: Duration = 3.seconds,
+        )
+
+        data class Templates(
+            val chatPrefix: String = "<%prefix%>",
+            val chatFormat: String =
+                "[cyan]<[white]%subject_playtime:chaotic%[cyan]> [%subject_color:hex%]%subject_name:display% [cyan]>[white]",
         )
 
         companion object {

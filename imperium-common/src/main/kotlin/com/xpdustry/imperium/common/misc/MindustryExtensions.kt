@@ -21,6 +21,8 @@ import java.awt.Color
 
 val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
 
+val MINDUSTRY_ORANGE_COLOR = Color(0xffa108)
+
 fun CharSequence.stripMindustryColors(): String {
     val out = StringBuilder(length)
     var index = 0
