@@ -187,6 +187,10 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         target: Player,
         @Greedy message: String
     ) {
+        if (sender.player == target) {
+            sender.sendWarning("You can't whisper to yourself.")
+            return
+        }
         val filtered1 = runMindustryThread {
             Vars.netServer.admins.filterMessage(sender.player, message)
         }
