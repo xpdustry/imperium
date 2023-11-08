@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.discord.misc.identity
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.future.await
@@ -50,7 +51,9 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 ImperiumScope.MAIN.launch {
                     messenger.publish(
                         BridgeChatMessage(
-                            channel.name, event.message.author.name, event.message.content))
+                            channel.name,
+                            event.message.author.asUser().get().identity,
+                            event.message.content))
                 }
             }
         }

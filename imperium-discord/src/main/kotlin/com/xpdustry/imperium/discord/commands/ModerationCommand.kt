@@ -26,10 +26,10 @@ import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.misc.identity
 import java.time.Duration
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.take
@@ -137,8 +137,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                 Punishment.Target(user.lastAddress!!, user._id)
             }
 
-        punishments.punish(
-            Identity.Discord(actor.user.name, actor.user.id), lookup, reason, type, duration)
+        punishments.punish(actor.user.identity, lookup, reason, type, duration)
         actor.respond("$verb user $target.")
     }
 
@@ -161,7 +160,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             return
         }
 
-        punishments.pardon(Identity.Discord(actor.user.name, actor.user.id), snowflake, reason)
+        punishments.pardon(actor.user.identity, snowflake, reason)
         actor.respond("Pardoned user.")
     }
 

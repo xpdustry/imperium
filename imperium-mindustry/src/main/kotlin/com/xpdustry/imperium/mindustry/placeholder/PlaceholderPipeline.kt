@@ -19,24 +19,25 @@ package com.xpdustry.imperium.mindustry.placeholder
 
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
-import mindustry.gen.Player
 
-data class PlaceholderContext(val player: Player?, val query: String)
+data class PlaceholderContext(val subject: Identity, val query: String)
 
 interface PlaceholderPipeline : ProcessorPipeline<PlaceholderContext, String>
+
+fun invalidQueryError(query: String): Nothing =
+    throw IllegalArgumentException("Invalid query: $query")
 
 class SimplePlaceholderPipeline :
     PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
     override suspend fun pump(context: PlaceholderContext): String =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            PLACEHOLDER_REGEX.findAll(context.query)
-                .map { it.groupValues[1] }
-                .toSet()
+            extractPlaceholders(context.query)
                 .map { placeholder ->
                     async {
                         val parts = placeholder.split(":", limit = 2)
@@ -44,7 +45,7 @@ class SimplePlaceholderPipeline :
                         val query = parts.getOrNull(1) ?: ""
                         try {
                             placeholder to
-                                processor.process(PlaceholderContext(context.player, query))
+                                processor.process(PlaceholderContext(context.subject, query))
                         } catch (error: Exception) {
                             logger.error("Failed to process placeholder '{}'", placeholder, error)
                             null
@@ -53,13 +54,35 @@ class SimplePlaceholderPipeline :
                 }
                 .awaitAll()
                 .filterNotNull()
-                .fold(context.query) { message, result ->
-                    message.replace("%${result.first}%", result.second)
+                .fold(context.query) { message, (placeholder, result) ->
+                    message.replace("%$placeholder%", result)
                 }
         }
 
+    private fun extractPlaceholders(query: String): Set<String> {
+        val placeholders = mutableSetOf<String>()
+        var index = 0
+        while (index < query.length) {
+            if (query[index] == '%') {
+                val start = index
+                do {
+                    index++
+                } while (index < query.length && query[index] != '%')
+                if (index == query.length) {
+                    logger.warn("Invalid placeholder query: {}", query)
+                    break
+                } else if (index == start + 1) {
+                    index++
+                    continue
+                }
+                placeholders.add(query.substring(start + 1, index))
+            }
+            index++
+        }
+        return placeholders
+    }
+
     companion object {
         private val logger by LoggerDelegate()
-        private val PLACEHOLDER_REGEX = Regex("%([^%]+)%")
     }
 }

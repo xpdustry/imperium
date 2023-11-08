@@ -19,25 +19,35 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.CommandHandler.ResponseType
 import arc.util.Time
+import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
+import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
+import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Priority
+import java.awt.Color
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
@@ -49,17 +59,22 @@ import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
-private val logger = logger("ROOT")
+private val BLURPLE = Color(0x5865F2)
+private val rootLogger = logger("ROOT")
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
+
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
+    private val placeholderPipeline = instances.get<PlaceholderPipeline>()
+    private val accounts = instances.get<AccountManager>()
     private val punishments = instances.get<PunishmentManager>()
+    private val config = instances.get<ServerConfig.Mindustry>()
 
     override fun onImperiumInit() {
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
             if (con.player == null || packet.message == null) return@handleServer
-            interceptChatMessage(con.player, packet.message, chatMessagePipeline)
+            interceptChatMessage(con.player, packet.message)
         }
 
         // I don't know why but Foo client appends invisible characters to the end of messages,
@@ -94,6 +109,50 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             }
             ctx.message
         }
+
+        placeholderPipeline.register("subject_playtime") { (subject, query) ->
+            val playtime =
+                when (subject) {
+                    is Identity.Mindustry -> accounts.findByIdentity(subject)?.playtime
+                    is Identity.Discord -> accounts.findByDiscordId(subject.id)?.playtime
+                    else -> null
+                }
+                    ?: return@register ""
+            when (query) {
+                "hours" -> playtime.toHours().toString()
+                else -> invalidQueryError(query)
+            }
+        }
+
+        placeholderPipeline.register("subject_name") { (subject, query) ->
+            when (query) {
+                "plain" -> subject.name
+                "display" ->
+                    when (subject) {
+                        is Identity.Mindustry ->
+                            Entities.PLAYERS.find { it.uuid() == subject.uuid }?.name
+                                ?: subject.name
+                        else -> subject.name
+                    }
+                else -> invalidQueryError(query)
+            }
+        }
+
+        placeholderPipeline.register("subject_color") { (subject, query) ->
+            if (query != "hex") {
+                invalidQueryError(query)
+            }
+            when (subject) {
+                is Identity.Mindustry ->
+                    Entities.PLAYERS.find { it.uuid() == subject.uuid }
+                        ?.color
+                        ?.toString()
+                        ?.let { "#$it" }
+                        ?: MINDUSTRY_ACCENT_COLOR.toHexString()
+                is Identity.Discord -> BLURPLE.toHexString()
+                else -> Color.RED.toHexString()
+            }
+        }
     }
 
     @Command(["t"])
@@ -113,7 +172,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 if (filtered2.isBlank()) return@launch
 
                 target.sendMessage(
-                    "[#${sender.player.team().color}]<T> ${Vars.netServer.chatFormatter.format(sender.player, filtered2)}",
+                    "[#${sender.player.team().color}]<T> ${formatChatMessage(sender.player.identity, filtered2)}",
                     sender.player,
                     filtered2,
                 )
@@ -135,8 +194,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         val filtered2 = chatMessagePipeline.pump(ChatMessageContext(sender.player, target, message))
         if (filtered2.isBlank()) return
 
-        val formatted =
-            "[gray]<W>[] ${Vars.netServer.chatFormatter.format(sender.player, filtered2)}"
+        val formatted = "[gray]<W>[] ${formatChatMessage(sender.player.identity, filtered2)}"
         sender.player.sendMessage(formatted, sender.player, filtered2)
         target.sendMessage(formatted, sender.player, filtered2)
     }
@@ -154,75 +212,81 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             ImperiumScope.MAIN.launch {
                 val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
-                target?.sendMessage("[scarlet][[Server]:[] $processed")
+                target?.sendMessage(formatChatMessage(config.identity, processed))
                 if (target == null) {
                     sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
                 }
             }
         }
     }
-}
 
-private fun interceptChatMessage(sender: Player, message: String, pipeline: ChatMessagePipeline) {
-    // do not receive chat messages from clients that are too young or not registered
-    if (Time.timeSinceMillis(sender.con.connectTime) < 500 ||
-        !sender.con.hasConnected ||
-        !sender.isAdded)
-        return
-
-    // detect and kick for foul play
-    if (!sender.con.chatRate.allow(2000, Administration.Config.chatSpamLimit.num())) {
-        sender.con.kick(KickReason.kick)
-        Vars.netServer.admins.blacklistDos(sender.con.address)
-        return
+    private suspend fun formatChatMessage(subject: Identity, message: String): String {
+        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatMessage)) +
+            message
     }
 
-    if (message.length > Vars.maxTextLength) {
-        throw ValidateException(sender, "Player has sent a message above the text limit.")
-    }
+    private fun interceptChatMessage(sender: Player, message: String) {
+        // do not receive chat messages from clients that are too young or not registered
+        if (Time.timeSinceMillis(sender.con.connectTime) < 500 ||
+            !sender.con.hasConnected ||
+            !sender.isAdded)
+            return
 
-    val escaped = message.replace("\n", "")
-
-    DistributorProvider.get().eventBus.post(PlayerChatEvent(sender, escaped))
-
-    // log commands before they are handled
-    if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
-        // log with brackets
-        logger.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$escaped")
-    }
-
-    // check if it's a command
-    val response = Vars.netServer.clientCommands.handleMessage(escaped, sender)
-
-    if (response.type != ResponseType.noCommand) {
-        // a command was sent, now get the output
-        if (response.type != ResponseType.valid) {
-            val text = Vars.netServer.invalidHandler.handle(sender, response)
-            if (text != null) {
-                sender.sendMessage(text)
-            }
+        // detect and kick for foul play
+        if (!sender.con.chatRate.allow(2000, Administration.Config.chatSpamLimit.num())) {
+            sender.con.kick(KickReason.kick)
+            Vars.netServer.admins.blacklistDos(sender.con.address)
+            return
         }
-        return
-    }
 
-    val filtered1 = Vars.netServer.admins.filterMessage(sender, escaped)
-    if (filtered1.isNullOrBlank()) return
+        if (message.length > Vars.maxTextLength) {
+            throw ValidateException(sender, "Player has sent a message above the text limit.")
+        }
 
-    // The null target represents the server, for logging and event purposes
-    (Entities.PLAYERS + listOf(null)).forEach { target ->
-        ImperiumScope.MAIN.launch {
-            val filtered2 = pipeline.pump(ChatMessageContext(sender, target, filtered1))
-            if (filtered2.isBlank()) return@launch
-            target?.sendMessage(Vars.netServer.chatFormatter.format(sender, filtered2))
-            if (target == null) {
-                logger.info(
-                    "&fi{}: {}",
-                    "&lc${sender.name().stripMindustryColors()}",
-                    "&lw${filtered2.stripMindustryColors()}")
-                runMindustryThread {
-                    DistributorProvider.get()
-                        .eventBus
-                        .post(ProcessedPlayerChatEvent(sender, filtered2))
+        val escaped = message.replace("\n", "")
+
+        DistributorProvider.get().eventBus.post(PlayerChatEvent(sender, escaped))
+
+        // log commands before they are handled
+        if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
+            // log with brackets
+            rootLogger.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$escaped")
+        }
+
+        // check if it's a command
+        val response = Vars.netServer.clientCommands.handleMessage(escaped, sender)
+
+        if (response.type != ResponseType.noCommand) {
+            // a command was sent, now get the output
+            if (response.type != ResponseType.valid) {
+                val text = Vars.netServer.invalidHandler.handle(sender, response)
+                if (text != null) {
+                    sender.sendMessage(text)
+                }
+            }
+            return
+        }
+
+        val filtered1 = Vars.netServer.admins.filterMessage(sender, escaped)
+        if (filtered1.isNullOrBlank()) return
+
+        // The null target represents the server, for logging and event purposes
+        (Entities.PLAYERS + listOf(null)).forEach { target ->
+            ImperiumScope.MAIN.launch {
+                val filtered2 =
+                    chatMessagePipeline.pump(ChatMessageContext(sender, target, filtered1))
+                if (filtered2.isBlank()) return@launch
+                target?.sendMessage(formatChatMessage(sender.identity, filtered2))
+                if (target == null) {
+                    rootLogger.info(
+                        "&fi{}: {}",
+                        "&lc${sender.name().stripMindustryColors()}",
+                        "&lw${filtered2.stripMindustryColors()}")
+                    runMindustryThread {
+                        DistributorProvider.get()
+                            .eventBus
+                            .post(ProcessedPlayerChatEvent(sender, filtered2))
+                    }
                 }
             }
         }

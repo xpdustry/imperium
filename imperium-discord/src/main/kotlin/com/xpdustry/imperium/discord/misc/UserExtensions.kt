@@ -15,12 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.bridge
+package com.xpdustry.imperium.discord.misc
 
-import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.security.Identity
-import kotlinx.serialization.Serializable
+import org.javacord.api.entity.user.User
 
-@Serializable
-data class BridgeChatMessage(val serverName: String, val sender: Identity, val message: String) :
-    Message
+val User.identity: Identity
+    get() = Identity.Discord(name, id)
