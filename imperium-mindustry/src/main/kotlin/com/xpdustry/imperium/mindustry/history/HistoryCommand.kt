@@ -27,14 +27,18 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import fr.xpdustry.distributor.api.command.sender.CommandSender
+import fr.xpdustry.distributor.api.event.EventHandler
 import mindustry.Vars
+import mindustry.game.EventType
 import mindustry.net.Administration.PlayerInfo
 
 // TODO
 //  - Add interactive mode like the "/inspector" command ?
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
+    private val interactive = PlayerMap<Boolean>(instances.get())
 
     @Command(["history", "player"])
     @ClientSide
@@ -66,6 +70,25 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         // TODO I really need this Component API
         sender.sendMessage(
             if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
+    }
+
+    @Command(["history", "interactive"])
+    @ClientSide
+    private fun onInteractiveHistoryCommand(sender: CommandSender) {
+        if (interactive[sender.player] == true) {
+            interactive.remove(sender.player)
+            sender.sendMessage("[accent]Interactive history disabled.")
+        } else {
+            interactive[sender.player] = true
+            sender.sendMessage(
+                "[accent]Interactive history enabled. Tap on a tile to see its history.")
+        }
+    }
+
+    @EventHandler
+    internal fun onPlayerTapEvent(event: EventType.TapEvent) {
+        if (interactive[event.player] != true) return
+        onTileHistoryCommand(CommandSender.player(event.player), event.tile.x, event.tile.y)
     }
 
     @Command(["history", "tile"])
