@@ -34,9 +34,6 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
-import com.xpdustry.imperium.mindustry.game.KillAllCommand
-import com.xpdustry.imperium.mindustry.game.SwitchCommand
-import com.xpdustry.imperium.mindustry.game.WaveCommand
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -48,8 +45,11 @@ import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
+import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
+import com.xpdustry.imperium.mindustry.world.SwitchCommand
+import com.xpdustry.imperium.mindustry.world.WaveCommand
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
