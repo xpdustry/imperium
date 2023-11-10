@@ -21,12 +21,15 @@ import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
+import com.xpdustry.imperium.common.serialization.SerializableObjectId
 import java.time.Instant
 import kotlinx.serialization.Serializable
+import org.bson.types.ObjectId
 
 @Serializable
 data class User(
-    override val _id: MindustryUUID,
+    val uuid: MindustryUUID,
+    override val _id: SerializableObjectId = ObjectId(),
     val names: MutableSet<String> = mutableSetOf(),
     val addresses: MutableSet<SerializableInetAddress> = mutableSetOf(),
     var lastName: String? = null,
@@ -34,4 +37,4 @@ data class User(
     var timesJoined: Int = 0,
     var firstJoin: SerializableJInstant = Instant.now(),
     var lastJoin: SerializableJInstant = Instant.now(),
-) : Entity<MindustryUUID>
+) : Entity<ObjectId>

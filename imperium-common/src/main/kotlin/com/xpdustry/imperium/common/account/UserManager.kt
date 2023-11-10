@@ -19,13 +19,19 @@ package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import java.net.InetAddress
+import kotlinx.coroutines.flow.Flow
+import org.bson.types.ObjectId
 
 interface UserManager {
+    suspend fun findById(id: ObjectId): User?
+
     suspend fun findByUuidOrCreate(uuid: MindustryUUID): User
 
     suspend fun findByUuid(uuid: MindustryUUID): User?
 
     suspend fun findByLastAddress(address: InetAddress): User?
+
+    suspend fun searchUser(query: String): Flow<User>
 
     suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
 }

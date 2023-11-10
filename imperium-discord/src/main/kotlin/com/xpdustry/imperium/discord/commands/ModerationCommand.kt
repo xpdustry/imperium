@@ -127,12 +127,15 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         if (lookup == null) {
             val uuid =
                 target.toLongOrNull()?.let { tracker.getPlayerEntry(it) }?.player?.uuid ?: target
-            val user = users.findByUuid(uuid)
+            var user = users.findByUuid(uuid)
+            if (user == null && ObjectId.isValid(target)) {
+                user = users.findById(ObjectId(target))
+            }
             if (user?.lastAddress == null) {
-                actor.respond("Target is not a valid IP address or a valid UUID.")
+                actor.respond("Target is not a valid IP address, UUID, TEMP-ID or USER ID.")
                 return
             }
-            lookup = Punishment.Target(user.lastAddress!!, user._id)
+            lookup = Punishment.Target(user.lastAddress!!, user.uuid)
         }
 
         punishments.punish(

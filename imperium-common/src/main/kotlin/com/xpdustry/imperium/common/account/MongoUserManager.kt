@@ -18,35 +18,52 @@
 package com.xpdustry.imperium.common.account
 
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Indexes
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import java.net.InetAddress
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
+import org.bson.types.ObjectId
 
 internal class MongoUserManager(private val mongo: MongoProvider) :
     UserManager, ImperiumApplication.Listener {
 
-    private lateinit var users: MongoEntityCollection<User, String>
+    private lateinit var users: MongoEntityCollection<User, ObjectId>
 
     override fun onImperiumInit() {
         users = mongo.getCollection("users", User::class)
+        runBlocking {
+            users.index(
+                Indexes.compoundIndex(
+                    Indexes.ascending(User::lastName.name), Indexes.ascending(User::names.name))) {
+                    name("name_index").version(1)
+                }
+            users.index(Indexes.hashed(User::uuid.name)) { name("uuid_index").version(1) }
+        }
     }
 
-    override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User =
-        users.findById(uuid) ?: User(uuid)
+    override suspend fun findById(id: ObjectId): User? = users.findById(id)
 
-    override suspend fun findByUuid(uuid: MindustryUUID): User? = users.findById(uuid)
+    override suspend fun findByUuidOrCreate(uuid: MindustryUUID): User =
+        findByUuid(uuid) ?: User(uuid)
+
+    override suspend fun findByUuid(uuid: MindustryUUID): User? =
+        users.find(Filters.eq(User::uuid.name, uuid)).firstOrNull()
 
     override suspend fun findByLastAddress(address: InetAddress): User? =
         users.find(Filters.eq(User::lastAddress.name, address)).firstOrNull()
+
+    override suspend fun searchUser(query: String): Flow<User> = users.find(Filters.text(query))
 
     override suspend fun updateOrCreateByUuid(
         uuid: MindustryUUID,
         updater: suspend (User) -> Unit
     ) {
-        val user = users.findById(uuid) ?: User(uuid)
+        val user = findByUuidOrCreate(uuid)
         updater(user)
         users.save(user)
     }
