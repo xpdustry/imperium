@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -28,25 +29,50 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.Entities
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Building
 import mindustry.gen.Call
 import mindustry.gen.Groups
+import mindustry.gen.WorldLabel
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.storage.CoreBlock
 
-// TODO
-//  - Add Core Alerts option to not interfere with other plugins
-//  - Add Core damage alerts
 class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
+    private val config = instances.get<ServerConfig.Mindustry>()
     private val damageRateLimiter =
-        SimpleRateLimiter<CoreDamageKey>(
-            1, instances.get<ServerConfig.Mindustry>().world.coreDamageAlertDelay)
+        SimpleRateLimiter<CoreDamageKey>(1, config.world.coreDamageAlertDelay)
+
+    override fun onImperiumInit() {
+        WorldLabel.create()
+
+        if (!config.world.displayCoreId) return
+        ImperiumScope.MAIN.launch {
+            while (isActive) {
+                delay(1.seconds)
+                if (!Vars.state.isPlaying) continue
+                for (player in Entities.PLAYERS) {
+                    for ((index, cluster) in getManager(player.team()).clusters.withIndex()) {
+                        Call.label(
+                            player.con,
+                            "#$index",
+                            1F,
+                            (cluster.x + (cluster.w / 2F)) * Vars.tilesize - (Vars.tilesize / 2F),
+                            (cluster.y + (cluster.h / 2F)) * Vars.tilesize - (Vars.tilesize / 2F))
+                    }
+                }
+            }
+        }
+    }
 
     @Command(["core", "list"])
     @ClientSide
