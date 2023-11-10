@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.time.Duration
 import java.util.function.Consumer
@@ -52,8 +53,10 @@ import org.javacord.api.interaction.SlashCommandBuilder
 import org.javacord.api.interaction.SlashCommandInteractionOption
 import org.javacord.api.interaction.SlashCommandOption
 import org.javacord.api.interaction.SlashCommandOptionBuilder
+import org.javacord.api.interaction.SlashCommandOptionChoice
 import org.javacord.api.interaction.SlashCommandOptionType
 
+// TODO THis is awful, rewrite it
 class SlashCommandRegistry(private val discord: DiscordService) :
     CommandRegistry, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
@@ -69,6 +72,7 @@ class SlashCommandRegistry(private val discord: DiscordService) :
         registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
         registerHandler(ObjectId::class, OBJECT_ID_TYPE_HANDLER)
+        registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
     }
 
     override fun onImperiumInit() {
@@ -166,7 +170,7 @@ class SlashCommandRegistry(private val discord: DiscordService) :
                 throw IllegalArgumentException("$function must be suspend")
             }
 
-            val arguments = mutableListOf<CommandEdge.Argument>()
+            val arguments = mutableListOf<CommandEdge.Argument<*>>()
             var wasOptional = false
             for (parameter in function.parameters) {
                 // Skip "this"
@@ -195,8 +199,7 @@ class SlashCommandRegistry(private val discord: DiscordService) :
                         "$function has unsupported parameter type $classifier")
                 }
 
-                arguments +=
-                    CommandEdge.Argument(parameter.name!!, optional, handlers[classifier]!!)
+                arguments += createCommandEdgeArgument(parameter.name!!, optional, classifier)
             }
 
             function.isAccessible = true
@@ -212,6 +215,18 @@ class SlashCommandRegistry(private val discord: DiscordService) :
                     ),
             )
         }
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Any> createCommandEdgeArgument(
+        name: String,
+        optional: Boolean,
+        klass: KClass<T>
+    ): CommandEdge.Argument<T> {
+        val handler =
+            handlers[klass] as TypeHandler<T>?
+                ?: throw IllegalArgumentException("Unsupported type $klass")
+        return CommandEdge.Argument(name, optional, klass, handler)
     }
 
     private fun compile() {
@@ -263,16 +278,18 @@ class SlashCommandRegistry(private val discord: DiscordService) :
 
     private fun compile(options: Consumer<SlashCommandOption>, edge: CommandEdge) {
         for (parameter in edge.arguments) {
-            options.accept(
-                SlashCommandOptionBuilder()
-                    .setName(parameter.name)
-                    .setDescription("No description.")
-                    .setRequired(!parameter.optional)
-                    .setType(parameter.handler.type)
-                    .build(),
-            )
+            options.accept(compile(parameter))
         }
     }
+
+    private fun <T : Any> compile(argument: CommandEdge.Argument<T>) =
+        SlashCommandOptionBuilder()
+            .setName(argument.name)
+            .setDescription("No description.")
+            .setRequired(!argument.optional)
+            .setType(argument.handler.type)
+            .apply { argument.handler.apply(this, argument.annotations) }
+            .build()
 
     private fun <T : Any> registerHandler(klass: KClass<T>, handler: TypeHandler<T>) {
         handlers[klass] = handler
@@ -340,13 +357,18 @@ private data class CommandEdge(
     val container: Any,
     val function: KFunction<*>,
     val role: Role,
-    val arguments: List<Argument>,
+    val arguments: List<Argument<*>>,
     val ephemeral: Boolean,
 ) {
-    data class Argument(val name: String, val optional: Boolean, val handler: TypeHandler<*>)
+    data class Argument<T : Any>(
+        val name: String,
+        val optional: Boolean,
+        val annotations: KAnnotatedElement,
+        val handler: TypeHandler<T>
+    )
 }
 
-private abstract class TypeHandler<T : Any>(val type: SlashCommandOptionType) {
+abstract class TypeHandler<T : Any>(val type: SlashCommandOptionType) {
     abstract fun parse(option: SlashCommandInteractionOption): T?
 
     open fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) = Unit
@@ -440,5 +462,21 @@ private val OBJECT_ID_TYPE_HANDLER =
             throw OptionParsingException("Invalid ObjectId")
         }
     }
+
+class EnumTypeHandler<T>(private val klass: KClass<T>) :
+    TypeHandler<T>(SlashCommandOptionType.LONG) where T : Enum<T>, T : DiscordChoice {
+    override fun parse(option: SlashCommandInteractionOption): T? {
+        val ordinal = option.longValue.getOrNull()?.toInt() ?: return null
+        return klass.java.enumConstants[ordinal]
+    }
+
+    override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+        klass.java.enumConstants.forEach {
+            val choice = it as T
+            builder.addChoice(
+                SlashCommandOptionChoice.create(choice.choiceName, choice.ordinal.toLong()))
+        }
+    }
+}
 
 class OptionParsingException(message: String) : Exception(message)

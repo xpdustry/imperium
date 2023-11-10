@@ -51,7 +51,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
 
             val embed =
-                EmbedBuilder().setTimestampToNow().apply {
+                EmbedBuilder().apply {
                     when (message.type) {
                         PunishmentMessage.Type.CREATE -> {
                             setColor(Color.RED)

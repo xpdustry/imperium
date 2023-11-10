@@ -41,7 +41,7 @@ import mindustry.game.EventType
 import mindustry.gen.Player
 
 class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline: GatekeeperPipeline = instances.get()
+    private val pipeline = instances.get<GatekeeperPipeline>()
     private val accounts = instances.get<AccountManager>()
     private val users = instances.get<UserManager>()
     private val playtime = ConcurrentHashMap<Player, Long>()

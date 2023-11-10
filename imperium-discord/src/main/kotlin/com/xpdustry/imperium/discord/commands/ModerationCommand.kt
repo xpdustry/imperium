@@ -28,9 +28,13 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.discord.command.DiscordChoice
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.identity
-import java.time.Duration
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -88,23 +92,14 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(*embeds)
     }
 
-    @Command(["kick"], Role.MODERATOR)
-    private suspend fun onKickCommand(
-        actor: InteractionSender,
-        target: String,
-        reason: String,
-        duration: Duration = Duration.ofHours(6)
-    ) {
-        onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration)
-    }
-
     @Command(["ban"], Role.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender,
         target: String,
         reason: String,
+        duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
     ) {
-        onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, null)
+        onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration.value)
     }
 
     @Command(["mute"], Role.MODERATOR)
@@ -112,9 +107,9 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender,
         target: String,
         reason: String,
-        duration: Duration = Duration.ofHours(1)
+        duration: PunishmentDuration = PunishmentDuration.ONE_HOUR
     ) {
-        onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration)
+        onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration.value)
     }
 
     private suspend fun onPunishCommand(
@@ -123,7 +118,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender,
         target: String,
         reason: String,
-        duration: Duration?
+        duration: Duration
     ) {
         val lookup =
             try {
@@ -137,7 +132,12 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                 Punishment.Target(user.lastAddress!!, user._id)
             }
 
-        punishments.punish(actor.user.identity, lookup, reason, type, duration)
+        punishments.punish(
+            actor.user.identity,
+            lookup,
+            reason,
+            type,
+            if (duration.isInfinite()) null else duration.toJavaDuration())
         actor.respond("$verb user $target.")
     }
 
@@ -197,4 +197,17 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         analysis.updateSafetyById(result.first._id, unsafe)
         actor.respond("Updated safety of NSFW to ${if (unsafe) "unsafe" else "safe"}.")
     }
+}
+
+enum class PunishmentDuration(val value: Duration) : DiscordChoice {
+    ONE_HOUR(1.hours),
+    THREE_HOURS(3.hours),
+    ONE_DAY(1.days),
+    THREE_DAYS(3.days),
+    ONE_WEEK(7.days),
+    ONE_MONTH(30.days),
+    PERMANENT(Duration.INFINITE);
+
+    override val choiceName: String
+        get() = name.lowercase().replace("_", " ")
 }
