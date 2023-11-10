@@ -84,7 +84,7 @@ class HelpCommand : ImperiumApplication.Listener {
                     .drop(COMMANDS_PER_PAGE * (page - 1))
                     .take(COMMANDS_PER_PAGE)
                     .forEach {
-                        append("[orange] /${it.text} [white]${it.paramText}")
+                        append("[orange] /${it.text}")
                         val description = it.getDescription(Players.getLocale(sender.player))
                         if (description.isNotBlank()) {
                             append("[lightgray] - $description")
