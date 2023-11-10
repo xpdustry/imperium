@@ -45,8 +45,8 @@ class SimpleDiscovery(
     private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
 
-    override val servers: Collection<Discovery.Server>
-        get() = this._servers.asMap().values
+    override val servers: Map<String, Discovery.Server>
+        get() = this._servers.asMap()
 
     private val _servers: Cache<String, Discovery.Server> =
         CacheBuilder.newBuilder()
@@ -63,11 +63,11 @@ class SimpleDiscovery(
             if (it.info.name == config.server.name) {
                 logger.warn("Received discovery message from another server with the same name.")
             } else if (it.type === DiscoveryMessage.Type.DISCOVER) {
-                logger.trace("Received discovery message from {}", it.info.identifier)
-                this._servers.put(it.info.identifier, it.info)
+                logger.trace("Received discovery message from {}", it.info.name)
+                this._servers.put(it.info.name, it.info)
             } else if (it.type === DiscoveryMessage.Type.UN_DISCOVER) {
-                this._servers.invalidate(it.info.identifier)
-                logger.debug("Undiscovered server {}", it.info.identifier)
+                this._servers.invalidate(it.info.name)
+                logger.debug("Undiscovered server {}", it.info.name)
             }
         }
 
@@ -95,9 +95,7 @@ class SimpleDiscovery(
         logger.trace("Sending {} discovery message", type.name)
         messenger.publish(
             DiscoveryMessage(
-                Discovery.Server(
-                    config.server.name, config.server.name, discoveryDataProvider.get()),
-                type))
+                Discovery.Server(config.server.name, discoveryDataProvider.get()), type))
     }
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, Discovery.Server> {

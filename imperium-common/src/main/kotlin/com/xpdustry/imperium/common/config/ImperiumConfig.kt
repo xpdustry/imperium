@@ -93,7 +93,7 @@ sealed interface ServerConfig {
         override val name: String,
         override val displayName: String = name.capitalize(),
         val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
-        val hub: Boolean = false,
+        val hub: Hub = Hub(),
         val history: History = History(),
         val color: Color = Color.WHITE,
         val world: World = World(),
@@ -127,6 +127,20 @@ sealed interface ServerConfig {
             val chatFormat: String =
                 "[cyan]<[white]%subject_playtime:chaotic%[cyan]> [%subject_color:hex%]%subject_name:display% [cyan]>[white]",
         )
+
+        data class Hub(
+            val enabled: Boolean = false,
+            val overlays: List<Overlay> = emptyList(),
+        ) {
+            data class Overlay(
+                val text: String,
+                val offsetX: Float = 0F,
+                val offsetY: Float = 0F,
+                val size: Float = 2F,
+                val outline: Boolean = false,
+                val background: Boolean = false,
+            )
+        }
 
         companion object {
             private val NAME_REGEX = Regex("^[a-z0-9](-?[a-z0-9])+\$")

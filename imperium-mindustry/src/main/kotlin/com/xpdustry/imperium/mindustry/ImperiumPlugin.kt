@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
@@ -45,6 +46,7 @@ import com.xpdustry.imperium.mindustry.security.VoteKickCommand
 import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
+import com.xpdustry.imperium.mindustry.world.HubListener
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import fr.xpdustry.distributor.api.DistributorProvider
@@ -101,6 +103,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 DumpCommand::class,
             )) {
             application.register(listener)
+        }
+        if (application.instances.get<ServerConfig.Mindustry>().hub.enabled) {
+            application.register(HubListener::class)
         }
         application.init()
 

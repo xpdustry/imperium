@@ -22,11 +22,11 @@ import com.xpdustry.imperium.common.version.MindustryVersion
 import kotlinx.serialization.Serializable
 
 interface Discovery {
-    val servers: Collection<Server>
+    val servers: Map<String, Server>
 
     fun heartbeat()
 
-    @Serializable data class Server(val name: String, val identifier: String, val data: Data)
+    @Serializable data class Server(val name: String, val data: Data)
 
     @Serializable
     sealed interface Data {
