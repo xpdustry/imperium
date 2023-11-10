@@ -42,7 +42,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             EmbedBuilder()
                 .setTitle("Server List")
                 .setDescription(
-                    discovery.servers.joinToString(separator = "\n") { "- ${it.name}" }),
+                    discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }),
         )
 
     @Command(["server", "player", "joins"])
