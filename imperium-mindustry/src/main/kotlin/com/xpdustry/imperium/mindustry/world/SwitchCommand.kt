@@ -23,9 +23,11 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
+import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.gen.Call
 import mindustry.gen.Player
@@ -37,9 +39,9 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["switch"])
     @ClientSide
-    fun onSwitchCommand(player: Player, server: String? = null) {
+    fun onSwitchCommand(sender: CommandSender, server: String? = null) {
         if (server == null) {
-            switchInterface.open(player)
+            switchInterface.open(sender.player)
             return
         }
         val data = discovery.servers[server]?.data
@@ -55,7 +57,11 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             Call.sendMessage("[accent]Server is not playing.")
             return
         }
-        switchToServer(player, data)
+        if (data.gameVersion != getMindustryVersion()) {
+            Call.sendMessage("[accent]Server is not running the same version of Mindustry.")
+            return
+        }
+        switchToServer(sender.player, data)
     }
 
     private fun createServerSwitchInterface(): Interface {
@@ -67,7 +73,10 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         .asSequence()
                         .map(Discovery.Server::data)
                         .filterIsInstance(Discovery.Data.Mindustry::class.java)
-                        .filter { it.state == Discovery.Data.Mindustry.State.PLAYING }
+                        .filter {
+                            it.state == Discovery.Data.Mindustry.State.PLAYING &&
+                                it.gameVersion == getMindustryVersion()
+                        }
                         .sortedBy(Discovery.Data.Mindustry::name)
                         .toList()
                 },

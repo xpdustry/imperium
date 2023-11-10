@@ -36,6 +36,7 @@ import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -59,15 +60,15 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val config = instances.get<ServerConfig.Mindustry>().hub
     private val directory = instances.get<Path>("directory").resolve("hub")
+    private val portals = mutableMapOf<String, Portal>()
+    private val building = PlayerMap<PortalBuilder>(instances.get())
+    private val discovery = instances.get<Discovery>()
+    private val debug = PlayerMap<Boolean>(instances.get())
     private val gson =
         GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapter(Polygon::class.java, PolygonTypeAdapter().nullSafe())
             .create()
-    private val portals = mutableMapOf<String, Portal>()
-    private val building = PlayerMap<PortalBuilder>(instances.get())
-    private val discovery = instances.get<Discovery>()
-    private val debug = PlayerMap<Boolean>(instances.get())
 
     override fun onImperiumInit() {
         if (!config.enabled) error("Hub is not enabled.")
@@ -299,20 +300,26 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val info = discovery.servers[portal.name]
             if (info == null) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("Server not found.")
+                labels.error.text("[scarlet]ERROR: Server not found.")
                 labels.error.add()
                 continue
             }
             val data = info.data
             if (data !is Discovery.Data.Mindustry) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("Server is not a Mindustry server.")
+                labels.error.text("[scarlet]ERROR: Server is not a Mindustry server.")
                 labels.error.add()
                 continue
             }
             if (data.state != Discovery.Data.Mindustry.State.PLAYING) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("Server is not open.")
+                labels.error.text("[orange]Server is not open.")
+                labels.error.add()
+                continue
+            }
+            if (data.gameVersion != getMindustryServerInfo().gameVersion) {
+                labels.overlays.forEach { it.first.hide() }
+                labels.error.text("[scarlet]ERROR: Server version mismatch.")
                 labels.error.add()
                 continue
             }
