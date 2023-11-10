@@ -108,7 +108,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     for (i in 0 until portal.polygon.npoints) {
                         val ni = if (i == portal.polygon.npoints - 1) 0 else i + 1
                         Geometry.iterateLine(
-                            0F,
+                            0F, // Useless argument, why is it even there ?
                             portal.polygon.xpoints[i].toFloat(),
                             portal.polygon.ypoints[i].toFloat(),
                             portal.polygon.xpoints[ni].toFloat(),

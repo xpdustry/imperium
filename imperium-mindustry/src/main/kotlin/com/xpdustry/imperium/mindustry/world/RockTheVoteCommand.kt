@@ -45,17 +45,6 @@ class RockTheVoteCommand(instances: InstanceManager) :
 
     private val mapListInterface: Interface =
         MenuInterface.create(plugin).apply {
-            addTransformer(
-                ListTransformer(
-                    provider = { Vars.maps.customMaps().toList() },
-                    renderer = { it.name() },
-                    fill = true,
-                    onChoice = { view, map ->
-                        view.closeAll()
-                        onVoteSessionStart(view.viewer, manager.session, map)
-                    },
-                ),
-            )
             addTransformer { _, pane ->
                 pane.title = "Choose a map"
                 pane.options.addRow(
@@ -63,6 +52,17 @@ class RockTheVoteCommand(instances: InstanceManager) :
                         view.closeAll()
                         onVoteSessionStart(view.viewer, manager.session, null)
                     })
+                addTransformer(
+                    ListTransformer(
+                        provider = { Vars.maps.customMaps().toList() },
+                        renderer = { it.name() },
+                        fill = true,
+                        onChoice = { view, map ->
+                            view.closeAll()
+                            onVoteSessionStart(view.viewer, manager.session, map)
+                        },
+                    ),
+                )
             }
         }
 
@@ -98,5 +98,5 @@ class RockTheVoteCommand(instances: InstanceManager) :
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Map?>): String =
-        "Type [accent]/rtv y[] to vote to change the map."
+        "Type [accent]/rtv y[] to vote to change the map to ${session.objective?.name() ?: "a random one"}."
 }
