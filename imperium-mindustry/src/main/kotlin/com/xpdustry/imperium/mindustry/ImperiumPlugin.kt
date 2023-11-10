@@ -35,6 +35,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.KillAllCommand
+import com.xpdustry.imperium.mindustry.game.SwitchCommand
 import com.xpdustry.imperium.mindustry.game.WaveCommand
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
@@ -101,6 +102,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 WaveCommand::class,
                 KillAllCommand::class,
                 DumpCommand::class,
+                SwitchCommand::class,
             )) {
             application.register(listener)
         }
