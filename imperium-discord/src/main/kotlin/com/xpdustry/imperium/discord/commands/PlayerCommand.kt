@@ -24,19 +24,23 @@ import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.service.DiscordService
 import java.net.InetAddress
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toCollection
+import org.bson.types.ObjectId
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val tracker = instances.get<PlayerTracker>()
     private val users = instances.get<UserManager>()
+    private val discord = instances.get<DiscordService>()
 
-    // TODO
-    //  - Implement player search command
-    @Command(["player", "info"], Role.MODERATOR)
+    @Command(["player", "info"])
     suspend fun onPlayerInfo(actor: InteractionSender, query: String) {
         val user =
             users.findByUuid(query)
@@ -44,6 +48,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .toLongOrNull()
                     ?.let { tracker.getPlayerEntry(it) }
                     ?.let { users.findByUuid(it.player.uuid) }
+                    ?: if (ObjectId.isValid(query)) users.findById(ObjectId(query)) else null
         if (user == null) {
             actor.respond("Player not found.")
             return
@@ -52,9 +57,9 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(
             EmbedBuilder()
                 .setTitle("Player Info")
-                .addField("Last Name", user.lastName, true)
-                .addField("Last Address", user.lastAddress?.hostAddress!!, true)
-                .addField("Uuid", "`${user._id}`", true)
+                .addField("ID", "`${user._id}`", true)
+                .addField("Last Name", "`${user.lastName}`", true)
+                .addField("Names", user.names.joinToString(transform = { "`$it`" }), true)
                 .addField(
                     "First Join",
                     DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
@@ -66,10 +71,44 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         user.lastJoin.atOffset(ZoneOffset.UTC)),
                     true)
                 .addField("Times Joined", user.timesJoined.toString(), true)
-                .addField("Names", user.names.joinToString())
-                .addField(
-                    "Addresses",
-                    user.addresses.joinToString(transform = InetAddress::getHostAddress)),
+                .apply {
+                    if (discord.isAllowed(actor.user, Role.MODERATOR)) {
+                        addField("Uuid", "`${user.uuid}`", true)
+                        addField("Last Address", user.lastAddress!!.hostAddress, true)
+                        addField(
+                            "Addresses",
+                            user.addresses.joinToString(transform = InetAddress::getHostAddress),
+                            true)
+                    }
+                },
         )
+    }
+
+    @Command(["player", "search"])
+    suspend fun onPlayerSearch(actor: InteractionSender, query: String) {
+        val users = users.searchUser(query).take(21).toCollection(mutableListOf())
+        if (users.isEmpty()) {
+            actor.respond("No players found.")
+            return
+        }
+        var hasMore = false
+        if (users.size > 20) {
+            hasMore = true
+            users.removeLast()
+        }
+
+        var text =
+            if (users.isEmpty()) {
+                "No players found."
+            } else {
+                users.joinToString(separator = "\n") {
+                    "- `${it.lastName!!.stripMindustryColors()}` (`${it._id}`)"
+                }
+            }
+        if (hasMore) {
+            text += "\n\nAnd more..."
+        }
+
+        actor.respond(EmbedBuilder().setTitle("Player Search").setDescription(text))
     }
 }

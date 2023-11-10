@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.account
 
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Indexes
+import com.mongodb.client.model.Sorts
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.mongo.MongoEntityCollection
 import com.xpdustry.imperium.common.database.mongo.MongoProvider
@@ -37,12 +38,14 @@ internal class MongoUserManager(private val mongo: MongoProvider) :
     override fun onImperiumInit() {
         users = mongo.getCollection("users", User::class)
         runBlocking {
-            users.index(
-                Indexes.compoundIndex(
-                    Indexes.ascending(User::lastName.name), Indexes.ascending(User::names.name))) {
-                    name("name_index").version(1)
-                }
-            users.index(Indexes.hashed(User::uuid.name)) { name("uuid_index").version(1) }
+            users.index(Indexes.text(User::names.name)) {
+                name("names_text_index")
+                version(1)
+            }
+            users.index(Indexes.hashed(User::uuid.name)) {
+                name("uuid_index")
+                version(1)
+            }
         }
     }
 
@@ -57,7 +60,8 @@ internal class MongoUserManager(private val mongo: MongoProvider) :
     override suspend fun findByLastAddress(address: InetAddress): User? =
         users.find(Filters.eq(User::lastAddress.name, address)).firstOrNull()
 
-    override suspend fun searchUser(query: String): Flow<User> = users.find(Filters.text(query))
+    override suspend fun searchUser(query: String): Flow<User> =
+        users.find(Filters.text(query)).sort(Sorts.ascending(User::lastName.name))
 
     override suspend fun updateOrCreateByUuid(
         uuid: MindustryUUID,
