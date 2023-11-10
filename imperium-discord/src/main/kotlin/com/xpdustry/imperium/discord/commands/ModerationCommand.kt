@@ -20,12 +20,14 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.discord.command.DiscordChoice
@@ -46,6 +48,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val analysis = instances.get<LogicImageAnalysis>()
+    private val tracker = instances.get<PlayerTracker>()
 
     @Command(["punishment", "list"], Role.MODERATOR)
     private suspend fun onPunishmentListCommand(
@@ -120,17 +123,17 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         reason: String,
         duration: Duration
     ) {
-        val lookup =
-            try {
-                Punishment.Target(target.toInetAddress())
-            } catch (e: Exception) {
-                val user = users.findByUuid(target)
-                if (user?.lastAddress == null) {
-                    actor.respond("Target is not a valid IP address or a valid UUID.")
-                    return
-                }
-                Punishment.Target(user.lastAddress!!, user._id)
+        var lookup = target.toInetAddressOrNull()?.let(Punishment::Target)
+        if (lookup == null) {
+            val uuid =
+                target.toLongOrNull()?.let { tracker.getPlayerEntry(it) }?.player?.uuid ?: target
+            val user = users.findByUuid(uuid)
+            if (user?.lastAddress == null) {
+                actor.respond("Target is not a valid IP address or a valid UUID.")
+                return
             }
+            lookup = Punishment.Target(user.lastAddress!!, user._id)
+        }
 
         punishments.punish(
             actor.user.identity,
