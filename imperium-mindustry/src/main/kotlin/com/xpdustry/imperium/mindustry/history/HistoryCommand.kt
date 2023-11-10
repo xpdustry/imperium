@@ -34,8 +34,6 @@ import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.net.Administration.PlayerInfo
 
-// TODO
-//  - Add interactive mode like the "/inspector" command ?
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
     private val interactive = PlayerMap<Boolean>(instances.get())
@@ -45,18 +43,18 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ServerSide
     private fun onPlayerHistoryCommand(
         sender: CommandSender,
-        info: PlayerInfo,
+        player: PlayerInfo,
         @Min(1) @Max(50) limit: Int = 10
     ) {
-        val entries = normalize(history.getHistory(info.id), limit)
+        val entries = normalize(history.getHistory(player.id), limit)
         if (entries.none()) {
             sender.sendWarning("No history found.")
             return
         }
         val builder =
-            StringBuilder("[accent]History of player [white]").append(info.plainLastName())
+            StringBuilder("[accent]History of player [white]").append(player.plainLastName())
         if (canSeeUuid(sender)) {
-            builder.append(" [accent](").append(info.id).append(")")
+            builder.append(" [accent](").append(player.id).append(")")
         }
         builder.append(":")
         for (entry in entries) {

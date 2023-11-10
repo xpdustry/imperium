@@ -40,6 +40,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.ArcCommandManager
 import fr.xpdustry.distributor.api.command.argument.PlayerInfoArgument
 import fr.xpdustry.distributor.api.command.sender.CommandSender
@@ -106,7 +107,7 @@ class MindustryCommandRegistry(
         var builder =
             manager
                 .commandBuilder(annotation.name, createLiteralDescription(base))
-                .permission(createPermission(annotation.role))
+                .permission(createPermission(annotation.role, annotation.name))
         for (rest in annotation.path.drop(1)) {
             base += rest
             builder = builder.literal(rest, createLiteralDescription(base))
@@ -131,10 +132,9 @@ class MindustryCommandRegistry(
         manager.command(builder)
     }
 
-    private fun createPermission(role: Role) =
-        PredicatePermission.of<CommandSender>(
-            SimpleCloudKey.of("imperium"),
-        ) { sender ->
+    // TODO Cache the permissions, the number of requests per help command is insane
+    private fun createPermission(role: Role, command: String) =
+        PredicatePermission.of<CommandSender>(SimpleCloudKey.of("imperium:$command")) { sender ->
             role == Role.EVERYONE ||
                 sender.isConsole ||
                 sender.player.admin ||
@@ -196,7 +196,11 @@ class MindustryCommandRegistry(
             }
         }
 
-        function.callSuspendBy(arguments)
+        if (function.isSuspend) {
+            function.callSuspendBy(arguments)
+        } else {
+            runMindustryThread { function.callBy(arguments) }
+        }
     }
 }
 

@@ -20,6 +20,7 @@ package com.xpdustry.imperium.mindustry.world
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -56,11 +57,11 @@ class WaveCommand(instances: InstanceManager) :
             }
         }
 
-    @Command(["wave", "set", "time"], Role.MODERATOR)
+    @Command(["wave", "set", "countdown"], Role.MODERATOR)
     @ClientSide
-    private fun onWaveSetTime(sender: CommandSender, time: Duration) {
-        Vars.state.wavetime = time.seconds.toFloat() * 60F
-        sender.sendMessage("Set wave time to $time")
+    private fun onWaveSetTime(sender: CommandSender, duration: Duration) {
+        Vars.state.wavetime = duration.seconds.toFloat() * 60F
+        sender.sendMessage("Set wave countdown to $duration")
     }
 
     @Command(["wave", "set", "counter"], Role.MODERATOR)
@@ -73,9 +74,9 @@ class WaveCommand(instances: InstanceManager) :
 
     @Command(["wave", "run"], Role.MODERATOR)
     @ClientSide
-    private fun onWaveRun(sender: CommandSender, @Min(0) waves: Int = 0) {
-        repeat(waves) { Vars.logic.runWave() }
-        sender.sendMessage("Skipped $waves wave(s).")
+    private fun onWaveRun(sender: CommandSender, @Min(1) @Max(20) count: Int = 1) {
+        repeat(count) { Vars.logic.runWave() }
+        sender.sendMessage("Ran $count wave(s).")
     }
 
     @Command(["wave", "skip"])

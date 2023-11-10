@@ -27,6 +27,8 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.toList
 import fr.xpdustry.distributor.api.command.ArcCommand
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Players
@@ -39,7 +41,7 @@ class HelpCommand : ImperiumApplication.Listener {
 
     @Command(["help"])
     @ClientSide
-    private fun onHelpCommand(sender: CommandSender, @Greedy query: String? = null) {
+    private suspend fun onHelpCommand(sender: CommandSender, @Greedy query: String? = null) {
         val page = if (query == null) 1 else query.toIntOrNull()
         if (page != null) {
             onHelpPageCommand(sender, page)
@@ -48,17 +50,26 @@ class HelpCommand : ImperiumApplication.Listener {
 
         val path = query!!.split(" ")
         val command =
-            Vars.netServer.clientCommands.commandList.find { it.text == path[0] }
+            getNativeCommandList().find { it.text == path[0] }
                 ?: return sender.sendMessage("[scarlet]No command found.")
         if (command is ArcCommand<*>) {
             onArcCommandHelp(
-                sender, command, command.realName + " " + path.drop(1).joinToString(" "))
+                sender,
+                command,
+                buildString {
+                    append(command.realName)
+                    for (part in path.drop(1)) {
+                        append(" ")
+                        append(part)
+                    }
+                })
         } else {
             sender.sendMessage(
                 buildString {
                     appendLine(
                         "[orange]-- [lightgray]/${command.text} ${command.paramText} --[orange]")
-                    val description = command.getDescription(Players.getLocale(sender.player))
+                    val description =
+                        command.getDescription(Players.getLocale(sender.player), first = true)
                     if (description.isNotBlank()) {
                         appendLine("[white]$description")
                     }
@@ -67,25 +78,28 @@ class HelpCommand : ImperiumApplication.Listener {
         }
     }
 
-    private fun onHelpPageCommand(sender: CommandSender, page: Int) {
-        if (page < 0 || page > getPageNumber()) {
+    private suspend fun onHelpPageCommand(sender: CommandSender, page: Int) {
+        if (page < 1 || page > getPageNumber(sender)) {
             sender.sendMessage(
-                "[scarlet]'page' must be a number between[orange] 1[] and[orange] ${getPageNumber()}[scarlet].")
+                "[scarlet]'page' must be a number between[orange] 1[] and[orange] ${getPageNumber(sender)}[scarlet].")
             return
         }
         sender.sendMessage(
             buildString {
                 appendLine(
-                    "[orange]-- Commands Page[lightgray] $page[gray]/[lightgray]${getPageNumber()}[orange] --")
+                    "[orange]-- Commands Page[lightgray] $page[gray]/[lightgray]${getPageNumber(sender)}[orange] --")
                 Vars.netServer.clientCommands.commandList
                     .asSequence()
-                    .filter { it !is ArcCommand<*> || !it.isAlias }
+                    .filter {
+                        it !is ArcCommand<*> || (!it.isAlias && canSeeArcCommand(it, sender))
+                    }
                     .sortedBy(CommandHandler.Command::text)
                     .drop(COMMANDS_PER_PAGE * (page - 1))
                     .take(COMMANDS_PER_PAGE)
                     .forEach {
                         append("[orange] /${it.text}")
-                        val description = it.getDescription(Players.getLocale(sender.player))
+                        val description =
+                            it.getDescription(Players.getLocale(sender.player), first = true)
                         if (description.isNotBlank()) {
                             append("[lightgray] - $description")
                         }
@@ -93,6 +107,14 @@ class HelpCommand : ImperiumApplication.Listener {
                     }
             },
         )
+    }
+
+    private fun <S : Any> canSeeArcCommand(command: ArcCommand<S>, sender: CommandSender): Boolean {
+        val mapped = command.manager.commandSenderMapper.apply(sender)
+        return command.manager.commands().any {
+            it.arguments[0].name == command.realName &&
+                command.manager.hasPermission(mapped, it.commandPermission)
+        }
     }
 
     private fun <S : Any> onArcCommandHelp(
@@ -103,8 +125,19 @@ class HelpCommand : ImperiumApplication.Listener {
         val mapped = command.manager.commandSenderMapper.apply(sender)
         val locale = Players.getLocale(sender.player)
 
-        when (val topic = command.manager.createCommandHelpHandler().queryHelp(mapped, query)) {
+        when (val topic =
+            command.manager
+                // Makes sure arguments of restricted commands do not make them visible
+                .createCommandHelpHandler { cmd ->
+                    command.manager.hasPermission(mapped, cmd.commandPermission)
+                }
+                .queryHelp(mapped, query)) {
             is CommandHelpHandler.MultiHelpTopic<S> -> {
+                if (topic.childSuggestions.isEmpty()) {
+                    sender.sendMessage("[scarlet]No command found.")
+                    logger.error("Impossible state: No suggestions for $topic")
+                    return
+                }
                 sender.sendMessage(
                     buildString {
                         appendLine(
@@ -125,11 +158,12 @@ class HelpCommand : ImperiumApplication.Listener {
                                 .commandSyntaxFormatter()
                                 .apply(topic.command.arguments, null)
                         appendLine("[orange]-- [lightgray]/$syntax[orange] --")
-                        val description = topic.command.getDescription(locale)
+                        val description = topic.command.getDescription(locale, first = false)
                         if (description.isNotBlank()) {
                             appendLine(" [white]$description")
                         }
                         for (argument in topic.command.components.drop(1)) {
+                            if (argument.argument is StaticArgument<*>) continue
                             val argumentDescription =
                                 argument.argumentDescription.getDescription(locale)
                             if (argumentDescription.isNotBlank()) {
@@ -141,8 +175,6 @@ class HelpCommand : ImperiumApplication.Listener {
                 )
             }
             is CommandHelpHandler.IndexHelpTopic<S> -> {
-                logger.error(
-                    "Impossible state: IndexHelpTopic with command ${command.text} and query $query")
                 sender.sendMessage("[scarlet]No command found.")
             }
             else -> {
@@ -152,22 +184,39 @@ class HelpCommand : ImperiumApplication.Listener {
         }
     }
 
-    private fun getPageNumber() =
-        ceil(Vars.netServer.clientCommands.commandList.size.toFloat() / COMMANDS_PER_PAGE).toInt()
+    private suspend fun getPageNumber(sender: CommandSender) =
+        ceil(
+                getNativeCommandList()
+                    .asSequence()
+                    .filter {
+                        it !is ArcCommand<*> || (!it.isAlias && canSeeArcCommand(it, sender))
+                    }
+                    .count()
+                    .toFloat() / COMMANDS_PER_PAGE)
+            .toInt()
 
-    private fun CommandHandler.Command.getDescription(locale: Locale) =
+    private suspend fun getNativeCommandList() = runMindustryThread {
+        Vars.netServer.clientCommands.commandList.toList()
+    }
+
+    private fun CommandHandler.Command.getDescription(locale: Locale, first: Boolean) =
         if (this is ArcCommand<*>) {
             manager
                 .commands()
                 .find { it.components[0].argument.name == realName }!!
-                .getDescription(locale)
+                .getDescription(locale, first)
         } else {
             description
         }
 
-    private fun cloud.commandframework.Command<*>.getDescription(locale: Locale): String {
-        val cloudDescription =
-            components.last { it.argument is StaticArgument<*> }.argumentDescription
+    private fun cloud.commandframework.Command<*>.getDescription(
+        locale: Locale,
+        first: Boolean
+    ): String {
+        val operation =
+            if (first) components.first { it.argument is StaticArgument<*> }
+            else components.last { it.argument is StaticArgument<*> }
+        val cloudDescription = operation.argumentDescription
         return if (cloudDescription is LocalisableArgumentDescription) {
             cloudDescription.getDescription(locale)
         } else {

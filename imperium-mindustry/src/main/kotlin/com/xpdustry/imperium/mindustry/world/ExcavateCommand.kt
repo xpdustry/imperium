@@ -112,7 +112,7 @@ class ExcavateCommand(instances: InstanceManager) :
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
     }
 
-    @Command(["excavate", "begin"])
+    @Command(["excavate", "select"])
     @ClientSide
     private fun onExcavateBeginCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
@@ -123,7 +123,7 @@ class ExcavateCommand(instances: InstanceManager) :
         areas[sender.player] = ExcavateArea()
     }
 
-    @Command(["excavate", "end"])
+    @Command(["excavate", "stop"])
     @ClientSide
     private fun onExcavateEndCommand(sender: CommandSender) {
         val area = areas[sender.player]
