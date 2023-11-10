@@ -131,13 +131,14 @@ sealed interface ServerConfig {
 
         data class Hub(
             val enabled: Boolean = false,
+            val errorFontSize: Float = 2F,
             val overlays: List<Overlay> = emptyList(),
         ) {
             data class Overlay(
                 val text: String,
                 val offsetX: Float = 0F,
                 val offsetY: Float = 0F,
-                val size: Float = 2F,
+                val fontSize: Float = 2F,
                 val outline: Boolean = false,
                 val background: Boolean = false,
             )

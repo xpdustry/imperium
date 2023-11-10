@@ -350,7 +350,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         WorldLabel.create().apply {
             x(portal.centerX * Vars.tilesize)
             y(portal.centerY * Vars.tilesize)
-            fontSize(4F)
+            fontSize(config.errorFontSize)
             flags(WorldLabel.flagOutline or WorldLabel.flagBackground)
         }
 
@@ -358,7 +358,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         WorldLabel.create().apply {
             x((portal.centerX + (overlay.offsetX * portal.w)) * Vars.tilesize)
             y((portal.centerY + (overlay.offsetY * portal.h)) * Vars.tilesize)
-            fontSize(overlay.size)
+            fontSize(overlay.fontSize)
             var flags: Byte = 0
             if (overlay.outline) flags = flags or WorldLabel.flagOutline
             if (overlay.background) flags = flags or WorldLabel.flagBackground
