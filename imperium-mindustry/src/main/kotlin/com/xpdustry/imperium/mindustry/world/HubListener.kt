@@ -74,6 +74,10 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (!config.enabled) error("Hub is not enabled.")
         directory.toFile().mkdirs()
 
+        if (config.preventPlayerActions) {
+            Vars.netServer.admins.addActionFilter { false }
+        }
+
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
