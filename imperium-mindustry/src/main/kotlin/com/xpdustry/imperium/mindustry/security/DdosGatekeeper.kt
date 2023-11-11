@@ -25,6 +25,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.mindustry.processing.Processor
@@ -32,7 +33,6 @@ import java.io.IOException
 import java.math.BigInteger
 import java.net.Inet4Address
 import java.net.URL
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -50,11 +50,13 @@ private val PROVIDERS =
         OracleCloudAddressProvider,
     )
 
-class DdosGatekeeper(private val http: OkHttpClient) :
-    Processor<GatekeeperContext, GatekeeperResult> {
+class DdosGatekeeper(
+    private val http: OkHttpClient,
+    private val config: ServerConfig.Mindustry.Security
+) : Processor<GatekeeperContext, GatekeeperResult> {
 
     private val addresses: Deferred<RangeSet<BigInteger>> =
-        ImperiumScope.MAIN.async(start = CoroutineStart.LAZY) { fetchAddressRanges() }
+        ImperiumScope.MAIN.async { fetchAddressRanges() }
 
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         return if (addresses.await().contains(BigInteger(1, context.address.address))) {
@@ -66,6 +68,7 @@ class DdosGatekeeper(private val http: OkHttpClient) :
 
     private suspend fun fetchAddressRanges(): RangeSet<BigInteger> =
         withContext(ImperiumScope.IO.coroutineContext) {
+            if (!config.gatekeeper) return@withContext TreeRangeSet.create()
             logger.info("Fetching addresses from {} cloud providers", PROVIDERS.size)
             PROVIDERS.map { provider ->
                     async {

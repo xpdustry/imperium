@@ -64,7 +64,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
             logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")
         }
 
-        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http))
+        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.security))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register("punishment", Priority.NORMAL, PunishmentGatekeeper(punishments))
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn))
