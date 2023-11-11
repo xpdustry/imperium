@@ -32,7 +32,7 @@ data class ChatMessageContext(
 interface ChatMessagePipeline : ProcessorPipeline<ChatMessageContext, String>
 
 class SimpleChatMessagePipeline :
-    ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>() {
+    ChatMessagePipeline, AbstractProcessorPipeline<ChatMessageContext, String>("chat-message") {
     override suspend fun pump(context: ChatMessageContext): String {
         var result = context.message
         for (processor in processors) {

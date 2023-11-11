@@ -17,13 +17,12 @@
  */
 package com.xpdustry.imperium.mindustry.processing
 
-import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.logger
 import fr.xpdustry.distributor.api.util.Priority
 
-abstract class AbstractProcessorPipeline<I : Any, O : Any> : ProcessorPipeline<I, O> {
+abstract class AbstractProcessorPipeline<I : Any, O : Any>(name: String) : ProcessorPipeline<I, O> {
 
-    // TODO Use pipeline name
-    private val logger by LoggerDelegate()
+    private val logger = logger("processor-pipeline-$name")
 
     protected val processors: List<Processor<I, O>>
         get() = _processors.map { it.processor }

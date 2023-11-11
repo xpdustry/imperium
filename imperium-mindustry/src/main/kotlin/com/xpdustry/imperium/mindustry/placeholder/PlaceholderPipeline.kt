@@ -34,7 +34,7 @@ fun invalidQueryError(query: String): Nothing =
     throw IllegalArgumentException("Invalid query: $query")
 
 class SimplePlaceholderPipeline :
-    PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>() {
+    PlaceholderPipeline, AbstractProcessorPipeline<PlaceholderContext, String>("placeholder") {
     override suspend fun pump(context: PlaceholderContext): String =
         withContext(ImperiumScope.MAIN.coroutineContext) {
             extractPlaceholders(context.query)

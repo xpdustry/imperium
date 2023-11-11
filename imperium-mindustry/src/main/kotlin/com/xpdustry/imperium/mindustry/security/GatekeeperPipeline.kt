@@ -45,7 +45,8 @@ sealed interface GatekeeperResult {
 interface GatekeeperPipeline : ProcessorPipeline<GatekeeperContext, GatekeeperResult>
 
 class SimpleGatekeeperPipeline :
-    GatekeeperPipeline, AbstractProcessorPipeline<GatekeeperContext, GatekeeperResult>() {
+    GatekeeperPipeline,
+    AbstractProcessorPipeline<GatekeeperContext, GatekeeperResult>("gatekeeper") {
     override suspend fun pump(context: GatekeeperContext) =
         withContext(ImperiumScope.MAIN.coroutineContext) {
             for (processor in processors) {
