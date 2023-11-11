@@ -88,7 +88,7 @@ class HelpCommand : ImperiumApplication.Listener {
             buildString {
                 appendLine(
                     "[orange]-- Commands Page[lightgray] $page[gray]/[lightgray]${getPageNumber(sender)}[orange] --")
-                Vars.netServer.clientCommands.commandList
+                getNativeCommandList()
                     .asSequence()
                     .filter {
                         it !is ArcCommand<*> || (!it.isAlias && canSeeArcCommand(it, sender))

@@ -50,7 +50,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
     private val config = instances.get<ServerConfig.Mindustry>()
     private val damageRateLimiter =
-        SimpleRateLimiter<CoreDamageKey>(1, config.world.coreDamageAlertDelay)
+        SimpleRateLimiter<CoreClusterDamageKey>(1, config.world.coreDamageAlertDelay)
 
     override fun onImperiumInit() {
         WorldLabel.create()
@@ -115,12 +115,18 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     fun onBuildDamageEvent(event: EventType.BuildDamageEvent) {
         val building = event.build
         if (building !is CoreBlock.CoreBuild) return
-        val key = CoreDamageKey(building.team, building.rx, building.ry)
-        if (!damageRateLimiter.incrementAndCheck(key)) return
+
+        val manager = getManager(building.team)
+        val (cluster, _) = manager.getElement(building.rx, building.ry) ?: return
+        if (!damageRateLimiter.incrementAndCheck(
+            CoreClusterDamageKey(building.team, cluster.x, cluster.y)))
+            return
+
+        val index = manager.clusters.indexOf(cluster)
         for (player in Groups.player) {
             if (player.team() == building.team) {
                 player.sendMessage(
-                    "[scarlet]WARNING:[] Your core at (${building.rx}, ${building.ry}) is under attack!")
+                    "[scarlet]The core cluster [orange]#$index[] at ([orange]${cluster.x}[], [orange]${cluster.x}[]) is under attack!")
             }
         }
     }
@@ -230,5 +236,5 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         private val logger by LoggerDelegate()
     }
 
-    data class CoreDamageKey(val team: Team, val x: Int, val y: Int)
+    data class CoreClusterDamageKey(val team: Team, val x: Int, val y: Int)
 }
