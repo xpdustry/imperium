@@ -82,7 +82,7 @@ sealed interface ServerConfig {
     val displayName: String
         get() = name.capitalize()
 
-    val identity: Identity
+    val identity: Identity.Server
         get() = Identity.Server(name)
 
     data object None : ServerConfig {

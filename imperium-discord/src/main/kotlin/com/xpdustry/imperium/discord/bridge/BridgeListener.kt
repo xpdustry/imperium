@@ -21,18 +21,20 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
+import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.discord.misc.identity
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import org.javacord.api.entity.channel.ChannelCategory
+import org.javacord.api.entity.channel.ServerTextChannel
 import org.javacord.api.entity.message.MessageBuilder
 import org.javacord.api.entity.message.mention.AllowedMentionsBuilder
 
@@ -59,22 +61,7 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
         }
 
         messenger.consumer<MindustryPlayerMessage> { message ->
-            val channel =
-                getLiveChatCategory().channels.find { it.name == message.serverName }
-                    ?: discord
-                        .getMainServer()
-                        .createTextChannelBuilder()
-                        .setCategory(getLiveChatCategory())
-                        .setName(message.serverName)
-                        .create()
-                        .await()
-
-            val textChannel = channel.asServerTextChannel().getOrNull()
-            if (textChannel == null) {
-                logger.error("Channel ${channel.name} (${channel.id}) is not a text channel")
-                return@consumer
-            }
-
+            val channel = getLiveChatChannel(message.server) ?: return@consumer
             val text =
                 when (val action = message.action) {
                     is MindustryPlayerMessage.Action.Join ->
@@ -85,16 +72,38 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
                         ":blue_square: **${message.player.name}**: ${action.message}"
                 }
 
+            MessageBuilder().setAllowedMentions(NO_MENTIONS).setContent(text).send(channel).await()
+        }
+
+        messenger.consumer<MindustryServerMessage> { message ->
+            val channel = getLiveChatChannel(message.server) ?: return@consumer
             MessageBuilder()
                 .setAllowedMentions(NO_MENTIONS)
-                .setContent(text)
-                .send(textChannel)
+                .setContent(":purple_square: ${message.message}")
+                .send(channel)
                 .await()
         }
     }
 
-    private fun getLiveChatCategory(): ChannelCategory =
-        discord.getMainServer().getChannelCategoryById(config.categories.liveChat).get()
+    private suspend fun getLiveChatChannel(server: Identity.Server): ServerTextChannel? {
+        val category =
+            discord.getMainServer().getChannelCategoryById(config.categories.liveChat).get()
+        val channel =
+            category.channels.find { it.name == server.name }
+                ?: discord
+                    .getMainServer()
+                    .createTextChannelBuilder()
+                    .setCategory(category)
+                    .setName(server.name)
+                    .create()
+                    .await()
+        val textChannel = channel.asServerTextChannel().getOrNull()
+        if (textChannel == null) {
+            logger.error("Channel ${channel.name} (${channel.id}) is not a text channel")
+            return null
+        }
+        return textChannel
+    }
 
     companion object {
         private val logger by LoggerDelegate()

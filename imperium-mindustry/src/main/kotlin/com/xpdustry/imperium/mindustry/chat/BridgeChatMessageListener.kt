@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
+import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -38,6 +39,7 @@ import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
+import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Iconc
 
@@ -75,7 +77,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryPlayerMessage(
-                    config.name, event.player.identity, MindustryPlayerMessage.Action.Join))
+                    config.identity, event.player.identity, MindustryPlayerMessage.Action.Join))
         }
 
     @EventHandler
@@ -83,7 +85,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryPlayerMessage(
-                    config.name, event.player.identity, MindustryPlayerMessage.Action.Quit))
+                    config.identity, event.player.identity, MindustryPlayerMessage.Action.Quit))
         }
 
     @EventHandler
@@ -91,11 +93,24 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryPlayerMessage(
-                    config.name,
+                    config.identity,
                     event.player.identity,
                     MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message))),
             )
         }
+
+    @EventHandler
+    fun onGameOver(event: EventType.GameOverEvent) {
+        val message =
+            if (Vars.state.rules.waves) {
+                "Game over! Reached wave ${Vars.state.wave} with ${Entities.PLAYERS.size} players online on map ${Vars.state.map.name()}."
+            } else {
+                "Game over! Team ${event.winner.name} is victorious with ${Entities.PLAYERS.size} players online on map ${Vars.state.map.name()}."
+            }
+        ImperiumScope.MAIN.launch {
+            messenger.publish(MindustryServerMessage(config.identity, message))
+        }
+    }
 
     private suspend fun formatChatMessage(subject: Identity, message: String): String {
         return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatFormat)) +
