@@ -23,6 +23,7 @@ import com.xpdustry.imperium.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.imperium.mindustry.ui.TransformerInterface
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import kotlin.math.min
 import mindustry.game.EventType
 import mindustry.gen.Call
 
@@ -46,7 +47,8 @@ private class SimplePopupInterface(
     init {
         interval.reset(0, Float.MAX_VALUE)
         DistributorProvider.get().eventBus.subscribe(EventType.Trigger.update, plugin) {
-            if (interval[updateInterval.toFloat()]) {
+            // TODO This should cover lag, needs more testing tho
+            if (interval[updateInterval.toFloat() - (min(updateInterval.toFloat() / 30F, 6F))]) {
                 for (view in views.values) {
                     view.open()
                 }

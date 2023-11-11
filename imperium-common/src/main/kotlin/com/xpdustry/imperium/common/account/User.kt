@@ -42,5 +42,6 @@ data class User(
     @Serializable
     enum class Setting(val default: Boolean, val description: String) {
         SHOW_WELCOME_MESSAGE(true, "Show the welcome message when joining the server."),
+        RESOURCE_HUD(true, "Show a HUD with the evolution of the resources."),
     }
 }

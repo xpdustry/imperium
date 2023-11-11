@@ -48,6 +48,7 @@ import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
 import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
+import com.xpdustry.imperium.mindustry.world.ResourceHudListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
@@ -107,6 +108,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 SwitchCommand::class,
                 UserSettingsCommand::class,
                 WelcomeListener::class,
+                ResourceHudListener::class,
             )) {
             application.register(listener)
         }

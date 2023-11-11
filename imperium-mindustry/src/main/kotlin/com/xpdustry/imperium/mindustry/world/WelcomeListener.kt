@@ -103,9 +103,7 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         ImperiumScope.MAIN.launch {
-            val user = users.findByUuidOrCreate(event.player.uuid())
-            val setting = User.Setting.SHOW_WELCOME_MESSAGE
-            if (user.settings[setting.name] ?: setting.default) {
+            if (users.getSetting(event.player.uuid(), User.Setting.SHOW_WELCOME_MESSAGE)) {
                 welcomeInterface.open(event.player)
             }
         }

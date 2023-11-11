@@ -34,4 +34,7 @@ interface UserManager {
     suspend fun searchUser(query: String): Flow<User>
 
     suspend fun updateOrCreateByUuid(uuid: MindustryUUID, updater: suspend (User) -> Unit)
+
+    suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
+        findByUuid(uuid)?.settings?.get(setting.name) ?: setting.default
 }
