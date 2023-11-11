@@ -37,4 +37,10 @@ data class User(
     var timesJoined: Int = 0,
     var firstJoin: SerializableJInstant = Instant.now(),
     var lastJoin: SerializableJInstant = Instant.now(),
-) : Entity<ObjectId>
+    var settings: MutableMap<String, Boolean> = mutableMapOf(),
+) : Entity<ObjectId> {
+    @Serializable
+    enum class Setting(val default: Boolean, val description: String) {
+        SHOW_WELCOME_MESSAGE(true, "Show the welcome message when joining the server."),
+    }
+}

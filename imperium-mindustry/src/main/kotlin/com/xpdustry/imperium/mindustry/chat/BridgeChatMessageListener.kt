@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
@@ -36,12 +37,10 @@ import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import fr.xpdustry.distributor.api.event.EventHandler
-import java.awt.Color
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Iconc
 
-private val BLURPLE = Color(0x5865F2)
 private val logger = logger("ROOT")
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {

@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
+import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
@@ -50,6 +51,7 @@ import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
+import com.xpdustry.imperium.mindustry.world.WelcomeListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
@@ -103,6 +105,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 KillAllCommand::class,
                 DumpCommand::class,
                 SwitchCommand::class,
+                UserSettingsCommand::class,
+                WelcomeListener::class,
             )) {
             application.register(listener)
         }

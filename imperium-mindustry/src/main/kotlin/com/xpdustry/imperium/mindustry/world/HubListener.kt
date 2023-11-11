@@ -304,14 +304,14 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val info = discovery.servers[portal.name]
             if (info == null) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[scarlet]ERROR: Server not found.")
+                labels.error.text("[orange]Server not found.")
                 labels.error.add()
                 continue
             }
             val data = info.data
             if (data !is Discovery.Data.Mindustry) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[scarlet]ERROR: Server is not a Mindustry server.")
+                labels.error.text("[scarlet]Server is not a Mindustry server.")
                 labels.error.add()
                 continue
             }
@@ -323,7 +323,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             }
             if (data.gameVersion != getMindustryServerInfo().gameVersion) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[scarlet]ERROR: Server version mismatch.")
+                labels.error.text("[scarlet]Server version mismatch.")
                 labels.error.add()
                 continue
             }
