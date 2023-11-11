@@ -65,7 +65,6 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 )
         }
 
-        // TODO I really need this Component API
         sender.sendMessage(
             if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }
@@ -116,7 +115,6 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 .append(renderEntry(entry, true, canSeeUuid(sender), false, 3))
         }
 
-        // TODO I really need this Component API
         sender.sendMessage(
             if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }

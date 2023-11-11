@@ -23,7 +23,6 @@ import fr.xpdustry.distributor.api.util.Priority
 import mindustry.game.EventType.PlayerLeave
 import mindustry.gen.Player
 
-// TODO Delegate the creation to a factory?
 class PlayerMap<V>(plugin: MindustryPlugin) {
     private val players = mutableMapOf<Int, V>()
     @Suppress("UNCHECKED_CAST")

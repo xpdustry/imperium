@@ -232,7 +232,6 @@ private fun createArcCommandManager(plugin: MindustryPlugin) =
                         ?: return@registerAnnotationMapper ParserParameters.empty()
                 ParserParameters.single(StandardParameters.RANGE_MAX, number)
             }
-            // TODO ADD MISSING PARSER IN DISTRIBUTOR
             parserRegistry().registerParserSupplier(TypeToken.get(PlayerInfo::class.java)) {
                 PlayerInfoArgument.PlayerInfoParser()
             }

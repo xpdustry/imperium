@@ -90,7 +90,6 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) :
             return
         }
 
-        // TODO Check if tile is ConstructBlock ?
         val block: Block =
             if (event.breaking) (event.tile.build as ConstructBlock.ConstructBuild).current
             else event.tile.block()

@@ -36,7 +36,6 @@ import java.util.Locale
 import kotlin.math.ceil
 import mindustry.Vars
 
-// TODO Polish the command display system
 class HelpCommand : ImperiumApplication.Listener {
 
     @Command(["help"])

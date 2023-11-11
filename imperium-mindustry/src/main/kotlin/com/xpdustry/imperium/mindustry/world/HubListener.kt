@@ -394,7 +394,6 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     data class PortalBuilder(val name: String, val points: List<ImmutablePoint>)
 
-    // TODO Wrap polygon in immutable view ?
     private class PolygonTypeAdapter : TypeAdapter<Polygon>() {
         override fun write(writer: JsonWriter, value: Polygon) {
             writer.beginArray()

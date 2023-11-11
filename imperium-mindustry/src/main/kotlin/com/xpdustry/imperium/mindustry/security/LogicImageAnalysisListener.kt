@@ -70,7 +70,6 @@ import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.LogicDisplay
 
 // TODO
-//  - Different cluster managers for different teams ?
 //  - Index blocks on map load ?
 //  - "Less dramatic destruction" - .json probably
 class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplication.Listener {
