@@ -17,12 +17,10 @@
  */
 package com.xpdustry.imperium.common.security
 
-fun interface UsernameRequirement {
+sealed interface UsernameRequirement {
     fun check(username: String): Boolean
 
     data class InvalidSymbol(val allowed: Set<Char>) : UsernameRequirement {
-        constructor(vararg allowed: Char) : this(allowed.toSet())
-
         override fun check(username: String) =
             username.all { it.isLetterOrDigit() || it in allowed }
     }
@@ -46,7 +44,7 @@ fun List<UsernameRequirement>.findMissingUsernameRequirements(
 
 val DEFAULT_USERNAME_REQUIREMENTS =
     listOf(
-        UsernameRequirement.InvalidSymbol('_'),
+        UsernameRequirement.InvalidSymbol(allowed = setOf('_')),
         UsernameRequirement.Length(3, 32),
         UsernameRequirement.Reserved(
             UsernameRequirement::class

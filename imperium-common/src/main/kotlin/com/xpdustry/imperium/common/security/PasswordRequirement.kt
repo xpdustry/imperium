@@ -17,22 +17,22 @@
  */
 package com.xpdustry.imperium.common.security
 
-fun interface PasswordRequirement {
+sealed interface PasswordRequirement {
     fun check(password: CharArray): Boolean
 
-    object LowercaseLetter : PasswordRequirement {
+    data object LowercaseLetter : PasswordRequirement {
         override fun check(password: CharArray) = password.any { it.isLowerCase() }
     }
 
-    object UppercaseLetter : PasswordRequirement {
+    data object UppercaseLetter : PasswordRequirement {
         override fun check(password: CharArray) = password.any { it.isUpperCase() }
     }
 
-    object Number : PasswordRequirement {
+    data object Number : PasswordRequirement {
         override fun check(password: CharArray) = password.any { it.isDigit() }
     }
 
-    object Symbol : PasswordRequirement {
+    data object Symbol : PasswordRequirement {
         override fun check(password: CharArray) = password.any { it.isLetterOrDigit().not() }
     }
 

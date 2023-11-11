@@ -28,6 +28,8 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
+import com.xpdustry.imperium.common.security.PasswordRequirement
+import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -65,14 +67,14 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
     private val manager = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
-    private val verifications =
-        CacheBuilder.newBuilder()
-            .expireAfterWrite(10.minutes.toJavaDuration())
-            .build<ObjectId, Int>()
     private val loginInterface = createLoginInterface(instances.get(), manager)
     private val registerInterface = createRegisterInterface(instances.get(), manager)
     private val migrateInterface = createMigrateInterface(instances.get(), manager)
     private val changePasswordInterface = createPasswordChangeInterface(instances.get(), manager)
+    private val verifications =
+        CacheBuilder.newBuilder()
+            .expireAfterWrite(10.minutes.toJavaDuration())
+            .build<ObjectId, Int>()
 
     @Command(["login"])
     @ClientSide
@@ -412,12 +414,31 @@ private suspend fun handleAccountResult(result: AccountOperationResult, view: Vi
                 is AccountOperationResult.NotLogged -> "You are not logged in! Use /login to login."
                 is AccountOperationResult.WrongPassword -> "Wrong password!"
                 is AccountOperationResult.InvalidPassword ->
-                    "The password does not meet the requirements:\n - ${result.missing.joinToString("\n - ")}"
+                    "The password does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
                 is AccountOperationResult.InvalidUsername ->
-                    "The username does not meet the requirements:\n - ${result.missing.joinToString("\n - ")}"
+                    "The username does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
                 is AccountOperationResult.RateLimit ->
                     "You have made too many attempts, please try again later."
             }
         view.open()
         view.viewer.showInfoMessage("[red]$message")
+    }
+
+private fun getErrorMessage(requirement: PasswordRequirement) =
+    when (requirement) {
+        is PasswordRequirement.LowercaseLetter -> "It needs at least a lowercase letter."
+        is PasswordRequirement.UppercaseLetter -> "It needs at least a uppercase letter."
+        is PasswordRequirement.Number -> "It needs at least a number."
+        is PasswordRequirement.Symbol -> "It needs at least a symbol."
+        is PasswordRequirement.Length ->
+            "It needs to be between ${requirement.min} and ${requirement.max} characters long."
+    }
+
+private fun getErrorMessage(requirement: UsernameRequirement) =
+    when (requirement) {
+        is UsernameRequirement.InvalidSymbol ->
+            "It can only contain letters, numbers and ${requirement.allowed.joinToString()}."
+        is UsernameRequirement.Length ->
+            "It needs to be between ${requirement.min} and ${requirement.max} characters long."
+        is UsernameRequirement.Reserved -> "This username is reserved or already taken."
     }
