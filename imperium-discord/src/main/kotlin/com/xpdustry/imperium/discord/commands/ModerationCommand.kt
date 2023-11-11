@@ -38,13 +38,13 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.bson.types.ObjectId
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val analysis = instances.get<LogicImageAnalysis>()
@@ -61,7 +61,13 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                 val address = target.toInetAddress()
                 punishments.findAllByAddress(address)
             } catch (e: Exception) {
-                punishments.findAllByUuid(target)
+                // TODO This is goofy, punishment should store user IDs instead of UUIDs
+                if (ObjectId.isValid(target)) {
+                    users.findById(ObjectId(target))?.uuid?.let { punishments.findAllByUuid(it) }
+                        ?: emptyFlow()
+                } else {
+                    punishments.findAllByUuid(target)
+                }
             }
 
         val result = flow.drop(page * 10).take(10).toList()
@@ -151,7 +157,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
         val snowflake = id.toLongOrNull()
         if (snowflake == null) {
-            actor.respond("Invalid ID.")
+            actor.respond("Invalid Punishment ID.")
             return
         }
 

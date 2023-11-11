@@ -126,7 +126,7 @@ sealed interface ServerConfig {
         data class Templates(
             val chatPrefix: String = "<%prefix%>",
             val chatFormat: String =
-                "[cyan]<[white]%subject_playtime:chaotic%[cyan]> [%subject_color:hex%]%subject_name:display% [cyan]>[white]",
+                "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display% [accent]>[white]",
         )
 
         data class Hub(
