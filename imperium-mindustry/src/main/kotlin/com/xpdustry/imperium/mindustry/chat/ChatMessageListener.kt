@@ -219,7 +219,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
                 target?.sendMessage(
-                    "[${Color.RED}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(config.identity, processed)}")
+                    "[${Color.RED.toHexString()}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(config.identity, processed)}",
+                    null,
+                    processed)
                 if (target == null) {
                     sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
                 }
@@ -288,7 +290,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val filtered2 =
                     chatMessagePipeline.pump(ChatMessageContext(sender, target, filtered1))
                 if (filtered2.isBlank()) return@launch
-                target?.sendMessage(getChatFormat(sender.identity, filtered2))
+                target?.sendMessage(getChatFormat(sender.identity, filtered2), sender, filtered2)
                 if (target == null) {
                     rootLogger.info(
                         "&fi{}: {}",
