@@ -19,6 +19,7 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.User
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -90,6 +91,9 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
             val now = System.currentTimeMillis()
             accounts.updateByIdentity(event.player.identity) { account ->
                 account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
+            }
+            if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
+                accounts.logout(event.player.identity)
             }
         }
 }
