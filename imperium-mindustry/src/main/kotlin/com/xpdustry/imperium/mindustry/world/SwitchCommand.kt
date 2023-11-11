@@ -46,22 +46,28 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
         val data = discovery.servers[server]?.data
         if (data == null) {
-            Call.sendMessage("[accent]Server not found.")
+            sender.sendMessage("[accent]Server not found.")
             return
         }
         if (data !is Discovery.Data.Mindustry) {
-            Call.sendMessage("[accent]Server is not a Mindustry server.")
+            sender.sendMessage("[accent]Server is not a Mindustry server.")
             return
         }
         if (data.state != Discovery.Data.Mindustry.State.PLAYING) {
-            Call.sendMessage("[accent]Server is not playing.")
+            sender.sendMessage("[accent]Server is not playing.")
             return
         }
         if (data.gameVersion != getMindustryVersion()) {
-            Call.sendMessage("[accent]Server is not running the same version of Mindustry.")
+            sender.sendMessage("[accent]Server is not running the same version of Mindustry.")
             return
         }
         switchToServer(sender.player, data)
+    }
+
+    @Command(["hub"])
+    @ClientSide
+    fun onHubCommand(sender: CommandSender) {
+        onSwitchCommand(sender, "hub")
     }
 
     private fun createServerSwitchInterface(): Interface {
@@ -92,6 +98,6 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private fun switchToServer(player: Player, server: Discovery.Data.Mindustry) {
         Call.connect(player.con, server.host.hostAddress, server.port)
         Call.sendMessage(
-            "[accent]${player.plainName()}[] switched to the [cyan]${server.name}[] server.")
+            "[accent]${player.plainName()}[] switched to the [cyan]${server.name}[accent].")
     }
 }
