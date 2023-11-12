@@ -52,18 +52,18 @@ class RockTheVoteCommand(instances: InstanceManager) :
                         view.closeAll()
                         onVoteSessionStart(view.viewer, manager.session, null)
                     })
-                addTransformer(
-                    ListTransformer(
-                        provider = { Vars.maps.customMaps().toList() },
-                        renderer = { it.name() },
-                        fill = true,
-                        onChoice = { view, map ->
-                            view.closeAll()
-                            onVoteSessionStart(view.viewer, manager.session, map)
-                        },
-                    ),
-                )
             }
+            addTransformer(
+                ListTransformer(
+                    provider = { Vars.maps.customMaps().toList() },
+                    renderer = { it.name() },
+                    fill = true,
+                    onChoice = { view, map ->
+                        view.closeAll()
+                        onVoteSessionStart(view.viewer, manager.session, map)
+                    },
+                ),
+            )
         }
 
     @Command(["rtv"])
