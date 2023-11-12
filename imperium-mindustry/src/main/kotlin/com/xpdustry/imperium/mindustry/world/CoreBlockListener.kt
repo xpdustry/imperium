@@ -42,7 +42,6 @@ import mindustry.game.Team
 import mindustry.gen.Building
 import mindustry.gen.Call
 import mindustry.gen.Groups
-import mindustry.gen.WorldLabel
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.storage.CoreBlock
 
