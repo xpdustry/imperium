@@ -27,4 +27,5 @@ enum class MindustryGamemode {
     HEXED,
     TOWER_DEFENSE,
     HUB,
+    TESTING,
 }
