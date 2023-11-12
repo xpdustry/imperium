@@ -30,7 +30,6 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.discord.command.DiscordChoice
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
@@ -211,15 +210,12 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     }
 }
 
-enum class PunishmentDuration(val value: Duration) : DiscordChoice {
+enum class PunishmentDuration(val value: Duration) {
     ONE_HOUR(1.hours),
     THREE_HOURS(3.hours),
     ONE_DAY(1.days),
     THREE_DAYS(3.days),
     ONE_WEEK(7.days),
     ONE_MONTH(30.days),
-    PERMANENT(Duration.INFINITE);
-
-    override val choiceName: String
-        get() = name.lowercase().replace("_", " ")
+    PERMANENT(Duration.INFINITE)
 }

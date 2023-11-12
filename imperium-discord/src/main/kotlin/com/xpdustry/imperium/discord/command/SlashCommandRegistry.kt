@@ -501,8 +501,10 @@ private val OBJECT_ID_TYPE_HANDLER =
         }
     }
 
-class EnumTypeHandler<T>(private val klass: KClass<T>) :
-    TypeHandler<T>(SlashCommandOptionType.LONG) where T : Enum<T>, T : DiscordChoice {
+class EnumTypeHandler<T : Enum<T>>(
+    private val klass: KClass<T>,
+    private val renderer: (T) -> String = { it.name.lowercase().replace("_", " ") }
+) : TypeHandler<T>(SlashCommandOptionType.LONG) {
     override fun parse(option: SlashCommandInteractionOption): T? {
         val ordinal = option.longValue.getOrNull()?.toInt() ?: return null
         return klass.java.enumConstants[ordinal]
@@ -512,7 +514,7 @@ class EnumTypeHandler<T>(private val klass: KClass<T>) :
         klass.java.enumConstants.forEach {
             val choice = it as T
             builder.addChoice(
-                SlashCommandOptionChoice.create(choice.choiceName, choice.ordinal.toLong()))
+                SlashCommandOptionChoice.create(renderer(choice), choice.ordinal.toLong()))
         }
     }
 }
