@@ -20,6 +20,8 @@ package com.xpdustry.imperium.mindustry.account
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountOperationResult
+import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -210,11 +212,19 @@ private fun createLoginInterface(plugin: MindustryPlugin, manager: AccountManage
             view.close()
             view.state[PASSWORD] = value
             ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
+                // TODO Return account object on login ?
                 when (val result =
                     manager.login(
                         view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
                     is AccountOperationResult.Success -> {
                         view.viewer.sendMessage("You have been logged in!")
+                        // Grants admin to moderators
+                        view.viewer.admin =
+                            manager
+                                .findByIdentity(view.viewer.identity)
+                                ?.roles
+                                ?.containsRole(Role.MODERATOR)
+                                ?: view.viewer.admin
                     }
                     is AccountOperationResult.WrongPassword,
                     AccountOperationResult.NotRegistered -> {
