@@ -53,8 +53,6 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         SimpleRateLimiter<CoreClusterDamageKey>(1, config.world.coreDamageAlertDelay)
 
     override fun onImperiumInit() {
-        WorldLabel.create()
-
         if (!config.world.displayCoreId) return
         ImperiumScope.MAIN.launch {
             while (isActive) {
@@ -64,7 +62,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
                     for ((index, cluster) in getManager(player.team()).clusters.withIndex()) {
                         Call.label(
                             player.con,
-                            "#$index",
+                            "#${index + 1}",
                             1F,
                             (cluster.x + (cluster.w / 2F)) * Vars.tilesize - (Vars.tilesize / 2F),
                             (cluster.y + (cluster.h / 2F)) * Vars.tilesize - (Vars.tilesize / 2F))
