@@ -438,9 +438,9 @@ private val INT_TYPE_HANDLER =
 
         override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
             builder.setLongMinValue(
-                annotation.findAnnotation<Min>()?.value ?: Int.MAX_VALUE.toLong())
+                annotation.findAnnotation<Min>()?.value ?: Int.MIN_VALUE.toLong())
             builder.setLongMaxValue(
-                annotation.findAnnotation<Max>()?.value ?: Int.MIN_VALUE.toLong())
+                annotation.findAnnotation<Max>()?.value ?: Int.MAX_VALUE.toLong())
         }
     }
 
