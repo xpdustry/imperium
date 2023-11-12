@@ -45,7 +45,7 @@ fun DiscordModule() =
 
         single<Path>("directory") { Path(".") }
 
-        single<CommandRegistry>("slash") { SlashCommandRegistry(get()) }
+        single<CommandRegistry>("slash") { SlashCommandRegistry(get(), get()) }
 
         single<CommandRegistry>("button") { ButtonCommandRegistry(get()) }
 

@@ -32,10 +32,11 @@ data class ImperiumConfig(
     val database: DatabaseConfig = DatabaseConfig.Mongo(),
     val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
     val server: ServerConfig = ServerConfig.None,
-    val language: Locale = Locale.ENGLISH,
     val storage: StorageConfig = StorageConfig.Minio(),
     val imageAnalysis: ImageAnalysisConfig = ImageAnalysisConfig.None,
     val generatorId: Int = 0,
+    val language: Locale = Locale.ENGLISH,
+    val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),
 )
 
 data class NetworkConfig(

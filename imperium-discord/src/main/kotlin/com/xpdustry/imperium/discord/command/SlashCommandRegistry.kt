@@ -25,9 +25,12 @@ import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.command.validate
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
+import com.xpdustry.imperium.discord.misc.getTranslatedTextOrNull
+import com.xpdustry.imperium.discord.misc.toDiscordLocale
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.time.Duration
 import java.util.function.Consumer
@@ -49,6 +52,7 @@ import org.bson.types.ObjectId
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.ServerChannel
 import org.javacord.api.entity.user.User
+import org.javacord.api.interaction.DiscordLocale
 import org.javacord.api.interaction.SlashCommandBuilder
 import org.javacord.api.interaction.SlashCommandInteractionOption
 import org.javacord.api.interaction.SlashCommandOption
@@ -56,9 +60,11 @@ import org.javacord.api.interaction.SlashCommandOptionBuilder
 import org.javacord.api.interaction.SlashCommandOptionChoice
 import org.javacord.api.interaction.SlashCommandOptionType
 
-// TODO THis is awful, rewrite it
-class SlashCommandRegistry(private val discord: DiscordService) :
-    CommandRegistry, ImperiumApplication.Listener {
+// TODO This is awful, rewrite it
+class SlashCommandRegistry(
+    private val discord: DiscordService,
+    private val config: ImperiumConfig
+) : CommandRegistry, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
     private val tree = CommandNode("root", parent = null)
@@ -232,13 +238,17 @@ class SlashCommandRegistry(private val discord: DiscordService) :
     private fun compile() {
         val compiled = mutableSetOf<SlashCommandBuilder>()
         for (entry in tree.children) {
-            val builder = SlashCommandBuilder().setName(entry.key).setDescription("No description.")
+            val builder = SlashCommandBuilder().setName(entry.key).setDescription(NO_DESCRIPTION)
 
             for (child in entry.value.children.values) {
                 compile(builder::addOption, child)
             }
 
             if (entry.value.edge != null) {
+                applyBuilderTranslations(
+                    builder::setDescription,
+                    builder::addDescriptionLocalization,
+                    entry.value.edge!!)
                 compile(builder::addOption, entry.value.edge!!)
             }
 
@@ -249,8 +259,7 @@ class SlashCommandRegistry(private val discord: DiscordService) :
     }
 
     private fun compile(options: Consumer<SlashCommandOption>, node: CommandNode) {
-        val builder =
-            SlashCommandOptionBuilder().setName(node.name).setDescription("No description.")
+        val builder = SlashCommandOptionBuilder().setName(node.name).setDescription(NO_DESCRIPTION)
 
         val type =
             when (node.type) {
@@ -270,6 +279,8 @@ class SlashCommandRegistry(private val discord: DiscordService) :
         }
 
         if (node.edge != null) {
+            applyBuilderTranslations(
+                builder::setDescription, builder::addDescriptionLocalization, node.edge!!)
             compile(builder::addOption, node.edge!!)
         }
 
@@ -278,17 +289,20 @@ class SlashCommandRegistry(private val discord: DiscordService) :
 
     private fun compile(options: Consumer<SlashCommandOption>, edge: CommandEdge) {
         for (parameter in edge.arguments) {
-            options.accept(compile(parameter))
+            options.accept(compile(parameter, edge))
         }
     }
 
-    private fun <T : Any> compile(argument: CommandEdge.Argument<T>) =
+    private fun <T : Any> compile(argument: CommandEdge.Argument<T>, edge: CommandEdge) =
         SlashCommandOptionBuilder()
             .setName(argument.name)
-            .setDescription("No description.")
             .setRequired(!argument.optional)
             .setType(argument.handler.type)
-            .apply { argument.handler.apply(this, argument.annotations) }
+            .apply {
+                argument.handler.apply(this, argument.annotations)
+                applyBuilderTranslations(
+                    this::setDescription, this::addDescriptionLocalization, edge, argument)
+            }
             .build()
 
     private fun <T : Any> registerHandler(klass: KClass<T>, handler: TypeHandler<T>) {
@@ -298,8 +312,32 @@ class SlashCommandRegistry(private val discord: DiscordService) :
     private fun isSupportedActor(classifier: KClassifier) =
         classifier == InteractionSender::class || classifier == InteractionSender.Slash::class
 
+    private fun applyBuilderTranslations(
+        description: (String) -> Any,
+        localizedDescription: (DiscordLocale, String) -> Any,
+        edge: CommandEdge,
+        argument: CommandEdge.Argument<*>? = null
+    ) {
+        val path = edge.function.findAnnotation<Command>()!!.path.joinToString(".")
+        var key = "imperium.command.[$path]"
+        key +=
+            if (argument == null) {
+                ".description"
+            } else {
+                ".argument.${argument.name}.description"
+            }
+        description(getTranslatedTextOrNull(key, config.language) ?: NO_DESCRIPTION)
+        for (language in config.supportedLanguages) {
+            getTranslatedTextOrNull(key, language)?.let {
+                val locale = language.toDiscordLocale() ?: return@let
+                localizedDescription(locale, it)
+            }
+        }
+    }
+
     companion object {
         private val logger by LoggerDelegate()
+        private const val NO_DESCRIPTION = "No description."
     }
 }
 
