@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
-import arc.util.Log
+import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
 import java.time.Instant
@@ -26,6 +26,7 @@ import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.NetConnection
+import org.slf4j.event.Level
 
 val Player.identity: Identity.Mindustry
     get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
@@ -38,9 +39,9 @@ fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
 fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = false) {
     if (kicked) return
 
-    if (!silent) {
-        Log.info("Kicking connection @ / @; Reason: @", address, uuid, reason.replace("\n", " "))
-    }
+    logger
+        .atLevel(if (silent) Level.DEBUG else Level.INFO)
+        .log("Kicking connection {} / {}; Reason: {}", address, uuid, reason.replace("\n", " "))
 
     if (duration.isPositive()) {
         Vars.netServer.admins.handleKicked(uuid, address, duration.inWholeMilliseconds)
@@ -53,3 +54,5 @@ fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = fal
     Vars.netServer.admins.save()
     kicked = true
 }
+
+private val logger = logger("ROOT")
