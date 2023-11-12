@@ -59,6 +59,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
+import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.gen.Building
 import mindustry.gen.Call
@@ -69,9 +70,6 @@ import mindustry.world.blocks.logic.CanvasBlock
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.LogicDisplay
 
-// TODO
-//  - Index blocks on map load ?
-//  - "Less dramatic destruction" - .json probably
 class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val analyzer = instances.get<LogicImageAnalysis>()
     private val history = instances.get<BlockHistory>()
@@ -159,9 +157,11 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     }
 
     @EventHandler
-    fun onWorldLoad(event: EventType.WorldLoadEvent) {
+    fun onResetEvent(event: EventType.ResetEvent) {
         displays.reset()
+        drawerQueue.clear()
         canvases.reset()
+        pixmapQueue.clear()
     }
 
     @EventHandler
@@ -385,11 +385,13 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
 
                         runMindustryThread {
                             for (block in element.value.blocks) {
-                                Vars.world.tile(block.x, block.y)?.build?.kill()
+                                Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
                                 val data = block.data
                                 if (data is LogicImage.Drawer) {
                                     for (processor in data.processors) {
-                                        Vars.world.tile(processor.x, processor.y)?.build?.kill()
+                                        Vars.world
+                                            .tile(processor.x, processor.y)
+                                            ?.setNet(Blocks.air)
                                     }
                                 }
                             }

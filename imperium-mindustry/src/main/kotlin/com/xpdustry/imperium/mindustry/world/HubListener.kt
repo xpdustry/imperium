@@ -136,7 +136,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onPlayEvent(event: EventType.PlayEvent) {
+    fun onResetEvent(event: EventType.ResetEvent) {
         portals.clear()
         portals.putAll(loadPortals())
         updatePortals()

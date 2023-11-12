@@ -108,7 +108,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.PLAYERS.size} players online on map ${Vars.state.map.name()}."
             }
         ImperiumScope.MAIN.launch {
-            messenger.publish(MindustryServerMessage(config.identity, message))
+            messenger.publish(MindustryServerMessage(config.identity, message, chat = false))
         }
     }
 

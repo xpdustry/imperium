@@ -52,7 +52,7 @@ internal class MongoMindustryMapManager(
         maps = mongo.getCollection("maps", MindustryMap::class)
         ratings = mongo.getCollection("map_ratings", Rating::class)
         runBlocking {
-            maps.index(Indexes.descending("name")) { name("name_index").version(2).unique(true) }
+            maps.index(Indexes.ascending("name")) { name("name_index").version(3).unique(true) }
         }
     }
 
@@ -70,7 +70,7 @@ internal class MongoMindustryMapManager(
             .firstOrNull()
 
     override suspend fun findAllMaps(): Flow<MindustryMap> =
-        maps.findAll().sort(Sorts.descending("name"))
+        maps.findAll().sort(Sorts.ascending("name"))
 
     override suspend fun computeAverageScoreByMap(map: ObjectId): Double {
         if (ratings.count(Filters.eq("map", map)) == 0L) {
@@ -136,5 +136,5 @@ internal class MongoMindustryMapManager(
     }
 
     override suspend fun searchMap(query: String): Flow<MindustryMap> =
-        maps.find(Filters.text(query)).sort(Sorts.descending("name"))
+        maps.find(Filters.text(query)).sort(Sorts.ascending("name"))
 }

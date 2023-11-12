@@ -18,10 +18,8 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.User
 import com.xpdustry.imperium.common.account.UserManager
-import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -30,6 +28,7 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -68,11 +67,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                 user.addresses += event.player.ip().toInetAddress()
                 user.lastJoin = Instant.now()
             }
-
-            // Grants admin to moderators
-            event.player.admin =
-                accounts.findByIdentity(event.player.identity)?.roles?.containsRole(Role.MODERATOR)
-                    ?: false
+            event.player.tryGrantAdmin(accounts)
         }
     }
 

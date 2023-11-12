@@ -132,7 +132,7 @@ class SimpleBlockHistory(private val config: ServerConfig.Mindustry) :
     }
 
     @EventHandler(priority = Priority.HIGH)
-    fun onWorldLoadEvent(event: EventType.WorldLoadEvent) {
+    fun onResetEvent(event: EventType.ResetEvent) {
         positions.clear()
         players.clear()
     }

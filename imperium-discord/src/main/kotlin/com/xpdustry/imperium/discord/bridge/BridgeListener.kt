@@ -77,11 +77,12 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
         messenger.consumer<MindustryServerMessage> { message ->
             val channel = getLiveChatChannel(message.server) ?: return@consumer
-            MessageBuilder()
-                .setAllowedMentions(NO_MENTIONS)
-                .setContent(":purple_square: ${message.message}")
-                .send(channel)
-                .await()
+            val text = buildString {
+                append(":purple_square: ")
+                if (message.chat) append("**${message.server.name}**: ")
+                append(message.message)
+            }
+            MessageBuilder().setAllowedMentions(NO_MENTIONS).setContent(text).send(channel).await()
         }
     }
 

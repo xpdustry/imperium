@@ -137,7 +137,6 @@ class MindustryCommandRegistry(
         PredicatePermission.of<CommandSender>(SimpleCloudKey.of("imperium:$command")) { sender ->
             role == Role.EVERYONE ||
                 sender.isConsole ||
-                sender.player.admin ||
                 runBlocking {
                     accounts.findByIdentity(sender.player.identity)?.roles?.containsRole(role)
                         ?: false

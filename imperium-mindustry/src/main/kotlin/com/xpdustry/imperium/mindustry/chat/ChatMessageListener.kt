@@ -22,11 +22,13 @@ import arc.util.Time
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ORANGE_COLOR
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -69,6 +71,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     private val accounts = instances.get<AccountManager>()
     private val punishments = instances.get<PunishmentManager>()
     private val config = instances.get<ServerConfig.Mindustry>()
+    private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
         // Intercept chat messages, so they go through the async processing pipeline
@@ -151,7 +154,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         ?.let { "#$it" }
                         ?: MINDUSTRY_ORANGE_COLOR.toHexString()
                 is Identity.Discord -> MINDUSTRY_ORANGE_COLOR.toHexString()
-                else -> Color.RED.toHexString()
+                else -> "[scarlet]"
             }
         }
     }
@@ -224,6 +227,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     processed)
                 if (target == null) {
                     sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
+                    messenger.publish(
+                        MindustryServerMessage(config.identity, processed, chat = true))
                 }
             }
         }

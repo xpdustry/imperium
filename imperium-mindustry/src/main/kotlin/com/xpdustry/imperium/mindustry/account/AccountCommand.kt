@@ -38,6 +38,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -164,10 +165,9 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         messenger.consumer<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
-                runMindustryThread {
-                    Entities.PLAYERS.find { it.uuid() == message.uuid }
-                        ?.showInfoMessage("You have been verified!")
-                }
+                val player = Entities.PLAYERS.find { it.uuid() == message.uuid } ?: return@consumer
+                player.showInfoMessage("You have been verified!")
+                player.tryGrantAdmin(manager)
             }
         }
     }

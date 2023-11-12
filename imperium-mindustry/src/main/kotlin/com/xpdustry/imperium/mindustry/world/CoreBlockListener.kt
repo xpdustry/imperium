@@ -123,36 +123,32 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         for (player in Groups.player) {
             if (player.team() == building.team) {
                 player.sendMessage(
-                    "[scarlet]The core cluster [orange]#$index[] at ([orange]${cluster.x}[], [orange]${cluster.x}[]) is under attack!")
+                    "[scarlet]The core cluster [orange]#${index + 1}[] at ([orange]${cluster.x}[], [orange]${cluster.x}[]) is under attack!")
             }
         }
     }
 
     @EventHandler
-    fun onWorldLoadEvent(event: EventType.WorldLoadEvent) {
+    fun onResetEvent(event: EventType.ResetEvent) {
         managers.clear()
-    }
-
-    @EventHandler
-    fun onPlayEvent(event: EventType.PlayEvent) {
-        Vars.world.tiles.eachTile {
-            val building = it.build
-            if (building is CoreBlock.CoreBuild) {
-                val manager = getManager(building.team)
-                if (manager.getElement(building.rx, building.ry) != null) {
-                    return@eachTile
-                }
-                manager.addElement(
-                    Cluster.Block(
-                        building.rx,
-                        building.ry,
-                        building.block.size,
-                        Unit,
-                    ),
-                )
-                logger.trace(
-                    "Loaded {} core at ({}, {})", building.team.name, building.rx, building.ry)
+        Vars.world.tiles.eachTile { tile ->
+            val building = tile.build
+            if (building !is CoreBlock.CoreBuild) {
+                return@eachTile
             }
+            val manager = getManager(building.team)
+            if (manager.getElement(building.rx, building.ry) != null) {
+                return@eachTile
+            }
+            manager.addElement(
+                Cluster.Block(
+                    building.rx,
+                    building.ry,
+                    building.block.size,
+                    Unit,
+                ),
+            )
+            logger.trace("Loaded {} core at ({}, {})", building.team.name, building.rx, building.ry)
         }
     }
 
