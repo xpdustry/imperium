@@ -48,13 +48,13 @@ fun getMindustryServerInfo(): Discovery.Data.Mindustry =
             GameState.State.menu -> Discovery.Data.Mindustry.State.STOPPED
         })
 
-fun getGameMode(): Discovery.Data.Mindustry.GameMode =
+fun getGameMode(): Discovery.Data.Mindustry.Gamemode =
     when (Vars.state.rules.mode()!!) {
-        Gamemode.attack -> Discovery.Data.Mindustry.GameMode.ATTACK
-        Gamemode.pvp -> Discovery.Data.Mindustry.GameMode.PVP
-        Gamemode.sandbox -> Discovery.Data.Mindustry.GameMode.SANDBOX
-        Gamemode.survival -> Discovery.Data.Mindustry.GameMode.SURVIVAL
-        Gamemode.editor -> Discovery.Data.Mindustry.GameMode.EDITOR
+        Gamemode.attack -> Discovery.Data.Mindustry.Gamemode.ATTACK
+        Gamemode.pvp -> Discovery.Data.Mindustry.Gamemode.PVP
+        Gamemode.sandbox -> Discovery.Data.Mindustry.Gamemode.SANDBOX
+        Gamemode.survival -> Discovery.Data.Mindustry.Gamemode.SURVIVAL
+        Gamemode.editor -> Discovery.Data.Mindustry.Gamemode.EDITOR
     }
 
 fun getMindustryVersion(): MindustryVersion =

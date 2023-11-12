@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -39,6 +40,7 @@ import java.time.Instant
 import kotlin.jvm.optionals.getOrNull
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.future.await
@@ -190,10 +192,15 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private suspend fun onMapList(
         actor: InteractionSender,
         @Min(1) page: Int = 1,
-        server: String? = null
+        query: String? = null,
+        gamemode: MindustryGamemode? = null
     ) {
         val result =
-            maps.findMaps(server).drop((page - 1) * 10).take(11).toCollection(mutableListOf())
+            (if (query == null) maps.findAllMaps() else maps.searchMap(query))
+                .filter { gamemode == null || gamemode in it.gamemodes }
+                .drop((page - 1) * 10)
+                .take(11)
+                .toCollection(mutableListOf())
         val hasMore = result.size > 11
         if (hasMore) {
             result.removeLast()
@@ -237,9 +244,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .addField("Score", "%.2f / 5".format(maps.computeAverageScoreByMap(map._id)))
                     .addField(
                         "Difficulty", maps.computeAverageDifficultyByMap(map._id).name.lowercase())
-                    .addField(
-                        "Servers",
-                        if (map.servers.isEmpty()) "`none`" else map.servers.joinToString(", "))
+                    .addField("Gamemodes", map.gamemodes.joinToString { it.name.lowercase() })
                     .setImage(
                         content
                             .getMapMetadataWithPreview(maps.getMapObject(map._id).getData())
@@ -273,31 +278,43 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             "Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
     }
 
-    @Command(["map", "edit", "servers"], Role.MAP_MANAGER)
-    private suspend fun onMapServersChange(
+    @Command(["map", "gamemode", "add"], Role.MAP_MANAGER)
+    private suspend fun onMapGamemodeAdd(
         actor: InteractionSender,
         id: ObjectId,
-        servers: String? = null
+        gamemode: MindustryGamemode
     ) {
-        if (maps.findMapById(id) == null) {
+        val map = maps.findMapById(id)
+        if (map == null) {
             actor.respond("Unknown map id")
             return
         }
-
-        val list = servers?.split(",")?.map { it.trim() } ?: emptyList()
-        for (server in list) {
-            if (!server.all { it.isLetterOrDigit() || it == '-' || it == '_' }) {
-                actor.respond("**$server** is an invalid server name")
-                return
-            }
+        if (gamemode in map.gamemodes) {
+            actor.respond(
+                "This map is already in the **${gamemode.name.lowercase()}** server pool.")
+            return
         }
+        maps.updateMapById(id) { this.gamemodes += gamemode }
+        actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
+    }
 
-        maps.updateMapById(id) {
-            this.servers.clear()
-            this.servers.addAll(list)
+    @Command(["map", "gamemode", "remove"], Role.MAP_MANAGER)
+    private suspend fun onMapGamemodeRemove(
+        actor: InteractionSender,
+        id: ObjectId,
+        gamemode: MindustryGamemode
+    ) {
+        val map = maps.findMapById(id)
+        if (map == null) {
+            actor.respond("Unknown map id")
+            return
         }
-
-        actor.respond("Map servers updated to $list!")
+        if (gamemode !in map.gamemodes) {
+            actor.respond("This map is not in the **${gamemode.name.lowercase()}** server pool.")
+            return
+        }
+        maps.updateMapById(id) { this.gamemodes -= gamemode }
+        actor.respond("This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
     }
 
     @Command(["map", "delete"], Role.MAP_MANAGER)

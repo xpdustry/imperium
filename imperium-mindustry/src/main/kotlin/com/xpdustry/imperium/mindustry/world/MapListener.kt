@@ -54,7 +54,9 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()
 
-        messenger.consumer<MapReloadMessage> { if (config.name in it.servers) reloadMaps() }
+        messenger.consumer<MapReloadMessage> {
+            if (config.gamemode in it.gamemodes || it.gamemodes.isEmpty()) reloadMaps()
+        }
 
         reloadMaps()
     }
@@ -75,7 +77,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
             val pool =
                 maps
-                    .findMapsByServer(config.name)
+                    .findMapsByGamemode(config.gamemode)
                     .map {
                         try {
                             downloadMapFromPool(it)
@@ -88,7 +90,6 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     }
                     .filterNotNull()
                     .toList()
-
             if (pool.isEmpty()) {
                 logger.warn("No maps found in server pool, falling back to local maps.")
             }

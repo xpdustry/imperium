@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
@@ -60,7 +61,9 @@ import org.javacord.api.interaction.SlashCommandOptionBuilder
 import org.javacord.api.interaction.SlashCommandOptionChoice
 import org.javacord.api.interaction.SlashCommandOptionType
 
-// TODO This is awful, rewrite it
+// TODO
+//   - This is awful, rewrite it
+//   - Arguments name are case insensitive, quite annoying
 class SlashCommandRegistry(
     private val discord: DiscordService,
     private val config: ImperiumConfig
@@ -79,6 +82,7 @@ class SlashCommandRegistry(
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
         registerHandler(ObjectId::class, OBJECT_ID_TYPE_HANDLER)
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
+        registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
     }
 
     override fun onImperiumInit() {
@@ -182,6 +186,11 @@ class SlashCommandRegistry(
                 // Skip "this"
                 if (parameter.index == 0) {
                     continue
+                }
+
+                if (parameter.name!!.lowercase() != parameter.name) {
+                    throw IllegalArgumentException(
+                        "$function parameter names must be lowercase: ${parameter.name}")
                 }
 
                 if (parameter.index == 1) {

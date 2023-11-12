@@ -52,9 +52,7 @@ internal class MongoMindustryMapManager(
         maps = mongo.getCollection("maps", MindustryMap::class)
         ratings = mongo.getCollection("map_ratings", Rating::class)
         runBlocking {
-            maps.index(Indexes.compoundIndex(Indexes.descending("name"))) {
-                name("name_index").version(1).unique(true)
-            }
+            maps.index(Indexes.descending("name")) { name("name_index").version(2).unique(true) }
         }
     }
 
@@ -63,19 +61,16 @@ internal class MongoMindustryMapManager(
     override suspend fun findMapByName(name: String): MindustryMap? =
         maps.find(Filters.eq("name", name)).firstOrNull()
 
-    override suspend fun findMaps(server: String?): Flow<MindustryMap> {
-        return maps
-            .find(if (server == null) Filters.empty() else Filters.`in`(server, "servers"))
-            .sort(Sorts.descending("name"))
-    }
-
-    override suspend fun findMapsByServer(server: String): Flow<MindustryMap> =
-        maps.find(Filters.`in`("servers", server))
+    override suspend fun findMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap> =
+        maps.find(Filters.`in`("gamemodes", gamemode))
 
     override suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating? =
         ratings
             .find(Filters.and(Filters.eq("map", map), Filters.eq("player", player)))
             .firstOrNull()
+
+    override suspend fun findAllMaps(): Flow<MindustryMap> =
+        maps.findAll().sort(Sorts.descending("name"))
 
     override suspend fun computeAverageScoreByMap(map: ObjectId): Double {
         if (ratings.count(Filters.eq("map", map)) == 0L) {
@@ -119,14 +114,14 @@ internal class MongoMindustryMapManager(
         val map = maps.findById(id) ?: return false
         maps.deleteById(id)
         storage.getObject("maps", "pool", map._id.toHexString() + ".msav").delete()
-        notifyReload(map)
+        messenger.publish(MapReloadMessage(map.gamemodes))
         return true
     }
 
     override suspend fun saveMap(map: MindustryMap, stream: InputStream) {
         maps.save(map)
         storage.getObject("maps", "pool", map._id.toHexString() + ".msav").putData(stream)
-        notifyReload(map)
+        messenger.publish(MapReloadMessage(map.gamemodes))
     }
 
     override suspend fun getMapObject(map: ObjectId): StorageBucket.S3Object =
@@ -136,13 +131,10 @@ internal class MongoMindustryMapManager(
         maps.findById(id)?.let {
             updater(it)
             maps.save(it)
-            notifyReload(it)
+            messenger.publish(MapReloadMessage(it.gamemodes))
         }
     }
 
-    private suspend fun notifyReload(map: MindustryMap) {
-        if (map.servers.isNotEmpty()) {
-            messenger.publish(MapReloadMessage(map.servers))
-        }
-    }
+    override suspend fun searchMap(query: String): Flow<MindustryMap> =
+        maps.find(Filters.text(query)).sort(Sorts.descending("name"))
 }

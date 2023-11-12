@@ -17,7 +17,13 @@
  */
 package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.message.Message
-import kotlinx.serialization.Serializable
-
-@Serializable data class MapReloadMessage(val gamemodes: Set<MindustryGamemode>) : Message
+enum class MindustryGamemode {
+    SURVIVAL,
+    ATTACK,
+    PVP,
+    SANDBOX,
+    ROUTER,
+    SURVIVAL_EXPERT,
+    HEXED,
+    TOWER_DEFENSE,
+}

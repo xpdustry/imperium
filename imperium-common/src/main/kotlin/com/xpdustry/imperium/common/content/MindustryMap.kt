@@ -36,7 +36,7 @@ data class MindustryMap(
     var height: Int,
     var playtime: SerializableJDuration = Duration.ZERO,
     var games: Int = 0,
-    val servers: MutableSet<String> = mutableSetOf(),
+    var gamemodes: MutableSet<MindustryGamemode> = mutableSetOf(),
     var lastUpdate: SerializableJInstant = _id.date.toInstant(),
 ) : Entity<ObjectId>
 

@@ -346,8 +346,8 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             .replace("%server_player_count%", info.playerCount.toString())
             .replace("%server_player_limit%", info.playerLimit.toString())
             .replace("%server_game_version%", info.gameVersion.toString())
-            .replace("%server_game_mode%", info.gameMode.toString())
-            .replace("%server_game_mode_name%", info.gameModeName ?: "unknown")
+            .replace("%server_game_mode%", info.gamemode.name.lowercase())
+            .replace("%server_game_mode_name%", info.gamemodeName ?: "unknown")
     }
 
     private fun createErrorLabel(portal: Portal) =

@@ -28,11 +28,11 @@ interface MindustryMapManager {
 
     suspend fun findMapByName(name: String): MindustryMap?
 
-    suspend fun findMaps(server: String? = null): Flow<MindustryMap>
-
-    suspend fun findMapsByServer(server: String): Flow<MindustryMap>
+    suspend fun findMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap>
 
     suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
+
+    suspend fun findAllMaps(): Flow<MindustryMap>
 
     suspend fun computeAverageScoreByMap(map: ObjectId): Double
 
@@ -45,4 +45,6 @@ interface MindustryMapManager {
     suspend fun getMapObject(map: ObjectId): StorageBucket.S3Object
 
     suspend fun updateMapById(id: ObjectId, updater: suspend MindustryMap.() -> Unit)
+
+    suspend fun searchMap(query: String): Flow<MindustryMap>
 }

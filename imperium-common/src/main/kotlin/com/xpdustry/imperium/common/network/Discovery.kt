@@ -45,8 +45,8 @@ interface Discovery {
             val playerCount: Int,
             val playerLimit: Int,
             val gameVersion: MindustryVersion,
-            val gameMode: GameMode,
-            val gameModeName: String?,
+            val gamemode: Gamemode,
+            val gamemodeName: String?,
             val state: State,
         ) : Data {
 
@@ -56,7 +56,7 @@ interface Discovery {
                 STOPPED
             }
 
-            enum class GameMode {
+            enum class Gamemode {
                 SURVIVAL,
                 SANDBOX,
                 ATTACK,

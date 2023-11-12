@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
@@ -92,6 +93,7 @@ sealed interface ServerConfig {
 
     data class Mindustry(
         override val name: String,
+        val gamemode: MindustryGamemode,
         override val displayName: String = name.capitalize(),
         val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
         val hub: Hub = Hub(),
