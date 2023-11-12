@@ -133,7 +133,6 @@ sealed interface ServerConfig {
         )
 
         data class Hub(
-            val enabled: Boolean = false,
             val preventPlayerActions: Boolean = true,
             val errorFontSize: Float = 2F,
             val overlays: List<Overlay> = emptyList(),

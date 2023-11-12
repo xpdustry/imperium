@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
@@ -112,7 +113,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             )) {
             application.register(listener)
         }
-        if (application.instances.get<ServerConfig.Mindustry>().hub.enabled) {
+        if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         }
         application.init()

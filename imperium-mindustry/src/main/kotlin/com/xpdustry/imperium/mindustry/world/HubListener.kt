@@ -71,7 +71,6 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             .create()
 
     override fun onImperiumInit() {
-        if (!config.enabled) error("Hub is not enabled.")
         directory.toFile().mkdirs()
 
         if (config.preventPlayerActions) {

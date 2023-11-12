@@ -26,4 +26,5 @@ enum class MindustryGamemode {
     SURVIVAL_EXPERT,
     HEXED,
     TOWER_DEFENSE,
+    HUB,
 }
