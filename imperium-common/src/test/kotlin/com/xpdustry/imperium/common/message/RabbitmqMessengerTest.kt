@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
@@ -234,7 +235,9 @@ class RabbitmqMessengerTest {
                 factory<Messenger> {
                     RabbitmqMessenger(
                         ImperiumConfig(
-                            server = ServerConfig.Mindustry("test-${UUID.randomUUID()}"),
+                            server =
+                                ServerConfig.Mindustry(
+                                    "test-${UUID.randomUUID()}", MindustryGamemode.SURVIVAL),
                             messenger =
                                 MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort)),
                     )
