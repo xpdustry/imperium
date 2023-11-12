@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.net.InetAddress
 import java.time.ZoneOffset
@@ -72,7 +73,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     true)
                 .addField("Times Joined", user.timesJoined.toString(), true)
                 .apply {
-                    if (discord.isAllowed(actor.user, Role.MODERATOR)) {
+                    if (discord.isAllowed(actor.user, Role.ADMINISTRATOR)) {
                         addField("Uuid", "`${user.uuid}`", true)
                         addField("Last Address", user.lastAddress!!.hostAddress, true)
                         addField(
@@ -85,6 +86,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command(["player", "search"])
+    @NonEphemeral
     suspend fun onPlayerSearch(actor: InteractionSender, query: String) {
         val users = users.searchUser(query).take(21).toCollection(mutableListOf())
         if (users.isEmpty()) {

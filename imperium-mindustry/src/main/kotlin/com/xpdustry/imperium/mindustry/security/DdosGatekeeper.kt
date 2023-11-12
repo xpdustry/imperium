@@ -50,6 +50,9 @@ private val PROVIDERS =
         OracleCloudAddressProvider,
     )
 
+// TODO
+//   shit is so efficient I am not even aware of the attacks,
+//   although I do want to have a notification
 class DdosGatekeeper(
     private val http: OkHttpClient,
     private val config: ServerConfig.Mindustry.Security

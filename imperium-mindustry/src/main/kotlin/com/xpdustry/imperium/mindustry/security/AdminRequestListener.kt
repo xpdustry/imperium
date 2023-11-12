@@ -18,6 +18,10 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.UserManager
+import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -35,13 +39,16 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import java.net.InetAddress
 import java.time.Duration
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
 import mindustry.game.Team
 import mindustry.gen.AdminRequestCallPacket
 import mindustry.gen.Call
+import mindustry.gen.Player
 import mindustry.net.Administration.TraceInfo
 import mindustry.net.NetConnection
 import mindustry.net.Packets
@@ -54,6 +61,8 @@ private val PUNISHMENT_TARGET = stateKey<Identity.Mindustry>("punishment_target"
 class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
     private val bans = instances.get<PunishmentManager>()
+    private val users = instances.get<UserManager>()
+    private val accounts = instances.get<AccountManager>()
     private lateinit var banInterface: Interface
 
     override fun onImperiumInit() {
@@ -168,30 +177,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 logger.info(
                     "{} ({}) has skipped the wave", con.player.plainName(), con.player.uuid())
             }
-            AdminAction.trace -> {
-                val stats = Vars.netServer.admins.getInfo(packet.other.uuid())
-                Call.traceInfo(
-                    con,
-                    packet.other,
-                    TraceInfo(
-                        packet.other.con.address,
-                        packet.other.uuid(),
-                        packet.other.con.modclient,
-                        packet.other.con.mobile,
-                        stats.timesJoined,
-                        stats.timesKicked,
-                        stats.ips.toArray(String::class.java),
-                        stats.names.toArray(String::class.java),
-                    ),
-                )
-                logger.info(
-                    "{} ({}) has requested trace info of {} ({})",
-                    con.player.plainName(),
-                    con.player.uuid(),
-                    packet.other.plainName(),
-                    packet.other.uuid(),
-                )
-            }
+            AdminAction.trace -> handleTraceInfo(con.player, packet.other)
             AdminAction.ban ->
                 banInterface.open(con.player) { it[PUNISHMENT_TARGET] = packet.other.identity }
             AdminAction.kick -> {
@@ -238,6 +224,40 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 )
         }
     }
+
+    private fun handleTraceInfo(requester: Player, target: Player) =
+        ImperiumScope.MAIN.launch {
+            val user = users.findByUuid(target.uuid())
+            if (user == null) {
+                // This should never happen
+                Call.infoMessage(requester.con, "Player not found.")
+                return@launch
+            }
+            val admin =
+                accounts
+                    .findByIdentity(requester.identity)
+                    ?.roles
+                    ?.containsRole(Role.ADMINISTRATOR) == true
+            Call.traceInfo(
+                requester.con,
+                target,
+                TraceInfo(
+                    target.con.address,
+                    if (admin) target.uuid() else user._id.toHexString(),
+                    target.con.modclient,
+                    target.con.mobile,
+                    user.timesJoined,
+                    bans.findAllByUuid(target.uuid()).count(),
+                    if (admin) user.addresses.map(InetAddress::getHostAddress).toTypedArray()
+                    else arrayOf("Don't have permission to view addresses."),
+                    user.names.toTypedArray()))
+            logger.info(
+                "{} ({}) has requested trace info of {} ({})",
+                requester.plainName(),
+                requester.uuid(),
+                target.plainName(),
+                target.uuid())
+        }
 
     companion object {
         private val logger by LoggerDelegate()
