@@ -24,8 +24,8 @@ import mindustry.gen.Player
  * Read only lists of the entities
  */
 object Entities {
-    val PLAYERS = Groups.player.toList()
-    val UNITS = Groups.unit.toList()
+    val PLAYERS = Groups.player.asList()
+    val UNITS = Groups.unit.asList()
 
     fun findPlayerByID(id: Int): Player? = Groups.player.getByID(id)
 }

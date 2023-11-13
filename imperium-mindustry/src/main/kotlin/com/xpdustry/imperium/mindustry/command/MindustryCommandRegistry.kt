@@ -42,7 +42,6 @@ import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.ArcCommandManager
-import fr.xpdustry.distributor.api.command.argument.PlayerInfoArgument
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import io.leangen.geantyref.GenericTypeReflector
@@ -61,7 +60,6 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaType
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
-import mindustry.net.Administration.PlayerInfo
 import mindustry.server.ServerControl
 
 class MindustryCommandRegistry(
@@ -230,9 +228,6 @@ private fun createArcCommandManager(plugin: MindustryPlugin) =
                     getNumber(annotation.value, token)
                         ?: return@registerAnnotationMapper ParserParameters.empty()
                 ParserParameters.single(StandardParameters.RANGE_MAX, number)
-            }
-            parserRegistry().registerParserSupplier(TypeToken.get(PlayerInfo::class.java)) {
-                PlayerInfoArgument.PlayerInfoParser()
             }
         }
 

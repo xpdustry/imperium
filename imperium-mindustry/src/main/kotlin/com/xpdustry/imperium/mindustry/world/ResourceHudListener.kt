@@ -27,8 +27,8 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.asList
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.misc.toList
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.popup.PopupAlignement
@@ -115,7 +115,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     private fun updateResourceTrackers() {
         for (team in Team.all) {
             if (!team.active()) continue
-            for (item in Vars.content.items().toList()) {
+            for (item in Vars.content.items().asList()) {
                 val tracker = teams.getOrPut(team, ::ResourceTracker)
                 val list = tracker.items.getOrPut(item) { LimitedList(ITEM_LIST_SIZE) }
                 list += team.items().get(item)

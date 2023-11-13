@@ -27,8 +27,8 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
+import com.xpdustry.imperium.mindustry.misc.asList
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.misc.toList
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
@@ -55,7 +55,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
             }
             addTransformer(
                 ListTransformer(
-                    provider = { Vars.maps.customMaps().toList() },
+                    provider = { Vars.maps.customMaps().asList() },
                     renderer = { it.name() },
                     fill = true,
                     onChoice = { view, map ->

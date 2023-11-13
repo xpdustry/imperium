@@ -27,8 +27,8 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.asList
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.misc.toList
 import fr.xpdustry.distributor.api.command.ArcCommand
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Players
@@ -195,7 +195,7 @@ class HelpCommand : ImperiumApplication.Listener {
             .toInt()
 
     private suspend fun getNativeCommandList() = runMindustryThread {
-        Vars.netServer.clientCommands.commandList.toList()
+        Vars.netServer.clientCommands.commandList.asList()
     }
 
     private fun CommandHandler.Command.getDescription(locale: Locale, first: Boolean) =

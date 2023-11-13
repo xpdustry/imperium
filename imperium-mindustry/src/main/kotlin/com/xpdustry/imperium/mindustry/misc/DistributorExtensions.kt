@@ -20,14 +20,37 @@ package com.xpdustry.imperium.mindustry.misc
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
+import com.xpdustry.imperium.mindustry.ImperiumPlugin
+import fr.xpdustry.distributor.api.DistributorProvider
+import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.ArcCollections
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
+import mindustry.Vars
 import mindustry.entities.EntityGroup
 import mindustry.gen.Entityc
 
-fun <T> Seq<T>.toList(): List<T> = ArcCollections.immutableList(this)
+fun <T> Seq<T>.asList(): List<T> = ArcCollections.immutableList(this)
 
-fun <T : Entityc> EntityGroup<T>.toList(): List<T> = ArcCollections.immutableList(this)
+fun <T : Entityc> EntityGroup<T>.asList(): List<T> = ArcCollections.immutableList(this)
 
-fun <K, V> ObjectMap<K, V>.toMap(): Map<K, V> = ArcCollections.immutableMap(this)
+fun <K, V> ObjectMap<K, V>.asMap(): Map<K, V> = ArcCollections.immutableMap(this)
 
-fun <T> ObjectSet<T>.toSet(): Set<T> = ArcCollections.immutableSet(this)
+fun <T> ObjectSet<T>.asSet(): Set<T> = ArcCollections.immutableSet(this)
+
+// https://stackoverflow.com/a/73494554
+suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T =
+    withTimeout(timeout) {
+        suspendCancellableCoroutine { continuation ->
+            DistributorProvider.get()
+                .pluginScheduler
+                .scheduleSync(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
+                .execute { _ ->
+                    runCatching(task).fold(continuation::resume, continuation::resumeWithException)
+                }
+        }
+    }

@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.history.factory
 import com.xpdustry.imperium.mindustry.history.HistoryConfig
 import com.xpdustry.imperium.mindustry.history.HistoryEntry
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
-import com.xpdustry.imperium.mindustry.misc.toList
+import com.xpdustry.imperium.mindustry.misc.asList
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.io.IOException
@@ -57,7 +57,7 @@ object LogicProcessorConfigurationFactory :
         val configurations = mutableListOf<HistoryConfig>()
         val links =
             building.links
-                .toList()
+                .asList()
                 .filter { it.active }
                 .map { link ->
                     ImmutablePoint(link.x - building.tileX(), link.y - building.tileY())
