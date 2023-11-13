@@ -87,6 +87,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                     append("[white]")
                     append("%")
                 }
+                append("\nEvery minute")
             }
         }
     }
@@ -124,9 +125,9 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
             if (!team.active()) continue
             for (item in Vars.content.items().asList()) {
                 val tracker = teams.getOrPut(team, ::ResourceTracker)
-                val list = tracker.items.getOrPut(item) { LimitedList(ITEM_LIST_SIZE) }
+                val list = tracker.items.getOrPut(item) { LimitedList(RECORDED_SECONDS) }
                 list += team.items().get(item)
-                val change = getAverageChange(list) * ITEM_LIST_SIZE
+                val change = getAverageChange(list) * PROJECTED_SECONDS
                 tracker.change[item] = change
                 tracker.rate[item] =
                     (change / max(team.cores().sum(CoreBuild::storageCapacity).toFloat(), 1F)) *
@@ -195,6 +196,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     )
 
     companion object {
-        private const val ITEM_LIST_SIZE = 10
+        private const val RECORDED_SECONDS = 10
+        private const val PROJECTED_SECONDS = 60
     }
 }
