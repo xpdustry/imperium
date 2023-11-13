@@ -107,7 +107,8 @@ class ListTransformer<E : Any>(
 fun createPlayerListTransformer(action: BiAction<Player>): Transformer<MenuPane> =
     ListTransformer(
         provider = { view ->
-            Entities.PLAYERS.asSequence()
+            Entities.getPlayers()
+                .asSequence()
                 .filter { it != view.viewer }
                 .sortedBy { it.name().stripMindustryColors() }
                 .toList()

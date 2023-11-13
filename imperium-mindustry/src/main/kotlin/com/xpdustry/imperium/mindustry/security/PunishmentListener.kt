@@ -46,7 +46,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
             runMindustryThread {
                 Events.fire(PlayerIpBanEvent(punishment.target.address.hostAddress))
-                for (player in Entities.PLAYERS) {
+                for (player in Entities.getPlayers()) {
                     if (player.ip().toInetAddress() != punishment.target.address &&
                         player.uuid() != punishment.target.uuid) {
                         continue

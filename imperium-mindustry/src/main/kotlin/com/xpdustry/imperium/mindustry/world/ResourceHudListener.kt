@@ -97,7 +97,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                 delay(1.seconds)
                 if (!Vars.state.isPlaying) continue
                 runMindustryThread { updateResourceTrackers() }
-                for (player in Entities.PLAYERS) {
+                for (player in Entities.getPlayersAsync()) {
                     val enabled = users.getSetting(player.uuid(), User.Setting.RESOURCE_HUD)
                     runMindustryThread {
                         if (enabled) {

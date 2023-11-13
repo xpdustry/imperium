@@ -104,7 +104,8 @@ class VoteKickCommand(instances: InstanceManager) :
             votekickInterface.open(sender.player)
             return
         }
-        if (Entities.PLAYERS.filter { !Vars.state.rules.pvp || it.team() == sender.player.team() }
+        if (Entities.getPlayers()
+            .filter { !Vars.state.rules.pvp || it.team() == sender.player.team() }
             .size < 3) {
             sender.player.sendMessage(
                 """

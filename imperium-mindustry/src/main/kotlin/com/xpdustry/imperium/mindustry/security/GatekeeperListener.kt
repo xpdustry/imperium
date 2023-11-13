@@ -131,7 +131,7 @@ private fun interceptPlayerConnection(
 
     // CHECK: Player limit
     if (Vars.netServer.admins.playerLimit > 0 &&
-        Entities.PLAYERS.size >= Vars.netServer.admins.playerLimit &&
+        Entities.getPlayers().size >= Vars.netServer.admins.playerLimit &&
         !Vars.netServer.admins.isAdmin(packet.uuid, packet.usid)) {
         con.kick(KickReason.playerLimit)
         return
@@ -184,7 +184,7 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Duplicate names
-    if (Entities.PLAYERS.any {
+    if (Entities.getPlayers().any {
         it.name
             .stripMindustryColors()
             .trim()
@@ -195,7 +195,7 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Duplicate ids
-    if (Entities.PLAYERS.any { player ->
+    if (Entities.getPlayers().any { player ->
         player.uuid() == packet.uuid || player.usid() == packet.usid
     }) {
         con.uuid = packet.uuid

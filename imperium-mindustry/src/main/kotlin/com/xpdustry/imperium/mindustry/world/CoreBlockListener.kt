@@ -41,7 +41,6 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Building
 import mindustry.gen.Call
-import mindustry.gen.Groups
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.storage.CoreBlock
 
@@ -57,7 +56,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
             while (isActive) {
                 delay(1.seconds)
                 if (!Vars.state.isPlaying) continue
-                for (player in Entities.PLAYERS) {
+                for (player in Entities.getPlayersAsync()) {
                     for ((index, cluster) in getManager(player.team()).clusters.withIndex()) {
                         Call.label(
                             player.con,
@@ -120,7 +119,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
             return
 
         val index = manager.clusters.indexOf(cluster)
-        for (player in Groups.player) {
+        for (player in Entities.getPlayers()) {
             if (player.team() == building.team) {
                 player.sendMessage(
                     "[scarlet]The core cluster [orange]#${index + 1}[] at ([orange]${cluster.x}[], [orange]${cluster.x}[]) is under attack!")

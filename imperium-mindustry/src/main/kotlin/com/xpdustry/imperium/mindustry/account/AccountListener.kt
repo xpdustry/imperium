@@ -73,7 +73,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
 
     @EventHandler
     internal fun onGameOver(event: EventType.GameOverEvent) {
-        Entities.PLAYERS.forEach { player ->
+        Entities.getPlayers().forEach { player ->
             ImperiumScope.MAIN.launch {
                 accounts.updateByIdentity(player.identity) { account -> account.games++ }
             }

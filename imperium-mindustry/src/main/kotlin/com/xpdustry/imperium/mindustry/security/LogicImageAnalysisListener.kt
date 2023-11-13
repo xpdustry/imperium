@@ -400,7 +400,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                         val extra =
                             if (entry != null) PunishmentMessage.Extra.Nsfw(entry)
                             else PunishmentMessage.Extra.None
-                        val player = Entities.PLAYERS.find { it.uuid() == element.author }
+                        val player = Entities.getPlayersAsync().find { it.uuid() == element.author }
                         if (player != null) {
                             punishments.punish(
                                 config.identity,

@@ -165,7 +165,8 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         messenger.consumer<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
-                val player = Entities.PLAYERS.find { it.uuid() == message.uuid } ?: return@consumer
+                val player =
+                    Entities.getPlayersAsync().find { it.uuid() == message.uuid } ?: return@consumer
                 player.showInfoMessage("You have been verified!")
                 player.tryGrantAdmin(manager)
             }

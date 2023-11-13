@@ -37,7 +37,7 @@ fun getMindustryServerInfo(): Discovery.Data.Mindustry =
         Vars.state.map.name(),
         Administration.Config.desc.string(),
         Vars.state.wave,
-        Entities.PLAYERS.size,
+        Entities.getPlayers().size,
         Vars.netServer.admins.playerLimit,
         getMindustryVersion(),
         getGameMode(),

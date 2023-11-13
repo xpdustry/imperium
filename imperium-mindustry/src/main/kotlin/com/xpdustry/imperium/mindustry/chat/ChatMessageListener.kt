@@ -134,7 +134,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 "display" ->
                     when (subject) {
                         is Identity.Mindustry ->
-                            Entities.PLAYERS.find { it.uuid() == subject.uuid }?.name
+                            Entities.getPlayersAsync().find { it.uuid() == subject.uuid }?.name
                                 ?: subject.name
                         else -> subject.name
                     }
@@ -148,7 +148,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             }
             when (subject) {
                 is Identity.Mindustry ->
-                    Entities.PLAYERS.find { it.uuid() == subject.uuid }
+                    Entities.getPlayersAsync()
+                        .find { it.uuid() == subject.uuid }
                         ?.color
                         ?.toString()
                         ?.let { "#$it" }
@@ -167,7 +168,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
         if (filtered1.isNullOrBlank()) return
 
-        for (target in Entities.PLAYERS) {
+        for (target in Entities.getPlayersAsync()) {
             if (sender.player.team() != target.team()) continue
             ImperiumScope.MAIN.launch {
                 val filtered2 =
@@ -217,7 +218,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
 
         // The null target represents the server, for logging purposes
-        (Entities.PLAYERS + listOf(null)).forEach { target ->
+        (Entities.getPlayersAsync() + listOf(null)).forEach { target ->
             ImperiumScope.MAIN.launch {
                 val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
@@ -290,7 +291,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         if (filtered1.isNullOrBlank()) return
 
         // The null target represents the server, for logging and event purposes
-        (Entities.PLAYERS + listOf(null)).forEach { target ->
+        (Entities.getPlayers() + listOf(null)).forEach { target ->
             ImperiumScope.MAIN.launch {
                 val filtered2 =
                     chatMessagePipeline.pump(ChatMessageContext(sender, target, filtered1))

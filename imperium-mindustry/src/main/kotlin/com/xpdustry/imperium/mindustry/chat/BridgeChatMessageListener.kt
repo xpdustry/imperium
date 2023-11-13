@@ -55,7 +55,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         messenger.consumer<BridgeChatMessage> {
             if (it.serverName != config.name) return@consumer
             // The null target represents the server, for logging purposes
-            (Entities.PLAYERS + listOf(null)).forEach { target ->
+            (Entities.getPlayersAsync() + listOf(null)).forEach { target ->
                 ImperiumScope.MAIN.launch {
                     val processed =
                         chatMessagePipeline.pump(ChatMessageContext(null, target, it.message))
@@ -103,9 +103,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     fun onGameOver(event: EventType.GameOverEvent) {
         val message =
             if (Vars.state.rules.waves) {
-                "Game over! Reached wave ${Vars.state.wave} with ${Entities.PLAYERS.size} players online on map ${Vars.state.map.name()}."
+                "Game over! Reached wave ${Vars.state.wave} with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             } else {
-                "Game over! Team ${event.winner.name} is victorious with ${Entities.PLAYERS.size} players online on map ${Vars.state.map.name()}."
+                "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
         ImperiumScope.MAIN.launch {
             messenger.publish(MindustryServerMessage(config.identity, message, chat = false))

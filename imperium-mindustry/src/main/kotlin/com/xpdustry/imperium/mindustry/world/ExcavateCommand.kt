@@ -175,7 +175,7 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     override fun getRequiredVotes(players: Int): Int =
-        when (Entities.PLAYERS.size) {
+        when (Entities.getPlayers().size) {
             0 -> 0
             1 -> 1
             2,
