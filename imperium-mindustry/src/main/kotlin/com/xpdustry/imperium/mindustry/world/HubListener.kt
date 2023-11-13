@@ -136,7 +136,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onResetEvent(event: EventType.ResetEvent) {
+    fun onPlayEvent(event: EventType.PlayEvent) {
         portals.clear()
         portals.putAll(loadPortals())
         updatePortals()
@@ -314,7 +314,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 labels.error.add()
                 continue
             }
-            if (data.state != Discovery.Data.Mindustry.State.PLAYING) {
+            if (data.state == Discovery.Data.Mindustry.State.STOPPED) {
                 labels.overlays.forEach { it.first.hide() }
                 labels.error.text("[orange]Server is not open.")
                 labels.error.add()
@@ -328,7 +328,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             }
             labels.error.hide()
             labels.overlays.forEach { (label, overlay) ->
-                label.text(formatText(overlay.text, data))
+                label.text(formatText(overlay.text.trim(), data))
                 label.add()
             }
         }
