@@ -58,7 +58,9 @@ class KillAllCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Unit>) {
         runMindustryThread {
-            Entities.UNITS.toList().forEach { unit -> if (!unit.isPlayer) Call.unitDespawn(unit) }
+            Entities.getUnits().toList().forEach { unit ->
+                if (!unit.isPlayer) Call.unitDespawn(unit)
+            }
         }
     }
 }
