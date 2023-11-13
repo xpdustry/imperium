@@ -33,9 +33,11 @@ import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.popup.PopupAlignement
 import com.xpdustry.imperium.mindustry.ui.popup.PopupInterface
+import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.Color
 import kotlin.math.abs
 import kotlin.math.absoluteValue
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
@@ -43,12 +45,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Items
+import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Iconc
 import mindustry.type.Item
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 
-// TODO Tweak a little bit if possible
 class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
     private val views = PlayerMap<View>(instances.get())
@@ -112,6 +114,11 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
+    @EventHandler
+    fun onResetEvent(event: EventType.ResetEvent) {
+        teams.clear()
+    }
+
     private fun updateResourceTrackers() {
         for (team in Team.all) {
             if (!team.active()) continue
@@ -122,7 +129,8 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                 val change = getAverageChange(list) * ITEM_LIST_SIZE
                 tracker.change[item] = change
                 tracker.rate[item] =
-                    (change / team.cores().sum(CoreBuild::storageCapacity).toFloat()) * 100F
+                    (change / max(team.cores().sum(CoreBuild::storageCapacity).toFloat(), 1F)) *
+                        100F
             }
         }
     }
@@ -187,6 +195,6 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     )
 
     companion object {
-        private const val ITEM_LIST_SIZE = 5
+        private const val ITEM_LIST_SIZE = 10
     }
 }
