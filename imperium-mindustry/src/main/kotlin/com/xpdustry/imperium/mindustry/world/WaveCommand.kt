@@ -22,9 +22,11 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -59,6 +61,7 @@ class WaveCommand(instances: InstanceManager) :
 
     @Command(["wave", "set", "countdown"], Role.MODERATOR)
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSetTime(sender: CommandSender, duration: Duration) {
         Vars.state.wavetime = duration.seconds.toFloat() * 60F
         sender.sendMessage("Set wave countdown to $duration")
@@ -66,6 +69,7 @@ class WaveCommand(instances: InstanceManager) :
 
     @Command(["wave", "set", "counter"], Role.MODERATOR)
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
         Vars.state.wave = wave
         Vars.state.wavetime = Vars.state.rules.waveSpacing
@@ -74,6 +78,7 @@ class WaveCommand(instances: InstanceManager) :
 
     @Command(["wave", "run"], Role.MODERATOR)
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveRun(sender: CommandSender, @Min(1) @Max(20) count: Int = 1) {
         repeat(count) { Vars.logic.runWave() }
         sender.sendMessage("Ran $count wave(s).")
@@ -81,18 +86,21 @@ class WaveCommand(instances: InstanceManager) :
 
     @Command(["wave", "skip"])
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSkip(sender: CommandSender) {
         waveSkipInterface.open(sender.player)
     }
 
     @Command(["ws", "y"])
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSkipYes(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @Command(["ws", "n"])
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSkipNo(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }

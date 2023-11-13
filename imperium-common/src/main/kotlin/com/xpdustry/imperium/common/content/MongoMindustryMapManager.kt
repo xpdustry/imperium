@@ -51,9 +51,7 @@ internal class MongoMindustryMapManager(
     override fun onImperiumInit() {
         maps = mongo.getCollection("maps", MindustryMap::class)
         ratings = mongo.getCollection("map_ratings", Rating::class)
-        runBlocking {
-            maps.index(Indexes.ascending("name")) { name("name_index").version(3).unique(true) }
-        }
+        runBlocking { maps.index(Indexes.ascending("name")) { name("name_index").unique(true) } }
     }
 
     override suspend fun findMapById(id: ObjectId): MindustryMap? = maps.findById(id)

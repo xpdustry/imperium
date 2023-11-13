@@ -64,7 +64,7 @@ fun MindustryModule(plugin: ImperiumPlugin) =
                 ?: error("The current server configuration is not Mindustry")
         }
 
-        single<CommandRegistry> { MindustryCommandRegistry(get(), get(), get()) }
+        single<CommandRegistry> { MindustryCommandRegistry(get(), get(), get(), get()) }
 
         single<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
 

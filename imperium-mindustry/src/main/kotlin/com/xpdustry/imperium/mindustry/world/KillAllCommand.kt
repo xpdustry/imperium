@@ -19,9 +19,11 @@ package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -37,18 +39,21 @@ class KillAllCommand(instances: InstanceManager) :
 
     @Command(["killall"])
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsCommand(sender: CommandSender) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
     @Command(["killall", "y"])
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @Command(["killall", "n"])
     @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }

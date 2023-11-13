@@ -25,6 +25,7 @@ import cloud.commandframework.context.CommandContext
 import cloud.commandframework.keys.SimpleCloudKey
 import cloud.commandframework.kotlin.coroutines.SuspendingExecutionHandler
 import cloud.commandframework.permission.PredicatePermission
+import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.containsRole
@@ -37,15 +38,21 @@ import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.ArcCommandManager
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import fr.xpdustry.distributor.api.util.MUUID
 import io.leangen.geantyref.GenericTypeReflector
 import io.leangen.geantyref.TypeToken
+import java.util.EnumSet
+import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
@@ -64,11 +71,14 @@ import mindustry.server.ServerControl
 
 class MindustryCommandRegistry(
     plugin: MindustryPlugin,
+    private val server: ServerConfig.Mindustry,
     private val config: ImperiumConfig,
     private val accounts: AccountManager,
 ) : CommandRegistry, ImperiumApplication.Listener {
     private val clientCommandManager = createArcCommandManager(plugin)
     private val serverCommandManager = createArcCommandManager(plugin)
+    private val roleCache =
+        CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build<MUUID, Set<Role>>()
 
     override fun onImperiumInit() {
         clientCommandManager.initialize(Vars.netServer.clientCommands)
@@ -102,10 +112,11 @@ class MindustryCommandRegistry(
         annotation: Command
     ) {
         val base = mutableListOf(annotation.name)
+        val scope = function.findAnnotation<Scope>()?.gamemodes?.toSet() ?: emptySet()
         var builder =
             manager
                 .commandBuilder(annotation.name, createLiteralDescription(base))
-                .permission(createPermission(annotation.role, annotation.name))
+                .permission(createPermission(annotation.role, annotation.name, scope))
         for (rest in annotation.path.drop(1)) {
             base += rest
             builder = builder.literal(rest, createLiteralDescription(base))
@@ -130,16 +141,19 @@ class MindustryCommandRegistry(
         manager.command(builder)
     }
 
-    // TODO Cache the permissions, the number of requests per help command is insane
-    private fun createPermission(role: Role, command: String) =
+    private fun createPermission(role: Role, command: String, scope: Set<MindustryGamemode>) =
         PredicatePermission.of<CommandSender>(SimpleCloudKey.of("imperium:$command")) { sender ->
-            role == Role.EVERYONE ||
-                sender.isConsole ||
-                runBlocking {
-                    accounts.findByIdentity(sender.player.identity)?.roles?.containsRole(role)
-                        ?: false
-                }
+            getRoles(sender).containsRole(Role.ADMINISTRATOR) ||
+                (getRoles(sender).containsRole(role) &&
+                    (scope.isEmpty() || server.gamemode in scope))
         }
+
+    private fun getRoles(sender: CommandSender): Set<Role> =
+        if (sender.isConsole) EnumSet.allOf(Role::class.java)
+        else
+            roleCache.get(MUUID.of(sender.player)) {
+                runBlocking { accounts.findByIdentity(sender.player.identity)?.roles ?: emptySet() }
+            }
 
     private fun <T : Any> createCommandArgument(
         manager: ArcCommandManager<CommandSender>,

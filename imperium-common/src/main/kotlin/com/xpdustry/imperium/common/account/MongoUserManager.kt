@@ -38,14 +38,8 @@ internal class MongoUserManager(private val mongo: MongoProvider) :
     override fun onImperiumInit() {
         users = mongo.getCollection("users", User::class)
         runBlocking {
-            users.index(Indexes.text(User::names.name)) {
-                name("names_text_index")
-                version(1)
-            }
-            users.index(Indexes.hashed(User::uuid.name)) {
-                name("uuid_index")
-                version(1)
-            }
+            users.index(Indexes.text(User::names.name)) { name("names_text_index") }
+            users.index(Indexes.hashed(User::uuid.name)) { name("uuid_index") }
         }
     }
 
