@@ -36,6 +36,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -110,6 +111,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 UserSettingsCommand::class,
                 WelcomeListener::class,
                 ResourceHudListener::class,
+                ImperiumLogicListener::class,
             )) {
             application.register(listener)
         }

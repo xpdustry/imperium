@@ -39,6 +39,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
@@ -157,7 +158,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
     }
 
     @EventHandler
-    fun onResetEvent(event: EventType.ResetEvent) {
+    fun onMenuToPlayEvent(event: MenuToPlayEvent) {
         displays.reset()
         drawerQueue.clear()
         canvases.reset()

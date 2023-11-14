@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toHexString
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asList
@@ -45,7 +46,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Items
-import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Iconc
 import mindustry.type.Item
@@ -116,7 +116,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     }
 
     @EventHandler
-    fun onResetEvent(event: EventType.ResetEvent) {
+    fun onMenuToPlayEvent(event: MenuToPlayEvent) {
         teams.clear()
     }
 

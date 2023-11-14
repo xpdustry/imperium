@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -128,7 +129,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     }
 
     @EventHandler
-    fun onResetEvent(event: EventType.ResetEvent) {
+    fun onMenuToPlayEvent(event: MenuToPlayEvent) {
         managers.clear()
         Vars.world.tiles.eachTile { tile ->
             val building = tile.build
