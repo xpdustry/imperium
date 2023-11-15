@@ -33,9 +33,11 @@ dependencies {
 
     val exposed = "0.44.1"
     implementation("org.jetbrains.exposed:exposed-core:$exposed")
-    implementation("org.jetbrains.exposed:exposed-crypt:$exposed")
-    implementation("org.jetbrains.exposed:exposed-dao:$exposed")
+    // implementation("org.jetbrains.exposed:exposed-crypt:$exposed")
+    // implementation("org.jetbrains.exposed:exposed-dao:$exposed")
     implementation("org.jetbrains.exposed:exposed-jdbc:$exposed")
     implementation("org.jetbrains.exposed:exposed-java-time:$exposed")
+    implementation("org.jetbrains.exposed:exposed-json:$exposed")
+
     implementation("org.xerial:sqlite-jdbc:3.44.0.0")
 }
