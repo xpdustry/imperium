@@ -25,10 +25,12 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
 import java.time.Instant
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.NetConnection
+import mindustry.net.Packets.KickReason
 import org.slf4j.event.Level
 
 val Player.identity: Identity.Mindustry
@@ -39,7 +41,24 @@ val Player.joinTime: Instant
 
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
 
+fun NetConnection.kick(reason: KickReason, silent: Boolean = false) {
+    val duration =
+        if (reason == KickReason.kick || reason == KickReason.banned || reason == KickReason.vote)
+            30.minutes
+        else Duration.ZERO
+    kick(reason.name, reason, duration, silent)
+}
+
 fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = false) {
+    kick(reason, null, duration, silent)
+}
+
+private fun NetConnection.kick(
+    reason: String,
+    kick: KickReason?,
+    duration: Duration,
+    silent: Boolean
+) {
     if (kicked) return
 
     logger
@@ -50,7 +69,12 @@ fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = fal
         Vars.netServer.admins.handleKicked(uuid, address, duration.inWholeMilliseconds)
     }
 
-    Call.kick(this, reason)
+    if (kick == null) {
+        Call.kick(this, reason)
+    } else {
+        Call.kick(this, kick)
+    }
+
     // STEAM: Will break if the connection closes now
     close()
 
