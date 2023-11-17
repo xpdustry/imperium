@@ -37,6 +37,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.util.Priority
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import kotlin.time.Duration
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.core.Version
@@ -102,7 +103,7 @@ private fun interceptPlayerConnection(
         return
 
     if (con.hasBegunConnecting) {
-        con.kick(KickReason.idInUse)
+        con.kick(KickReason.idInUse, silent = true)
         return
     }
 
@@ -115,7 +116,7 @@ private fun interceptPlayerConnection(
     con.mobile = packet.mobile
 
     if (packet.uuid == null || packet.usid == null) {
-        con.kick(KickReason.idInUse)
+        con.kick(KickReason.idInUse, silent = true)
         return
     }
 
@@ -125,7 +126,7 @@ private fun interceptPlayerConnection(
     }
 
     if (Time.millis() < Vars.netServer.admins.getKickTime(packet.uuid, con.address)) {
-        con.kick(KickReason.recentKick)
+        con.kick(KickReason.recentKick, silent = true)
         return
     }
 
@@ -153,7 +154,7 @@ private fun interceptPlayerConnection(
                 .append("> ")
                 .append(mods.toString("\n> "))
         }
-        con.kick(result.toString(), 0)
+        con.kick(result.toString(), Duration.ZERO, silent = true)
         return
     }
 
@@ -168,7 +169,7 @@ private fun interceptPlayerConnection(
             "&lcDo &lywhitelist-add {}&lc to whitelist the player &lb'{}'",
             packet.uuid,
             packet.name)
-        con.kick(KickReason.whitelist)
+        con.kick(KickReason.whitelist, silent = true)
         return
     }
 
@@ -190,7 +191,7 @@ private fun interceptPlayerConnection(
             .trim()
             .equals(packet.name.stripMindustryColors().trim(), ignoreCase = true)
     }) {
-        con.kick(KickReason.nameInUse)
+        con.kick(KickReason.nameInUse, silent = true)
         return
     }
 
@@ -199,7 +200,7 @@ private fun interceptPlayerConnection(
         player.uuid() == packet.uuid || player.usid() == packet.usid
     }) {
         con.uuid = packet.uuid
-        con.kick(KickReason.idInUse)
+        con.kick(KickReason.idInUse, silent = true)
         return
     }
 
@@ -207,7 +208,7 @@ private fun interceptPlayerConnection(
     for (otherCon in Vars.net.connections) {
         if (otherCon !== con && packet.uuid == otherCon.uuid) {
             con.uuid = packet.uuid
-            con.kick(KickReason.idInUse)
+            con.kick(KickReason.idInUse, silent = true)
             return
         }
     }
@@ -216,7 +217,7 @@ private fun interceptPlayerConnection(
 
     // CHECK: Empty name
     if (packet.name.trim().stripMindustryColors().isBlank()) {
-        con.kick(KickReason.nameEmpty)
+        con.kick(KickReason.nameEmpty, silent = true)
         return
     }
 
@@ -229,7 +230,8 @@ private fun interceptPlayerConnection(
     if (packet.version != Version.build && Version.build != -1 && packet.version != -1) {
         con.kick(
             if (packet.version > Version.build) KickReason.serverOutdated
-            else KickReason.clientOutdated)
+            else KickReason.clientOutdated,
+            silent = true)
         return
     }
 
