@@ -19,9 +19,7 @@ package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
-import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -32,6 +30,8 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.containsRole
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage

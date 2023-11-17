@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.command
 
-import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.security.permission.Role
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)

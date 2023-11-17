@@ -20,8 +20,6 @@ package com.xpdustry.imperium.mindustry.account
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountOperationResult
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -33,6 +31,8 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.VerificationMessage
+import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.containsRole
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity

@@ -15,31 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account
+package com.xpdustry.imperium.common.user
 
-import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.serialization.SerializableInetAddress
-import com.xpdustry.imperium.common.serialization.SerializableJInstant
-import com.xpdustry.imperium.common.serialization.SerializableObjectId
+import com.xpdustry.imperium.common.snowflake.Snowflake
+import java.net.InetAddress
 import java.time.Instant
-import kotlinx.serialization.Serializable
-import org.bson.types.ObjectId
 
-@Serializable
 data class User(
+    val snowflake: Snowflake,
     val uuid: MindustryUUID,
-    override val _id: SerializableObjectId = ObjectId(),
-    val names: MutableSet<String> = mutableSetOf(),
-    val addresses: MutableSet<SerializableInetAddress> = mutableSetOf(),
-    var lastName: String? = null,
-    var lastAddress: SerializableInetAddress? = null,
+    var lastName: String,
+    var lastAddress: InetAddress,
     var timesJoined: Int = 0,
-    var firstJoin: SerializableJInstant = Instant.now(),
-    var lastJoin: SerializableJInstant = Instant.now(),
-    var settings: MutableMap<String, Boolean> = mutableMapOf(),
-) : Entity<ObjectId> {
-    @Serializable
+    var lastJoin: Instant,
+) {
+    data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>)
+
     enum class Setting(val default: Boolean, val description: String) {
         SHOW_WELCOME_MESSAGE(true, "Show the welcome message when joining the server."),
         RESOURCE_HUD(true, "Show a HUD with the evolution of the resources."),

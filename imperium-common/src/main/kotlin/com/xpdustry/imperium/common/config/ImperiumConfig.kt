@@ -18,10 +18,10 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.security.permission.Role
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration

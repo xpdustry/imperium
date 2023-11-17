@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account.sql
+package com.xpdustry.imperium.common.user
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -41,7 +41,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-interface SQLUserManager {
+interface UserManager {
 
     suspend fun findBySnowflake(snowflake: Long): User?
 
@@ -55,15 +55,13 @@ interface SQLUserManager {
 
     suspend fun incrementJoins(identity: Identity.Mindustry)
 
-    suspend fun getSettings(identity: Identity.Mindustry): Map<Setting, Boolean>
+    suspend fun getSettings(identity: Identity.Mindustry): Map<User.Setting, Boolean>
 
-    suspend fun setSetting(identity: Identity.Mindustry, setting: Setting, value: Boolean)
+    suspend fun setSetting(identity: Identity.Mindustry, setting: User.Setting, value: Boolean)
 }
 
-class SimpleSQLUserManager(
-    private val database: Database,
-    private val generator: SnowflakeGenerator
-) : SQLUserManager, ImperiumApplication.Listener {
+class SimpleUserManager(private val database: Database, private val generator: SnowflakeGenerator) :
+    UserManager, ImperiumApplication.Listener {
     override fun onImperiumInit() {
         transaction(database) {
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
@@ -130,7 +128,7 @@ class SimpleSQLUserManager(
             }
         }
 
-    override suspend fun getSettings(identity: Identity.Mindustry): Map<Setting, Boolean> =
+    override suspend fun getSettings(identity: Identity.Mindustry): Map<User.Setting, Boolean> =
         newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
             (UserSettingTable leftJoin UserTable)
                 .slice(UserSettingTable.setting, UserSettingTable.value)
@@ -140,7 +138,7 @@ class SimpleSQLUserManager(
 
     override suspend fun setSetting(
         identity: Identity.Mindustry,
-        setting: Setting,
+        setting: User.Setting,
         value: Boolean
     ): Unit =
         newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {

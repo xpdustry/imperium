@@ -18,11 +18,11 @@
 package com.xpdustry.imperium.mindustry.misc
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.containsRole
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes

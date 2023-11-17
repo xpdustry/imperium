@@ -15,13 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account.sql
+package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
+import com.xpdustry.imperium.common.user.UserTable
 import java.time.Duration
-import java.time.Instant
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.duration
@@ -50,29 +48,4 @@ object MindustryMapRatingTable : Table("mindustry_map_rating") {
     val score = integer("score")
     val difficulty = enumerationByName<MindustryMap.Difficulty>("difficulty", 32)
     override val primaryKey = PrimaryKey(map, user)
-}
-
-data class MindustryMap(
-    val snowflake: Snowflake,
-    val name: String,
-    val description: String?,
-    val author: String?,
-    val width: Int,
-    val height: Int,
-    val playtime: Duration,
-    val games: Int,
-    val lastUpdate: Instant
-) {
-    enum class Difficulty {
-        EASY,
-        NORMAL,
-        HARD,
-        EXPERT
-    }
-
-    data class Rating(
-        val user: Snowflake,
-        val score: Int,
-        val difficulty: Difficulty,
-    )
 }

@@ -15,15 +15,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account.sql
+package com.xpdustry.imperium.common.security.punishment
 
+import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
-import com.xpdustry.imperium.common.misc.toLong
 import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.snowflake.Snowflake
@@ -44,7 +44,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-interface SQLPunishmentManager {
+interface PunishmentManager {
 
     suspend fun findBySnowflake(snowflake: Snowflake): Punishment?
 
@@ -81,12 +81,12 @@ data class PunishmentEvent(
     }
 }
 
-class SimpleSQLPunishmentManager(
+class SimplePunishmentManager(
     private val database: Database,
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
-    private val account: SQLAccountManager,
-) : SQLPunishmentManager, ImperiumApplication.Listener {
+    private val account: AccountManager,
+) : PunishmentManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         transaction(database) { SchemaUtils.create(PunishmentTable) }
@@ -220,11 +220,4 @@ class SimpleSQLPunishmentManager(
             duration = this[PunishmentTable.duration],
             pardon = pardon)
     }
-
-    private suspend fun Identity.asLong(): Long =
-        when (this) {
-            is Identity.Server -> 0L
-            is Identity.Mindustry -> account.findByIdentity(this)?.snowflake ?: uuid.toLong()
-            is Identity.Discord -> id
-        }
 }

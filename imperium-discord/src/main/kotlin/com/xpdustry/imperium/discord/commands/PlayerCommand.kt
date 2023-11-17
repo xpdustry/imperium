@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
@@ -25,6 +24,7 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService

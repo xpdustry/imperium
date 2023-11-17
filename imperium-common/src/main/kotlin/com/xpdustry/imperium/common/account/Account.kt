@@ -17,43 +17,31 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.hash.Hash
-import com.xpdustry.imperium.common.serialization.SerializableJDuration
-import com.xpdustry.imperium.common.serialization.SerializableJInstant
-import com.xpdustry.imperium.common.serialization.SerializableObjectId
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import java.time.Duration
-import kotlinx.serialization.Serializable
-import org.bson.types.ObjectId
+import java.time.Instant
 
-@Serializable
 data class Account(
-    var username: String,
-    var password: Hash,
-    var discord: Long? = null,
-    val roles: MutableSet<Role> = mutableSetOf(),
-    val sessions: MutableMap<String, Session> = mutableMapOf(),
-    val achievements: MutableMap<String, Achievement.Progression> = mutableMapOf(),
-    var playtime: SerializableJDuration = Duration.ZERO,
-    var games: Int = 0,
-    override val _id: SerializableObjectId = ObjectId(),
-) : Entity<ObjectId> {
-
+    val snowflake: Snowflake,
+    val username: String,
+    val discord: Long?,
+    val games: Int,
+    val playtime: Duration,
+    val creation: Instant,
+    val legacy: Boolean,
     val verified: Boolean
-        get() = discord != null || roles.containsRole(Role.VERIFIED)
+) {
+    enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
+        ACTIVE(7, true),
+        HYPER(30, true),
+        ADDICT(90, true),
+        GAMER(8 * 60),
+        STEAM,
+        DISCORD,
+        DAY(24 * 60),
+        WEEK(7 * 24 * 60),
+        MONTH(30 * 24 * 60);
 
-    fun progress(achievement: Achievement, value: Int = 1) {
-        if (completed(achievement)) return
-        val progression =
-            achievements.getOrPut(achievement.name.lowercase(), Achievement::Progression)
-        progression.progress += value
-        if (progression.progress >= achievement.goal) {
-            progression.completed = true
-        }
+        data class Progression(var progress: Int = 0, var completed: Boolean = false)
     }
-
-    fun completed(achievement: Achievement): Boolean =
-        achievements[achievement.name.lowercase()]?.completed == true
-
-    @Serializable data class Session(val expiration: SerializableJInstant)
 }

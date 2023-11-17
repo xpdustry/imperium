@@ -15,11 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account.sql
+package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.StorageBucket
@@ -43,7 +42,7 @@ import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransacti
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-interface SQLMapManager {
+interface MapManager {
 
     suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap?
 
@@ -88,11 +87,11 @@ interface SQLMapManager {
     suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>)
 }
 
-class SimpleSQLMapManager(
+class SimpleMapManager(
     private val database: Database,
     private val storage: StorageBucket,
     private val generator: SnowflakeGenerator
-) : SQLMapManager, ImperiumApplication.Listener {
+) : MapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         transaction(database) {

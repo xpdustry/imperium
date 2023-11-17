@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Max
@@ -25,6 +24,7 @@ import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand

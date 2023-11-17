@@ -18,11 +18,11 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.Events
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote

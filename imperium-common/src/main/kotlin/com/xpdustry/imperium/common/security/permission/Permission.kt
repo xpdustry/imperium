@@ -15,14 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database
+package com.xpdustry.imperium.common.security.permission
 
-import java.time.Instant
-import org.bson.types.ObjectId
-
-interface Entity<I> {
-    @Suppress("PropertyName") val _id: I
+enum class Permission {
+    VERIFIED,
+    MANAGE_USERS,
+    MANAGE_MAPS,
+    SEE_USER_INFO,
 }
-
-val Entity<ObjectId>.timestamp: Instant
-    get() = _id.date.toInstant()

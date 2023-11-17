@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.discord.command
 
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -28,6 +27,7 @@ import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.getTranslatedTextOrNull

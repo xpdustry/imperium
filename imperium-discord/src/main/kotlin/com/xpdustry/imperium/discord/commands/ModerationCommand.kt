@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.Role
 import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
@@ -30,6 +29,7 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration

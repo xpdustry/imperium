@@ -18,10 +18,10 @@
 package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.containsRole
 import java.util.concurrent.TimeUnit
 import org.bson.types.ObjectId
 import org.javacord.api.DiscordApi

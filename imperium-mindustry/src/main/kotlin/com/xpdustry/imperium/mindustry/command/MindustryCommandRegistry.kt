@@ -27,8 +27,6 @@ import cloud.commandframework.kotlin.coroutines.SuspendingExecutionHandler
 import cloud.commandframework.permission.PredicatePermission
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -40,6 +38,8 @@ import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.containsRole
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide

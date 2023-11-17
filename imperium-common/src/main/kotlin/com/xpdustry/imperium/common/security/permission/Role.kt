@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account
+package com.xpdustry.imperium.common.security.permission
 
 enum class Role(vararg parents: Role = emptyArray()) {
     EVERYONE,
