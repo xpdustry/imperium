@@ -34,6 +34,7 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -68,6 +69,7 @@ enum class PardonResult {
     ALREADY_PARDONED
 }
 
+@Serializable
 data class PunishmentEvent(
     val author: Identity,
     val type: Type,
