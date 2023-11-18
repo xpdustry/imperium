@@ -38,7 +38,8 @@ class RoleSynchronizationListener(instances: InstanceManager) : ImperiumApplicat
             ImperiumScope.MAIN.launch {
                 val account = accounts.findByDiscordId(it.user.id) ?: return@launch
                 val added =
-                    config.roles.entries.find { (_, id) -> id == it.role.id }?.key ?: return@launch
+                    config.rolePermissions.entries.find { (_, id) -> id == it.role.id }?.key
+                        ?: return@launch
                 accounts.updateById(account._id) { it.roles.add(added) }
             }
         }
@@ -47,7 +48,8 @@ class RoleSynchronizationListener(instances: InstanceManager) : ImperiumApplicat
             ImperiumScope.MAIN.launch {
                 val account = accounts.findByDiscordId(it.user.id) ?: return@launch
                 val removed =
-                    config.roles.entries.find { (_, id) -> id == it.role.id }?.key ?: return@launch
+                    config.rolePermissions.entries.find { (_, id) -> id == it.role.id }?.key
+                        ?: return@launch
                 accounts.updateById(account._id) { it.roles.remove(removed) }
             }
         }

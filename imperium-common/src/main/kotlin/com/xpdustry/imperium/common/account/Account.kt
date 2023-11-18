@@ -29,8 +29,10 @@ data class Account(
     val playtime: Duration,
     val creation: Instant,
     val legacy: Boolean,
-    val verified: Boolean
 ) {
+    val verified: Boolean
+        get() = discord != null
+
     enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
         ACTIVE(7, true),
         HYPER(30, true),
@@ -42,6 +44,10 @@ data class Account(
         WEEK(7 * 24 * 60),
         MONTH(30 * 24 * 60);
 
-        data class Progression(var progress: Int = 0, var completed: Boolean = false)
+        data class Progression(var progress: Int = 0, var completed: Boolean = false) {
+            companion object {
+                val ZERO = Progression()
+            }
+        }
     }
 }

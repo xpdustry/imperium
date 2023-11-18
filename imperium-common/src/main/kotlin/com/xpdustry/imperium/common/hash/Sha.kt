@@ -17,14 +17,13 @@
  */
 package com.xpdustry.imperium.common.hash
 
-import com.google.common.hash.Hashing
+import com.password4j.MessageDigestFunction
 import com.password4j.SecureString
 import com.xpdustry.imperium.common.async.ImperiumScope
 import kotlinx.coroutines.withContext
 
 enum class ShaType(val length: Int) : HashParams {
-    SHA256(256),
-    ;
+    SHA256(256);
 
     override fun toString(): String {
         return "sha/$length"
@@ -47,19 +46,16 @@ object ShaHashFunction : HashFunction<ShaType> {
 
     override suspend fun create(bytes: ByteArray, params: ShaType): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            Hash(getHashFunction(params).hashBytes(bytes).asBytes(), ByteArray(0), params)
+            Hash(getHashFunction(params).hash(bytes).bytes, ByteArray(0), params)
         }
 
     override suspend fun create(chars: CharArray, params: ShaType): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
-            Hash(
-                getHashFunction(params).hashString(SecureString(chars), Charsets.UTF_8).asBytes(),
-                ByteArray(0),
-                params)
+            Hash(getHashFunction(params).hash(SecureString(chars)).bytes, ByteArray(0), params)
         }
 
     private fun getHashFunction(params: ShaType) =
         when (params) {
-            ShaType.SHA256 -> Hashing.sha256()
+            ShaType.SHA256 -> MessageDigestFunction.getInstance("SHA-256")
         }
 }

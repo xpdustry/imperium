@@ -17,32 +17,13 @@
  */
 package com.xpdustry.imperium.common.security.permission
 
-enum class Role(vararg parents: Role = emptyArray()) {
-    EVERYONE,
-    VERIFIED(EVERYONE),
-    MAP_MANAGER,
-    MODERATOR(VERIFIED),
-    ADMINISTRATOR(MODERATOR, MAP_MANAGER),
-    OWNER(ADMINISTRATOR);
+import com.xpdustry.imperium.common.account.AccountTable
+import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.Table
 
-    val parents = parents.toSet()
-}
-
-fun Collection<Role>.containsRole(role: Role): Boolean {
-    if (role == Role.EVERYONE) return true
-
-    // Find the permission while flattening the tree
-    val queue = ArrayDeque<Role>()
-    queue.addAll(this)
-    val resolved = mutableSetOf<Role>()
-    resolved.add(Role.EVERYONE)
-    while (queue.isNotEmpty()) {
-        val current = queue.removeFirst()
-        if (current == role) return true
-        if (current in resolved) continue
-        resolved.add(current)
-        queue.addAll(current.parents)
-    }
-
-    return false
+object AccountPermissionTable : Table("account_permission") {
+    val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
+    val permission = enumerationByName<Permission>("permission", 32)
+    val scope = varchar("server", 128)
+    override val primaryKey = PrimaryKey(account, permission)
 }

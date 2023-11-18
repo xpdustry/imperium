@@ -19,11 +19,10 @@ package com.xpdustry.imperium.common
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.MongoAccountManager
-import com.xpdustry.imperium.common.account.MongoUserManager
-import com.xpdustry.imperium.common.account.UserManager
+import com.xpdustry.imperium.common.account.SimpleAccountManager
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
+import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
@@ -32,11 +31,9 @@ import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.content.MongoMindustryMapManager
-import com.xpdustry.imperium.common.database.mongo.MongoProvider
-import com.xpdustry.imperium.common.database.mongo.SimpleMongoProvider
-import com.xpdustry.imperium.common.database.snowflake.SimpleSnowflakeGenerator
-import com.xpdustry.imperium.common.database.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
+import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.database.SimpleSQLProvider
 import com.xpdustry.imperium.common.image.ImageAnalysis
 import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.image.SightEngineImageAnalysis
@@ -50,12 +47,16 @@ import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnApiIoDetection
 import com.xpdustry.imperium.common.network.VpnDetection
-import com.xpdustry.imperium.common.security.MongoBanManager
-import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.punishment.PunishmentManager
+import com.xpdustry.imperium.common.security.punishment.SimplePunishmentManager
+import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
+import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.MinioStorageBucket
 import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
+import com.xpdustry.imperium.common.user.SimpleUserManager
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.util.concurrent.Executors
 import java.util.function.Supplier
@@ -98,15 +99,19 @@ fun CommonModule() =
             }
         }
 
-        single<MongoProvider> { SimpleMongoProvider(get()) }
+        single<SQLProvider> {
+            when (val config = get<ImperiumConfig>().database) {
+                is DatabaseConfig.SQL -> SimpleSQLProvider(config)
+            }
+        }
 
-        single<AccountManager> { MongoAccountManager(get()) }
+        single<AccountManager> { SimpleAccountManager(get(), get(), get()) }
 
-        single<MindustryMapManager> { MongoMindustryMapManager(get(), get(), get()) }
+        single<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get()) }
 
-        single<PunishmentManager> { MongoBanManager(get(), get(), get()) }
+        single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 
-        single<UserManager> { MongoUserManager(get()) }
+        single<UserManager> { SimpleUserManager(get(), get()) }
 
         single<ImageAnalysis> {
             when (val config = get<ImperiumConfig>().imageAnalysis) {
@@ -115,7 +120,7 @@ fun CommonModule() =
             }
         }
 
-        single<LogicImageAnalysis> { SimpleLogicImageAnalysis(get(), get(), get()) }
+        single<LogicImageAnalysis> { SimpleLogicImageAnalysis(get()) }
 
         single<OkHttpClient> {
             OkHttpClient.Builder()

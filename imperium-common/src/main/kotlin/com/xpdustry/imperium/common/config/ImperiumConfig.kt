@@ -21,7 +21,7 @@ import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.Permission
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration
@@ -30,7 +30,7 @@ import kotlin.time.Duration.Companion.seconds
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val translator: TranslatorConfig = TranslatorConfig.None,
-    val database: DatabaseConfig = DatabaseConfig.Mongo(),
+    val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
     val server: ServerConfig = ServerConfig.None,
     val storage: StorageConfig = StorageConfig.Minio(),
@@ -58,15 +58,26 @@ sealed interface TranslatorConfig {
 }
 
 sealed interface DatabaseConfig {
-    data class Mongo(
-        val host: String = "localhost",
-        val port: Int = 27017,
+    data class SQL(
+        val host: String = "./database.sqlite",
+        val port: Short = 3306,
+        val database: String = "imperium",
         val username: String = "",
         val password: Secret = Secret(""),
-        val ssl: Boolean = false,
-        val database: String = "imperium",
-        val authDatabase: String = "admin",
-    ) : DatabaseConfig
+        val poolMin: Int = 1,
+        val poolMax: Int = 4,
+        val type: Type = Type.SQLITE
+    ) : DatabaseConfig {
+        init {
+            require(poolMin > 0) { "poolMin can't be below 1, got $poolMin" }
+            require(poolMax >= poolMin) { "poolMax can't be lower than poolMin, got $poolMax" }
+        }
+
+        enum class Type(val driver: String) {
+            SQLITE("org.sqlite.JDBC"),
+            MARIADB("org.mariadb.jdbc.Driver")
+        }
+    }
 }
 
 sealed interface MessengerConfig {
@@ -154,7 +165,7 @@ sealed interface ServerConfig {
 
     data class Discord(
         val token: Secret,
-        val roles: Map<Role, Long> = emptyMap(),
+        val rolePermissions: Map<Long, Permission> = emptyMap(),
         val categories: Categories,
         val channels: Channels,
         val mindustryVersion: String = "145",

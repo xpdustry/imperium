@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.StorageBucket
@@ -28,7 +28,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toSet
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -38,11 +37,9 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
-interface MapManager {
+interface MindustryMapManager {
 
     suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap?
 
@@ -87,35 +84,35 @@ interface MapManager {
     suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>)
 }
 
-class SimpleMapManager(
-    private val database: Database,
+class SimpleMindustryMapManager(
+    private val provider: SQLProvider,
     private val storage: StorageBucket,
     private val generator: SnowflakeGenerator
-) : MapManager, ImperiumApplication.Listener {
+) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        transaction(database) {
+        provider.newTransaction {
             SchemaUtils.create(
                 MindustryMapTable, MindustryMapGamemodeTable, MindustryMapRatingTable)
         }
     }
 
     override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapTable.select { MindustryMapTable.id eq snowflake }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapTable.select { MindustryMapTable.name eq name }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
 
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             (MindustryMapTable leftJoin MindustryMapGamemodeTable)
                 .select { MindustryMapGamemodeTable.gamemode eq gamemode }
                 .asFlow()
@@ -126,7 +123,7 @@ class SimpleMapManager(
         map: Snowflake,
         user: Snowflake
     ): MindustryMap.Rating? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapRatingTable.select {
                     (MindustryMapRatingTable.map eq map) and (MindustryMapRatingTable.user eq user)
                 }
@@ -135,12 +132,12 @@ class SimpleMapManager(
         }
 
     override suspend fun findAllMaps(): Flow<MindustryMap> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapTable.selectAll().asFlow().map { it.toMindustryMap() }
         }
 
     override suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapRatingTable.slice(MindustryMapRatingTable.score.avg())
                 .select { MindustryMapRatingTable.map eq snowflake }
                 .firstOrNull()
@@ -153,7 +150,7 @@ class SimpleMapManager(
     override suspend fun computeAverageDifficultyByMap(
         snowflake: Snowflake
     ): MindustryMap.Difficulty =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapRatingTable.slice(
                     MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
                 .select { MindustryMapRatingTable.map eq snowflake }
@@ -166,7 +163,7 @@ class SimpleMapManager(
         }
 
     override suspend fun deleteMapById(snowflake: Snowflake): Boolean =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapTable.deleteWhere { MindustryMapTable.id eq snowflake } > 0
         }
 
@@ -178,7 +175,7 @@ class SimpleMapManager(
         height: Int,
         stream: InputStream
     ): Snowflake =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val snowflake = generator.generate()
             MindustryMapTable.insert {
                 it[id] = snowflake
@@ -200,7 +197,7 @@ class SimpleMapManager(
         height: Int,
         stream: InputStream
     ) =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapTable.update({ MindustryMapTable.id eq snowflake }) {
                 it[MindustryMapTable.description] = description
                 it[MindustryMapTable.author] = author
@@ -214,14 +211,14 @@ class SimpleMapManager(
         storage.getObject("maps", "$map.msav")
 
     override suspend fun searchMapByName(query: String): Flow<MindustryMap> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapTable.select { MindustryMapTable.name like "%$query%" }
                 .asFlow()
                 .map { it.toMindustryMap() }
         }
 
     override suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapGamemodeTable.select { MindustryMapGamemodeTable.map eq map }
                 .asFlow()
                 .map { it[MindustryMapGamemodeTable.gamemode] }
@@ -229,7 +226,7 @@ class SimpleMapManager(
         }
 
     override suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>) =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             MindustryMapGamemodeTable.deleteWhere { MindustryMapGamemodeTable.map eq map }
             gamemodes.forEach { mode ->
                 MindustryMapGamemodeTable.insert {

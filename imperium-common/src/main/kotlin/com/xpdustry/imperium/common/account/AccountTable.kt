@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.security.permission.Permission
 import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
 import java.time.Duration
 import org.jetbrains.exposed.dao.id.IntIdTable
@@ -34,7 +33,6 @@ object AccountTable : SnowflakeIdTable("account") {
     val games = integer("games").default(0)
     val playtime = duration("playtime").default(Duration.ZERO)
     val legacy = bool("legacy").default(false)
-    val verified = bool("verified").default(false)
 }
 
 object AccountSessionTable : Table("account_user_session") {
@@ -52,17 +50,10 @@ object AccountAchievementTable : Table("account_achievement") {
     override val primaryKey = PrimaryKey(account, achievement)
 }
 
-object AccountPermissionTable : Table("account_permission") {
-    val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
-    val permission = enumerationByName<Permission>("permission", 32)
-    override val primaryKey = PrimaryKey(account, permission)
-}
-
 object LegacyAccountTable : IntIdTable("account_legacy") {
     val usernameHash = binary("username_hash", 32).uniqueIndex()
     val passwordHash = binary("password_hash", 64)
     val passwordSalt = binary("password_salt", 64)
-    val verified = bool("verified")
     val games = integer("games")
     val playtime = duration("playtime")
 }

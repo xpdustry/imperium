@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.common.user
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
@@ -30,15 +30,12 @@ import java.time.Instant
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
 interface UserManager {
@@ -60,33 +57,35 @@ interface UserManager {
     suspend fun setSetting(identity: Identity.Mindustry, setting: User.Setting, value: Boolean)
 }
 
-class SimpleUserManager(private val database: Database, private val generator: SnowflakeGenerator) :
-    UserManager, ImperiumApplication.Listener {
+class SimpleUserManager(
+    private val provider: SQLProvider,
+    private val generator: SnowflakeGenerator
+) : UserManager, ImperiumApplication.Listener {
     override fun onImperiumInit() {
-        transaction(database) {
+        provider.newTransaction {
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
         }
     }
 
     override suspend fun findBySnowflake(snowflake: Long): User? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             UserTable.select { UserTable.id eq snowflake }.firstOrNull()?.toUser()
         }
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             UserTable.select { UserTable.uuid eq uuid.toShortMuuid() }.firstOrNull()?.toUser()
         }
 
     override suspend fun findByLastAddress(address: InetAddress): Flow<User> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             UserTable.select { UserTable.lastAddress eq address.address }
                 .asFlow()
                 .map { it.toUser() }
         }
 
     override suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val names =
                 UserNameTable.select { UserNameTable.user eq snowflake }
                     .mapTo(mutableSetOf()) { it[UserNameTable.name] }
@@ -99,7 +98,7 @@ class SimpleUserManager(private val database: Database, private val generator: S
         }
 
     override suspend fun searchUserByName(query: String): Flow<User> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             (UserTable leftJoin UserNameTable)
                 .select { UserNameTable.name like "%$query%" }
                 .asFlow()
@@ -107,7 +106,7 @@ class SimpleUserManager(private val database: Database, private val generator: S
         }
 
     override suspend fun incrementJoins(identity: Identity.Mindustry): Unit =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val snowflake = ensureUserExists(identity)
 
             UserTable.update({ UserTable.uuid eq identity.uuid.toShortMuuid() }) {
@@ -129,7 +128,7 @@ class SimpleUserManager(private val database: Database, private val generator: S
         }
 
     override suspend fun getSettings(identity: Identity.Mindustry): Map<User.Setting, Boolean> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             (UserSettingTable leftJoin UserTable)
                 .slice(UserSettingTable.setting, UserSettingTable.value)
                 .select { UserTable.uuid eq identity.uuid.toShortMuuid() }
@@ -141,7 +140,7 @@ class SimpleUserManager(private val database: Database, private val generator: S
         setting: User.Setting,
         value: Boolean
     ): Unit =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val snowflake = ensureUserExists(identity)
             UserSettingTable.insert {
                 it[user] = snowflake

@@ -19,7 +19,7 @@ package com.xpdustry.imperium.common.account
 
 import com.google.common.annotations.VisibleForTesting
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.hash.Argon2HashFunction
 import com.xpdustry.imperium.common.hash.Argon2Params
 import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
@@ -27,6 +27,8 @@ import com.xpdustry.imperium.common.hash.Hash
 import com.xpdustry.imperium.common.hash.PBKDF2Params
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
+import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
@@ -35,11 +37,11 @@ import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.timestamp
 import java.time.Duration
 import java.time.Instant
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -50,11 +52,11 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.upsert
 
 interface AccountManager {
+
     suspend fun findByUsername(username: String): Account?
 
     suspend fun findByDiscord(discord: Long): Account?
@@ -63,11 +65,11 @@ interface AccountManager {
 
     suspend fun existsByIdentity(identity: Identity.Mindustry): Boolean
 
-    suspend fun register(
-        username: String,
-        password: CharArray,
-        identity: Identity.Mindustry
-    ): AccountResult
+    suspend fun existsBySnowflake(snowflake: Snowflake): Boolean
+
+    suspend fun updateDiscord(account: Snowflake, discord: Snowflake): AccountResult
+
+    suspend fun register(username: String, password: CharArray): AccountResult
 
     suspend fun migrate(
         oldUsername: String,
@@ -90,7 +92,22 @@ interface AccountManager {
     suspend fun refresh(identity: Identity.Mindustry): AccountResult
 
     suspend fun logout(identity: Identity.Mindustry, all: Boolean = false): AccountResult
+
+    suspend fun progress(
+        identity: Identity.Mindustry,
+        achievement: Account.Achievement,
+        value: Int
+    ): AccountResult
+
+    suspend fun getAchievements(
+        snowflake: Snowflake
+    ): Map<Account.Achievement, Account.Achievement.Progression>
 }
+
+data class AchievementCompletedMessage(
+    val account: Snowflake,
+    val achievement: Account.Achievement
+) : Message
 
 sealed interface AccountResult {
 
@@ -98,9 +115,7 @@ sealed interface AccountResult {
 
     data object AlreadyRegistered : AccountResult
 
-    data object AccountNotFound : AccountResult
-
-    data object NotLogged : AccountResult
+    data object NotFound : AccountResult
 
     data object AlreadyLogged : AccountResult
 
@@ -112,16 +127,16 @@ sealed interface AccountResult {
 }
 
 class SimpleAccountManager(
-    private val database: Database,
-    private val snowflake: SnowflakeGenerator
+    private val provider: SQLProvider,
+    private val generator: SnowflakeGenerator,
+    private val messenger: Messenger
 ) : AccountManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        transaction(database) {
+        provider.newTransaction {
             SchemaUtils.create(
                 AccountTable,
                 AccountSessionTable,
-                AccountPermissionTable,
                 AccountAchievementTable,
                 LegacyAccountTable,
                 LegacyAccountAchievementTable)
@@ -129,29 +144,29 @@ class SimpleAccountManager(
     }
 
     override suspend fun findByUsername(username: String): Account? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             AccountTable.select { AccountTable.username eq username }.firstOrNull()?.toAccount()
         }
 
     override suspend fun findByDiscord(discord: Long): Account? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             AccountTable.select { AccountTable.discord eq discord }.firstOrNull()?.toAccount()
         }
 
     override suspend fun findByIdentity(identity: Identity.Mindustry): Account? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
             (AccountTable leftJoin AccountSessionTable)
                 .select {
                     (AccountSessionTable.hash eq sessionHash) and
-                        (AccountSessionTable.expiration less Instant.now())
+                        (AccountSessionTable.expiration greater Instant.now())
                 }
                 .firstOrNull()
                 ?.toAccount()
         }
 
     override suspend fun existsByIdentity(identity: Identity.Mindustry): Boolean =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
             AccountSessionTable.exists {
                 (AccountSessionTable.hash eq sessionHash) and
@@ -159,43 +174,51 @@ class SimpleAccountManager(
             }
         }
 
-    override suspend fun register(
-        username: String,
-        password: CharArray,
-        identity: Identity.Mindustry
-    ): AccountResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+    override suspend fun existsBySnowflake(snowflake: Snowflake): Boolean =
+        provider.newSuspendTransaction { AccountTable.exists { AccountTable.id eq snowflake } }
+
+    override suspend fun updateDiscord(account: Snowflake, discord: Snowflake): AccountResult =
+        provider.newSuspendTransaction {
+            val rows =
+                AccountTable.update({ AccountTable.id eq account }) {
+                    it[AccountTable.discord] = discord
+                }
+            if (rows == 0) AccountResult.NotFound else AccountResult.Success
+        }
+
+    override suspend fun register(username: String, password: CharArray): AccountResult =
+        provider.newSuspendTransaction {
             if (AccountTable.exists { AccountTable.username eq username }) {
-                return@newSuspendedTransaction AccountResult.AlreadyRegistered
+                return@newSuspendTransaction AccountResult.AlreadyRegistered
             }
 
             val hashUsr = ShaHashFunction.create(username.toCharArray(), ShaType.SHA256).hash
             if (LegacyAccountTable.exists { LegacyAccountTable.usernameHash eq hashUsr }) {
-                return@newSuspendedTransaction AccountResult.InvalidUsername(
+                return@newSuspendTransaction AccountResult.InvalidUsername(
                     listOf(UsernameRequirement.Reserved(username)))
             }
 
             val missingPwdRequirements =
                 DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
             if (missingPwdRequirements.isNotEmpty()) {
-                return@newSuspendedTransaction AccountResult.InvalidPassword(missingPwdRequirements)
+                return@newSuspendTransaction AccountResult.InvalidPassword(missingPwdRequirements)
             }
 
             val missingUsrRequirements =
                 DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(username)
             if (missingUsrRequirements.isNotEmpty()) {
-                return@newSuspendedTransaction AccountResult.InvalidUsername(missingUsrRequirements)
+                return@newSuspendTransaction AccountResult.InvalidUsername(missingUsrRequirements)
             }
 
             val hashPwd = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
             AccountTable.insert {
-                it[id] = snowflake.generate()
+                it[id] = generator.generate()
                 it[AccountTable.username] = username
                 it[passwordHash] = hashPwd.hash
                 it[passwordSalt] = hashPwd.salt
             }
 
-            return@newSuspendedTransaction AccountResult.Success
+            return@newSuspendTransaction AccountResult.Success
         }
 
     override suspend fun migrate(
@@ -203,7 +226,7 @@ class SimpleAccountManager(
         newUsername: String,
         password: CharArray
     ): AccountResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val oldUsernameHash =
                 ShaHashFunction.create(oldUsername.toCharArray(), ShaType.SHA256).hash
 
@@ -211,7 +234,7 @@ class SimpleAccountManager(
                 LegacyAccountTable.select { LegacyAccountTable.usernameHash eq oldUsernameHash }
                     .limit(1)
                     .firstOrNull()
-                    ?: return@newSuspendedTransaction AccountResult.AccountNotFound
+                    ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (!GenericSaltyHashFunction.equals(
                 password,
@@ -219,27 +242,28 @@ class SimpleAccountManager(
                     oldAccount[LegacyAccountTable.passwordHash],
                     oldAccount[LegacyAccountTable.passwordSalt],
                     LEGACY_PASSWORD_PARAMS))) {
-                return@newSuspendedTransaction AccountResult.WrongPassword
+                return@newSuspendTransaction AccountResult.NotFound
             }
 
             if (AccountTable.exists { AccountTable.username eq newUsername }) {
-                return@newSuspendedTransaction AccountResult.AlreadyRegistered
+                return@newSuspendTransaction AccountResult.AlreadyRegistered
             }
 
             val missing = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(newUsername)
             if (missing.isNotEmpty()) {
-                return@newSuspendedTransaction AccountResult.InvalidUsername(missing)
+                return@newSuspendTransaction AccountResult.InvalidUsername(missing)
             }
 
             val newPasswordHash = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
             val newAccount =
                 AccountTable.insertAndGetId {
+                    it[id] = generator.generate()
                     it[username] = newUsername
                     it[passwordHash] = newPasswordHash.hash
                     it[passwordSalt] = newPasswordHash.salt
                     it[playtime] = oldAccount[LegacyAccountTable.playtime]
                     it[games] = oldAccount[LegacyAccountTable.games]
-                    it[verified] = oldAccount[LegacyAccountTable.verified]
+                    it[legacy] = true
                 }
 
             val oldAchievements =
@@ -256,7 +280,7 @@ class SimpleAccountManager(
 
             LegacyAccountTable.deleteWhere { id eq oldAccount[LegacyAccountTable.id] }
 
-            return@newSuspendedTransaction AccountResult.Success
+            return@newSuspendTransaction AccountResult.Success
         }
 
     override suspend fun changePassword(
@@ -264,14 +288,14 @@ class SimpleAccountManager(
         newPassword: CharArray,
         identity: Identity.Mindustry
     ): AccountResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
             val account =
                 (AccountTable leftJoin AccountSessionTable)
                     .slice(AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
                     .select { AccountSessionTable.hash eq sessionHash }
                     .firstOrNull()
-                    ?: return@newSuspendedTransaction AccountResult.NotLogged
+                    ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (!GenericSaltyHashFunction.equals(
                 oldPassword,
@@ -279,12 +303,12 @@ class SimpleAccountManager(
                     account[AccountTable.passwordHash],
                     account[AccountTable.passwordSalt],
                     PASSWORD_PARAMS))) {
-                return@newSuspendedTransaction AccountResult.WrongPassword
+                return@newSuspendTransaction AccountResult.WrongPassword
             }
 
             val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(newPassword)
             if (missing.isNotEmpty()) {
-                return@newSuspendedTransaction AccountResult.InvalidPassword(missing)
+                return@newSuspendTransaction AccountResult.InvalidPassword(missing)
             }
 
             val newPasswordHash = GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS)
@@ -293,7 +317,7 @@ class SimpleAccountManager(
                 it[passwordSalt] = newPasswordHash.salt
             }
 
-            return@newSuspendedTransaction AccountResult.Success
+            return@newSuspendTransaction AccountResult.Success
         }
 
     override suspend fun login(
@@ -301,13 +325,13 @@ class SimpleAccountManager(
         password: CharArray,
         identity: Identity.Mindustry
     ): AccountResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val result =
                 AccountTable.slice(
                         AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
                     .select { AccountTable.username eq username }
                     .firstOrNull()
-                    ?: return@newSuspendedTransaction AccountResult.AccountNotFound
+                    ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (!GenericSaltyHashFunction.equals(
                 password,
@@ -315,12 +339,12 @@ class SimpleAccountManager(
                     result[AccountTable.passwordHash],
                     result[AccountTable.passwordSalt],
                     PASSWORD_PARAMS))) {
-                return@newSuspendedTransaction AccountResult.AccountNotFound
+                return@newSuspendTransaction AccountResult.NotFound
             }
 
             val sessionHash = createSessionHash(identity)
             if (AccountSessionTable.exists { AccountSessionTable.hash eq sessionHash }) {
-                return@newSuspendedTransaction AccountResult.AlreadyLogged
+                return@newSuspendTransaction AccountResult.AlreadyLogged
             }
 
             AccountSessionTable.insert {
@@ -329,11 +353,11 @@ class SimpleAccountManager(
                 it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION)
             }
 
-            return@newSuspendedTransaction AccountResult.Success
+            return@newSuspendTransaction AccountResult.Success
         }
 
     override suspend fun refresh(identity: Identity.Mindustry): AccountResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
 
             AccountSessionTable.deleteWhere {
@@ -346,20 +370,20 @@ class SimpleAccountManager(
                 }
 
             if (updated == 0) {
-                AccountResult.NotLogged
+                AccountResult.NotFound
             } else {
                 AccountResult.Success
             }
         }
 
     override suspend fun logout(identity: Identity.Mindustry, all: Boolean): AccountResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
             val session =
                 AccountSessionTable.slice(AccountSessionTable.account)
                     .select { AccountSessionTable.hash eq sessionHash }
                     .firstOrNull()
-                    ?: return@newSuspendedTransaction AccountResult.AccountNotFound
+                    ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (all) {
                 AccountSessionTable.deleteWhere { account eq session[account] }
@@ -368,6 +392,58 @@ class SimpleAccountManager(
             }
 
             AccountResult.Success
+        }
+
+    override suspend fun progress(
+        identity: Identity.Mindustry,
+        achievement: Account.Achievement,
+        value: Int
+    ) =
+        provider.newSuspendTransaction {
+            val snowflake =
+                findByIdentity(identity)?.snowflake
+                    ?: return@newSuspendTransaction AccountResult.NotFound
+            val progression =
+                AccountAchievementTable.slice(
+                        AccountAchievementTable.progress, AccountAchievementTable.completed)
+                    .select {
+                        (AccountAchievementTable.account eq snowflake) and
+                            (AccountAchievementTable.achievement eq achievement)
+                    }
+                    .firstOrNull()
+                    ?.toAchievementProgression()
+                    ?: Account.Achievement.Progression.ZERO
+
+            if (progression.completed) {
+                return@newSuspendTransaction AccountResult.Success
+            }
+
+            val completed = progression.progress + value >= achievement.goal
+            AccountAchievementTable.upsert {
+                it[account] = snowflake
+                it[AccountAchievementTable.achievement] = achievement
+                it[AccountAchievementTable.completed] = completed
+            }
+
+            if (completed) {
+                messenger.publish(AchievementCompletedMessage(snowflake, achievement), local = true)
+            }
+
+            AccountResult.Success
+        }
+
+    override suspend fun getAchievements(
+        snowflake: Snowflake
+    ): Map<Account.Achievement, Account.Achievement.Progression> =
+        provider.newSuspendTransaction {
+            AccountAchievementTable.slice(
+                    AccountAchievementTable.achievement,
+                    AccountAchievementTable.progress,
+                    AccountAchievementTable.completed)
+                .select { AccountAchievementTable.account eq snowflake }
+                .associate {
+                    it[AccountAchievementTable.achievement] to it.toAchievementProgression()
+                }
         }
 
     @VisibleForTesting
@@ -384,8 +460,12 @@ class SimpleAccountManager(
             games = this[AccountTable.games],
             playtime = this[AccountTable.playtime],
             creation = this[AccountTable.id].value.timestamp,
-            legacy = this[AccountTable.legacy],
-            verified = this[AccountTable.verified])
+            legacy = this[AccountTable.legacy])
+
+    private fun ResultRow.toAchievementProgression() =
+        Account.Achievement.Progression(
+            progress = this[AccountAchievementTable.progress],
+            completed = this[AccountAchievementTable.completed])
 
     companion object {
         private val SESSION_TOKEN_DURATION = Duration.ofDays(7L)
@@ -412,7 +492,7 @@ class SimpleAccountManager(
                 saltLength = 64,
             )
 
-        private val LEGACY_PASSWORD_PARAMS =
+        internal val LEGACY_PASSWORD_PARAMS =
             PBKDF2Params(
                 hmac = PBKDF2Params.Hmac.SHA256,
                 iterations = 10000,

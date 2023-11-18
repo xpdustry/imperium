@@ -19,7 +19,7 @@ package com.xpdustry.imperium.common.security.punishment
 
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.MindustryUUID
@@ -35,13 +35,10 @@ import kotlin.time.toJavaDuration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.update
 
 interface PunishmentManager {
@@ -82,30 +79,30 @@ data class PunishmentEvent(
 }
 
 class SimplePunishmentManager(
-    private val database: Database,
+    private val provider: SQLProvider,
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
     private val account: AccountManager,
 ) : PunishmentManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        transaction(database) { SchemaUtils.create(PunishmentTable) }
+        provider.newTransaction { SchemaUtils.create(PunishmentTable) }
     }
 
     override suspend fun findBySnowflake(snowflake: Snowflake): Punishment? =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             PunishmentTable.select { PunishmentTable.id eq snowflake }.firstOrNull()?.toPunishment()
         }
 
     override suspend fun findAllByAddress(target: InetAddress): Flow<Punishment> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             PunishmentTable.select { PunishmentTable.targetAddress eq target.address }
                 .map { it.toPunishment() }
                 .asFlow()
         }
 
     override suspend fun findAllByUuid(uuid: MindustryUUID): Flow<Punishment> =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             PunishmentTable.select { PunishmentTable.targetUuid eq uuid.toShortMuuid() }
                 .map { it.toPunishment() }
                 .asFlow()
@@ -118,7 +115,7 @@ class SimplePunishmentManager(
         type: Punishment.Type,
         duration: Duration
     ): Unit =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val snowflake = generator.generate()
             val punishmentAuthor = author.toAuthor()
             PunishmentTable.insert {
@@ -142,15 +139,15 @@ class SimplePunishmentManager(
         snowflake: Snowflake,
         reason: String
     ): PardonResult =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) {
+        provider.newSuspendTransaction {
             val punishment =
                 PunishmentTable.slice(PunishmentTable.pardonTimestamp)
                     .select { PunishmentTable.id eq snowflake }
                     .firstOrNull()
-                    ?: return@newSuspendedTransaction PardonResult.NOT_FOUND
+                    ?: return@newSuspendTransaction PardonResult.NOT_FOUND
 
             if (punishment[PunishmentTable.pardonTimestamp] != null) {
-                return@newSuspendedTransaction PardonResult.ALREADY_PARDONED
+                return@newSuspendTransaction PardonResult.ALREADY_PARDONED
             }
 
             val punishmentAuthor = author.toAuthor()
@@ -164,7 +161,7 @@ class SimplePunishmentManager(
             messenger.publish(
                 PunishmentEvent(author, PunishmentEvent.Type.PARDON, snowflake), local = true)
 
-            return@newSuspendedTransaction PardonResult.SUCCESS
+            return@newSuspendTransaction PardonResult.SUCCESS
         }
 
     private suspend fun Identity.toAuthor(): Punishment.Author =

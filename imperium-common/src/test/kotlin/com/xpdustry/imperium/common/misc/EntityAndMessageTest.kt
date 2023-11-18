@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.misc
 
-import com.xpdustry.imperium.common.database.Entity
 import com.xpdustry.imperium.common.message.Message
 import io.github.classgraph.ClassGraph
 import kotlin.reflect.jvm.jvmName
@@ -35,8 +34,7 @@ class EntityAndMessageTest {
                 .enableClassInfo()
                 .acceptPackages("com.xpdustry.imperium.common")
                 .scan()
-        (graph.getClassesImplementing(Entity::class.jvmName) +
-                graph.getClassesImplementing(Message::class.jvmName))
+        (graph.getClassesImplementing(Message::class.jvmName))
             .filter { it.isStandardClass }
             .forEach { info ->
                 if (info.getAnnotationInfo(Serializable::class.java) == null) {

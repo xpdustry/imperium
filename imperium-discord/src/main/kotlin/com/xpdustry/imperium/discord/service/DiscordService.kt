@@ -69,7 +69,7 @@ class SimpleDiscordService(
     override suspend fun syncRoles(user: User, account: ObjectId) {
         val roles =
             user.getRoles(getMainServer()).mapNotNullTo(mutableSetOf()) { role ->
-                config.roles.entries.find { (_, id) -> id == role.id }?.key
+                config.rolePermissions.entries.find { (_, id) -> id == role.id }?.key
             }
         roles += Role.VERIFIED
         roles += Role.EVERYONE
@@ -88,7 +88,7 @@ class SimpleDiscordService(
         return getMainServer()
             .getRoles(user)
             .mapNotNull { discordRole ->
-                config.roles.entries.find { it.value == discordRole.id }?.key
+                config.rolePermissions.entries.find { it.value == discordRole.id }?.key
             }
             .containsRole(role)
     }

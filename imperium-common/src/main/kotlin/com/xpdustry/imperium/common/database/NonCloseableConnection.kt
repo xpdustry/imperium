@@ -15,29 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security.permission
+package com.xpdustry.imperium.common.database
 
-enum class Permission {
-    EVERYONE,
-    VERIFIED,
-    MANAGE_USERS,
-    MANAGE_MAPS,
-    SEE_USER_INFO,
-    ADMIN;
+import java.sql.Connection
+import java.sql.SQLException
 
-    sealed interface Scope {
-        fun matches(server: String): Boolean
+class NonCloseableConnection(private val delegate: Connection) : Connection by delegate {
 
-        data object False : Scope {
-            override fun matches(server: String) = false
-        }
+    @Throws(SQLException::class) fun close0() = this.delegate.close()
 
-        data object True : Scope {
-            override fun matches(server: String) = true
-        }
+    @Throws(SQLException::class) override fun close() = Unit
 
-        data class Some(val servers: Set<String>) : Scope {
-            override fun matches(server: String) = servers.contains(server)
-        }
-    }
+    @Throws(SQLException::class)
+    override fun isWrapperFor(iface: Class<*>): Boolean =
+        iface.isInstance(this.delegate) || this.delegate.isWrapperFor(iface)
+
+    @Throws(SQLException::class)
+    @Suppress("UNCHECKED_CAST")
+    override fun <T> unwrap(iface: Class<T>): T =
+        if (iface.isInstance(this.delegate)) this.delegate as T else this.delegate.unwrap(iface)
 }
