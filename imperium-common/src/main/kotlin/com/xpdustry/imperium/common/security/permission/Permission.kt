@@ -21,9 +21,10 @@ enum class Permission {
     EVERYONE,
     VERIFIED,
     MANAGE_USERS,
-    MANAGE_MAPS,
+    MAP_MANAGER,
     SEE_USER_INFO,
-    ADMIN;
+    ADMIN,
+    OWNER;
 
     sealed interface Scope {
         fun matches(server: String): Boolean

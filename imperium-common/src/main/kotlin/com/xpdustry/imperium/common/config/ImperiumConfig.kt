@@ -165,12 +165,20 @@ sealed interface ServerConfig {
 
     data class Discord(
         val token: Secret,
-        val rolePermissions: Map<Long, Permission> = emptyMap(),
         val categories: Categories,
+        val roles2permissions: Map<Long, List<Permission>> = emptyMap(),
         val channels: Channels,
         val mindustryVersion: String = "145",
     ) : ServerConfig {
         override val name: String = "discord"
+
+        val permissions2roles: Map<Permission, List<Long>> = buildMap {
+            for ((role, permissions) in roles2permissions.entries) {
+                for (permission in permissions) {
+                    put(permission, (get(permission) ?: emptyList()) + role)
+                }
+            }
+        }
 
         data class Categories(
             val liveChat: Long,

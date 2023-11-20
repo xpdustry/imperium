@@ -59,6 +59,8 @@ interface AccountManager {
 
     suspend fun findByUsername(username: String): Account?
 
+    suspend fun findBySnowflake(snowflake: Snowflake): Account?
+
     suspend fun findByDiscord(discord: Long): Account?
 
     suspend fun findByIdentity(identity: Identity.Mindustry): Account?
@@ -146,6 +148,11 @@ class SimpleAccountManager(
     override suspend fun findByUsername(username: String): Account? =
         provider.newSuspendTransaction {
             AccountTable.select { AccountTable.username eq username }.firstOrNull()?.toAccount()
+        }
+
+    override suspend fun findBySnowflake(snowflake: Snowflake): Account? =
+        provider.newSuspendTransaction {
+            AccountTable.select { AccountTable.id eq snowflake }.firstOrNull()?.toAccount()
         }
 
     override suspend fun findByDiscord(discord: Long): Account? =

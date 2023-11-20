@@ -30,7 +30,8 @@ data class MindustryMap(
     val height: Int,
     val playtime: Duration,
     val games: Int,
-    val lastUpdate: Instant
+    val lastUpdate: Instant,
+    val gamemodes: Set<MindustryGamemode>
 ) {
     enum class Difficulty {
         EASY,

@@ -23,6 +23,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
 
 interface Messenger {
+
+    // TODO Throw an error instead of returning a boolean
     suspend fun publish(message: Message, local: Boolean = false): Boolean
 
     suspend fun <R : Message> request(

@@ -22,13 +22,13 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.Permission
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.command.ButtonCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
@@ -36,7 +36,6 @@ import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
-import java.time.Instant
 import kotlin.jvm.optionals.getOrNull
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.flow.drop
@@ -44,7 +43,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.future.await
-import org.bson.types.ObjectId
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
 import org.javacord.api.entity.message.MessageBuilder
@@ -89,7 +87,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                             if (notes != null) {
                                 addField("Notes", notes)
                             }
-                            val updating = maps.findMapByName(meta.name.stripMindustryColors())?._id
+                            val updating =
+                                maps.findMapByName(meta.name.stripMindustryColors())?.snowflake
                             if (updating != null) {
                                 addField("Updating Map", "`$updating`")
                             }
@@ -118,38 +117,41 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
     }
 
-    @ButtonCommand(MAP_REJECT_BUTTON, Role.MAP_MANAGER)
+    @ButtonCommand(MAP_REJECT_BUTTON, Permission.MAP_MANAGER)
     private suspend fun onMapReject(actor: InteractionSender.Button) {
         updateSubmissionEmbed(actor, Color.RED, "rejected")
         actor.respond("Map submission rejected!")
     }
 
-    @ButtonCommand(MAP_UPLOAD_BUTTON, Role.MAP_MANAGER)
+    @ButtonCommand(MAP_UPLOAD_BUTTON, Permission.MAP_MANAGER)
     private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
         val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
 
-        var map = maps.findMapByName(meta.name.stripMindustryColors())
+        val map = maps.findMapByName(meta.name.stripMindustryColors())
+        val snowflake: Snowflake
         if (map == null) {
-            map =
-                MindustryMap(
+            snowflake =
+                maps.createMap(
                     name = meta.name.stripMindustryColors(),
                     description = meta.description?.stripMindustryColors(),
                     author = meta.author?.stripMindustryColors(),
                     width = meta.width,
                     height = meta.height,
-                )
+                    stream = attachment.asInputStream())
         } else {
-            map.description = meta.description?.stripMindustryColors()
-            map.author = meta.author?.stripMindustryColors()
-            map.width = meta.width
-            map.height = meta.height
-            map.lastUpdate = Instant.now()
+            snowflake = map.snowflake
+            maps.updateMap(
+                snowflake = map.snowflake,
+                description = meta.description?.stripMindustryColors(),
+                author = meta.author?.stripMindustryColors(),
+                width = meta.width,
+                height = meta.height,
+                stream = attachment.asInputStream())
         }
 
-        maps.saveMap(map, attachment.asInputStream())
         updateSubmissionEmbed(actor, Color.GREEN, "uploaded")
-        actor.respond("Map submission uploaded! The map id is `${map._id}`.")
+        actor.respond("Map submission uploaded! The map id is `$snowflake`.")
     }
 
     private suspend fun updateSubmissionEmbed(
@@ -196,7 +198,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         gamemode: MindustryGamemode? = null
     ) {
         val result =
-            (if (query == null) maps.findAllMaps() else maps.searchMap(query))
+            (if (query == null) maps.findAllMaps() else maps.searchMapByName(query))
                 .filter { gamemode == null || gamemode in it.gamemodes }
                 .drop((page - 1) * 10)
                 .take(11)
@@ -212,7 +214,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         } else {
             embed.setDescription(
                 buildString {
-                    append(result.joinToString("\n") { "- ${it.name} / `${it._id}`" })
+                    append(result.joinToString("\n") { "- ${it.name} / `${it.snowflake}`" })
                     if (hasMore) {
                         append("\n\n...and more")
                     }
@@ -225,8 +227,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["map", "info"])
     @NonEphemeral
-    private suspend fun onMapInfo(actor: InteractionSender, id: ObjectId) {
-        val map = maps.findMapById(id)
+    private suspend fun onMapInfo(actor: InteractionSender, id: Snowflake) {
+        val map = maps.findMapBySnowflake(id)
         if (map == null) {
             actor.respond("Unknown map id")
             return
@@ -238,16 +240,21 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .setColor(MINDUSTRY_ACCENT_COLOR)
                     .setTitle(map.name)
                     .addField("Author", map.author ?: "Unknown")
-                    .addField("Identifier", "${map._id}")
+                    .addField("Identifier", "${map.snowflake}")
                     .addField("Description", map.description ?: "Unknown")
                     .addField("Size", "${map.width} x ${map.height}")
-                    .addField("Score", "%.2f / 5".format(maps.computeAverageScoreByMap(map._id)))
                     .addField(
-                        "Difficulty", maps.computeAverageDifficultyByMap(map._id).name.lowercase())
-                    .addField("Gamemodes", map.gamemodes.joinToString { it.name.lowercase() })
+                        "Score", "%.2f / 5".format(maps.computeAverageScoreByMap(map.snowflake)))
+                    .addField(
+                        "Difficulty",
+                        maps.computeAverageDifficultyByMap(map.snowflake).name.lowercase())
+                    .addField(
+                        "Gamemodes",
+                        if (map.gamemodes.isEmpty()) "`none`"
+                        else map.gamemodes.joinToString { it.name.lowercase() })
                     .setImage(
                         content
-                            .getMapMetadataWithPreview(maps.getMapObject(map._id).getData())
+                            .getMapMetadataWithPreview(maps.getMapObject(map.snowflake).getData())
                             .getOrThrow()
                             .second,
                     ),
@@ -265,7 +272,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             actor.message.embeds
                 .first()
                 .getFieldValue("Identifier")
-                ?.let { maps.getMapObject(ObjectId(it)) }
+                ?.let { maps.getMapObject(it.toLong()) }
                 ?.takeIf { it.exists }
                 ?.getDownloadUrl(1.hours)
 
@@ -278,13 +285,13 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             "Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
     }
 
-    @Command(["map", "gamemode", "add"], Role.MAP_MANAGER)
+    @Command(["map", "gamemode", "add"], Permission.MAP_MANAGER)
     private suspend fun onMapGamemodeAdd(
         actor: InteractionSender,
-        id: ObjectId,
+        id: Snowflake,
         gamemode: MindustryGamemode
     ) {
-        val map = maps.findMapById(id)
+        val map = maps.findMapBySnowflake(id)
         if (map == null) {
             actor.respond("Unknown map id")
             return
@@ -294,17 +301,17 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 "This map is already in the **${gamemode.name.lowercase()}** server pool.")
             return
         }
-        maps.updateMapById(id) { this.gamemodes += gamemode }
+        maps.setMapGamemodes(id, map.gamemodes + gamemode)
         actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "gamemode", "remove"], Role.MAP_MANAGER)
+    @Command(["map", "gamemode", "remove"], Permission.MAP_MANAGER)
     private suspend fun onMapGamemodeRemove(
         actor: InteractionSender,
-        id: ObjectId,
+        id: Snowflake,
         gamemode: MindustryGamemode
     ) {
-        val map = maps.findMapById(id)
+        val map = maps.findMapBySnowflake(id)
         if (map == null) {
             actor.respond("Unknown map id")
             return
@@ -313,12 +320,12 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             actor.respond("This map is not in the **${gamemode.name.lowercase()}** server pool.")
             return
         }
-        maps.updateMapById(id) { this.gamemodes -= gamemode }
+        maps.setMapGamemodes(id, map.gamemodes - gamemode)
         actor.respond("This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "delete"], Role.MAP_MANAGER)
-    private suspend fun onMapDelete(actor: InteractionSender, id: ObjectId) {
+    @Command(["map", "delete"], Permission.MAP_MANAGER)
+    private suspend fun onMapDelete(actor: InteractionSender, id: Snowflake) {
         if (maps.deleteMapById(id)) {
             actor.respond("Map deleted!")
         } else {

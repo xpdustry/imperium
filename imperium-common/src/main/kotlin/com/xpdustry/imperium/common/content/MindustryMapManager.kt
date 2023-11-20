@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.StorageBucket
@@ -33,6 +34,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
@@ -73,15 +75,13 @@ interface MindustryMapManager {
         width: Int,
         height: Int,
         stream: InputStream
-    )
+    ): Boolean
 
     suspend fun getMapObject(map: Snowflake): StorageBucket.S3Object
 
     suspend fun searchMapByName(query: String): Flow<MindustryMap>
 
-    suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode>
-
-    suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>)
+    suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>): Boolean
 }
 
 class SimpleMindustryMapManager(
@@ -91,10 +91,7 @@ class SimpleMindustryMapManager(
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        provider.newTransaction {
-            SchemaUtils.create(
-                MindustryMapTable, MindustryMapGamemodeTable, MindustryMapRatingTable)
-        }
+        provider.newTransaction { SchemaUtils.create(MindustryMapTable, MindustryMapRatingTable) }
     }
 
     override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
@@ -113,8 +110,7 @@ class SimpleMindustryMapManager(
 
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap> =
         provider.newSuspendTransaction {
-            (MindustryMapTable leftJoin MindustryMapGamemodeTable)
-                .select { MindustryMapGamemodeTable.gamemode eq gamemode }
+            MindustryMapTable.select { MindustryMapGamemodeTable.gamemode eq gamemode }
                 .asFlow()
                 .map { it.toMindustryMap() }
         }
@@ -196,15 +192,21 @@ class SimpleMindustryMapManager(
         width: Int,
         height: Int,
         stream: InputStream
-    ) =
+    ): Boolean =
         provider.newSuspendTransaction {
-            MindustryMapTable.update({ MindustryMapTable.id eq snowflake }) {
-                it[MindustryMapTable.description] = description
-                it[MindustryMapTable.author] = author
-                it[MindustryMapTable.width] = width
-                it[MindustryMapTable.height] = height
+            val rows =
+                MindustryMapTable.update({ MindustryMapTable.id eq snowflake }) {
+                    it[MindustryMapTable.description] = description
+                    it[MindustryMapTable.author] = author
+                    it[MindustryMapTable.width] = width
+                    it[MindustryMapTable.height] = height
+                }
+            if (rows == 0) {
+                false
+            } else {
+                getMapObject(snowflake).putData(stream)
+                true
             }
-            getMapObject(snowflake).putData(stream)
         }
 
     override suspend fun getMapObject(map: Snowflake): StorageBucket.S3Object =
@@ -217,7 +219,23 @@ class SimpleMindustryMapManager(
                 .map { it.toMindustryMap() }
         }
 
-    override suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
+    override suspend fun setMapGamemodes(
+        map: Snowflake,
+        gamemodes: Set<MindustryGamemode>
+    ): Boolean =
+        provider.newSuspendTransaction {
+            if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
+                return@newSuspendTransaction false
+            }
+            MindustryMapGamemodeTable.deleteWhere { MindustryMapGamemodeTable.map eq map }
+            MindustryMapGamemodeTable.batchUpsert(gamemodes) {
+                this[MindustryMapGamemodeTable.map] = map
+                this[MindustryMapGamemodeTable.gamemode] = it
+            }
+            true
+        }
+
+    private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
         provider.newSuspendTransaction {
             MindustryMapGamemodeTable.select { MindustryMapGamemodeTable.map eq map }
                 .asFlow()
@@ -225,18 +243,7 @@ class SimpleMindustryMapManager(
                 .toSet()
         }
 
-    override suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>) =
-        provider.newSuspendTransaction {
-            MindustryMapGamemodeTable.deleteWhere { MindustryMapGamemodeTable.map eq map }
-            gamemodes.forEach { mode ->
-                MindustryMapGamemodeTable.insert {
-                    it[MindustryMapGamemodeTable.map] = map
-                    it[gamemode] = mode
-                }
-            }
-        }
-
-    private fun ResultRow.toMindustryMap() =
+    private suspend fun ResultRow.toMindustryMap() =
         MindustryMap(
             snowflake = this[MindustryMapTable.id].value,
             name = this[MindustryMapTable.name],
@@ -246,7 +253,8 @@ class SimpleMindustryMapManager(
             height = this[MindustryMapTable.height],
             playtime = this[MindustryMapTable.playtime],
             games = this[MindustryMapTable.games],
-            lastUpdate = this[MindustryMapTable.lastUpdate])
+            lastUpdate = this[MindustryMapTable.lastUpdate],
+            gamemodes = getMapGamemodes(this[MindustryMapTable.id].value))
 
     private fun ResultRow.toMindustryMapRating() =
         MindustryMap.Rating(

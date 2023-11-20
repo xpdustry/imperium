@@ -24,6 +24,6 @@ import org.jetbrains.exposed.sql.Table
 object AccountPermissionTable : Table("account_permission") {
     val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
     val permission = enumerationByName<Permission>("permission", 32)
-    val scope = varchar("server", 128)
+    val scope = varchar("scope", 128)
     override val primaryKey = PrimaryKey(account, permission)
 }

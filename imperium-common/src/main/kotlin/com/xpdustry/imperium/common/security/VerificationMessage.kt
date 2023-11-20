@@ -19,12 +19,12 @@ package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.serialization.SerializableObjectId
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class VerificationMessage(
-    val account: SerializableObjectId,
+    val account: Snowflake,
     val uuid: MindustryUUID,
     val code: Int,
     val response: Boolean = false

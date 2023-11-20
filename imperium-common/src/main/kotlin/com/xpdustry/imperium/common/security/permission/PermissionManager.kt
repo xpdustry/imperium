@@ -31,10 +31,11 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.upsert
 
 interface PermissionManager {
 
@@ -49,16 +50,23 @@ interface PermissionManager {
         account: Snowflake,
         permission: Permission,
         scope: Permission.Scope
-    ): PermissionResult
+    ): PermissionResult = setPermissions(account, mapOf(permission to scope))
 
     suspend fun getPermissions(account: Snowflake): Map<Permission, Permission.Scope>
 
-    enum class PermissionResult {
-        SUCCESS,
-        PERMISSION_NOT_FOUND,
-        ACCOUNT_NOT_FOUND
-    }
+    suspend fun setPermissions(
+        account: Snowflake,
+        permissions: Map<Permission, Permission.Scope>
+    ): PermissionResult
 }
+
+enum class PermissionResult {
+    SUCCESS,
+    IMMUTABLE_PERMISSION,
+    ACCOUNT_NOT_FOUND
+}
+
+@Serializable data class PermissionChangeMessage(val account: Snowflake) : Message
 
 class SimplePermissionManager(
     private val provider: SQLProvider,
@@ -89,56 +97,6 @@ class SimplePermissionManager(
         permission: Permission
     ): Permission.Scope = getPermissions(account)[permission] ?: Permission.Scope.False
 
-    override suspend fun setPermission(
-        account: Snowflake,
-        permission: Permission,
-        scope: Permission.Scope
-    ): PermissionManager.PermissionResult {
-        val result =
-            provider.newSuspendTransaction {
-                if (!accounts.existsBySnowflake(account)) {
-                    return@newSuspendTransaction PermissionManager.PermissionResult
-                        .ACCOUNT_NOT_FOUND
-                }
-                when (scope) {
-                    is Permission.Scope.False -> {
-                        val rows =
-                            AccountPermissionTable.deleteWhere {
-                                (AccountPermissionTable.account eq account) and
-                                    (AccountPermissionTable.permission eq permission)
-                            }
-                        if (rows == 0) {
-                            return@newSuspendTransaction PermissionManager.PermissionResult
-                                .PERMISSION_NOT_FOUND
-                        }
-                    }
-                    is Permission.Scope.True -> {
-                        AccountPermissionTable.upsert {
-                            it[AccountPermissionTable.account] = account
-                            it[AccountPermissionTable.permission] = permission
-                            it[AccountPermissionTable.scope] = "*"
-                        }
-                    }
-                    is Permission.Scope.Some -> {
-                        AccountPermissionTable.upsert {
-                            it[AccountPermissionTable.account] = account
-                            it[AccountPermissionTable.permission] = permission
-                            it[AccountPermissionTable.scope] = scope.servers.joinToString(",")
-                        }
-                    }
-                }
-
-                PermissionManager.PermissionResult.SUCCESS
-            }
-
-        if (result == PermissionManager.PermissionResult.SUCCESS) {
-            refreshPermissions(account)
-            messenger.publish(PermissionChangeMessage(account))
-        }
-
-        return result
-    }
-
     override suspend fun getPermissions(account: Snowflake): Map<Permission, Permission.Scope> {
         var permissions = cache.getIfPresent(account)
         if (permissions == null) {
@@ -147,16 +105,72 @@ class SimplePermissionManager(
                     AccountPermissionTable.slice(
                             AccountPermissionTable.permission, AccountPermissionTable.scope)
                         .select { AccountPermissionTable.account eq account }
-                        .associate { it[AccountPermissionTable.permission] to it.toScope() }
+                        .associateTo(mutableMapOf()) {
+                            it[AccountPermissionTable.permission] to it.toScope()
+                        }
                 }
+            permissions[Permission.EVERYONE] = Permission.Scope.True
             cache.put(account, permissions)
         }
         return permissions
     }
 
+    override suspend fun setPermissions(
+        account: Snowflake,
+        permissions: Map<Permission, Permission.Scope>
+    ): PermissionResult {
+        if (permissions.isEmpty() ||
+            (permissions.size == 1 && Permission.EVERYONE in permissions)) {
+            return PermissionResult.SUCCESS
+        }
+
+        val result =
+            provider.newSuspendTransaction {
+                if (!accounts.existsBySnowflake(account)) {
+                    return@newSuspendTransaction PermissionResult.ACCOUNT_NOT_FOUND
+                }
+
+                val deleting =
+                    permissions.entries
+                        .filter {
+                            it.key != Permission.EVERYONE && it.value is Permission.Scope.False
+                        }
+                        .map(Map.Entry<Permission, Permission.Scope>::key)
+                AccountPermissionTable.deleteWhere {
+                    (AccountPermissionTable.account eq account) and (permission inList deleting)
+                }
+
+                val modifying =
+                    permissions.entries.filter {
+                        it.key != Permission.EVERYONE && it.value !is Permission.Scope.False
+                    }
+                AccountPermissionTable.batchUpsert(modifying) { (permission, scope) ->
+                    this[AccountPermissionTable.account] = account
+                    this[AccountPermissionTable.permission] = permission
+                    this[AccountPermissionTable.scope] =
+                        when (scope) {
+                            is Permission.Scope.True -> "*"
+                            is Permission.Scope.Some -> scope.servers.joinToString(",")
+                            is Permission.Scope.False -> error("Got False permission: $permission")
+                        }
+                }
+
+                PermissionResult.SUCCESS
+            }
+
+        if (result == PermissionResult.SUCCESS) {
+            refreshPermissions(account)
+            messenger.publish(PermissionChangeMessage(account), local = true)
+        }
+
+        return result
+    }
+
     private suspend fun refreshPermissions(account: Snowflake) {
-        cache.invalidate(account)
-        getPermissions(account)
+        if (cache.getIfPresent(account) != null) {
+            cache.invalidate(account)
+            getPermissions(account)
+        }
     }
 
     private fun ResultRow.toScope(): Permission.Scope {
@@ -164,6 +178,4 @@ class SimplePermissionManager(
         return if (value == "*") Permission.Scope.True
         else Permission.Scope.Some(value.split(",").filter(String::isBlank).toSet())
     }
-
-    @Serializable private data class PermissionChangeMessage(val account: Snowflake) : Message
 }

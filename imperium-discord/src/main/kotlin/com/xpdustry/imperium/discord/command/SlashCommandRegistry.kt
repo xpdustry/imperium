@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.security.permission.Role
+import com.xpdustry.imperium.common.security.permission.Permission
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.getTranslatedTextOrNull
@@ -95,7 +95,7 @@ class SlashCommandRegistry(
                 val responder =
                     event.slashCommandInteraction.respondLater(command.ephemeral).await()
 
-                if (!discord.isAllowed(event.slashCommandInteraction.user, command.role)) {
+                if (!discord.isAllowed(event.slashCommandInteraction.user, command.permission)) {
                     responder
                         .setContent(":warning: **You do not have permission to use this command.**")
                         .update()
@@ -224,7 +224,7 @@ class SlashCommandRegistry(
                     CommandEdge(
                         container,
                         function,
-                        command.role,
+                        command.permission,
                         arguments,
                         !function.hasAnnotation<NonEphemeral>(),
                     ),
@@ -403,7 +403,7 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
 private data class CommandEdge(
     val container: Any,
     val function: KFunction<*>,
-    val role: Role,
+    val permission: Permission,
     val arguments: List<Argument<*>>,
     val ephemeral: Boolean,
 ) {

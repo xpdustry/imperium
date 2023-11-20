@@ -20,10 +20,8 @@ package com.xpdustry.imperium.discord.service
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.security.permission.Role
-import com.xpdustry.imperium.common.security.permission.containsRole
+import com.xpdustry.imperium.common.security.permission.Permission
 import java.util.concurrent.TimeUnit
-import org.bson.types.ObjectId
 import org.javacord.api.DiscordApi
 import org.javacord.api.DiscordApiBuilder
 import org.javacord.api.entity.intent.Intent
@@ -35,9 +33,7 @@ interface DiscordService {
 
     fun getMainServer(): Server
 
-    suspend fun syncRoles(user: User, account: ObjectId)
-
-    fun isAllowed(user: User, role: Role): Boolean
+    fun isAllowed(user: User, permission: Permission): Boolean
 }
 
 class SimpleDiscordService(
@@ -66,31 +62,13 @@ class SimpleDiscordService(
 
     override fun getMainServer(): Server = api.servers.first()
 
-    override suspend fun syncRoles(user: User, account: ObjectId) {
-        val roles =
-            user.getRoles(getMainServer()).mapNotNullTo(mutableSetOf()) { role ->
-                config.rolePermissions.entries.find { (_, id) -> id == role.id }?.key
-            }
-        roles += Role.VERIFIED
-        roles += Role.EVERYONE
-
-        accounts.updateById(account) {
-            it.roles.clear()
-            it.roles += roles
-        }
-    }
-
-    override fun isAllowed(user: User, role: Role): Boolean {
-        if (role == Role.EVERYONE) {
+    override fun isAllowed(user: User, permission: Permission): Boolean {
+        if (permission == Permission.EVERYONE) {
             return true
         }
-        // TODO This is awful, use a reverse map
-        return getMainServer()
-            .getRoles(user)
-            .mapNotNull { discordRole ->
-                config.rolePermissions.entries.find { it.value == discordRole.id }?.key
-            }
-            .containsRole(role)
+        return getMainServer().getRoles(user).any {
+            config.roles2permissions[it.id]?.contains(permission) == true
+        }
     }
 
     override fun onImperiumExit() {
