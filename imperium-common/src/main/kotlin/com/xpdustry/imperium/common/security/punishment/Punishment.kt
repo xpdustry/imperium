@@ -35,8 +35,8 @@ data class Punishment(
 ) {
     data class Target(
         val address: InetAddress,
-        val mask: Byte = 0,
-        val uuid: MindustryUUID? = null
+        val uuid: MindustryUUID? = null,
+        val mask: Byte = 0
     ) {
         init {
             val size = if (address is Inet4Address) 32 else 128

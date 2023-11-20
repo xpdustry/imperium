@@ -19,7 +19,6 @@ package com.xpdustry.imperium.mindustry.security
 
 import arc.math.geom.Point2
 import arc.struct.IntSet
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.findMostCommon
@@ -35,9 +34,9 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.Punishment
-import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.security.PunishmentMessage
+import com.xpdustry.imperium.common.security.punishment.Punishment
+import com.xpdustry.imperium.common.security.punishment.PunishmentManager
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.history.BlockHistory
@@ -376,14 +375,11 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
 
                 launch broadcast@{
                     logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
-                    val (unsafe, entry) = analyzer.isUnsafe(element.value.blocks)
-                    if (unsafe) {
+                    if (analyzer.isUnsafe(element.value.blocks)) {
                         logger.debug(
-                            "Cluster ({}, {}) is unsafe (entry={}). Destroying.",
+                            "Cluster ({}, {}) is unsafe. Destroying.",
                             element.value.x,
-                            element.value.y,
-                            entry)
-
+                            element.value.y)
                         runMindustryThread {
                             for (block in element.value.blocks) {
                                 Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
@@ -398,9 +394,6 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                             }
                         }
 
-                        val extra =
-                            if (entry != null) PunishmentMessage.Extra.Nsfw(entry)
-                            else PunishmentMessage.Extra.None
                         val player = Entities.getPlayersAsync().find { it.uuid() == element.author }
                         if (player != null) {
                             punishments.punish(
@@ -408,9 +401,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                                 Punishment.Target(player.ip().toInetAddress(), player.uuid()),
                                 "Placing NSFW images",
                                 Punishment.Type.BAN,
-                                Duration.ofDays(3L),
-                                extra,
-                            )
+                                Duration.ofDays(3L))
                             return@broadcast
                         }
 

@@ -117,13 +117,13 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
     }
 
-    @ButtonCommand(MAP_REJECT_BUTTON, Permission.MAP_MANAGER)
+    @ButtonCommand(MAP_REJECT_BUTTON, Permission.MANAGE_MAPS)
     private suspend fun onMapReject(actor: InteractionSender.Button) {
         updateSubmissionEmbed(actor, Color.RED, "rejected")
         actor.respond("Map submission rejected!")
     }
 
-    @ButtonCommand(MAP_UPLOAD_BUTTON, Permission.MAP_MANAGER)
+    @ButtonCommand(MAP_UPLOAD_BUTTON, Permission.MANAGE_MAPS)
     private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
         val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
@@ -285,7 +285,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             "Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
     }
 
-    @Command(["map", "gamemode", "add"], Permission.MAP_MANAGER)
+    @Command(["map", "gamemode", "add"], Permission.MANAGE_MAPS)
     private suspend fun onMapGamemodeAdd(
         actor: InteractionSender,
         id: Snowflake,
@@ -305,7 +305,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "gamemode", "remove"], Permission.MAP_MANAGER)
+    @Command(["map", "gamemode", "remove"], Permission.MANAGE_MAPS)
     private suspend fun onMapGamemodeRemove(
         actor: InteractionSender,
         id: Snowflake,
@@ -324,7 +324,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "delete"], Permission.MAP_MANAGER)
+    @Command(["map", "delete"], Permission.MANAGE_MAPS)
     private suspend fun onMapDelete(actor: InteractionSender, id: Snowflake) {
         if (maps.deleteMapById(id)) {
             actor.respond("Map deleted!")

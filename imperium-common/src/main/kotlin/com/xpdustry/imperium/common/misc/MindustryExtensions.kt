@@ -62,6 +62,23 @@ fun ByteArray.toCRC32Muuid(): MindustryUUID {
     return Base64.getEncoder().encodeToString(bytes)
 }
 
+fun String.isCRC32Muuid(): Boolean {
+    val bytes =
+        try {
+            Base64.getDecoder().decode(this)
+        } catch (_: Exception) {
+            return false
+        }
+    if (bytes.size != 16) {
+        return false
+    }
+    val crc = CRC32()
+    crc.update(bytes, 0, 8)
+    return crc.value ==
+        Longs.fromBytes(
+            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15])
+}
+
 fun MindustryUUID.toShortMuuid(): ByteArray = Base64.getDecoder().decode(this).sliceArray(0..7)
 
 fun MindustryUUID.toLong(): Long = Longs.fromByteArray(toShortMuuid())

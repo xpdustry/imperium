@@ -21,7 +21,7 @@ enum class Permission {
     EVERYONE,
     VERIFIED,
     MANAGE_USERS,
-    MAP_MANAGER,
+    MANAGE_MAPS,
     SEE_USER_INFO,
     ADMIN,
     OWNER;

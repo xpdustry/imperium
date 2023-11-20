@@ -67,7 +67,7 @@ enum class PardonResult {
 }
 
 @Serializable
-data class PunishmentEvent(
+data class PunishmentMessage(
     val author: Identity,
     val type: Type,
     val snowflake: Snowflake,
@@ -131,7 +131,7 @@ class SimplePunishmentManager(
                     if (duration.isInfinite()) null else duration.toJavaDuration()
             }
             messenger.publish(
-                PunishmentEvent(author, PunishmentEvent.Type.CREATE, snowflake), local = true)
+                PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake), local = true)
         }
 
     override suspend fun pardon(
@@ -159,7 +159,7 @@ class SimplePunishmentManager(
             }
 
             messenger.publish(
-                PunishmentEvent(author, PunishmentEvent.Type.PARDON, snowflake), local = true)
+                PunishmentMessage(author, PunishmentMessage.Type.PARDON, snowflake), local = true)
 
             return@newSuspendTransaction PardonResult.SUCCESS
         }
@@ -189,8 +189,8 @@ class SimplePunishmentManager(
         val target =
             Punishment.Target(
                 InetAddress.getByAddress(this[PunishmentTable.targetAddress]),
-                this[PunishmentTable.targetAddressMask],
-                this[PunishmentTable.targetUuid]?.toCRC32Muuid())
+                this[PunishmentTable.targetUuid]?.toCRC32Muuid(),
+                this[PunishmentTable.targetAddressMask])
 
         val author =
             Punishment.Author(
