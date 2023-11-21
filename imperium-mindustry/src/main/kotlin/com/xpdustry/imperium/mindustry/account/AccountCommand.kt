@@ -19,7 +19,7 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.AccountOperationResult
+import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -31,8 +31,9 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.security.permission.Role
-import com.xpdustry.imperium.common.security.permission.containsRole
+import com.xpdustry.imperium.common.security.permission.Permission
+import com.xpdustry.imperium.common.security.permission.PermissionManager
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
@@ -55,7 +56,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mindustry.gen.Player
-import org.bson.types.ObjectId
 
 // TODO
 //  - Replace sequential interfaces with a proper form interface
@@ -68,16 +68,17 @@ private val OLD_PASSWORD = stateKey<String>("old_password")
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
+    private val permissions = instances.get<PermissionManager>()
     private val manager = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
-    private val loginInterface = createLoginInterface(instances.get(), manager)
+    private val loginInterface = createLoginInterface(instances.get(), manager, permissions)
     private val registerInterface = createRegisterInterface(instances.get(), manager)
     private val migrateInterface = createMigrateInterface(instances.get(), manager)
     private val changePasswordInterface = createPasswordChangeInterface(instances.get(), manager)
     private val verifications =
         CacheBuilder.newBuilder()
             .expireAfterWrite(10.minutes.toJavaDuration())
-            .build<ObjectId, Int>()
+            .build<Snowflake, Int>()
 
     @Command(["login"])
     @ClientSide
@@ -148,8 +149,8 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
 
         code = Random.nextInt(1000..9999)
-        messenger.publish(VerificationMessage(account._id, sender.player.uuid(), code))
-        verifications.put(account._id, code)
+        messenger.publish(VerificationMessage(account.snowflake, sender.player.uuid(), code))
+        verifications.put(account.snowflake, code)
 
         sender.sendMessage(
             """
@@ -190,7 +191,11 @@ private class PlayerCoroutineExceptionHandler(
     }
 }
 
-private fun createLoginInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
+private fun createLoginInterface(
+    plugin: MindustryPlugin,
+    manager: AccountManager,
+    permissions: PermissionManager
+): Interface {
     val usernameInterface = TextInputInterface.create(plugin)
     val passwordInterface = TextInputInterface.create(plugin)
 
@@ -217,18 +222,15 @@ private fun createLoginInterface(plugin: MindustryPlugin, manager: AccountManage
                 when (val result =
                     manager.login(
                         view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
-                    is AccountOperationResult.Success -> {
+                    is AccountResult.Success -> {
                         view.viewer.sendMessage("You have been logged in!")
                         // Grants admin to moderators
                         view.viewer.admin =
-                            manager
-                                .findByIdentity(view.viewer.identity)
-                                ?.roles
-                                ?.containsRole(Role.MODERATOR)
-                                ?: view.viewer.admin
+                            permissions.hasPermission(
+                                view.viewer.identity, Permission.SEE_USER_INFO) || view.viewer.admin
                     }
-                    is AccountOperationResult.WrongPassword,
-                    AccountOperationResult.NotRegistered -> {
+                    is AccountResult.WrongPassword,
+                    AccountResult.NotFound -> {
                         view.open()
                         view.viewer.showInfoMessage("The username or password is incorrect!")
                     }
@@ -281,10 +283,8 @@ private fun createRegisterInterface(plugin: MindustryPlugin, manager: AccountMan
                 return@BiAction
             }
             ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
-                when (val result =
-                    manager.register(
-                        view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
-                    is AccountOperationResult.Success -> {
+                when (val result = manager.register(view.state[USERNAME]!!, value.toCharArray())) {
+                    is AccountResult.Success -> {
                         view.viewer.sendMessage(
                             "Your account have been created! You can do /login now.")
                     }
@@ -336,11 +336,8 @@ fun createMigrateInterface(plugin: MindustryPlugin, manager: AccountManager): In
             ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
                 when (val result =
                     manager.migrate(
-                        view.state[OLD_USERNAME]!!,
-                        value,
-                        view.state[PASSWORD]!!.toCharArray(),
-                        view.viewer.identity)) {
-                    is AccountOperationResult.Success -> {
+                        view.state[OLD_USERNAME]!!, value, view.state[PASSWORD]!!.toCharArray())) {
+                    is AccountResult.Success -> {
                         view.viewer.sendMessage(
                             "Your account have been migrated! You can do /login now.")
                     }
@@ -401,7 +398,7 @@ private fun createPasswordChangeInterface(
                         view.state[OLD_PASSWORD]!!.toCharArray(),
                         value.toCharArray(),
                         view.viewer.identity)) {
-                    is AccountOperationResult.Success -> {
+                    is AccountResult.Success -> {
                         view.viewer.sendMessage("Your password have been changed!")
                     }
                     else -> {
@@ -415,25 +412,22 @@ private fun createPasswordChangeInterface(
     return oldPasswordInterface
 }
 
-private suspend fun handleAccountResult(result: AccountOperationResult, view: View) =
-    runMindustryThread {
-        val message =
-            when (result) {
-                is AccountOperationResult.Success -> "Success!"
-                is AccountOperationResult.AlreadyRegistered -> "This account is already registered!"
-                is AccountOperationResult.NotRegistered -> "You are not registered!"
-                is AccountOperationResult.NotLogged -> "You are not logged in! Use /login to login."
-                is AccountOperationResult.WrongPassword -> "Wrong password!"
-                is AccountOperationResult.InvalidPassword ->
-                    "The password does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
-                is AccountOperationResult.InvalidUsername ->
-                    "The username does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
-                is AccountOperationResult.RateLimit ->
-                    "You have made too many attempts, please try again later."
-            }
-        view.open()
-        view.viewer.showInfoMessage("[red]$message")
-    }
+private suspend fun handleAccountResult(result: AccountResult, view: View) = runMindustryThread {
+    val message =
+        when (result) {
+            is AccountResult.Success -> "Success!"
+            is AccountResult.AlreadyRegistered -> "This account is already registered!"
+            is AccountResult.NotFound -> "You are not registered!"
+            is AccountResult.WrongPassword -> "Wrong password!"
+            is AccountResult.InvalidPassword ->
+                "The password does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
+            is AccountResult.InvalidUsername ->
+                "The username does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
+            is AccountResult.AlreadyLogged -> "You are already logged in."
+        }
+    view.open()
+    view.viewer.showInfoMessage("[red]$message")
+}
 
 private fun getErrorMessage(requirement: PasswordRequirement) =
     when (requirement) {
@@ -452,4 +446,5 @@ private fun getErrorMessage(requirement: UsernameRequirement) =
         is UsernameRequirement.Length ->
             "It needs to be between ${requirement.min} and ${requirement.max} characters long."
         is UsernameRequirement.Reserved -> "This username is reserved or already taken."
+        is UsernameRequirement.AllLowercase -> "Uppercase letters aren't allowed in the username."
     }

@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.security.permission
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
@@ -38,6 +39,8 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.select
 
 interface PermissionManager {
+
+    suspend fun hasPermission(identity: Identity.Mindustry, permission: Permission): Boolean
 
     suspend fun getPermission(
         identity: Identity.Mindustry,
@@ -72,6 +75,7 @@ class SimplePermissionManager(
     private val provider: SQLProvider,
     private val messenger: Messenger,
     private val accounts: AccountManager,
+    private val config: ImperiumConfig,
 ) : PermissionManager, ImperiumApplication.Listener {
 
     private val cache =
@@ -83,6 +87,11 @@ class SimplePermissionManager(
         provider.newTransaction { SchemaUtils.create(AccountPermissionTable) }
         messenger.consumer<PermissionChangeMessage> { refreshPermissions(it.account) }
     }
+
+    override suspend fun hasPermission(
+        identity: Identity.Mindustry,
+        permission: Permission
+    ): Boolean = getPermission(identity, permission).matches(config.server.name)
 
     override suspend fun getPermission(
         identity: Identity.Mindustry,

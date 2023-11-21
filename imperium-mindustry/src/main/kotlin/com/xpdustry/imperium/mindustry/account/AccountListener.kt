@@ -18,14 +18,12 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.User
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
@@ -34,7 +32,6 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
@@ -59,14 +56,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
         ImperiumScope.MAIN.launch {
-            users.updateOrCreateByUuid(event.player.uuid()) { user ->
-                user.timesJoined += 1
-                user.lastName = event.player.plainName()
-                user.names += event.player.plainName()
-                user.lastAddress = event.player.ip().toInetAddress()
-                user.addresses += event.player.ip().toInetAddress()
-                user.lastJoin = Instant.now()
-            }
+            users.incrementJoins(event.player.identity)
             event.player.tryGrantAdmin(accounts)
         }
     }
@@ -74,9 +64,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     internal fun onGameOver(event: EventType.GameOverEvent) {
         Entities.getPlayers().forEach { player ->
-            ImperiumScope.MAIN.launch {
-                accounts.updateByIdentity(player.identity) { account -> account.games++ }
-            }
+            ImperiumScope.MAIN.launch { accounts.incrementGames(accounts.findByIdentity()) }
         }
     }
 

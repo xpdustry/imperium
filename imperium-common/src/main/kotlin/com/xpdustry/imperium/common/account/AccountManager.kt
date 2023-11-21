@@ -40,12 +40,15 @@ import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.timestamp
-import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.toJavaDuration
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
@@ -104,6 +107,10 @@ interface AccountManager {
     suspend fun getAchievements(
         snowflake: Snowflake
     ): Map<Account.Achievement, Account.Achievement.Progression>
+
+    suspend fun incrementGames(snowflake: Snowflake): Boolean
+
+    suspend fun incrementPlaytime(snowflake: Snowflake, duration: Duration): Boolean
 }
 
 data class AchievementCompletedMessage(
@@ -357,7 +364,7 @@ class SimpleAccountManager(
             AccountSessionTable.insert {
                 it[account] = result[AccountTable.id]
                 it[hash] = sessionHash
-                it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION)
+                it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION.toJavaDuration())
             }
 
             return@newSuspendTransaction AccountResult.Success
@@ -373,7 +380,7 @@ class SimpleAccountManager(
 
             val updated =
                 AccountSessionTable.update({ AccountSessionTable.hash eq sessionHash }) {
-                    it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION)
+                    it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION.toJavaDuration())
                 }
 
             if (updated == 0) {
@@ -453,6 +460,18 @@ class SimpleAccountManager(
                 }
         }
 
+    override suspend fun incrementGames(snowflake: Snowflake): Boolean =
+        provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq snowflake }) { it[games] = games.plus(1) } != 0
+        }
+
+    override suspend fun incrementPlaytime(snowflake: Snowflake, duration: Duration): Boolean =
+        provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq snowflake }) {
+                it[playtime] = playtime.plus(duration.toJavaDuration())
+            } != 0
+        }
+
     @VisibleForTesting
     internal suspend fun createSessionHash(identity: Identity.Mindustry): ByteArray =
         Argon2HashFunction.create(
@@ -475,7 +494,7 @@ class SimpleAccountManager(
             completed = this[AccountAchievementTable.completed])
 
     companion object {
-        private val SESSION_TOKEN_DURATION = Duration.ofDays(7L)
+        private val SESSION_TOKEN_DURATION = 7.days
 
         private val SESSION_TOKEN_PARAMS =
             Argon2Params(

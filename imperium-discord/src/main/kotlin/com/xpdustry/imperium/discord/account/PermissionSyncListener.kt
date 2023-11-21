@@ -50,9 +50,10 @@ class PermissionSyncListener(instances: InstanceManager) : ImperiumApplication.L
             for ((permission, scope) in permissions.getPermissions(snowflake)) {
                 for (element in config.permissions2roles[permission] ?: emptyList()) {
                     val role = discord.getMainServer().getRoleById(element).getOrNull() ?: continue
-                    when (scope) {
-                        is Permission.Scope.True -> updater.addRoleToUser(user, role)
-                        else -> updater.removeRoleFromUser(user, role)
+                    if (scope.matches(config.name)) {
+                        updater.addRoleToUser(user, role)
+                    } else {
+                        updater.removeRoleFromUser(user, role)
                     }
                 }
             }
