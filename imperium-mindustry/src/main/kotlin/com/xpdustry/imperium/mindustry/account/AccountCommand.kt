@@ -31,8 +31,6 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.security.permission.Permission
-import com.xpdustry.imperium.common.security.permission.PermissionManager
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -67,11 +65,9 @@ private val OLD_USERNAME = stateKey<String>("old_username")
 private val OLD_PASSWORD = stateKey<String>("old_password")
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-
-    private val permissions = instances.get<PermissionManager>()
     private val manager = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
-    private val loginInterface = createLoginInterface(instances.get(), manager, permissions)
+    private val loginInterface = createLoginInterface(instances.get(), manager)
     private val registerInterface = createRegisterInterface(instances.get(), manager)
     private val migrateInterface = createMigrateInterface(instances.get(), manager)
     private val changePasswordInterface = createPasswordChangeInterface(instances.get(), manager)
@@ -194,7 +190,6 @@ private class PlayerCoroutineExceptionHandler(
 private fun createLoginInterface(
     plugin: MindustryPlugin,
     manager: AccountManager,
-    permissions: PermissionManager
 ): Interface {
     val usernameInterface = TextInputInterface.create(plugin)
     val passwordInterface = TextInputInterface.create(plugin)
@@ -224,10 +219,7 @@ private fun createLoginInterface(
                         view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
                     is AccountResult.Success -> {
                         view.viewer.sendMessage("You have been logged in!")
-                        // Grants admin to moderators
-                        view.viewer.admin =
-                            permissions.hasPermission(
-                                view.viewer.identity, Permission.SEE_USER_INFO) || view.viewer.admin
+                        view.viewer.tryGrantAdmin(manager)
                     }
                     is AccountResult.WrongPassword,
                     AccountResult.NotFound -> {

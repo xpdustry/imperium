@@ -30,7 +30,11 @@ data class User(
     var timesJoined: Int = 0,
     var lastJoin: Instant,
 ) {
-    data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>)
+    data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>) {
+        companion object {
+            val EMPTY = NamesAndAddresses(emptySet(), emptySet())
+        }
+    }
 
     enum class Setting(val default: Boolean, val description: String) {
         SHOW_WELCOME_MESSAGE(true, "Show the welcome message when joining the server."),

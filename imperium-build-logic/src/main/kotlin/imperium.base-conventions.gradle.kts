@@ -43,7 +43,6 @@ dependencies {
 
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.testcontainers.mongodb)
     testImplementation(libs.testcontainers.rabbitmq)
 }
 

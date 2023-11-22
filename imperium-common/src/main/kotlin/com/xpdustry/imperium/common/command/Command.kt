@@ -17,12 +17,12 @@
  */
 package com.xpdustry.imperium.common.command
 
-import com.xpdustry.imperium.common.security.permission.Permission
+import com.xpdustry.imperium.common.account.Rank
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class Command(val path: Array<String>, val permission: Permission = Permission.EVERYONE)
+annotation class Command(val path: Array<String>, val rank: Rank = Rank.EVERYONE)
 
 private val PATH_ELEMENT_REGEX = Regex("^[a-zA-Z](-?[a-zA-Z0-9])*$")
 

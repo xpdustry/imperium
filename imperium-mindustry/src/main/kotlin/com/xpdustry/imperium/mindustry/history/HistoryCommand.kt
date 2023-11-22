@@ -262,6 +262,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         else author.team.name.lowercase() + " " + author.unit.name
     }
 
+    // TODO Use our permission system
     private fun canSeeUuid(sender: CommandSender): Boolean =
         sender.isConsole || sender.player.admin()
 

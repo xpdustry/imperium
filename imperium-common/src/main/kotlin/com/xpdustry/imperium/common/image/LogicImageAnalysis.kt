@@ -31,6 +31,7 @@ interface LogicImageAnalysis {
     suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Boolean
 }
 
+// TODO Upload images to S3 for debugging
 internal class SimpleLogicImageAnalysis(
     private val analysis: ImageAnalysis,
 ) : LogicImageAnalysis, ImperiumApplication.Listener {

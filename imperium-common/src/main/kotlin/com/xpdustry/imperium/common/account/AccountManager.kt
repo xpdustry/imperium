@@ -44,6 +44,8 @@ import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.toJavaDuration
+import kotlin.time.toKotlinDuration
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -88,6 +90,7 @@ interface AccountManager {
         identity: Identity.Mindustry
     ): AccountResult
 
+    // TODO Move these in a account session manager
     suspend fun login(
         username: String,
         password: CharArray,
@@ -98,6 +101,7 @@ interface AccountManager {
 
     suspend fun logout(identity: Identity.Mindustry, all: Boolean = false): AccountResult
 
+    // TODO Move the following methods in a account stat manager
     suspend fun progress(
         identity: Identity.Mindustry,
         achievement: Account.Achievement,
@@ -111,8 +115,11 @@ interface AccountManager {
     suspend fun incrementGames(snowflake: Snowflake): Boolean
 
     suspend fun incrementPlaytime(snowflake: Snowflake, duration: Duration): Boolean
+
+    suspend fun setRank(snowflake: Snowflake, rank: Rank)
 }
 
+@Serializable
 data class AchievementCompletedMessage(
     val account: Snowflake,
     val achievement: Account.Achievement
@@ -278,6 +285,9 @@ class SimpleAccountManager(
                     it[playtime] = oldAccount[LegacyAccountTable.playtime]
                     it[games] = oldAccount[LegacyAccountTable.games]
                     it[legacy] = true
+                    it[rank] =
+                        if (oldAccount[LegacyAccountTable.verified]) Rank.VERIFIED
+                        else Rank.EVERYONE
                 }
 
             val oldAchievements =
@@ -472,6 +482,25 @@ class SimpleAccountManager(
             } != 0
         }
 
+    override suspend fun setRank(snowflake: Snowflake, rank: Rank) =
+        provider.newSuspendTransaction {
+            val current =
+                AccountTable.slice(AccountTable.rank)
+                    .select { AccountTable.id eq snowflake }
+                    .firstOrNull()
+                    ?.get(AccountTable.rank)
+            if (current == rank) {
+                return@newSuspendTransaction
+            }
+            val changed =
+                AccountTable.update({ AccountTable.id eq snowflake }) {
+                    it[AccountTable.rank] = rank
+                } != 0
+            if (changed) {
+                messenger.publish(RankChangeEvent(snowflake), local = true)
+            }
+        }
+
     @VisibleForTesting
     internal suspend fun createSessionHash(identity: Identity.Mindustry): ByteArray =
         Argon2HashFunction.create(
@@ -484,9 +513,10 @@ class SimpleAccountManager(
             username = this[AccountTable.username],
             discord = this[AccountTable.discord],
             games = this[AccountTable.games],
-            playtime = this[AccountTable.playtime],
+            playtime = this[AccountTable.playtime].toKotlinDuration(),
             creation = this[AccountTable.id].value.timestamp,
-            legacy = this[AccountTable.legacy])
+            legacy = this[AccountTable.legacy],
+            rank = this[AccountTable.rank])
 
     private fun ResultRow.toAchievementProgression() =
         Account.Achievement.Progression(

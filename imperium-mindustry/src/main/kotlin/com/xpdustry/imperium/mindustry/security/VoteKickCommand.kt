@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Greedy
@@ -28,7 +29,6 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
-import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -44,7 +44,6 @@ import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import java.net.InetAddress
-import java.time.Duration
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -83,7 +82,7 @@ class VoteKickCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
-    @Command(["vote", "c"], Role.MODERATOR)
+    @Command(["vote", "c"], Rank.MODERATOR)
     @ClientSide
     private fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))
@@ -126,14 +125,13 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
-        val duration = Duration.ofMinutes(NetServer.kickDuration / 60L)
         punishments.punish(
             config.server.identity,
             Punishment.Target(
                 session.objective.target.ip().toInetAddress(), session.objective.target.uuid()),
             "Votekick: ${session.objective.reason}",
             Punishment.Type.BAN,
-            duration,
+            NetServer.kickDuration.seconds,
         )
     }
 

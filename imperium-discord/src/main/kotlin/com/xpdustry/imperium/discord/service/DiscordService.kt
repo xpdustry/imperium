@@ -18,9 +18,9 @@
 package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.security.permission.Permission
 import java.util.concurrent.TimeUnit
 import org.javacord.api.DiscordApi
 import org.javacord.api.DiscordApiBuilder
@@ -33,7 +33,7 @@ interface DiscordService {
 
     fun getMainServer(): Server
 
-    fun isAllowed(user: User, permission: Permission): Boolean
+    suspend fun isAllowed(user: User, rank: Rank): Boolean
 }
 
 class SimpleDiscordService(
@@ -62,14 +62,9 @@ class SimpleDiscordService(
 
     override fun getMainServer(): Server = api.servers.first()
 
-    override fun isAllowed(user: User, permission: Permission): Boolean {
-        if (permission == Permission.EVERYONE) {
-            return true
-        }
-        return getMainServer().getRoles(user).any {
-            config.roles2permissions[it.id]?.contains(permission) == true
-        }
-    }
+    override suspend fun isAllowed(user: User, rank: Rank): Boolean =
+        (rank == Rank.EVERYONE) ||
+            ((accounts.findByDiscord(user.id)?.rank ?: Rank.EVERYONE) >= rank)
 
     override fun onImperiumExit() {
         api.disconnect().orTimeout(15L, TimeUnit.SECONDS).join()

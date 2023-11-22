@@ -47,7 +47,7 @@ interface MindustryMapManager {
 
     suspend fun findMapByName(name: String): MindustryMap?
 
-    suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap>
+    suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap>
 
     suspend fun findRatingByMapAndUser(map: Snowflake, user: Snowflake): MindustryMap.Rating?
 
@@ -91,7 +91,10 @@ class SimpleMindustryMapManager(
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        provider.newTransaction { SchemaUtils.create(MindustryMapTable, MindustryMapRatingTable) }
+        provider.newTransaction {
+            SchemaUtils.create(
+                MindustryMapTable, MindustryMapRatingTable, MindustryMapGamemodeTable)
+        }
     }
 
     override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
@@ -108,10 +111,10 @@ class SimpleMindustryMapManager(
                 ?.toMindustryMap()
         }
 
-    override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap> =
+    override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.select { MindustryMapGamemodeTable.gamemode eq gamemode }
-                .asFlow()
+            (MindustryMapTable leftJoin MindustryMapGamemodeTable)
+                .select { (MindustryMapGamemodeTable.gamemode eq gamemode) }
                 .map { it.toMindustryMap() }
         }
 

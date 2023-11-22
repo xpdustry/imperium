@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.common.hash
 
 import com.xpdustry.imperium.common.misc.encodeBase64
-import com.xpdustry.imperium.common.serialization.ByteArrayAsBsonBinary
 import java.util.Objects
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -30,8 +29,8 @@ fun Hash(hash: ByteArray, salt: ByteArray, params: HashParams): Hash =
 class Hash
 internal constructor(
     val params: HashParams,
-    @SerialName("hash") private val _hash: ByteArrayAsBsonBinary,
-    @SerialName("salt") private val _salt: ByteArrayAsBsonBinary,
+    @SerialName("hash") private val _hash: ByteArray,
+    @SerialName("salt") private val _salt: ByteArray,
 ) {
     val hash: ByteArray
         get() = _hash.clone()

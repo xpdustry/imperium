@@ -15,30 +15,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security.permission
+package com.xpdustry.imperium.common.account
 
-enum class Permission {
+import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.snowflake.Snowflake
+import kotlinx.serialization.Serializable
+
+enum class Rank {
     EVERYONE,
     VERIFIED,
-    MANAGE_USERS,
-    MANAGE_MAPS,
-    SEE_USER_INFO,
+    OVERSEER,
+    MODERATOR,
     ADMIN,
     OWNER;
 
-    sealed interface Scope {
-        fun matches(server: String): Boolean
-
-        data object False : Scope {
-            override fun matches(server: String) = false
-        }
-
-        data object True : Scope {
-            override fun matches(server: String) = true
-        }
-
-        data class Some(val servers: Set<String>) : Scope {
-            override fun matches(server: String) = servers.contains(server)
-        }
-    }
+    fun getRanksBelow() = entries.slice(0..this.ordinal)
 }
+
+// TODO Change to generic account change event ?
+@Serializable data class RankChangeEvent(val account: Snowflake) : Message

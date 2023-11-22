@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.discord.command
 
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -27,7 +28,6 @@ import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.security.permission.Permission
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.getTranslatedTextOrNull
@@ -49,7 +49,6 @@ import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
-import org.bson.types.ObjectId
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.ServerChannel
 import org.javacord.api.entity.user.User
@@ -75,12 +74,12 @@ class SlashCommandRegistry(
     init {
         registerHandler(String::class, STRING_TYPE_HANDLER)
         registerHandler(Int::class, INT_TYPE_HANDLER)
+        registerHandler(Long::class, LONG_TYPE_HANDLER)
         registerHandler(Boolean::class, BOOLEAN_TYPE_HANDLER)
         registerHandler(User::class, USER_TYPE_HANDLER)
         registerHandler(ServerChannel::class, CHANNEL_TYPE_HANDLER)
         registerHandler(Attachment::class, ATTACHMENT_TYPE_HANDLER)
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
-        registerHandler(ObjectId::class, OBJECT_ID_TYPE_HANDLER)
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
     }
@@ -95,7 +94,7 @@ class SlashCommandRegistry(
                 val responder =
                     event.slashCommandInteraction.respondLater(command.ephemeral).await()
 
-                if (!discord.isAllowed(event.slashCommandInteraction.user, command.permission)) {
+                if (!discord.isAllowed(event.slashCommandInteraction.user, command.rank)) {
                     responder
                         .setContent(":warning: **You do not have permission to use this command.**")
                         .update()
@@ -224,7 +223,7 @@ class SlashCommandRegistry(
                     CommandEdge(
                         container,
                         function,
-                        command.permission,
+                        command.rank,
                         arguments,
                         !function.hasAnnotation<NonEphemeral>(),
                     ),
@@ -403,7 +402,7 @@ private class CommandNode(val name: String, val parent: CommandNode?) {
 private data class CommandEdge(
     val container: Any,
     val function: KFunction<*>,
-    val permission: Permission,
+    val rank: Rank,
     val arguments: List<Argument<*>>,
     val ephemeral: Boolean,
 ) {
@@ -441,6 +440,16 @@ private val INT_TYPE_HANDLER =
                 annotation.findAnnotation<Min>()?.value ?: Int.MIN_VALUE.toLong())
             builder.setLongMaxValue(
                 annotation.findAnnotation<Max>()?.value ?: Int.MAX_VALUE.toLong())
+        }
+    }
+
+private val LONG_TYPE_HANDLER =
+    object : TypeHandler<Long>(SlashCommandOptionType.LONG) {
+        override fun parse(option: SlashCommandInteractionOption) = option.longValue.getOrNull()
+
+        override fun apply(builder: SlashCommandOptionBuilder, annotation: KAnnotatedElement) {
+            annotation.findAnnotation<Min>()?.value?.let(builder::setLongMinValue)
+            annotation.findAnnotation<Max>()?.value?.let(builder::setLongMaxValue)
         }
     }
 
@@ -496,17 +505,6 @@ private val DURATION_TYPE_HANDLER =
                 throw OptionParsingException("The duration is zero")
             }
             return duration
-        }
-    }
-
-private val OBJECT_ID_TYPE_HANDLER =
-    object : TypeHandler<ObjectId>(SlashCommandOptionType.STRING) {
-        override fun parse(option: SlashCommandInteractionOption): ObjectId? {
-            val input = option.stringValue.getOrNull() ?: return null
-            if (ObjectId.isValid(input)) {
-                return ObjectId(input)
-            }
-            throw OptionParsingException("Invalid ObjectId")
         }
     }
 

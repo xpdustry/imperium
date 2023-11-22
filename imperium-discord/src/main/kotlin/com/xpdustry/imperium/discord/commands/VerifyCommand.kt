@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.commands
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -31,9 +32,6 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.security.permission.Permission
-import com.xpdustry.imperium.common.security.permission.PermissionManager
-import com.xpdustry.imperium.common.security.permission.PermissionResult
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
@@ -45,7 +43,6 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val config = instances.get<ImperiumConfig>()
     private val accounts = instances.get<AccountManager>()
-    private val permissions = instances.get<PermissionManager>()
     private val api = instances.get<DiscordService>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
@@ -90,14 +87,8 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        when (permissions.setPermission(data.first, Permission.VERIFIED, Permission.Scope.True)) {
-            PermissionResult.SUCCESS -> Unit
-            else -> {
-                actor.respond("An unexpected error occurred while verifying you.")
-                logger.error("Failed to set user permission ${actor.user.name}")
-            }
-        }
-
+        accounts.setRank(
+            data.first, accounts.findByDiscord(actor.user.id)!!.rank.coerceAtLeast(Rank.VERIFIED))
         messenger.publish(VerificationMessage(data.first, data.second, code, true))
         actor.respond("You have been verified!")
     }

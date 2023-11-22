@@ -53,6 +53,7 @@ tasks.shadowJar {
     mergeServiceFiles()
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
+        exclude(dependency(libs.sqlite.get()))
     }
 }
 

@@ -42,7 +42,6 @@ tasks.shadowJar {
         into("com/xpdustry/imperium/bundles/")
     }
 
-    mergeServiceFiles()
     minimize {
         exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
         exclude(dependency("org.slf4j:slf4j-.*:.*"))
@@ -50,6 +49,8 @@ tasks.shadowJar {
         exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
+        exclude(dependency(libs.sqlite.get()))
+        exclude(dependency(libs.exposed.jdbc.get()))
     }
 }
 

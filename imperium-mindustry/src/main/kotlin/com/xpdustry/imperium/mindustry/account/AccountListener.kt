@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
@@ -31,8 +32,8 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
-import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
@@ -64,7 +65,10 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     internal fun onGameOver(event: EventType.GameOverEvent) {
         Entities.getPlayers().forEach { player ->
-            ImperiumScope.MAIN.launch { accounts.incrementGames(accounts.findByIdentity()) }
+            ImperiumScope.MAIN.launch {
+                val account = accounts.findByIdentity(player.identity) ?: return@launch
+                accounts.incrementGames(account.snowflake)
+            }
         }
     }
 
@@ -72,10 +76,13 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     internal fun onPlayerLeave(event: EventType.PlayerLeave) =
         ImperiumScope.MAIN.launch {
             val now = System.currentTimeMillis()
-            accounts.updateByIdentity(event.player.identity) { account ->
-                account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
+
+            val account = accounts.findByIdentity(event.player.identity)
+            if (account != null) {
+                accounts.incrementPlaytime(
+                    account.snowflake, (now - (playtime.remove(event.player) ?: now)).milliseconds)
             }
-            if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
+            if (users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
                 accounts.logout(event.player.identity)
             }
         }

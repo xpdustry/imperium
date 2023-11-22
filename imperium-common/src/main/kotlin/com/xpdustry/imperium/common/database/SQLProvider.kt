@@ -82,7 +82,7 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL) :
         }
     }
 
-    // Goofy name, but meh, who cares at this point
+    // TODO Goofy name, but meh, who cares at this point
     private interface Handle {
         fun start(): Database
 

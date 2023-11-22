@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.common.security.permission.Permission
 import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
@@ -75,7 +75,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     true)
                 .addField("Times Joined", user.timesJoined.toString(), true)
                 .apply {
-                    if (discord.isAllowed(actor.user, Permission.SEE_USER_INFO)) {
+                    if (discord.isAllowed(actor.user, Rank.ADMIN)) {
                         addField("Uuid", "`${user.uuid}`", true)
                         addField("Last Address", user.lastAddress.hostAddress, true)
                         addField(

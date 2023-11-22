@@ -18,6 +18,8 @@
 package com.xpdustry.imperium.discord.account
 
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -25,44 +27,39 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
-import com.xpdustry.imperium.common.security.permission.Permission
-import com.xpdustry.imperium.common.security.permission.PermissionChangeMessage
-import com.xpdustry.imperium.common.security.permission.PermissionManager
-import com.xpdustry.imperium.common.security.permission.PermissionResult
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.jvm.optionals.getOrNull
 import kotlinx.coroutines.future.await
 
-class PermissionSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class RankSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
-    private val permissions = instances.get<PermissionManager>()
     private val messenger = instances.get<Messenger>()
     private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PermissionChangeMessage> { (snowflake) ->
-            val id = accounts.findBySnowflake(snowflake)?.discord ?: return@consumer
-            val user = discord.api.getUserById(id).exceptionally { null }.await() ?: return@consumer
+        messenger.consumer<RankChangeEvent> { (snowflake) ->
+            val account = accounts.findBySnowflake(snowflake) ?: return@consumer
+            val userId = account.discord ?: return@consumer
+            val user =
+                discord.api.getUserById(userId).exceptionally { null }.await() ?: return@consumer
             val updater = discord.getMainServer().createUpdater()
 
-            for ((permission, scope) in permissions.getPermissions(snowflake)) {
-                for (element in config.permissions2roles[permission] ?: emptyList()) {
-                    val role = discord.getMainServer().getRoleById(element).getOrNull() ?: continue
-                    if (scope.matches(config.name)) {
-                        updater.addRoleToUser(user, role)
-                    } else {
-                        updater.removeRoleFromUser(user, role)
-                    }
-                }
+            for (rank in account.rank.getRanksBelow()) {
+                val roleId = config.ranks2roles[rank] ?: continue
+                val role = discord.getMainServer().getRoleById(roleId).getOrNull() ?: continue
+                updater.addRoleToUser(user, role)
+                logger.debug(
+                    "Added role {} (rank={}) to {} (id={})", role.name, rank, user.name, user.id)
             }
 
             updater.update().await()
         }
     }
 
-    @Command(["sync-permissions"])
+    @Command(["sync-rank"])
     private suspend fun onSyncRolesCommand(sender: InteractionSender.Slash) {
         val account = accounts.findByDiscord(sender.user.id)
         if (account == null) {
@@ -70,22 +67,16 @@ class PermissionSyncListener(instances: InstanceManager) : ImperiumApplication.L
             return
         }
 
-        val map = permissions.getPermissions(account.snowflake).toMutableMap()
-        map.putIfAbsent(Permission.EVERYONE, Permission.Scope.True)
-        map.putIfAbsent(Permission.VERIFIED, Permission.Scope.True)
-
+        var rank = Rank.EVERYONE
         for (role in sender.user.getRoles(discord.getMainServer())) {
-            for (permission in config.roles2permissions[role.id] ?: emptyList()) {
-                map.putIfAbsent(permission, Permission.Scope.True)
-            }
+            rank = maxOf(Rank.EVERYONE, config.roles2ranks[role.id] ?: Rank.EVERYONE)
         }
 
-        val result = permissions.setPermissions(account.snowflake, map)
-        if (result != PermissionResult.SUCCESS) {
-            sender.respond("Failed to synchronize your permission: **$result**")
-            return
-        }
+        accounts.setRank(account.snowflake, rank)
+        sender.respond("Your account rank have been synchronized with your discord roles.")
+    }
 
-        sender.respond("Your discord roles have been synchronized with your account.")
+    companion object {
+        private val logger by LoggerDelegate()
     }
 }

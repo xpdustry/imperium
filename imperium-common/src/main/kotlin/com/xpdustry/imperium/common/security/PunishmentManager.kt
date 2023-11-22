@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security.punishment
+package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -25,13 +25,13 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
-import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
+import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.serialization.Serializable
@@ -214,7 +214,7 @@ class SimplePunishmentManager(
             target = target,
             reason = this[PunishmentTable.reason],
             type = this[PunishmentTable.type],
-            duration = this[PunishmentTable.duration],
+            duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
             pardon = pardon)
     }
 }

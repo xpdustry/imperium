@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
@@ -52,9 +53,13 @@ interface UserManager {
 
     suspend fun incrementJoins(identity: Identity.Mindustry)
 
-    suspend fun getSettings(identity: Identity.Mindustry): Map<User.Setting, Boolean>
+    suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean
+
+    suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean>
 
     suspend fun setSetting(identity: Identity.Mindustry, setting: User.Setting, value: Boolean)
+
+    suspend fun setSettings(identity: Identity.Mindustry, settings: Map<User.Setting, Boolean>)
 }
 
 class SimpleUserManager(
@@ -127,11 +132,22 @@ class SimpleUserManager(
             }
         }
 
-    override suspend fun getSettings(identity: Identity.Mindustry): Map<User.Setting, Boolean> =
+    // TODO Cache settings
+    override suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
+        provider.newSuspendTransaction {
+            (UserSettingTable leftJoin UserTable)
+                .slice(UserSettingTable.value)
+                .select { UserTable.uuid eq uuid.toShortMuuid() }
+                .firstOrNull()
+                ?.get(UserSettingTable.value)
+                ?: setting.default
+        }
+
+    override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> =
         provider.newSuspendTransaction {
             (UserSettingTable leftJoin UserTable)
                 .slice(UserSettingTable.setting, UserSettingTable.value)
-                .select { UserTable.uuid eq identity.uuid.toShortMuuid() }
+                .select { UserTable.uuid eq uuid.toShortMuuid() }
                 .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
         }
 
@@ -146,6 +162,19 @@ class SimpleUserManager(
                 it[user] = snowflake
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
+            }
+        }
+
+    override suspend fun setSettings(
+        identity: Identity.Mindustry,
+        settings: Map<User.Setting, Boolean>
+    ): Unit =
+        provider.newSuspendTransaction {
+            val snowflake = ensureUserExists(identity)
+            UserSettingTable.batchInsert(settings.entries) { (setting, value) ->
+                this[UserSettingTable.user] = snowflake
+                this[UserSettingTable.setting] = setting
+                this[UserSettingTable.value] = value
             }
         }
 

@@ -22,6 +22,6 @@ import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.Column
 
 abstract class SnowflakeIdTable(name: String = "") : IdTable<Long>(name) {
-    final override val id: Column<EntityID<Long>> = long("snowflake").entityId()
+    final override val id: Column<EntityID<Long>> = long("id").entityId()
     final override val primaryKey = PrimaryKey(id)
 }

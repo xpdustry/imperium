@@ -47,8 +47,8 @@ import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnApiIoDetection
 import com.xpdustry.imperium.common.network.VpnDetection
-import com.xpdustry.imperium.common.security.punishment.PunishmentManager
-import com.xpdustry.imperium.common.security.punishment.SimplePunishmentManager
+import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.SimplePunishmentManager
 import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.MinioStorageBucket

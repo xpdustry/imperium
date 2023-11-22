@@ -15,14 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security.punishment
+package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.snowflake.Snowflake
+import com.xpdustry.imperium.common.snowflake.timestamp
 import java.net.Inet4Address
 import java.net.InetAddress
-import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
 data class Punishment(
     val snowflake: Snowflake,
@@ -30,9 +32,20 @@ data class Punishment(
     val target: Target,
     val reason: String,
     val type: Type,
-    val duration: Duration?,
+    val duration: Duration,
     val pardon: Pardon?,
 ) {
+    val expired: Boolean
+        get() = pardon != null || expiration < Instant.now()
+
+    val expiration: Instant
+        get() =
+            if (duration.isInfinite()) Instant.MAX
+            else snowflake.timestamp.plus(duration.toJavaDuration()) ?: Instant.MAX
+
+    val permanent: Boolean
+        get() = duration.isInfinite()
+
     data class Target(
         val address: InetAddress,
         val uuid: MindustryUUID? = null,

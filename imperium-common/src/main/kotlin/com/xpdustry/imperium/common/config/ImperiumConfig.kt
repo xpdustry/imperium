@@ -18,10 +18,10 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.permission.Permission
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration
@@ -166,18 +166,17 @@ sealed interface ServerConfig {
     data class Discord(
         val token: Secret,
         val categories: Categories,
-        val roles2permissions: Map<Long, List<Permission>> = emptyMap(),
+        val ranks2roles: Map<Rank, Long> = emptyMap(),
         val channels: Channels,
         val mindustryVersion: String = "145",
     ) : ServerConfig {
         override val name: String = "discord"
 
-        val permissions2roles: Map<Permission, List<Long>> = buildMap {
-            for ((role, permissions) in roles2permissions.entries) {
-                for (permission in permissions) {
-                    put(permission, (get(permission) ?: emptyList()) + role)
-                }
-            }
+        val roles2ranks: Map<Long, Rank> =
+            ranks2roles.entries.associate { (key, value) -> value to key }
+
+        init {
+            require(ranks2roles.size == roles2ranks.size) { "some ranks have a shared role id" }
         }
 
         data class Categories(

@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.snowflake.Snowflake
-import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration
 
 data class Account(
     val snowflake: Snowflake,
@@ -29,10 +29,8 @@ data class Account(
     val playtime: Duration,
     val creation: Instant,
     val legacy: Boolean,
+    val rank: Rank
 ) {
-    val verified: Boolean
-        get() = discord != null
-
     enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
         ACTIVE(7, true),
         HYPER(30, true),

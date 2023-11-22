@@ -17,18 +17,17 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
-import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
-import com.xpdustry.imperium.common.security.permission.Permission
-import com.xpdustry.imperium.common.security.punishment.Punishment
-import com.xpdustry.imperium.common.security.punishment.PunishmentManager
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
@@ -46,10 +45,9 @@ import org.javacord.api.entity.message.embed.EmbedBuilder
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
-    private val analysis = instances.get<LogicImageAnalysis>()
     private val tracker = instances.get<PlayerTracker>()
 
-    @Command(["punishment", "list"], Permission.MANAGE_USERS)
+    @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
         actor: InteractionSender,
         target: String,
@@ -88,7 +86,11 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                         .addField("Type", punishment.type.toString(), true)
                         .addField("Reason", punishment.reason, false)
                         .addField("Timestamp", punishment.snowflake.timestamp.toString(), true)
-                        .addField("Duration", punishment.duration?.toString() ?: "Permanent", true)
+                        .addField(
+                            "Duration",
+                            if (punishment.duration.isInfinite()) "Permanent"
+                            else punishment.duration.toString(),
+                            true)
                         .addField("Pardoned", if (punishment.pardon != null) "Yes" else "No", true)
                 if (punishment.pardon != null) {
                     embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
@@ -101,7 +103,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(*embeds)
     }
 
-    @Command(["ban"], Permission.MANAGE_USERS)
+    @Command(["ban"], Rank.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender,
         target: String,
@@ -111,7 +113,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration.value)
     }
 
-    @Command(["mute"], Permission.MANAGE_USERS)
+    @Command(["mute"], Rank.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender,
         target: String,
@@ -148,7 +150,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("$verb user $target.")
     }
 
-    @Command(["pardon"], Permission.MANAGE_USERS)
+    @Command(["pardon"], Rank.MODERATOR)
     private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
         val snowflake = id.toLongOrNull()
         if (snowflake == null) {

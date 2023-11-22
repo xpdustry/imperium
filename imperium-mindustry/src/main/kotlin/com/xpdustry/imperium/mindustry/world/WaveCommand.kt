@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Max
@@ -24,7 +25,6 @@ import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.security.permission.Role
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
@@ -59,7 +59,7 @@ class WaveCommand(instances: InstanceManager) :
             }
         }
 
-    @Command(["wave", "set", "countdown"], Role.MODERATOR)
+    @Command(["wave", "set", "countdown"], Rank.MODERATOR)
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSetTime(sender: CommandSender, duration: Duration) {
@@ -67,7 +67,7 @@ class WaveCommand(instances: InstanceManager) :
         sender.sendMessage("Set wave countdown to $duration")
     }
 
-    @Command(["wave", "set", "counter"], Role.MODERATOR)
+    @Command(["wave", "set", "counter"], Rank.MODERATOR)
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
@@ -76,7 +76,7 @@ class WaveCommand(instances: InstanceManager) :
         sender.sendMessage("Set wave to counter $wave")
     }
 
-    @Command(["wave", "run"], Role.MODERATOR)
+    @Command(["wave", "run"], Rank.MODERATOR)
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onWaveRun(sender: CommandSender, @Min(1) @Max(20) count: Int = 1) {

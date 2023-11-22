@@ -34,8 +34,8 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.misc.toInetAddress
-import com.xpdustry.imperium.common.security.punishment.Punishment
-import com.xpdustry.imperium.common.security.punishment.PunishmentManager
+import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
@@ -46,10 +46,10 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.Color
-import java.time.Duration
 import java.time.Instant
 import java.util.Queue
 import java.util.concurrent.PriorityBlockingQueue
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.Job
@@ -401,7 +401,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                                 Punishment.Target(player.ip().toInetAddress(), player.uuid()),
                                 "Placing NSFW images",
                                 Punishment.Type.BAN,
-                                Duration.ofDays(3L))
+                                3.days)
                             return@broadcast
                         }
 
@@ -412,9 +412,7 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                                 Punishment.Target(address, element.author),
                                 "Placing NSFW images",
                                 Punishment.Type.BAN,
-                                Duration.ofDays(3L),
-                                extra,
-                            )
+                                3.days)
                             return@broadcast
                         }
 

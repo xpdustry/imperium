@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.discord.command
 
-import com.xpdustry.imperium.common.security.permission.Permission
+import com.xpdustry.imperium.common.account.Rank
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class ButtonCommand(val name: String, val permission: Permission = Permission.EVERYONE)
+annotation class ButtonCommand(val name: String, val rank: Rank = Rank.EVERYONE)
