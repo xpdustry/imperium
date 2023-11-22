@@ -62,9 +62,19 @@ class SimpleDiscordService(
 
     override fun getMainServer(): Server = api.servers.first()
 
-    override suspend fun isAllowed(user: User, rank: Rank): Boolean =
-        (rank == Rank.EVERYONE) ||
-            ((accounts.findByDiscord(user.id)?.rank ?: Rank.EVERYONE) >= rank)
+    override suspend fun isAllowed(user: User, rank: Rank): Boolean {
+        if (rank == Rank.EVERYONE) {
+            return true
+        }
+        if ((accounts.findByDiscord(user.id)?.rank ?: Rank.EVERYONE) >= rank) {
+            return true
+        }
+        var max = Rank.EVERYONE
+        for (role in user.getRoles(getMainServer())) {
+            max = maxOf(max, config.roles2ranks[role.id] ?: Rank.EVERYONE)
+        }
+        return max >= rank
+    }
 
     override fun onImperiumExit() {
         api.disconnect().orTimeout(15L, TimeUnit.SECONDS).join()

@@ -33,7 +33,6 @@ data class ImperiumConfig(
     val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
     val server: ServerConfig = ServerConfig.None,
-    val storage: StorageConfig = StorageConfig.Minio(),
     val imageAnalysis: ImageAnalysisConfig = ImageAnalysisConfig.None,
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
@@ -188,17 +187,6 @@ sealed interface ServerConfig {
             val maps: Long,
         )
     }
-}
-
-sealed interface StorageConfig {
-    data class Minio(
-        val host: String = "localhost",
-        val port: Int = 9000,
-        val secure: Boolean = false,
-        val accessKey: Secret = Secret("minioadmin"),
-        val secretKey: Secret = Secret("minioadmin"),
-        val bucket: String = "imperium",
-    ) : StorageConfig
 }
 
 sealed interface ImageAnalysisConfig {

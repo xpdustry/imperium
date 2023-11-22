@@ -28,7 +28,6 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
-import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
@@ -51,8 +50,6 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
 import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
-import com.xpdustry.imperium.common.storage.MinioStorageBucket
-import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.user.SimpleUserManager
@@ -93,12 +90,6 @@ fun CommonModule() =
             }
         }
 
-        single<StorageBucket> {
-            when (val config = get<ImperiumConfig>().storage) {
-                is StorageConfig.Minio -> MinioStorageBucket(config, get())
-            }
-        }
-
         single<SQLProvider> {
             when (val config = get<ImperiumConfig>().database) {
                 is DatabaseConfig.SQL -> SimpleSQLProvider(config, get("directory"))
@@ -107,7 +98,7 @@ fun CommonModule() =
 
         single<AccountManager> { SimpleAccountManager(get(), get(), get()) }
 
-        single<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get()) }
+        single<MindustryMapManager> { SimpleMindustryMapManager(get(), get()) }
 
         single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 

@@ -31,6 +31,7 @@ object MindustryMapTable : SnowflakeIdTable("mindustry_map") {
     val author = varchar("author", 64).nullable()
     val width = integer("width")
     val height = integer("height")
+    val file = blob("file")
     val playtime = duration("playtime").default(Duration.ZERO)
     val games = integer("games").default(0)
     val lastUpdate = timestamp("last_update").defaultExpression(CurrentTimestamp())

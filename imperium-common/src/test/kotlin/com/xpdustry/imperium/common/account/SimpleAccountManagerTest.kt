@@ -34,6 +34,7 @@ import com.xpdustry.imperium.common.message.TestMessenger
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.security.Identity
 import java.net.InetAddress
+import java.nio.file.Path
 import java.time.Duration
 import java.util.Base64
 import kotlin.random.Random
@@ -48,8 +49,10 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 class SimpleAccountManagerTest {
+    @TempDir private lateinit var tempDir: Path
     private lateinit var application: SimpleImperiumApplication
     private lateinit var manager: SimpleAccountManager
 
@@ -255,10 +258,10 @@ class SimpleAccountManagerTest {
         module("account-test") {
             include(CommonModule())
             single<ImperiumConfig> {
-                ImperiumConfig(
-                    database = DatabaseConfig.SQL(host = "file:test?mode=memory&cache=shared"))
+                ImperiumConfig(database = DatabaseConfig.SQL(host = ":memory:"))
             }
             single<Messenger> { TestMessenger() }
+            single<Path>("directory") { tempDir }
         }
 
     companion object {

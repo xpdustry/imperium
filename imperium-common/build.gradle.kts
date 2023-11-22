@@ -14,7 +14,6 @@ dependencies {
     api(libs.slf4j.api)
     api(libs.password4j)
     api(libs.rabbitmq.client)
-    api(libs.minio)
     api(libs.snowflake.id)
     api(libs.okhttp)
     runtimeOnly(libs.okio) // Fixes CVE in okhttp

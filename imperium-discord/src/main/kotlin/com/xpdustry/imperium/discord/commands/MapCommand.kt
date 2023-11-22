@@ -37,7 +37,6 @@ import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import kotlin.jvm.optionals.getOrNull
-import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
@@ -65,7 +64,21 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val (meta, preview) = content.getMapMetadataWithPreview(map.asInputStream()).getOrThrow()
+        if (map.size > MAX_MAP_FILE_SIZE) {
+            actor.respond(
+                "The map file is bigger than ${MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
+            return
+        }
+
+        val (meta, preview) =
+            map.asInputStream().use { content.getMapMetadataWithPreview(it).getOrThrow() }
+
+        if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
+            actor.respond(
+                "The map is bigger than $MAX_MAP_SIDE_SIZE blocs, please submit reasonably sized maps.")
+            return
+        }
+
         val channel =
             discord.getMainServer().getTextChannelById(config.channels.maps).getOrNull()
                 ?: throw IllegalStateException("Map submission channel not found")
@@ -253,12 +266,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         if (map.gamemodes.isEmpty()) "`none`"
                         else map.gamemodes.joinToString { it.name.lowercase() })
                     .setImage(
-                        content
-                            .getMapMetadataWithPreview(maps.getMapObject(map.snowflake).getData())
-                            .getOrThrow()
-                            .second,
-                    ),
-            )
+                        maps.getMapInputStream(map.snowflake)!!.use {
+                            content.getMapMetadataWithPreview(it).getOrThrow().second
+                        }))
             addComponents(
                 ActionRow.of(
                     Button.primary(MAP_DOWNLOAD_BUTTON, "Download", ImperiumEmojis.DOWN_ARROW)),
@@ -268,21 +278,22 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ButtonCommand(MAP_DOWNLOAD_BUTTON)
     private suspend fun onMapDownload(actor: InteractionSender.Button) {
-        val url =
-            actor.message.embeds
-                .first()
-                .getFieldValue("Identifier")
-                ?.let { maps.getMapObject(it.toLong()) }
-                ?.takeIf { it.exists }
-                ?.getDownloadUrl(1.hours)
+        val stream =
+            actor.message.embeds.first().getFieldValue("Identifier")?.let {
+                maps.getMapInputStream(it.toLong())
+            }
 
-        if (url === null) {
-            actor.respond("Failed to get download url")
+        if (stream === null) {
+            actor.respond("The map is no longer available")
             return
         }
 
-        actor.respond(
-            "Here go, click on this [link]($url) to download the map. It will expire in 1 hour.")
+        stream.use {
+            actor.respond {
+                setContent("Here you go.")
+                addAttachment(it, "map.msav")
+            }
+        }
     }
 
     @Command(["map", "gamemode", "add"], Rank.ADMIN)
@@ -340,5 +351,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
         private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
+        private const val MAX_MAP_SIDE_SIZE = 512
+        private const val MAX_MAP_FILE_SIZE = 50 * 1024
     }
 }

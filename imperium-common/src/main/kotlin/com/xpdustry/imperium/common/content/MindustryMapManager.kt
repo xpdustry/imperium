@@ -22,13 +22,12 @@ import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
-import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toSet
+import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -39,6 +38,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.update
 
 interface MindustryMapManager {
@@ -77,7 +77,7 @@ interface MindustryMapManager {
         stream: InputStream
     ): Boolean
 
-    suspend fun getMapObject(map: Snowflake): StorageBucket.S3Object
+    suspend fun getMapInputStream(map: Snowflake): InputStream?
 
     suspend fun searchMapByName(query: String): Flow<MindustryMap>
 
@@ -86,7 +86,6 @@ interface MindustryMapManager {
 
 class SimpleMindustryMapManager(
     private val provider: SQLProvider,
-    private val storage: StorageBucket,
     private val generator: SnowflakeGenerator
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
@@ -99,14 +98,16 @@ class SimpleMindustryMapManager(
 
     override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.select { MindustryMapTable.id eq snowflake }
+            MindustryMapTable.sliceWithoutFile()
+                .select { MindustryMapTable.id eq snowflake }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.select { MindustryMapTable.name eq name }
+            MindustryMapTable.sliceWithoutFile()
+                .select { MindustryMapTable.name eq name }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
@@ -114,6 +115,7 @@ class SimpleMindustryMapManager(
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
         provider.newSuspendTransaction {
             (MindustryMapTable leftJoin MindustryMapGamemodeTable)
+                .sliceWithoutFile()
                 .select { (MindustryMapGamemodeTable.gamemode eq gamemode) }
                 .map { it.toMindustryMap() }
         }
@@ -132,7 +134,7 @@ class SimpleMindustryMapManager(
 
     override suspend fun findAllMaps(): Flow<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll().asFlow().map { it.toMindustryMap() }
+            MindustryMapTable.sliceWithoutFile().selectAll().asFlow().map { it.toMindustryMap() }
         }
 
     override suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double =
@@ -183,8 +185,8 @@ class SimpleMindustryMapManager(
                 it[MindustryMapTable.author] = author
                 it[MindustryMapTable.width] = width
                 it[MindustryMapTable.height] = height
+                it[file] = ExposedBlob(stream)
             }
-            getMapObject(snowflake).putData(stream)
             snowflake
         }
 
@@ -203,21 +205,22 @@ class SimpleMindustryMapManager(
                     it[MindustryMapTable.author] = author
                     it[MindustryMapTable.width] = width
                     it[MindustryMapTable.height] = height
+                    it[file] = ExposedBlob(stream)
                 }
-            if (rows == 0) {
-                false
-            } else {
-                getMapObject(snowflake).putData(stream)
-                true
-            }
+            rows != 0
         }
 
-    override suspend fun getMapObject(map: Snowflake): StorageBucket.S3Object =
-        storage.getObject("maps", "$map.msav")
+    override suspend fun getMapInputStream(map: Snowflake): InputStream? =
+        MindustryMapTable.slice(MindustryMapTable.file)
+            .select { MindustryMapTable.id eq map }
+            .firstOrNull()
+            ?.get(MindustryMapTable.file)
+            ?.inputStream
 
     override suspend fun searchMapByName(query: String): Flow<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.select { MindustryMapTable.name like "%$query%" }
+            MindustryMapTable.sliceWithoutFile()
+                .select { MindustryMapTable.name like "%$query%" }
                 .asFlow()
                 .map { it.toMindustryMap() }
         }
@@ -238,12 +241,13 @@ class SimpleMindustryMapManager(
             true
         }
 
+    private fun ColumnSet.sliceWithoutFile() =
+        MindustryMapTable.slice(columns - MindustryMapTable.file)
+
     private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
         provider.newSuspendTransaction {
             MindustryMapGamemodeTable.select { MindustryMapGamemodeTable.map eq map }
-                .asFlow()
-                .map { it[MindustryMapGamemodeTable.gamemode] }
-                .toSet()
+                .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
         }
 
     private suspend fun ResultRow.toMindustryMap() =

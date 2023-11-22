@@ -23,7 +23,6 @@ discord4j = "3.2.4"
 password4j = "1.7.1"
 rabbitmq-client = "5.17.0"
 jsoup = "1.16.1"
-minio = "8.5.4"
 javacord = "3.8.0"
 log4j-to-slf4j = "2.20.0"
 snowflake-id = "0.0.2"
@@ -65,7 +64,6 @@ discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "disco
 password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 rabbitmq-client = { module = "com.rabbitmq:amqp-client", version.ref = "rabbitmq-client" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
-minio = { module = "io.minio:minio", version.ref = "minio" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutine" }
 kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlin-coroutine" }
