@@ -255,7 +255,8 @@ class SimpleAccountManagerTest {
         module("account-test") {
             include(CommonModule())
             single<ImperiumConfig> {
-                ImperiumConfig(database = DatabaseConfig.SQL(host = ":memory:"))
+                ImperiumConfig(
+                    database = DatabaseConfig.SQL(host = "file:test?mode=memory&cache=shared"))
             }
             single<Messenger> { TestMessenger() }
         }

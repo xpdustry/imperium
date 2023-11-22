@@ -22,15 +22,14 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import java.sql.Connection
+import java.nio.file.Path
 import java.sql.DriverManager
 import java.sql.SQLException
-import java.util.Properties
+import kotlin.io.path.absolutePathString
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.vendors.SQLiteDialect
 
 interface SQLProvider {
     fun <T> newTransaction(block: () -> T): T
@@ -38,26 +37,42 @@ interface SQLProvider {
     suspend fun <T> newSuspendTransaction(block: suspend () -> T): T
 }
 
-class SimpleSQLProvider(private val config: DatabaseConfig.SQL) :
+class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val directory: Path) :
     SQLProvider, ImperiumApplication.Listener {
 
     private lateinit var database: Database
-    private lateinit var handle: Handle
+    private lateinit var source: HikariDataSource
 
     override fun onImperiumInit() {
-        handle =
-            when (config.type) {
-                DatabaseConfig.SQL.Type.SQLITE -> SQLiteHandle()
-                DatabaseConfig.SQL.Type.MARIADB -> MariadbHandle()
-            }
+        val hikari = HikariConfig()
+        hikari.poolName = "imperium-sql-pool"
+        hikari.minimumIdle = config.poolMin
+        hikari.maximumPoolSize = config.poolMax
+        hikari.driverClassName = config.type.driver
 
-        database = handle.start()
+        when (config.type) {
+            DatabaseConfig.SQL.Type.SQLITE -> {
+                var host = config.host
+                if (config.host.endsWith(".sqlite")) {
+                    host = directory.resolve(config.host).absolutePathString()
+                }
+                hikari.jdbcUrl = "jdbc:sqlite:$host"
+            }
+            DatabaseConfig.SQL.Type.MARIADB -> {
+                hikari.jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"
+                hikari.username = config.username
+                hikari.password = config.password.value
+            }
+        }
+
+        source = HikariDataSource(hikari)
+        database = Database.connect(source)
         TransactionManager.defaultDatabase = null
         unregisterDriver(config.type.driver)
     }
 
     override fun onImperiumExit() {
-        handle.close()
+        source.close()
     }
 
     override fun <T> newTransaction(block: () -> T): T = transaction { block() }
@@ -79,60 +94,6 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL) :
                     DriverManager.deregisterDriver(driver)
                 } catch (_: SQLException) {}
             }
-        }
-    }
-
-    // TODO Goofy name, but meh, who cares at this point
-    private interface Handle {
-        fun start(): Database
-
-        fun close()
-    }
-
-    inner class SQLiteHandle : Handle {
-
-        private lateinit var connection: NonCloseableConnection
-
-        override fun start(): Database {
-            val constructor =
-                javaClass.classLoader
-                    .loadClass("org.sqlite.jdbc4.JDBC4Connection")
-                    .getConstructor(String::class.java, String::class.java, Properties::class.java)
-            connection =
-                NonCloseableConnection(
-                    constructor.newInstance("jdbc:sqlite:${config.host}", config.host, Properties())
-                        as Connection)
-            val config =
-                org.jetbrains.exposed.sql.DatabaseConfig.invoke {
-                    explicitDialect = SQLiteDialect()
-                }
-            return Database.connect({ connection }, config)
-        }
-
-        override fun close() {
-            connection.close0()
-        }
-    }
-
-    inner class MariadbHandle : Handle {
-
-        private lateinit var source: HikariDataSource
-
-        override fun start(): Database {
-            val hikari = HikariConfig()
-            hikari.poolName = "imperium-sql-pool"
-            hikari.minimumIdle = config.poolMin
-            hikari.maximumPoolSize = config.poolMax
-            hikari.driverClassName = DatabaseConfig.SQL.Type.MARIADB.driver
-            hikari.jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"
-            hikari.username = config.username
-            hikari.password = config.password.value
-            source = HikariDataSource(hikari)
-            return Database.connect(source)
-        }
-
-        override fun close() {
-            source.close()
         }
     }
 }

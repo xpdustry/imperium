@@ -101,7 +101,7 @@ fun CommonModule() =
 
         single<SQLProvider> {
             when (val config = get<ImperiumConfig>().database) {
-                is DatabaseConfig.SQL -> SimpleSQLProvider(config)
+                is DatabaseConfig.SQL -> SimpleSQLProvider(config, get("directory"))
             }
         }
 
