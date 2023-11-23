@@ -17,14 +17,15 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
-import com.xpdustry.imperium.common.account.User
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
@@ -64,7 +65,7 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
                         val settings = view.state[SETTINGS]!!.toMutableMap()
                         settings[setting] = !value
                         ImperiumScope.MAIN.launch {
-                            saveUserSettings(view.viewer.uuid(), settings)
+                            users.setSettings(view.viewer.identity, settings)
                             view.state[SETTINGS] = settings
                             runMindustryThread { view.open() }
                         }
@@ -77,19 +78,11 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     private suspend fun loadUserSettings(uuid: String): Map<User.Setting, Boolean> {
-        val user = users.findByUuidOrCreate(uuid)
-        val settings = mutableMapOf<User.Setting, Boolean>()
+        val settings = users.getSettings(uuid).toMutableMap()
         for (setting in User.Setting.entries) {
-            settings[setting] = user.settings[setting.name] ?: setting.default
+            settings.putIfAbsent(setting, setting.default)
         }
         return settings
-    }
-
-    private suspend fun saveUserSettings(uuid: String, settings: Map<User.Setting, Boolean>) {
-        users.updateOrCreateByUuid(uuid) { user ->
-            user.settings.clear()
-            settings.entries.toMutableList().forEach { user.settings[it.key.name] = it.value }
-        }
     }
 
     companion object {

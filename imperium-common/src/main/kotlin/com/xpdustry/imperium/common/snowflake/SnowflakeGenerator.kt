@@ -15,11 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.database.snowflake
+package com.xpdustry.imperium.common.snowflake
 
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.database.snowflake.SimpleSnowflakeGenerator.Companion.IMPERIUM_EPOCH_OFFSET
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import de.mkammerer.snowflakeid.SnowflakeIdGenerator
 import de.mkammerer.snowflakeid.options.Options
@@ -27,24 +25,19 @@ import de.mkammerer.snowflakeid.structure.Structure
 import de.mkammerer.snowflakeid.time.MonotonicTimeSource
 import java.time.Duration
 import java.time.Instant
-import kotlinx.coroutines.withContext
 
 typealias Snowflake = Long
 
-// Given the fact that the snowflake is structured as (timestamp, generatorId, sequenceId),
-// we can extract the timestamp by shifting the snowflake to the right by the number of bits used by
-// the generatorId
-// and sequenceId, and then converting it to an Instant.
 val Snowflake.timestamp: Instant
     get() =
         Instant.ofEpochMilli(
                 this shr
                     (SimpleSnowflakeGenerator.STRUCTURE.generatorBits +
                         SimpleSnowflakeGenerator.STRUCTURE.sequenceBits))
-            .plus(IMPERIUM_EPOCH_OFFSET)
+            .plus(SimpleSnowflakeGenerator.IMPERIUM_EPOCH_OFFSET)
 
 interface SnowflakeGenerator {
-    suspend fun generate(): Snowflake
+    fun generate(): Snowflake
 }
 
 class SimpleSnowflakeGenerator(config: ImperiumConfig) : SnowflakeGenerator {
@@ -63,8 +56,7 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : SnowflakeGenerator {
         }
     }
 
-    override suspend fun generate(): Snowflake =
-        withContext(ImperiumScope.MAIN.coroutineContext) { generator.next() }
+    override fun generate(): Snowflake = generator.next()
 
     companion object {
         // The creation date of the chaotic neutral server

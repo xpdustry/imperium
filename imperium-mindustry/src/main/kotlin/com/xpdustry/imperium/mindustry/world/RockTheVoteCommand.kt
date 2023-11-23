@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.Events
-import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -84,7 +84,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["rtv", "c"], Role.MODERATOR)
+    @Command(["rtv", "c"], Rank.MODERATOR)
     @ClientSide
     private fun onRtvCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)

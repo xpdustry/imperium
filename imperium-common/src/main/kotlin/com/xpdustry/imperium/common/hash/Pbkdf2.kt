@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.hash
 import com.password4j.HashBuilder
 import com.password4j.PBKDF2Function
 import com.password4j.Password
+import com.password4j.SaltGenerator
 import com.password4j.SecureString
 import com.password4j.types.Hmac
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -70,26 +71,26 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
 object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
 
     override suspend fun create(chars: CharArray, params: PBKDF2Params): Hash =
-        create0(Password.hash(SecureString(chars)).addRandomSalt(params.saltLength), params)
+        create0(
+            Password.hash(SecureString(chars)), SaltGenerator.generate(params.saltLength), params)
 
     override suspend fun create(bytes: ByteArray, params: PBKDF2Params): Hash =
-        create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
-
-    override suspend fun create(chars: CharArray, params: PBKDF2Params, salt: CharArray): Hash =
-        create0(Password.hash(SecureString(chars)).addSalt(salt.concatToString()), params)
+        create0(Password.hash(bytes), SaltGenerator.generate(params.saltLength), params)
 
     override suspend fun create(chars: CharArray, params: PBKDF2Params, salt: ByteArray): Hash =
-        create0(Password.hash(SecureString(chars)).addSalt(salt), params)
+        create0(Password.hash(SecureString(chars)), salt, params)
 
     override suspend fun create(bytes: ByteArray, params: PBKDF2Params, salt: ByteArray): Hash =
-        create0(Password.hash(bytes).addSalt(salt), params)
+        create0(Password.hash(bytes), salt, params)
 
-    private suspend fun create0(builder: HashBuilder, params: PBKDF2Params): Hash =
+    private suspend fun create0(builder: HashBuilder, salt: ByteArray, params: PBKDF2Params): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
             val result =
-                builder.with(
-                    PBKDF2Function.getInstance(
-                        params.hmac.toP4J(), params.iterations, params.length))
+                builder
+                    .addSalt(salt)
+                    .with(
+                        PBKDF2Function.getInstance(
+                            params.hmac.toP4J(), params.iterations, params.length))
             Hash(result.bytes, result.saltBytes, params)
         }
 

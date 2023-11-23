@@ -4,30 +4,32 @@ plugins {
 }
 
 dependencies {
-    api(libs.mongodb.driver.kotlin.coroutine)
     api(libs.guava)
     api(libs.gson)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
-    api(libs.deepl) {
-        exclude("org.apache.commons", "commons-math3")
-    }
-    api(libs.slf4j.api)
+    api(libs.deepl)
     api(libs.password4j)
     api(libs.rabbitmq.client)
-    api(libs.minio)
     api(libs.snowflake.id)
     api(libs.okhttp)
-    runtimeOnly(libs.okio) // Fixes CVE in okhttp
+    api(libs.caffeine)
+
+    api(libs.slf4j.api)
+    testApi(libs.slf4j.simple)
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.jdk8)
-    api(libs.kotlinx.serialization.json)
-    api(libs.mongodb.bson.kotlinx)
-
-    testApi(libs.slf4j.simple)
     testApi(libs.kotlinx.coroutines.test)
-    testApi(libs.kotlinx.serialization.json)
-    testApi(libs.mongodb.bson.kotlinx)
+    api(libs.kotlinx.serialization.json)
+
     testApi(libs.classgraph)
+
+    api(libs.exposed.core)
+    api(libs.exposed.jdbc)
+    api(libs.exposed.java.time)
+    api(libs.exposed.json)
+    api(libs.hikari)
+    runtimeOnly(libs.mariadb)
+    testRuntimeOnly(libs.h2)
 }

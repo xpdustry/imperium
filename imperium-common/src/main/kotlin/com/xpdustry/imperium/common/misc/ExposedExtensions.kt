@@ -15,29 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security
+package com.xpdustry.imperium.common.misc
 
-import com.xpdustry.imperium.common.database.snowflake.Snowflake
-import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.serialization.SerializableObjectId
-import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.FieldSet
+import org.jetbrains.exposed.sql.Op
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
+import org.jetbrains.exposed.sql.select
 
-@Serializable
-data class PunishmentMessage(
-    val author: Identity,
-    val type: Type,
-    val punishment: Snowflake,
-    val extra: Extra
-) : Message {
-    enum class Type {
-        CREATE,
-        PARDON
-    }
-
-    @Serializable
-    sealed interface Extra {
-        @Serializable data object None : Extra
-
-        @Serializable data class Nsfw(val entry: SerializableObjectId) : Extra
-    }
-}
+fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean = !select(where).empty()

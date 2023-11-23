@@ -18,12 +18,10 @@
 package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
 import java.util.concurrent.TimeUnit
-import org.bson.types.ObjectId
 import org.javacord.api.DiscordApi
 import org.javacord.api.DiscordApiBuilder
 import org.javacord.api.entity.intent.Intent
@@ -35,9 +33,7 @@ interface DiscordService {
 
     fun getMainServer(): Server
 
-    suspend fun syncRoles(user: User, account: ObjectId)
-
-    fun isAllowed(user: User, role: Role): Boolean
+    suspend fun isAllowed(user: User, rank: Rank): Boolean
 }
 
 class SimpleDiscordService(
@@ -66,31 +62,18 @@ class SimpleDiscordService(
 
     override fun getMainServer(): Server = api.servers.first()
 
-    override suspend fun syncRoles(user: User, account: ObjectId) {
-        val roles =
-            user.getRoles(getMainServer()).mapNotNullTo(mutableSetOf()) { role ->
-                config.roles.entries.find { (_, id) -> id == role.id }?.key
-            }
-        roles += Role.VERIFIED
-        roles += Role.EVERYONE
-
-        accounts.updateById(account) {
-            it.roles.clear()
-            it.roles += roles
-        }
-    }
-
-    override fun isAllowed(user: User, role: Role): Boolean {
-        if (role == Role.EVERYONE) {
+    override suspend fun isAllowed(user: User, rank: Rank): Boolean {
+        if (rank == Rank.EVERYONE) {
             return true
         }
-        // TODO This is awful, use a reverse map
-        return getMainServer()
-            .getRoles(user)
-            .mapNotNull { discordRole ->
-                config.roles.entries.find { it.value == discordRole.id }?.key
-            }
-            .containsRole(role)
+        if ((accounts.findByDiscord(user.id)?.rank ?: Rank.EVERYONE) >= rank) {
+            return true
+        }
+        var max = Rank.EVERYONE
+        for (role in user.getRoles(getMainServer())) {
+            max = maxOf(max, config.roles2ranks[role.id] ?: Rank.EVERYONE)
+        }
+        return max >= rank
     }
 
     override fun onImperiumExit() {

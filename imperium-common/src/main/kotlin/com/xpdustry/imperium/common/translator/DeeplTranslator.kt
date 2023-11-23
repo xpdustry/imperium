@@ -130,6 +130,7 @@ class DeeplTranslator(config: ImperiumConfig, version: ImperiumVersion) :
         }
     }
 
+    // TODO Make it synchronous
     private suspend fun fetchLanguages(type: LanguageType) =
         withContext(ImperiumScope.MAIN.coroutineContext) {
             translator.getLanguages(type).map { Locale.forLanguageTag(it.code) }

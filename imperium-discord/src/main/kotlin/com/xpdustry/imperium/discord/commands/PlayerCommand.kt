@@ -17,14 +17,15 @@
  */
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.UserManager
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.snowflake.timestamp
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -33,7 +34,6 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toCollection
-import org.bson.types.ObjectId
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -43,28 +43,30 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["player", "info"])
     suspend fun onPlayerInfo(actor: InteractionSender, query: String) {
+        // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
         val user =
             users.findByUuid(query)
                 ?: query
                     .toLongOrNull()
                     ?.let { tracker.getPlayerEntry(it) }
                     ?.let { users.findByUuid(it.player.uuid) }
-                    ?: if (ObjectId.isValid(query)) users.findById(ObjectId(query)) else null
+                    ?: if (query.toLongOrNull() != null) users.findBySnowflake(query.toLong())
+                else null
         if (user == null) {
             actor.respond("Player not found.")
             return
         }
-
+        val details = users.findNamesAndAddressesBySnowflake(user.snowflake)
         actor.respond(
             EmbedBuilder()
                 .setTitle("Player Info")
-                .addField("ID", "`${user._id}`", true)
+                .addField("ID", "`${user.snowflake}`", true)
                 .addField("Last Name", "`${user.lastName}`", true)
-                .addField("Names", user.names.joinToString(transform = { "`$it`" }), true)
+                .addField("Names", details.names.joinToString(transform = { "`$it`" }), true)
                 .addField(
                     "First Join",
                     DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-                        user.firstJoin.atOffset(ZoneOffset.UTC)),
+                        user.snowflake.timestamp.atOffset(ZoneOffset.UTC)),
                     true)
                 .addField(
                     "Last Join",
@@ -73,12 +75,12 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     true)
                 .addField("Times Joined", user.timesJoined.toString(), true)
                 .apply {
-                    if (discord.isAllowed(actor.user, Role.ADMINISTRATOR)) {
+                    if (discord.isAllowed(actor.user, Rank.ADMIN)) {
                         addField("Uuid", "`${user.uuid}`", true)
-                        addField("Last Address", user.lastAddress!!.hostAddress, true)
+                        addField("Last Address", user.lastAddress.hostAddress, true)
                         addField(
                             "Addresses",
-                            user.addresses.joinToString(transform = InetAddress::getHostAddress),
+                            details.addresses.joinToString(transform = InetAddress::getHostAddress),
                             true)
                     }
                 },
@@ -88,7 +90,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command(["player", "search"])
     @NonEphemeral
     suspend fun onPlayerSearch(actor: InteractionSender, query: String) {
-        val users = users.searchUser(query).take(21).toCollection(mutableListOf())
+        val users = users.searchUserByName(query).take(21).toCollection(mutableListOf())
         if (users.isEmpty()) {
             actor.respond("No players found.")
             return
@@ -104,7 +106,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 "No players found."
             } else {
                 users.joinToString(separator = "\n") {
-                    "- `${it.lastName!!.stripMindustryColors()}` (`${it._id}`)"
+                    "- `${it.lastName.stripMindustryColors()}` (`${it.snowflake}`)"
                 }
             }
         if (hasMore) {

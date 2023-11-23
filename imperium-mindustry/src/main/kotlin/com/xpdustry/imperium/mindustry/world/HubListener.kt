@@ -24,7 +24,7 @@ import com.google.gson.TypeAdapter
 import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
-import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -150,7 +150,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         return gson.fromJson(file.toFile().reader(), PORTAL_LIST_TYPE_TOKEN.type)
     }
 
-    @Command(["portal", "delete"], Role.OWNER)
+    @Command(["portal", "delete"], Rank.OWNER)
     @ClientSide
     private fun onHubPortalListCommand(sender: CommandSender, name: String) {
         if (!portals.containsKey(name)) {
@@ -162,7 +162,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Deleted portal $name.")
     }
 
-    @Command(["portal", "create"], Role.OWNER)
+    @Command(["portal", "create"], Rank.OWNER)
     @ClientSide
     private fun onHubPortalBuildCommand(
         sender: CommandSender,
@@ -180,7 +180,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Started building portal $name.")
     }
 
-    @Command(["portal", "undo"], Role.OWNER)
+    @Command(["portal", "undo"], Rank.OWNER)
     @ClientSide
     private fun onHubPortalUndoCommand(sender: CommandSender) {
         val builder = building[sender.player]
@@ -196,7 +196,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Removed last point.")
     }
 
-    @Command(["portal", "cancel"], Role.OWNER)
+    @Command(["portal", "cancel"], Rank.OWNER)
     @ClientSide
     private fun onHubPortalCancelCommand(sender: CommandSender) {
         if (building[sender.player] == null) {
@@ -206,7 +206,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         building.remove(sender.player)
     }
 
-    @Command(["portal", "list"], Role.OWNER)
+    @Command(["portal", "list"], Rank.OWNER)
     @ClientSide
     private fun onHubPortalListCommand(sender: CommandSender) {
         if (portals.isEmpty()) {
@@ -223,7 +223,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             })
     }
 
-    @Command(["portal", "debug"], Role.OWNER)
+    @Command(["portal", "debug"], Rank.OWNER)
     @ClientSide
     private fun onHubPortalDebugCommand(sender: CommandSender) {
         val debug = debug[sender.player] ?: false

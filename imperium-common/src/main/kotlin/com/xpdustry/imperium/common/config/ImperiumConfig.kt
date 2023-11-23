@@ -18,22 +18,22 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
-import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val translator: TranslatorConfig = TranslatorConfig.None,
-    val database: DatabaseConfig = DatabaseConfig.Mongo(),
+    val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
     val server: ServerConfig = ServerConfig.None,
-    val storage: StorageConfig = StorageConfig.Minio(),
     val imageAnalysis: ImageAnalysisConfig = ImageAnalysisConfig.None,
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
@@ -58,15 +58,26 @@ sealed interface TranslatorConfig {
 }
 
 sealed interface DatabaseConfig {
-    data class Mongo(
+    data class SQL(
         val host: String = "localhost",
-        val port: Int = 27017,
-        val username: String = "",
-        val password: Secret = Secret(""),
-        val ssl: Boolean = false,
+        val port: Short = 3306,
         val database: String = "imperium",
-        val authDatabase: String = "admin",
-    ) : DatabaseConfig
+        val username: String = "root",
+        val password: Secret = Secret("root"),
+        val poolMin: Int = 2,
+        val poolMax: Int = 8,
+        val type: Type = Type.MARIADB
+    ) : DatabaseConfig {
+        init {
+            require(poolMin > 0) { "poolMin can't be below 1, got $poolMin" }
+            require(poolMax >= poolMin) { "poolMax can't be lower than poolMin, got $poolMax" }
+        }
+
+        enum class Type(val driver: String) {
+            MARIADB("org.mariadb.jdbc.Driver"),
+            H2("org.h2.Driver")
+        }
+    }
 }
 
 sealed interface MessengerConfig {
@@ -113,6 +124,7 @@ sealed interface ServerConfig {
         data class History(
             val tileEntriesLimit: Int = 10,
             val playerEntriesLimit: Int = 200,
+            val doubleClickDelay: Duration = 200.milliseconds
         )
 
         data class World(
@@ -154,12 +166,19 @@ sealed interface ServerConfig {
 
     data class Discord(
         val token: Secret,
-        val roles: Map<Role, Long> = emptyMap(),
         val categories: Categories,
+        val ranks2roles: Map<Rank, Long> = emptyMap(),
         val channels: Channels,
         val mindustryVersion: String = "145",
     ) : ServerConfig {
         override val name: String = "discord"
+
+        val roles2ranks: Map<Long, Rank> =
+            ranks2roles.entries.associate { (key, value) -> value to key }
+
+        init {
+            require(ranks2roles.size == roles2ranks.size) { "some ranks have a shared role id" }
+        }
 
         data class Categories(
             val liveChat: Long,
@@ -170,17 +189,6 @@ sealed interface ServerConfig {
             val maps: Long,
         )
     }
-}
-
-sealed interface StorageConfig {
-    data class Minio(
-        val host: String = "localhost",
-        val port: Int = 9000,
-        val secure: Boolean = false,
-        val accessKey: Secret = Secret("minioadmin"),
-        val secretKey: Secret = Secret("minioadmin"),
-        val bucket: String = "imperium",
-    ) : StorageConfig
 }
 
 sealed interface ImageAnalysisConfig {

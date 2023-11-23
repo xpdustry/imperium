@@ -17,44 +17,56 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.database.snowflake.Snowflake
-import com.xpdustry.imperium.common.database.snowflake.timestamp
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.serialization.SerializableInetAddress
-import com.xpdustry.imperium.common.serialization.SerializableJDuration
-import com.xpdustry.imperium.common.serialization.SerializableJInstant
+import com.xpdustry.imperium.common.snowflake.Snowflake
+import com.xpdustry.imperium.common.snowflake.timestamp
+import java.net.Inet4Address
+import java.net.InetAddress
 import java.time.Instant
-import kotlinx.serialization.Serializable
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
 
-@Serializable
 data class Punishment(
-    override val _id: Snowflake,
-    var target: Target,
-    var reason: String,
+    val snowflake: Snowflake,
+    val author: Author,
+    val target: Target,
+    val reason: String,
     val type: Type,
-    var duration: SerializableJDuration?,
-    var pardon: Pardon? = null,
-) : Entity<Snowflake> {
-    val pardoned: Boolean
-        get() = pardon != null
-
+    val duration: Duration,
+    val pardon: Pardon?,
+) {
     val expired: Boolean
-        get() = pardoned || expiration < Instant.now()
+        get() = pardon != null || expiration < Instant.now()
 
     val expiration: Instant
-        get() = duration?.let { _id.timestamp.plus(it) } ?: Instant.MAX
+        get() =
+            if (duration.isInfinite()) Instant.MAX
+            else snowflake.timestamp.plus(duration.toJavaDuration()) ?: Instant.MAX
 
     val permanent: Boolean
-        get() = duration == null
+        get() = duration.isInfinite()
 
-    val timestamp: Instant
-        get() = _id.timestamp
+    data class Target(
+        val address: InetAddress,
+        val uuid: MindustryUUID? = null,
+        val mask: Byte = 0
+    ) {
+        init {
+            val size = if (address is Inet4Address) 32 else 128
+            require(mask in 0..size) { "mask must be in range 0..$size" }
+        }
+    }
 
-    @Serializable
-    data class Target(val address: SerializableInetAddress, val uuid: MindustryUUID? = null)
+    data class Author(val identifier: Long, val type: Type) {
+        enum class Type {
+            DISCORD,
+            ACCOUNT,
+            USER,
+            CONSOLE
+        }
+    }
 
-    @Serializable data class Pardon(val timestamp: SerializableJInstant, val reason: String)
+    data class Pardon(val timestamp: Instant, val reason: String, val author: Author)
 
     enum class Type {
         MUTE,

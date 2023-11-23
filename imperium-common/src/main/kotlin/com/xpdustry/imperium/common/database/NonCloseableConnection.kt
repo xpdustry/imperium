@@ -15,22 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.account
+package com.xpdustry.imperium.common.database
 
-import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.hash.Hash
-import com.xpdustry.imperium.common.serialization.SerializableJDuration
-import java.time.Duration
-import kotlinx.serialization.Serializable
+import java.sql.Connection
+import java.sql.SQLException
 
-typealias HashedUsername = String
+class NonCloseableConnection(private val delegate: Connection) : Connection by delegate {
 
-@Serializable
-data class LegacyAccount(
-    override val _id: HashedUsername,
-    var password: Hash,
-    var verified: Boolean = false,
-    var games: Int = 0,
-    var playtime: SerializableJDuration = Duration.ZERO,
-    val achievements: MutableSet<Achievement> = mutableSetOf(),
-) : Entity<HashedUsername>
+    @Throws(SQLException::class) fun close0() = this.delegate.close()
+
+    @Throws(SQLException::class) override fun close() = Unit
+
+    @Throws(SQLException::class)
+    override fun isWrapperFor(iface: Class<*>): Boolean =
+        iface.isInstance(this.delegate) || this.delegate.isWrapperFor(iface)
+
+    @Throws(SQLException::class)
+    @Suppress("UNCHECKED_CAST")
+    override fun <T> unwrap(iface: Class<T>): T =
+        if (iface.isInstance(this.delegate)) this.delegate as T else this.delegate.unwrap(iface)
+}

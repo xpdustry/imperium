@@ -17,8 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.imperium.common.account.User
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -27,6 +25,8 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.misc.toHexString
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.security.MindustryRules
 import com.xpdustry.imperium.mindustry.ui.Interface

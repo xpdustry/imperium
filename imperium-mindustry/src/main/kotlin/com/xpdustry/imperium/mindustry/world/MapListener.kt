@@ -77,7 +77,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
             val pool =
                 maps
-                    .findMapsByGamemode(config.gamemode)
+                    .findAllMapsByGamemode(config.gamemode)
                     .map {
                         try {
                             downloadMapFromPool(it)
@@ -106,17 +106,16 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
-        val file = cache.resolve("${map._id.toHexString()}_${map.lastUpdate.toEpochMilli()}.msav")
+        val file = cache.resolve("${map.snowflake}_${map.lastUpdate.toEpochMilli()}.msav")
         if (file.notExists()) {
-            logger.debug(
-                "Downloading map {} (id={}) from serer pool.", map.name, map._id.toHexString())
+            logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map.snowflake)
             file.outputStream().use { output ->
-                maps.getMapObject(map._id).getData().use { input -> input.copyTo(output) }
+                maps.getMapInputStream(map.snowflake)!!.use { input -> input.copyTo(output) }
             }
         }
-        logger.debug("Loaded map {} (id={}) from server pool.", map.name, map._id.toHexString())
+        logger.debug("Loaded map {} (id={}) from server pool.", map.name, map.snowflake)
         return MapIO.createMap(Fi(file.toFile()), true).also {
-            it.tags.put("imperium-map-id", map._id.toHexString())
+            it.tags.put("imperium-map-id", map.snowflake.toString())
         }
     }
 

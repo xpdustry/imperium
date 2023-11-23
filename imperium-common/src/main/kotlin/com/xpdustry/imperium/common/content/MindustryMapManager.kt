@@ -17,34 +17,260 @@
  */
 package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.storage.StorageBucket
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.misc.exists
+import com.xpdustry.imperium.common.snowflake.Snowflake
+import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.io.InputStream
+import java.util.function.Supplier
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
-import org.bson.types.ObjectId
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
+import org.jetbrains.exposed.sql.ColumnSet
+import org.jetbrains.exposed.sql.Join
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.avg
+import org.jetbrains.exposed.sql.batchUpsert
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import org.jetbrains.exposed.sql.update
 
 interface MindustryMapManager {
-    suspend fun findMapById(id: ObjectId): MindustryMap?
+
+    suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap?
 
     suspend fun findMapByName(name: String): MindustryMap?
 
-    suspend fun findMapsByGamemode(gamemode: MindustryGamemode): Flow<MindustryMap>
+    suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap>
 
-    suspend fun findRatingByMapAndPlayer(map: ObjectId, player: MindustryUUID): Rating?
+    suspend fun findRatingByMapAndUser(map: Snowflake, user: Snowflake): MindustryMap.Rating?
 
     suspend fun findAllMaps(): Flow<MindustryMap>
 
-    suspend fun computeAverageScoreByMap(map: ObjectId): Double
+    suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double
 
-    suspend fun computeAverageDifficultyByMap(map: ObjectId): Rating.Difficulty
+    suspend fun computeAverageDifficultyByMap(snowflake: Snowflake): MindustryMap.Difficulty
 
-    suspend fun deleteMapById(id: ObjectId): Boolean
+    suspend fun deleteMapById(snowflake: Snowflake): Boolean
 
-    suspend fun saveMap(map: MindustryMap, stream: InputStream)
+    suspend fun createMap(
+        name: String,
+        description: String?,
+        author: String?,
+        width: Int,
+        height: Int,
+        stream: Supplier<InputStream>
+    ): Snowflake
 
-    suspend fun getMapObject(map: ObjectId): StorageBucket.S3Object
+    suspend fun updateMap(
+        snowflake: Snowflake,
+        description: String?,
+        author: String?,
+        width: Int,
+        height: Int,
+        stream: Supplier<InputStream>
+    ): Boolean
 
-    suspend fun updateMapById(id: ObjectId, updater: suspend MindustryMap.() -> Unit)
+    suspend fun getMapInputStream(map: Snowflake): InputStream?
 
-    suspend fun searchMap(query: String): Flow<MindustryMap>
+    suspend fun searchMapByName(query: String): Flow<MindustryMap>
+
+    suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>): Boolean
+}
+
+class SimpleMindustryMapManager(
+    private val provider: SQLProvider,
+    private val generator: SnowflakeGenerator
+) : MindustryMapManager, ImperiumApplication.Listener {
+
+    override fun onImperiumInit() {
+        provider.newTransaction {
+            SchemaUtils.create(
+                MindustryMapTable, MindustryMapRatingTable, MindustryMapGamemodeTable)
+        }
+    }
+
+    override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
+        provider.newSuspendTransaction {
+            MindustryMapTable.sliceWithoutFile()
+                .select { MindustryMapTable.id eq snowflake }
+                .firstOrNull()
+                ?.toMindustryMap()
+        }
+
+    override suspend fun findMapByName(name: String): MindustryMap? =
+        provider.newSuspendTransaction {
+            MindustryMapTable.sliceWithoutFile()
+                .select { MindustryMapTable.name eq name }
+                .firstOrNull()
+                ?.toMindustryMap()
+        }
+
+    override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
+        provider.newSuspendTransaction {
+            (MindustryMapTable leftJoin MindustryMapGamemodeTable)
+                .sliceWithoutFile()
+                .select { (MindustryMapGamemodeTable.gamemode eq gamemode) }
+                .map { it.toMindustryMap() }
+        }
+
+    override suspend fun findRatingByMapAndUser(
+        map: Snowflake,
+        user: Snowflake
+    ): MindustryMap.Rating? =
+        provider.newSuspendTransaction {
+            MindustryMapRatingTable.select {
+                    (MindustryMapRatingTable.map eq map) and (MindustryMapRatingTable.user eq user)
+                }
+                .firstOrNull()
+                ?.toMindustryMapRating()
+        }
+
+    override suspend fun findAllMaps(): Flow<MindustryMap> =
+        provider.newSuspendTransaction {
+            MindustryMapTable.sliceWithoutFile().selectAll().asFlow().map { it.toMindustryMap() }
+        }
+
+    override suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double =
+        provider.newSuspendTransaction {
+            MindustryMapRatingTable.slice(MindustryMapRatingTable.score.avg())
+                .select { MindustryMapRatingTable.map eq snowflake }
+                .firstOrNull()
+                ?.get(MindustryMapRatingTable.score.avg())
+                ?.toDouble()
+                ?: 0.0
+        }
+
+    // The difficulty enum is stored by the ordinal
+    override suspend fun computeAverageDifficultyByMap(
+        snowflake: Snowflake
+    ): MindustryMap.Difficulty =
+        provider.newSuspendTransaction {
+            MindustryMapRatingTable.slice(
+                    MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
+                .select { MindustryMapRatingTable.map eq snowflake }
+                .map {
+                    it[MindustryMapRatingTable.difficulty].ordinal *
+                        it[MindustryMapRatingTable.score]
+                }
+                .average()
+                .let { MindustryMap.Difficulty.entries[it.roundToInt()] }
+        }
+
+    override suspend fun deleteMapById(snowflake: Snowflake): Boolean =
+        provider.newSuspendTransaction {
+            MindustryMapTable.deleteWhere { MindustryMapTable.id eq snowflake } > 0
+        }
+
+    override suspend fun createMap(
+        name: String,
+        description: String?,
+        author: String?,
+        width: Int,
+        height: Int,
+        stream: Supplier<InputStream>
+    ): Snowflake =
+        provider.newSuspendTransaction {
+            val snowflake = generator.generate()
+            MindustryMapTable.insert {
+                it[id] = snowflake
+                it[MindustryMapTable.name] = name
+                it[MindustryMapTable.description] = description
+                it[MindustryMapTable.author] = author
+                it[MindustryMapTable.width] = width
+                it[MindustryMapTable.height] = height
+                it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
+            }
+            snowflake
+        }
+
+    override suspend fun updateMap(
+        snowflake: Snowflake,
+        description: String?,
+        author: String?,
+        width: Int,
+        height: Int,
+        stream: Supplier<InputStream>
+    ): Boolean =
+        provider.newSuspendTransaction {
+            val rows =
+                MindustryMapTable.update({ MindustryMapTable.id eq snowflake }) {
+                    it[MindustryMapTable.description] = description
+                    it[MindustryMapTable.author] = author
+                    it[MindustryMapTable.width] = width
+                    it[MindustryMapTable.height] = height
+                    it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
+                }
+            rows != 0
+        }
+
+    override suspend fun getMapInputStream(map: Snowflake): InputStream? =
+        provider.newSuspendTransaction {
+            MindustryMapTable.slice(MindustryMapTable.file)
+                .select { MindustryMapTable.id eq map }
+                .firstOrNull()
+                ?.get(MindustryMapTable.file)
+                ?.inputStream
+        }
+
+    override suspend fun searchMapByName(query: String): Flow<MindustryMap> =
+        provider.newSuspendTransaction {
+            MindustryMapTable.sliceWithoutFile()
+                .select { MindustryMapTable.name like "%$query%" }
+                .asFlow()
+                .map { it.toMindustryMap() }
+        }
+
+    override suspend fun setMapGamemodes(
+        map: Snowflake,
+        gamemodes: Set<MindustryGamemode>
+    ): Boolean =
+        provider.newSuspendTransaction {
+            if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
+                return@newSuspendTransaction false
+            }
+            MindustryMapGamemodeTable.deleteWhere { MindustryMapGamemodeTable.map eq map }
+            MindustryMapGamemodeTable.batchUpsert(gamemodes) {
+                this[MindustryMapGamemodeTable.map] = map
+                this[MindustryMapGamemodeTable.gamemode] = it
+            }
+            true
+        }
+
+    private fun ColumnSet.sliceWithoutFile() =
+        slice((if (this is Join) table.columns else columns) - MindustryMapTable.file)
+
+    private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
+        provider.newSuspendTransaction {
+            MindustryMapGamemodeTable.slice(MindustryMapGamemodeTable.gamemode)
+                .select { MindustryMapGamemodeTable.map eq map }
+                .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
+        }
+
+    private suspend fun ResultRow.toMindustryMap() =
+        MindustryMap(
+            snowflake = this[MindustryMapTable.id].value,
+            name = this[MindustryMapTable.name],
+            description = this[MindustryMapTable.description],
+            author = this[MindustryMapTable.author],
+            width = this[MindustryMapTable.width],
+            height = this[MindustryMapTable.height],
+            playtime = this[MindustryMapTable.playtime],
+            games = this[MindustryMapTable.games],
+            lastUpdate = this[MindustryMapTable.lastUpdate],
+            gamemodes = getMapGamemodes(this[MindustryMapTable.id].value))
+
+    private fun ResultRow.toMindustryMapRating() =
+        MindustryMap.Rating(
+            user = this[MindustryMapRatingTable.user].value,
+            score = this[MindustryMapRatingTable.score],
+            difficulty = this[MindustryMapRatingTable.difficulty])
 }

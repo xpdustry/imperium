@@ -17,41 +17,32 @@
  */
 package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.database.Entity
-import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.serialization.SerializableJDuration
-import com.xpdustry.imperium.common.serialization.SerializableJInstant
-import com.xpdustry.imperium.common.serialization.SerializableObjectId
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import java.time.Duration
-import kotlinx.serialization.Serializable
-import org.bson.types.ObjectId
+import java.time.Instant
 
-@Serializable
 data class MindustryMap(
-    override val _id: SerializableObjectId = ObjectId(),
-    var name: String,
-    var description: String?,
-    var author: String?,
-    var width: Int,
-    var height: Int,
-    var playtime: SerializableJDuration = Duration.ZERO,
-    var games: Int = 0,
-    var gamemodes: MutableSet<MindustryGamemode> = mutableSetOf(),
-    var lastUpdate: SerializableJInstant = _id.date.toInstant(),
-) : Entity<ObjectId>
-
-@Serializable
-data class Rating(
-    override val _id: SerializableObjectId = ObjectId(),
-    var map: SerializableObjectId,
-    var player: MindustryUUID,
-    var score: Int,
-    var difficulty: Difficulty,
-) : Entity<ObjectId> {
+    val snowflake: Snowflake,
+    val name: String,
+    val description: String?,
+    val author: String?,
+    val width: Int,
+    val height: Int,
+    val playtime: Duration,
+    val games: Int,
+    val lastUpdate: Instant,
+    val gamemodes: Set<MindustryGamemode>
+) {
     enum class Difficulty {
         EASY,
         NORMAL,
         HARD,
         EXPERT
     }
+
+    data class Rating(
+        val user: Snowflake,
+        val score: Int,
+        val difficulty: Difficulty,
+    )
 }

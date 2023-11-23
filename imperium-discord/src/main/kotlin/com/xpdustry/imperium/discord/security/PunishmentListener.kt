@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.discord.security
 
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -28,6 +27,7 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import kotlin.jvm.optionals.getOrNull
@@ -42,32 +42,27 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PunishmentMessage> { message ->
-            val (author, _, id, extra) = message
-            val punishment = punishments.findById(id)!!
-            var user = punishment.target.uuid?.let { users.findByUuid(it) }
-            if (user == null) {
-                user = users.findByLastAddress(punishment.target.address)
-            }
-
+        messenger.consumer<PunishmentMessage> { (author, type, snowflake) ->
+            val punishment = punishments.findBySnowflake(snowflake)!!
+            val user = punishment.target.uuid?.let { users.findByUuid(it) }
             val embed =
                 EmbedBuilder().apply {
-                    when (message.type) {
+                    when (type) {
                         PunishmentMessage.Type.CREATE -> {
                             setColor(Color.RED)
-                            setTitle("Punishment `$id`")
+                            setTitle("Punishment ${punishment.snowflake}")
                             addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
                             addField("Type", punishment.type.toString(), true)
                             addField(
-                                "Duration", punishment.duration?.toString() ?: "`PERMANENT`", true)
+                                "Duration",
+                                if (punishment.duration.isInfinite()) "PERMANENT"
+                                else punishment.duration.toString(),
+                                true)
                             addField("Reason", punishment.reason, false)
-                            if (extra is PunishmentMessage.Extra.Nsfw) {
-                                addField("NSFW Entry ID", extra.entry.toHexString(), false)
-                            }
                         }
                         PunishmentMessage.Type.PARDON -> {
                             setColor(Color.GREEN)
-                            setTitle("Pardoned `$id`")
+                            setTitle("Pardoned ${punishment.snowflake}")
                             addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
                             addField("Type", punishment.type.toString(), true)
                             addField("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)

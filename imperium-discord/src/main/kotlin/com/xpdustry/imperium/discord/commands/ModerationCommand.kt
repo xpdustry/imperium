@@ -17,57 +17,57 @@
  */
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.UserManager
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
-import com.xpdustry.imperium.common.image.LogicImageAnalysis
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.snowflake.timestamp
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.toJavaDuration
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import org.bson.types.ObjectId
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
-    private val analysis = instances.get<LogicImageAnalysis>()
     private val tracker = instances.get<PlayerTracker>()
 
-    @Command(["punishment", "list"], Role.MODERATOR)
+    @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
         actor: InteractionSender,
         target: String,
         @Min(0) page: Int = 0
     ) {
-        val flow =
-            try {
-                val address = target.toInetAddress()
-                punishments.findAllByAddress(address)
-            } catch (e: Exception) {
-                // TODO This is goofy, punishment should store user IDs instead of UUIDs
-                if (ObjectId.isValid(target)) {
-                    users.findById(ObjectId(target))?.uuid?.let { punishments.findAllByUuid(it) }
-                        ?: emptyFlow()
-                } else {
-                    punishments.findAllByUuid(target)
-                }
+        var flow = emptyFlow<Punishment>()
+        val address = target.toInetAddressOrNull()
+        if (address != null) {
+            flow = merge(flow, punishments.findAllByAddress(address))
+        }
+        val long = target.toLongOrNull()
+        if (long != null) {
+            val user = users.findBySnowflake(long)
+            if (user != null) {
+                flow = merge(flow, punishments.findAllByUuid(user.uuid))
             }
+        }
+        if (target.isCRC32Muuid()) {
+            flow = merge(flow, punishments.findAllByUuid(target))
+        }
 
         val result = flow.drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
@@ -80,16 +80,19 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                 val punishment = result[it]
                 val embed =
                     EmbedBuilder()
-                        .setTitle("Punishment `${punishment._id}`")
+                        .setTitle("Punishment `${punishment.snowflake}`")
                         .addField("Target IP", punishment.target.address.hostAddress, true)
                         .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
                         .addField("Type", punishment.type.toString(), true)
                         .addField("Reason", punishment.reason, false)
-                        .addField("Timestamp", punishment.timestamp.toString(), true)
-                        .addField("Duration", punishment.duration?.toString() ?: "Permanent", true)
-                        .addField("Pardoned", if (punishment.pardoned) "Yes" else "No", true)
-                        .setTimestamp(punishment.timestamp)
-                if (punishment.pardoned) {
+                        .addField("Timestamp", punishment.snowflake.timestamp.toString(), true)
+                        .addField(
+                            "Duration",
+                            if (punishment.duration.isInfinite()) "Permanent"
+                            else punishment.duration.toString(),
+                            true)
+                        .addField("Pardoned", if (punishment.pardon != null) "Yes" else "No", true)
+                if (punishment.pardon != null) {
                     embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
                     embed.addField(
                         "Pardon Timestamp", punishment.pardon!!.timestamp.toString(), true)
@@ -100,7 +103,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(*embeds)
     }
 
-    @Command(["ban"], Role.MODERATOR)
+    @Command(["ban"], Rank.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender,
         target: String,
@@ -110,7 +113,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration.value)
     }
 
-    @Command(["mute"], Role.MODERATOR)
+    @Command(["mute"], Rank.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender,
         target: String,
@@ -133,26 +136,21 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             val uuid =
                 target.toLongOrNull()?.let { tracker.getPlayerEntry(it) }?.player?.uuid ?: target
             var user = users.findByUuid(uuid)
-            if (user == null && ObjectId.isValid(target)) {
-                user = users.findById(ObjectId(target))
+            if (user == null && target.toLongOrNull() != null) {
+                user = users.findBySnowflake(target.toLong())
             }
-            if (user?.lastAddress == null) {
+            if (user == null) {
                 actor.respond("Target is not a valid IP address, UUID, TEMP-ID or USER ID.")
                 return
             }
-            lookup = Punishment.Target(user.lastAddress!!, user.uuid)
+            lookup = Punishment.Target(user.lastAddress, user.uuid)
         }
 
-        punishments.punish(
-            actor.user.identity,
-            lookup,
-            reason,
-            type,
-            if (duration.isInfinite()) null else duration.toJavaDuration())
+        punishments.punish(actor.user.identity, lookup, reason, type, duration)
         actor.respond("$verb user $target.")
     }
 
-    @Command(["pardon"], Role.MODERATOR)
+    @Command(["pardon"], Rank.MODERATOR)
     private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
         val snowflake = id.toLongOrNull()
         if (snowflake == null) {
@@ -160,53 +158,19 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             return
         }
 
-        val punishment = punishments.findById(snowflake)
+        val punishment = punishments.findBySnowflake(snowflake)
         if (punishment == null) {
             actor.respond("Punishment not found.")
             return
         }
 
-        if (punishment.pardoned) {
+        if (punishment.pardon != null) {
             actor.respond("Punishment already pardoned.")
             return
         }
 
         punishments.pardon(actor.user.identity, snowflake, reason)
         actor.respond("Pardoned user.")
-    }
-
-    @Command(["punishment", "image", "show"], Role.MODERATOR)
-    private suspend fun onPunishmentNsfwShow(actor: InteractionSender, id: ObjectId) {
-        val result = analysis.findHashedImageById(id)
-        if (result == null) {
-            actor.respond("NSFW Image not found.")
-            return
-        }
-        actor.respond {
-            addAttachmentAsSpoiler(result.second.getData(), "image.jpg")
-            setContent(
-                buildString {
-                    appendLine("**ID**: ${result.first._id.toHexString()}")
-                    appendLine("**Hashes**: ${result.first.hashes.size}")
-                    appendLine("**Unsafe**: ${result.first.unsafe}")
-                },
-            )
-        }
-    }
-
-    @Command(["punishment", "image", "set"], Role.MODERATOR)
-    private suspend fun onPunishmentNsfwMark(
-        actor: InteractionSender,
-        id: ObjectId,
-        unsafe: Boolean
-    ) {
-        val result = analysis.findHashedImageById(id)
-        if (result == null) {
-            actor.respond("NSFW Image not found.")
-            return
-        }
-        analysis.updateSafetyById(result.first._id, unsafe)
-        actor.respond("Updated safety of NSFW to ${if (unsafe) "unsafe" else "safe"}.")
     }
 }
 

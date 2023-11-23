@@ -2,20 +2,6 @@ version: "3.8"
 
 # Docker compose file for local testing
 services:
-  # Mongo is nice :)
-  mongo:
-    image: mongo:6
-    ports:
-      - "27017:27017"
-
-  # Simple frontend for the mongo database available at http://localhost:8081
-  mongo-express:
-    image: mongo-express:latest
-    ports:
-      - "8081:8081"
-    depends_on:
-      - mongo
-
   # The RabbitMQ instance for inter-server communication
   # This image comes with an admin frontend available at http://localhost:15672, login with guest:guest
   rabbitmq:
@@ -24,16 +10,11 @@ services:
       - "5672:5672"
       - "15672:15672"
 
-  # For storing shared files such as maps, admin frontend available at http://localhost:9001,
-  # login with minioadmin:minioadmin
-  minio:
-    image: minio/minio:latest
-    command: server --console-address ":9001" /data
+  # The Mariadb database
+  # login is root:root
+  mariadb:
+    image: mariadb:latest
     ports:
-      - "9000:9000"
-      - "9001:9001"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-      interval: 30s
-      timeout: 20s
-      retries: 3
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root

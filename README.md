@@ -14,18 +14,20 @@ You will need:
 - Java 17
 - Docker
 
-Before doing anything, make sure docker is running.
-Then you can compile the project with `./gradlew build` or specific modules with `./gradlew :imperium-<module>:build`.
+For simply compiling the project, run `./gradlew shadowJar`.
+
+If you also want to run the tests, first, make sure docker is running, then run `./gradlew build`.
+
+If you only want to compile one of the subprojects,
+just prefix the task name with the subproject name such as `./gradlew :imperium-discord:shadowJar`.
 
 ## Testing
 
-For local testing, you will need a mongo database, a rabbitmq server and a S3 server.
+Imperium needs a mariadb database and a rabbitmq server in order to function.
 Fortunately for you, a docker-compose file is provided with everything.
 You will simply have to run `docker-compose up -d` once.
 
-- To access the web front-end of these services, see the comments in the docker-compose file.
-- The mongo express container fails to start with the other containers sometimes. If this happens,
-  just restart it with the command `docker-compose restart mongo-express`.
+> RabbitMQ has a web front-end at http://localhost:15672, you can login with guest:guest.
 
 ### Mindustry
 
@@ -56,15 +58,16 @@ server:
     notifications: "some channel id"
     maps: "some channel id"
   roles:
-    administrator: "some role id"
-    moderator: "some role id"
-    verified: "some role id"
+    OWNER: "some role id"
+    ADMIN: "some role id"
+    MODERATOR: "some role id"
+    VERIFIED: "some role id"
 ```
 
 Then you can start the discord bot by running `./gradlew imperium-discord:runImperiumDiscord`.
 
 > If it's the first time you run it, it will automatically download mindustry assets from GitHub,
-> this might take less than 2 minutes. (Or more if you have potato internet `;-;`)
+> this might take less than a minute. (Or more if you have potato internet `;-;`)
 
 ## Limitations
 

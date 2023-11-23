@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.discord.command
 
-import com.xpdustry.imperium.common.account.Role
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.CommandRegistry
@@ -60,7 +60,7 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
 
                 val updater = event.buttonInteraction.respondLater(handler.ephemeral).await()
 
-                if (!discord.isAllowed(event.buttonInteraction.user, handler.role)) {
+                if (!discord.isAllowed(event.buttonInteraction.user, handler.rank)) {
                     updater
                         .setContent(":warning: **You do not have permission to use this command.**")
                         .update()
@@ -111,7 +111,7 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
             handlers[button.name] =
                 ButtonHandler(
                     container,
-                    button.role,
+                    button.rank,
                     function,
                     !function.hasAnnotation<NonEphemeral>(),
                 )
@@ -127,7 +127,7 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
 
     private data class ButtonHandler(
         val container: Any,
-        val role: Role,
+        val rank: Rank,
         val function: KFunction<*>,
         val ephemeral: Boolean,
     )

@@ -19,9 +19,7 @@ package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.UserManager
-import com.xpdustry.imperium.common.account.containsRole
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -32,6 +30,8 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
@@ -44,7 +44,9 @@ import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import java.net.InetAddress
-import java.time.Duration
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -88,7 +90,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                             ),
                             view.state[PUNISHMENT_REASON]!!,
                             Punishment.Type.BAN,
-                            view.state[PUNISHMENT_DURATION],
+                            view.state[PUNISHMENT_DURATION]!!,
                         )
                     }
                 },
@@ -116,22 +118,22 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                         "Select duration of the ban of ${view.state[PUNISHMENT_TARGET]!!.name}"
 
                     // TODO Goofy aah function, use proper library to display durations
-                    fun addDuration(display: String, duration: Duration?) =
+                    fun addDuration(display: String, duration: Duration) =
                         pane.options.addRow(
                             MenuOption(display) { _ ->
                                 view.close()
-                                if (duration != null) view.state[PUNISHMENT_DURATION] = duration
+                                view.state[PUNISHMENT_DURATION] = duration
                                 detailsInterface.open(view)
                             },
                         )
 
-                    addDuration("[green]1 hour", Duration.ofHours(1L))
-                    addDuration("[green]6 hours", Duration.ofHours(6L))
-                    addDuration("[green]1 day", Duration.ofDays(1L))
-                    addDuration("[green]3 days", Duration.ofDays(3L))
-                    addDuration("[green]1 week", Duration.ofDays(7L))
-                    addDuration("[green]1 month", Duration.ofDays(30L))
-                    addDuration("[red]Permanent", null)
+                    addDuration("[green]1 hour", 1.hours)
+                    addDuration("[green]6 hours", 6.hours)
+                    addDuration("[green]1 day", 1.days)
+                    addDuration("[green]3 days", 3.days)
+                    addDuration("[green]1 week", 7.days)
+                    addDuration("[green]1 month", 30.days)
+                    addDuration("[red]Permanent", Duration.INFINITE)
                     pane.options.addRow(MenuOption("[red]Cancel", View::back))
                 }
             }
@@ -236,24 +238,26 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 Call.infoMessage(requester.con, "Player not found.")
                 return@launch
             }
-            val admin =
-                accounts
-                    .findByIdentity(requester.identity)
-                    ?.roles
-                    ?.containsRole(Role.ADMINISTRATOR) == true
+            val canSeeInfo =
+                (accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE) >= Rank.ADMIN
+            var historic: User.NamesAndAddresses = User.NamesAndAddresses.EMPTY
+            if (canSeeInfo) {
+                historic = users.findNamesAndAddressesBySnowflake(user.snowflake)
+            }
             Call.traceInfo(
                 requester.con,
                 target,
                 TraceInfo(
                     target.con.address,
-                    if (admin) target.uuid() else user._id.toHexString(),
+                    if (canSeeInfo) target.uuid() else user.snowflake.toString(),
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,
                     bans.findAllByUuid(target.uuid()).count(),
-                    if (admin) user.addresses.map(InetAddress::getHostAddress).toTypedArray()
+                    if (canSeeInfo)
+                        historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
                     else arrayOf("Don't have permission to view addresses."),
-                    user.names.toTypedArray()))
+                    historic.names.toTypedArray()))
             logger.info(
                 "{} ({}) has requested trace info of {} ({})",
                 requester.plainName(),
@@ -264,10 +268,9 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
 
     private fun handleWaveSkip(requester: Player) =
         ImperiumScope.MAIN.launch {
-            val roles = accounts.findByIdentity(requester.identity)?.roles ?: emptySet()
-            if (roles.containsRole(Role.ADMINISTRATOR) ||
-                (roles.containsRole(Role.MODERATOR) &&
-                    config.gamemode == MindustryGamemode.SANDBOX)) {
+            val rank = accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE
+            if (rank >= Rank.ADMIN ||
+                (rank >= Rank.MODERATOR && config.gamemode == MindustryGamemode.SANDBOX)) {
                 runMindustryThread {
                     Vars.logic.skipWave()
                     logger.info(

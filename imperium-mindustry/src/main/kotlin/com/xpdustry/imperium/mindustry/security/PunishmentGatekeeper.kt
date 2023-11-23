@@ -19,8 +19,12 @@ package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.mindustry.processing.Processor
-import java.time.Duration
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.toList
 
@@ -33,7 +37,7 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
                 .findAllByAddress(context.address)
                 .filter { !it.expired && it.type == Punishment.Type.BAN }
                 .toList()
-                .maxByOrNull(Punishment::timestamp)
+                .maxByOrNull { it.snowflake.timestamp }
 
         return if (punishment == null) {
             GatekeeperResult.Success
@@ -44,7 +48,7 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
                 [accent]Reason:[white] ${punishment.reason}
                 [accent]Duration:[white] ${formatDuration(punishment.duration)}
                 [accent]Expires:[white] ${punishment.expiration}
-                [accent]Punishment id:[white] ${punishment._id}
+                [accent]Punishment id:[white] ${punishment.snowflake}
 
                 [accent]Appeal in our discord server: [white]https://discord.xpdustry.com
                 """
@@ -54,11 +58,11 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
     }
 }
 
-private fun formatDuration(duration: Duration?): String =
+private fun formatDuration(duration: Duration): String =
     when {
-        duration == null -> "Permanent"
-        duration >= Duration.ofDays(1L) -> "${duration.toDays()} days"
-        duration >= Duration.ofHours(1L) -> "${duration.toHours()} hours"
-        duration >= Duration.ofMinutes(1L) -> "${duration.toMinutes()} minutes"
-        else -> "${duration.seconds} seconds"
+        duration.isInfinite() -> "Permanent"
+        duration >= 1.days -> "${duration.inWholeDays} days"
+        duration >= 1.hours -> "${duration.inWholeHours} hours"
+        duration >= 1.minutes -> "${duration.inWholeMinutes} minutes"
+        else -> "${duration.inWholeSeconds} seconds"
     }

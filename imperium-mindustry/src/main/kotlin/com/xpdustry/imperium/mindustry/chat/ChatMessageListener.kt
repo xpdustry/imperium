@@ -103,7 +103,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     ctx.sender.showInfoMessage(
                         """
                         [scarlet]You can't talk. You are currently muted for '${muted.reason}'.
-                        [orange]You can appeal this decision with the punishment id [cyan]${muted._id}[].
+                        [orange]You can appeal this decision with the punishment id [cyan]${muted.snowflake}[].
                         """
                             .trimIndent(),
                     )
@@ -117,13 +117,13 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             val playtime =
                 when (subject) {
                     is Identity.Mindustry -> accounts.findByIdentity(subject)?.playtime
-                    is Identity.Discord -> accounts.findByDiscordId(subject.id)?.playtime
+                    is Identity.Discord -> accounts.findByDiscord(subject.id)?.playtime
                     else -> null
                 }
                     ?: return@register ""
             when (query) {
-                "hours" -> playtime.toHours().toString()
-                "chaotic" -> DecimalFormat("000").format(playtime.toHours())
+                "hours" -> playtime.inWholeHours.toString()
+                "chaotic" -> DecimalFormat("000").format(playtime.inWholeHours)
                 else -> invalidQueryError(query)
             }
         }

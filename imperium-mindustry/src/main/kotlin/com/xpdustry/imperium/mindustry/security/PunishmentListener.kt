@@ -40,7 +40,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
-            val punishment = bans.findById(message.punishment) ?: return@consumer
+            val punishment = bans.findBySnowflake(message.snowflake) ?: return@consumer
             if (punishment.type != Punishment.Type.BAN) {
                 return@consumer
             }
@@ -56,7 +56,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         """
                         [scarlet]You have been banned for '${punishment.reason}'.
                         [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
-                        [accent]Your punishment id is [white]${punishment._id}[].
+                        [accent]Your punishment id is [white]${punishment.snowflake}[].
                         """
                             .trimIndent(),
                         0,

@@ -25,10 +25,8 @@ import cloud.commandframework.context.CommandContext
 import cloud.commandframework.keys.SimpleCloudKey
 import cloud.commandframework.kotlin.coroutines.SuspendingExecutionHandler
 import cloud.commandframework.permission.PredicatePermission
-import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -40,6 +38,7 @@ import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -48,11 +47,8 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.ArcCommandManager
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.MUUID
 import io.leangen.geantyref.GenericTypeReflector
 import io.leangen.geantyref.TypeToken
-import java.util.EnumSet
-import java.util.concurrent.TimeUnit
 import java.util.function.Function
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
@@ -74,11 +70,10 @@ class MindustryCommandRegistry(
     private val server: ServerConfig.Mindustry,
     private val config: ImperiumConfig,
     private val accounts: AccountManager,
+    private val messenger: Messenger,
 ) : CommandRegistry, ImperiumApplication.Listener {
     private val clientCommandManager = createArcCommandManager(plugin)
     private val serverCommandManager = createArcCommandManager(plugin)
-    private val roleCache =
-        CacheBuilder.newBuilder().expireAfterWrite(30, TimeUnit.SECONDS).build<MUUID, Set<Role>>()
 
     override fun onImperiumInit() {
         clientCommandManager.initialize(Vars.netServer.clientCommands)
@@ -116,7 +111,7 @@ class MindustryCommandRegistry(
         var builder =
             manager
                 .commandBuilder(annotation.name, createLiteralDescription(base))
-                .permission(createPermission(annotation.role, annotation.name, scope))
+                .permission(createPermission(annotation.rank, annotation.name, scope))
         for (rest in annotation.path.drop(1)) {
             base += rest
             builder = builder.literal(rest, createLiteralDescription(base))
@@ -141,19 +136,18 @@ class MindustryCommandRegistry(
         manager.command(builder)
     }
 
-    private fun createPermission(role: Role, command: String, scope: Set<MindustryGamemode>) =
+    private fun createPermission(rank: Rank, command: String, scope: Set<MindustryGamemode>) =
         PredicatePermission.of<CommandSender>(SimpleCloudKey.of("imperium:$command")) { sender ->
-            getRoles(sender).containsRole(Role.ADMINISTRATOR) ||
-                (getRoles(sender).containsRole(role) &&
-                    (scope.isEmpty() || server.gamemode in scope))
+            if (sender.isConsole) return@of true
+
+            runBlocking {
+                val current = accounts.findByIdentity(sender.player.identity)?.rank ?: Rank.EVERYONE
+                current >= Rank.ADMIN ||
+                    (current >= rank && (scope.isEmpty() || server.gamemode in scope))
+            }
         }
 
-    private fun getRoles(sender: CommandSender): Set<Role> =
-        if (sender.isConsole) EnumSet.allOf(Role::class.java)
-        else
-            roleCache.get(MUUID.of(sender.player)) {
-                runBlocking { accounts.findByIdentity(sender.player.identity)?.roles ?: emptySet() }
-            }
+    private fun getRank(sender: CommandSender) {}
 
     private fun <T : Any> createCommandArgument(
         manager: ArcCommandManager<CommandSender>,

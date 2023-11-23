@@ -17,19 +17,20 @@
  */
 package com.xpdustry.imperium.common.account
 
+import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import kotlinx.serialization.Serializable
 
-enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
-    ACTIVE(7, true),
-    HYPER(30, true),
-    ADDICT(90, true),
-    GAMER(8 * 60),
-    STEAM,
-    DISCORD,
-    DAY(24 * 60),
-    WEEK(7 * 24 * 60),
-    MONTH(30 * 24 * 60),
-    ;
+enum class Rank {
+    EVERYONE,
+    VERIFIED,
+    OVERSEER,
+    MODERATOR,
+    ADMIN,
+    OWNER;
 
-    @Serializable data class Progression(var progress: Int = 0, var completed: Boolean = false)
+    fun getRanksBelow() = entries.slice(0..this.ordinal)
 }
+
+// TODO Change to generic account change event ?
+@Serializable data class RankChangeEvent(val account: Snowflake) : Message

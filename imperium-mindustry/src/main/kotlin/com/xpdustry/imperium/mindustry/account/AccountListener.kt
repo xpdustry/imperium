@@ -18,14 +18,13 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.User
-import com.xpdustry.imperium.common.account.UserManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
@@ -33,9 +32,8 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
-import java.time.Duration
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
@@ -59,14 +57,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
         ImperiumScope.MAIN.launch {
-            users.updateOrCreateByUuid(event.player.uuid()) { user ->
-                user.timesJoined += 1
-                user.lastName = event.player.plainName()
-                user.names += event.player.plainName()
-                user.lastAddress = event.player.ip().toInetAddress()
-                user.addresses += event.player.ip().toInetAddress()
-                user.lastJoin = Instant.now()
-            }
+            users.incrementJoins(event.player.identity)
             event.player.tryGrantAdmin(accounts)
         }
     }
@@ -75,7 +66,8 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     internal fun onGameOver(event: EventType.GameOverEvent) {
         Entities.getPlayers().forEach { player ->
             ImperiumScope.MAIN.launch {
-                accounts.updateByIdentity(player.identity) { account -> account.games++ }
+                val account = accounts.findByIdentity(player.identity) ?: return@launch
+                accounts.incrementGames(account.snowflake)
             }
         }
     }
@@ -84,10 +76,13 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     internal fun onPlayerLeave(event: EventType.PlayerLeave) =
         ImperiumScope.MAIN.launch {
             val now = System.currentTimeMillis()
-            accounts.updateByIdentity(event.player.identity) { account ->
-                account.playtime += Duration.ofMillis(now - (playtime.remove(event.player) ?: now))
+
+            val account = accounts.findByIdentity(event.player.identity)
+            if (account != null) {
+                accounts.incrementPlaytime(
+                    account.snowflake, (now - (playtime.remove(event.player) ?: now)).milliseconds)
             }
-            if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
+            if (users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
                 accounts.logout(event.player.identity)
             }
         }

@@ -18,8 +18,7 @@
 package com.xpdustry.imperium.mindustry.misc
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Role
-import com.xpdustry.imperium.common.account.containsRole
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
@@ -83,8 +82,7 @@ private fun NetConnection.kick(
 }
 
 suspend fun Player.tryGrantAdmin(manager: AccountManager) {
-    val account = manager.findByIdentity(identity) ?: return
-    admin = account.roles.containsRole(Role.MODERATOR) || admin
+    admin = ((manager.findByIdentity(identity)?.rank ?: Rank.EVERYONE) >= Rank.MODERATOR) || admin
 }
 
 private val logger = logger("ROOT")
