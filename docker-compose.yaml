@@ -9,3 +9,12 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+
+  # The Mariadb database
+  # login is root:root
+  mariadb:
+    image: mariadb:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: root

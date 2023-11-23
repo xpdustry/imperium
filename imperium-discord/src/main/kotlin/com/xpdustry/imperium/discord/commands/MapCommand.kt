@@ -139,7 +139,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ButtonCommand(MAP_UPLOAD_BUTTON, Rank.ADMIN)
     private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
-        val meta = content.getMapMetadata(attachment.asInputStream()).getOrThrow()
+        val meta = attachment.asInputStream().use { content.getMapMetadata(it).getOrThrow() }
 
         val map = maps.findMapByName(meta.name.stripMindustryColors())
         val snowflake: Snowflake
@@ -151,7 +151,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     author = meta.author?.stripMindustryColors(),
                     width = meta.width,
                     height = meta.height,
-                    stream = attachment.asInputStream())
+                    stream = attachment::asInputStream)
         } else {
             snowflake = map.snowflake
             maps.updateMap(
@@ -160,7 +160,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 author = meta.author?.stripMindustryColors(),
                 width = meta.width,
                 height = meta.height,
-                stream = attachment.asInputStream())
+                stream = attachment::asInputStream)
         }
 
         updateSubmissionEmbed(actor, Color.GREEN, "uploaded")

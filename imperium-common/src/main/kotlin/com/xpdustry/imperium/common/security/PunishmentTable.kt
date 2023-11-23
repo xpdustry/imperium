@@ -18,13 +18,11 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
-import com.xpdustry.imperium.common.user.UserTable
-import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object PunishmentTable : SnowflakeIdTable("punishment") {
-    val authorId = reference("author_id", UserTable, onDelete = ReferenceOption.SET_NULL)
+    val authorId = long("author_id")
     val authorType = enumerationByName<Punishment.Author.Type>("author_type", 32)
     val targetAddress = binary("target_address", 16)
     val targetAddressMask = byte("target_address_mask")

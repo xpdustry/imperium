@@ -54,6 +54,7 @@ tasks.shadowJar {
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency(libs.sqlite.get()))
+        exclude(dependency(libs.mariadb.get()))
     }
 }
 
