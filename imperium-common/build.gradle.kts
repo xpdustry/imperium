@@ -8,23 +8,20 @@ dependencies {
     api(libs.gson)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
-    api(libs.deepl) {
-        exclude("org.apache.commons", "commons-math3")
-    }
-    api(libs.slf4j.api)
+    api(libs.deepl)
     api(libs.password4j)
     api(libs.rabbitmq.client)
     api(libs.snowflake.id)
     api(libs.okhttp)
-    runtimeOnly(libs.okio) // Fixes CVE in okhttp
+
+    api(libs.slf4j.api)
+    testApi(libs.slf4j.simple)
 
     api(libs.kotlinx.coroutines.core)
     api(libs.kotlinx.coroutines.jdk8)
+    testApi(libs.kotlinx.coroutines.test)
     api(libs.kotlinx.serialization.json)
 
-    testApi(libs.slf4j.simple)
-    testApi(libs.kotlinx.coroutines.test)
-    testApi(libs.kotlinx.serialization.json)
     testApi(libs.classgraph)
 
     api(libs.exposed.core)
@@ -32,8 +29,7 @@ dependencies {
     api(libs.exposed.java.time)
     api(libs.exposed.json)
     api(libs.hikari)
-
+    runtimeOnly(libs.mariadb)
     runtimeOnly(libs.sqlite)
     testRuntimeOnly(libs.sqlite)
-    runtimeOnly(libs.mariadb)
 }
