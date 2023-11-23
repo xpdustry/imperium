@@ -52,6 +52,7 @@ tasks.shadowJar {
         exclude(dependency(libs.exposed.jdbc.get()))
         exclude(dependency(libs.sqlite.get()))
         exclude(dependency(libs.mariadb.get()))
+        exclude(dependency(libs.caffeine.get()))
     }
 }
 

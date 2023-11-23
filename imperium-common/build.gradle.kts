@@ -13,6 +13,7 @@ dependencies {
     api(libs.rabbitmq.client)
     api(libs.snowflake.id)
     api(libs.okhttp)
+    api(libs.caffeine)
 
     api(libs.slf4j.api)
     testApi(libs.slf4j.simple)

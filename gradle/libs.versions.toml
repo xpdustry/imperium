@@ -34,6 +34,7 @@ hikari = "5.1.0"
 exposed = "0.44.1"
 sqlite = "3.44.0.0"
 mariadb = "3.3.0"
+caffeine = "3.1.8"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -81,6 +82,7 @@ exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", versio
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
+caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
