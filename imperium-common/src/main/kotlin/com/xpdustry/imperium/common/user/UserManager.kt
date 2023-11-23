@@ -19,6 +19,9 @@ package com.xpdustry.imperium.common.user
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.message.Message
+import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildAsyncCache
 import com.xpdustry.imperium.common.misc.getSuspending
@@ -33,6 +36,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
@@ -68,7 +72,8 @@ interface UserManager {
 
 class SimpleUserManager(
     private val provider: SQLProvider,
-    private val generator: SnowflakeGenerator
+    private val generator: SnowflakeGenerator,
+    private val messenger: Messenger
 ) : UserManager, ImperiumApplication.Listener {
     private val settingsCache =
         buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>>(
@@ -78,6 +83,8 @@ class SimpleUserManager(
         provider.newTransaction {
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
         }
+
+        messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid) }
     }
 
     override suspend fun findBySnowflake(snowflake: Long): User? =
@@ -168,7 +175,7 @@ class SimpleUserManager(
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
-            settingsCache.synchronous().invalidate(identity.uuid)
+            invalidateSettings(identity.uuid)
         }
 
     override suspend fun setSettings(
@@ -182,7 +189,7 @@ class SimpleUserManager(
                 this[UserSettingTable.setting] = setting
                 this[UserSettingTable.value] = value
             }
-            settingsCache.synchronous().invalidate(identity.uuid)
+            invalidateSettings(identity.uuid)
         }
 
     private fun ensureUserExists(identity: Identity.Mindustry): Snowflake {
@@ -226,4 +233,11 @@ class SimpleUserManager(
             lastAddress = InetAddress.getByAddress(this[UserTable.lastAddress]),
             timesJoined = this[UserTable.timesJoined],
             lastJoin = this[UserTable.lastJoin])
+
+    private suspend fun invalidateSettings(uuid: MindustryUUID) {
+        settingsCache.synchronous().invalidate(uuid)
+        messenger.publish(UserSettingChangeMessage(uuid))
+    }
+
+    @Serializable private data class UserSettingChangeMessage(val uuid: MindustryUUID) : Message
 }
