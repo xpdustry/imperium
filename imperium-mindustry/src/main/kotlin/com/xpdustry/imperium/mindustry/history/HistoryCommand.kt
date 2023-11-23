@@ -18,25 +18,35 @@
 package com.xpdustry.imperium.mindustry.history
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Max
 import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
+import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.net.Administration.PlayerInfo
 
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
-    private val interactive = PlayerMap<Boolean>(instances.get())
+    // TODO Have a general click manager to avoid collisions with others
+    private val taps = PlayerMap<Long>(instances.get())
+    private val users = instances.get<UserManager>()
+    private val config = instances.get<ServerConfig.Mindustry>()
 
     @Command(["history", "player"])
     @ClientSide
@@ -69,24 +79,24 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }
 
-    @Command(["history", "interactive"])
-    @ClientSide
-    private fun onInteractiveHistoryCommand(sender: CommandSender) {
-        if (interactive[sender.player] == true) {
-            interactive.remove(sender.player)
-            sender.sendMessage("[accent]Interactive history disabled.")
-        } else {
-            interactive[sender.player] = true
-            sender.sendMessage(
-                "[accent]Interactive history enabled. Tap on a tile to see its history.")
-        }
-    }
-
     @EventHandler
-    internal fun onPlayerTapEvent(event: EventType.TapEvent) {
-        if (interactive[event.player] != true) return
-        onTileHistoryCommand(CommandSender.player(event.player), event.tile.x, event.tile.y)
-    }
+    internal fun onPlayerTapEvent(event: EventType.TapEvent) =
+        ImperiumScope.MAIN.launch {
+            if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAB_TILE_LOG)) {
+                val last = taps[event.player]
+                if (last != null &&
+                    (System.currentTimeMillis() - last).milliseconds <
+                        config.history.doubleClickDelay) {
+                    taps.remove(event.player)
+                    runMindustryThread {
+                        onTileHistoryCommand(
+                            CommandSender.player(event.player), event.tile.x, event.tile.y)
+                    }
+                } else {
+                    taps[event.player] = System.currentTimeMillis()
+                }
+            }
+        }
 
     @Command(["history", "tile"])
     @ClientSide

@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
 import java.util.Locale
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 data class ImperiumConfig(
@@ -123,6 +124,7 @@ sealed interface ServerConfig {
         data class History(
             val tileEntriesLimit: Int = 10,
             val playerEntriesLimit: Int = 200,
+            val doubleClickDelay: Duration = 200.milliseconds
         )
 
         data class World(
