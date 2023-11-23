@@ -193,8 +193,7 @@ class SimplePunishmentManager(
                 this[PunishmentTable.targetAddressMask])
 
         val author =
-            Punishment.Author(
-                this[PunishmentTable.authorId].value, this[PunishmentTable.authorType])
+            Punishment.Author(this[PunishmentTable.authorId], this[PunishmentTable.authorType])
 
         val pardon =
             if (this[PunishmentTable.pardonTimestamp] == null) {

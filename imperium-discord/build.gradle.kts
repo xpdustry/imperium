@@ -49,8 +49,9 @@ tasks.shadowJar {
         exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
-        exclude(dependency(libs.sqlite.get()))
         exclude(dependency(libs.exposed.jdbc.get()))
+        exclude(dependency(libs.sqlite.get()))
+        exclude(dependency(libs.mariadb.get()))
     }
 }
 

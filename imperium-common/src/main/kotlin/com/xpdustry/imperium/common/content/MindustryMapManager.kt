@@ -23,11 +23,13 @@ import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.io.InputStream
+import java.util.function.Supplier
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.ColumnSet
+import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -65,7 +67,7 @@ interface MindustryMapManager {
         author: String?,
         width: Int,
         height: Int,
-        stream: InputStream
+        stream: Supplier<InputStream>
     ): Snowflake
 
     suspend fun updateMap(
@@ -74,7 +76,7 @@ interface MindustryMapManager {
         author: String?,
         width: Int,
         height: Int,
-        stream: InputStream
+        stream: Supplier<InputStream>
     ): Boolean
 
     suspend fun getMapInputStream(map: Snowflake): InputStream?
@@ -174,7 +176,7 @@ class SimpleMindustryMapManager(
         author: String?,
         width: Int,
         height: Int,
-        stream: InputStream
+        stream: Supplier<InputStream>
     ): Snowflake =
         provider.newSuspendTransaction {
             val snowflake = generator.generate()
@@ -185,7 +187,7 @@ class SimpleMindustryMapManager(
                 it[MindustryMapTable.author] = author
                 it[MindustryMapTable.width] = width
                 it[MindustryMapTable.height] = height
-                it[file] = ExposedBlob(stream)
+                it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
             }
             snowflake
         }
@@ -196,7 +198,7 @@ class SimpleMindustryMapManager(
         author: String?,
         width: Int,
         height: Int,
-        stream: InputStream
+        stream: Supplier<InputStream>
     ): Boolean =
         provider.newSuspendTransaction {
             val rows =
@@ -205,17 +207,19 @@ class SimpleMindustryMapManager(
                     it[MindustryMapTable.author] = author
                     it[MindustryMapTable.width] = width
                     it[MindustryMapTable.height] = height
-                    it[file] = ExposedBlob(stream)
+                    it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
                 }
             rows != 0
         }
 
     override suspend fun getMapInputStream(map: Snowflake): InputStream? =
-        MindustryMapTable.slice(MindustryMapTable.file)
-            .select { MindustryMapTable.id eq map }
-            .firstOrNull()
-            ?.get(MindustryMapTable.file)
-            ?.inputStream
+        provider.newSuspendTransaction {
+            MindustryMapTable.slice(MindustryMapTable.file)
+                .select { MindustryMapTable.id eq map }
+                .firstOrNull()
+                ?.get(MindustryMapTable.file)
+                ?.inputStream
+        }
 
     override suspend fun searchMapByName(query: String): Flow<MindustryMap> =
         provider.newSuspendTransaction {
@@ -242,7 +246,7 @@ class SimpleMindustryMapManager(
         }
 
     private fun ColumnSet.sliceWithoutFile() =
-        MindustryMapTable.slice(columns - MindustryMapTable.file)
+        slice((if (this is Join) table.columns else columns) - MindustryMapTable.file)
 
     private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
         provider.newSuspendTransaction {
