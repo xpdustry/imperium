@@ -250,7 +250,8 @@ class SimpleMindustryMapManager(
 
     private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
         provider.newSuspendTransaction {
-            MindustryMapGamemodeTable.select { MindustryMapGamemodeTable.map eq map }
+            MindustryMapGamemodeTable.slice(MindustryMapGamemodeTable.gamemode)
+                .select { MindustryMapGamemodeTable.map eq map }
                 .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
         }
 

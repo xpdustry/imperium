@@ -20,6 +20,8 @@ package com.xpdustry.imperium.common.user
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.misc.MindustryUUID
+import com.xpdustry.imperium.common.misc.buildAsyncCache
+import com.xpdustry.imperium.common.misc.getSuspending
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.security.Identity
@@ -27,17 +29,19 @@ import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import org.jetbrains.exposed.sql.batchInsert
+import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.upsert
 
 interface UserManager {
 
@@ -66,6 +70,10 @@ class SimpleUserManager(
     private val provider: SQLProvider,
     private val generator: SnowflakeGenerator
 ) : UserManager, ImperiumApplication.Listener {
+    private val settingsCache =
+        buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>>(
+            expireAfterAccess = 5.minutes, maximumSize = 1000)
+
     override fun onImperiumInit() {
         provider.newTransaction {
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
@@ -132,23 +140,20 @@ class SimpleUserManager(
             }
         }
 
-    // TODO Cache settings
     override suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
-        provider.newSuspendTransaction {
-            (UserSettingTable leftJoin UserTable)
-                .slice(UserSettingTable.value)
-                .select { UserTable.uuid eq uuid.toShortMuuid() }
-                .firstOrNull()
-                ?.get(UserSettingTable.value)
-                ?: setting.default
-        }
+        getSettings0(uuid)[setting] ?: setting.default
 
     override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> =
-        provider.newSuspendTransaction {
-            (UserSettingTable leftJoin UserTable)
-                .slice(UserSettingTable.setting, UserSettingTable.value)
-                .select { UserTable.uuid eq uuid.toShortMuuid() }
-                .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
+        getSettings0(uuid)
+
+    private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> =
+        settingsCache.getSuspending(uuid) {
+            provider.newSuspendTransaction {
+                (UserSettingTable leftJoin UserTable)
+                    .slice(UserSettingTable.setting, UserSettingTable.value)
+                    .select { UserTable.uuid eq uuid.toShortMuuid() }
+                    .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
+            }
         }
 
     override suspend fun setSetting(
@@ -158,11 +163,12 @@ class SimpleUserManager(
     ): Unit =
         provider.newSuspendTransaction {
             val snowflake = ensureUserExists(identity)
-            UserSettingTable.insert {
+            UserSettingTable.upsert {
                 it[user] = snowflake
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
+            settingsCache.synchronous().invalidate(identity.uuid)
         }
 
     override suspend fun setSettings(
@@ -171,11 +177,12 @@ class SimpleUserManager(
     ): Unit =
         provider.newSuspendTransaction {
             val snowflake = ensureUserExists(identity)
-            UserSettingTable.batchInsert(settings.entries) { (setting, value) ->
+            UserSettingTable.batchUpsert(settings.entries) { (setting, value) ->
                 this[UserSettingTable.user] = snowflake
                 this[UserSettingTable.setting] = setting
                 this[UserSettingTable.value] = value
             }
+            settingsCache.synchronous().invalidate(identity.uuid)
         }
 
     private fun ensureUserExists(identity: Identity.Mindustry): Snowflake {
