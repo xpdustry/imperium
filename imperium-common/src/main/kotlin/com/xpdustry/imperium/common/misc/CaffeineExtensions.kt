@@ -26,7 +26,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 
-fun <K : Any, V : Any> buildAsyncCache(
+fun <K, V> buildAsyncCache(
     expireAfterAccess: Duration? = null,
     maximumSize: Long = -1
 ): AsyncCache<K, V> {
@@ -40,7 +40,5 @@ fun <K : Any, V : Any> buildAsyncCache(
     return builder.buildAsync()
 }
 
-suspend fun <K : Any, V : Any> AsyncCache<K, V>.getSuspending(
-    key: K,
-    compute: suspend (K) -> V
-): V = get(key) { k, _ -> ImperiumScope.IO.async { compute(k) }.asCompletableFuture() }.await()
+suspend fun <K, V> AsyncCache<K, V>.getSuspending(key: K, compute: suspend (K) -> V): V =
+    get(key) { k, _ -> ImperiumScope.IO.async { compute(k) }.asCompletableFuture() }.await()
