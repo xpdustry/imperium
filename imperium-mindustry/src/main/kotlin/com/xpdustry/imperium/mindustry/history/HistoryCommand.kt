@@ -82,7 +82,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @EventHandler
     internal fun onPlayerTapEvent(event: EventType.TapEvent) =
         ImperiumScope.MAIN.launch {
-            if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAB_TILE_LOG)) {
+            if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAP_TILE_LOG)) {
                 val last = taps[event.player]
                 if (last != null &&
                     (System.currentTimeMillis() - last).milliseconds <

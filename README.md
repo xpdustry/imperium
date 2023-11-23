@@ -71,4 +71,4 @@ Then you can start the discord bot by running `./gradlew imperium-discord:runImp
 
 ## Limitations
 
-- It will crash if you it as a local steam server.
+- This plugin is not designed to run as a steam server. It will crash if you try.
