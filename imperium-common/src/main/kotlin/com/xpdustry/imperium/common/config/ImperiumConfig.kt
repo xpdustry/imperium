@@ -131,6 +131,7 @@ sealed interface ServerConfig {
             val maxExcavateSize: Int = 64,
             val coreDamageAlertDelay: Duration = 10.seconds,
             val displayCoreId: Boolean = true,
+            val displayResourceTracker: Boolean = true,
         )
 
         data class Security(
