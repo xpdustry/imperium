@@ -504,7 +504,7 @@ class SimpleAccountManager(
     @VisibleForTesting
     internal suspend fun createSessionHash(identity: Identity.Mindustry): ByteArray =
         Argon2HashFunction.create(
-                identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toCharArray())
+                identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toByteArray())
             .hash
 
     private fun ResultRow.toAccount() =

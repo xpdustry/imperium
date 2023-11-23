@@ -24,8 +24,6 @@ interface HashFunction<P : HashParams> {
 }
 
 interface SaltyHashFunction<P : HashParams> : HashFunction<P> {
-    suspend fun create(chars: CharArray, params: P, salt: CharArray): Hash
-
     suspend fun create(chars: CharArray, params: P, salt: ByteArray): Hash
 
     suspend fun create(bytes: ByteArray, params: P, salt: ByteArray): Hash
@@ -46,13 +44,6 @@ object GenericSaltyHashFunction : SaltyHashFunction<HashParams> {
         when (params) {
             is Argon2Params -> Argon2HashFunction.create(bytes, params)
             is PBKDF2Params -> PBKDF2HashFunction.create(bytes, params)
-            else -> throw IllegalArgumentException("Unsupported params: $params")
-        }
-
-    override suspend fun create(chars: CharArray, params: HashParams, salt: CharArray): Hash =
-        when (params) {
-            is Argon2Params -> Argon2HashFunction.create(chars, params, salt)
-            is PBKDF2Params -> PBKDF2HashFunction.create(chars, params, salt)
             else -> throw IllegalArgumentException("Unsupported params: $params")
         }
 

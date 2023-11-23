@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.hash
 import com.password4j.Argon2Function
 import com.password4j.HashBuilder
 import com.password4j.Password
+import com.password4j.SaltGenerator
 import com.password4j.SecureString
 import com.password4j.types.Argon2
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -85,34 +86,34 @@ data class Argon2Params(
 object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
 
     override suspend fun create(chars: CharArray, params: Argon2Params): Hash =
-        create0(Password.hash(SecureString(chars)).addRandomSalt(params.saltLength), params)
+        create0(
+            Password.hash(SecureString(chars)), SaltGenerator.generate(params.saltLength), params)
 
     override suspend fun create(bytes: ByteArray, params: Argon2Params): Hash =
-        create0(Password.hash(bytes).addRandomSalt(params.saltLength), params)
-
-    override suspend fun create(chars: CharArray, params: Argon2Params, salt: CharArray): Hash =
-        create0(Password.hash(SecureString(chars)).addSalt(salt.concatToString()), params)
+        create0(Password.hash(bytes), SaltGenerator.generate(params.saltLength), params)
 
     override suspend fun create(chars: CharArray, params: Argon2Params, salt: ByteArray): Hash =
-        create0(Password.hash(SecureString(chars)).addSalt(salt), params)
+        create0(Password.hash(SecureString(chars)), salt, params)
 
     override suspend fun create(bytes: ByteArray, params: Argon2Params, salt: ByteArray): Hash =
-        create0(Password.hash(bytes).addSalt(salt), params)
+        create0(Password.hash(bytes), salt, params)
 
-    private suspend fun create0(builder: HashBuilder, params: Argon2Params): Hash =
+    private suspend fun create0(builder: HashBuilder, salt: ByteArray, params: Argon2Params): Hash =
         withContext(ImperiumScope.MAIN.coroutineContext) {
             val result =
-                builder.with(
-                    Argon2Function.getInstance(
-                        params.memory,
-                        params.iterations,
-                        params.parallelism,
-                        params.length,
-                        params.type.toP4J(),
-                        params.version.toP4J(),
-                    ),
-                )
-            Hash(result.bytes, result.saltBytes, params)
+                builder
+                    .addSalt(salt)
+                    .with(
+                        Argon2Function.getInstance(
+                            params.memory,
+                            params.iterations,
+                            params.parallelism,
+                            params.length,
+                            params.type.toP4J(),
+                            params.version.toP4J(),
+                        ),
+                    )
+            Hash(result.bytes, salt, params)
         }
 
     private fun Argon2Params.Type.toP4J() =
