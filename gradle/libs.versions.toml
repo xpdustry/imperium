@@ -32,7 +32,7 @@ classgraph = "4.8.165"
 logback = "1.4.11"
 hikari = "5.1.0"
 exposed = "0.44.1"
-sqlite = "3.44.0.0"
+h2 = "2.2.224"
 mariadb = "3.3.0"
 caffeine = "3.1.8"
 
@@ -80,7 +80,7 @@ exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "e
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
 exposed-java-time = { module = "org.jetbrains.exposed:exposed-java-time", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
-sqlite = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
+h2 = { module = "com.h2database:h2", version.ref = "h2" }
 mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 

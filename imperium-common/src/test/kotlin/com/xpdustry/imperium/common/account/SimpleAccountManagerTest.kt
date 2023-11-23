@@ -258,7 +258,9 @@ class SimpleAccountManagerTest {
         module("account-test") {
             include(CommonModule())
             single<ImperiumConfig> {
-                ImperiumConfig(database = DatabaseConfig.SQL(host = ":memory:"))
+                ImperiumConfig(
+                    database =
+                        DatabaseConfig.SQL(host = "mem:regular", type = DatabaseConfig.SQL.Type.H2))
             }
             single<Messenger> { TestMessenger() }
             single<Path>("directory") { tempDir }

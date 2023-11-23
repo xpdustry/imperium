@@ -58,14 +58,14 @@ sealed interface TranslatorConfig {
 
 sealed interface DatabaseConfig {
     data class SQL(
-        val host: String = "./database.sqlite",
+        val host: String = "localhost",
         val port: Short = 3306,
         val database: String = "imperium",
-        val username: String = "",
-        val password: Secret = Secret(""),
-        val poolMin: Int = 1,
-        val poolMax: Int = 4,
-        val type: Type = Type.SQLITE
+        val username: String = "root",
+        val password: Secret = Secret("root"),
+        val poolMin: Int = 2,
+        val poolMax: Int = 8,
+        val type: Type = Type.MARIADB
     ) : DatabaseConfig {
         init {
             require(poolMin > 0) { "poolMin can't be below 1, got $poolMin" }
@@ -73,8 +73,8 @@ sealed interface DatabaseConfig {
         }
 
         enum class Type(val driver: String) {
-            SQLITE("org.sqlite.JDBC"),
-            MARIADB("org.mariadb.jdbc.Driver")
+            MARIADB("org.mariadb.jdbc.Driver"),
+            H2("org.h2.Driver")
         }
     }
 }

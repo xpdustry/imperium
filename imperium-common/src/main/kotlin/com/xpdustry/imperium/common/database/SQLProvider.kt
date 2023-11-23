@@ -51,12 +51,12 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
         hikari.driverClassName = config.type.driver
 
         when (config.type) {
-            DatabaseConfig.SQL.Type.SQLITE -> {
+            DatabaseConfig.SQL.Type.H2 -> {
                 var host = config.host
-                if (config.host.endsWith(".sqlite")) {
+                if (config.host.endsWith(".h2")) {
                     host = directory.resolve(config.host).absolutePathString()
                 }
-                hikari.jdbcUrl = "jdbc:sqlite:$host"
+                hikari.jdbcUrl = "jdbc:h2:$host"
             }
             DatabaseConfig.SQL.Type.MARIADB -> {
                 hikari.jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"

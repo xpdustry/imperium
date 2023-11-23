@@ -50,7 +50,6 @@ tasks.shadowJar {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
         exclude(dependency(libs.exposed.jdbc.get()))
-        exclude(dependency(libs.sqlite.get()))
         exclude(dependency(libs.mariadb.get()))
         exclude(dependency(libs.caffeine.get()))
     }

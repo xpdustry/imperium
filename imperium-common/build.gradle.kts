@@ -31,6 +31,5 @@ dependencies {
     api(libs.exposed.json)
     api(libs.hikari)
     runtimeOnly(libs.mariadb)
-    runtimeOnly(libs.sqlite)
-    testRuntimeOnly(libs.sqlite)
+    testRuntimeOnly(libs.h2)
 }
