@@ -60,9 +60,9 @@ class SimpleSnowflakeGenerator(config: ImperiumConfig) : SnowflakeGenerator {
 
     companion object {
         // The creation date of the chaotic neutral server
-        internal val IMPERIUM_EPOCH = Instant.ofEpochMilli(1543879632378L)
+        val IMPERIUM_EPOCH = Instant.ofEpochMilli(1543879632378L)
         internal val IMPERIUM_EPOCH_OFFSET = Duration.between(Instant.EPOCH, IMPERIUM_EPOCH)
-        internal val STRUCTURE = Structure(51, 8, 4)
+        val STRUCTURE = Structure(51, 8, 4)
         private val logger by LoggerDelegate()
     }
 }
