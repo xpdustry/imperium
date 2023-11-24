@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildAsyncCache
 import com.xpdustry.imperium.common.misc.getSuspending
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.security.Identity
@@ -120,7 +121,7 @@ class SimpleUserManager(
     override suspend fun searchUserByName(query: String): Flow<User> =
         provider.newSuspendTransaction {
             (UserTable leftJoin UserNameTable)
-                .select { UserNameTable.name like "%$query%" }
+                .select { UserNameTable.name like "%${query}%" }
                 .asFlow()
                 .map { it.toUser() }
         }
@@ -130,7 +131,7 @@ class SimpleUserManager(
             val snowflake = ensureUserExists(identity)
 
             UserTable.update({ UserTable.uuid eq identity.uuid.toShortMuuid() }) {
-                it[lastName] = identity.name
+                it[lastName] = identity.name.stripMindustryColors()
                 it[lastAddress] = identity.address.address
                 it[timesJoined] = timesJoined.plus(1)
                 it[lastJoin] = Instant.now()
@@ -138,7 +139,7 @@ class SimpleUserManager(
 
             UserNameTable.insertIgnore {
                 it[user] = snowflake
-                it[name] = identity.name
+                it[name] = identity.name.stripMindustryColors()
             }
 
             UserAddressTable.insertIgnore {
@@ -208,13 +209,13 @@ class SimpleUserManager(
         UserTable.insert {
             it[id] = snowflake
             it[uuid] = identity.uuid.toShortMuuid()
-            it[lastName] = identity.name
+            it[lastName] = identity.name.stripMindustryColors()
             it[lastAddress] = identity.address.address
         }
 
         UserNameTable.insert {
             it[user] = snowflake
-            it[name] = identity.name
+            it[name] = identity.name.stripMindustryColors()
         }
 
         UserAddressTable.insert {

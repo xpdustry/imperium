@@ -102,7 +102,7 @@ fun CommonModule() =
 
         single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 
-        single<UserManager> { SimpleUserManager(get(), get()) }
+        single<UserManager> { SimpleUserManager(get(), get(), get()) }
 
         single<ImageAnalysis> {
             when (val config = get<ImperiumConfig>().imageAnalysis) {

@@ -25,10 +25,10 @@ import java.time.Instant
 data class User(
     val snowflake: Snowflake,
     val uuid: MindustryUUID,
-    var lastName: String,
-    var lastAddress: InetAddress,
-    var timesJoined: Int = 0,
-    var lastJoin: Instant,
+    val lastName: String,
+    val lastAddress: InetAddress,
+    val timesJoined: Int = 0,
+    val lastJoin: Instant,
 ) {
     data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>) {
         companion object {
