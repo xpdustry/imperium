@@ -50,6 +50,8 @@ import org.jetbrains.exposed.sql.upsert
 
 interface UserManager {
 
+    suspend fun getByIdentity(identity: Identity.Mindustry): User
+
     suspend fun findBySnowflake(snowflake: Long): User?
 
     suspend fun findByUuid(uuid: MindustryUUID): User?
@@ -87,6 +89,9 @@ class SimpleUserManager(
 
         messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid) }
     }
+
+    override suspend fun getByIdentity(identity: Identity.Mindustry): User =
+        provider.newSuspendTransaction { findBySnowflake(ensureUserExists(identity))!! }
 
     override suspend fun findBySnowflake(snowflake: Long): User? =
         provider.newSuspendTransaction {
@@ -130,7 +135,7 @@ class SimpleUserManager(
         provider.newSuspendTransaction {
             val snowflake = ensureUserExists(identity)
 
-            UserTable.update({ UserTable.uuid eq identity.uuid.toShortMuuid() }) {
+            UserTable.update({ UserTable.id eq snowflake }) {
                 it[lastName] = identity.name.stripMindustryColors()
                 it[lastAddress] = identity.address.address
                 it[timesJoined] = timesJoined.plus(1)

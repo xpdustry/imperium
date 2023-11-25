@@ -44,14 +44,10 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command(["player", "info"])
     suspend fun onPlayerInfo(actor: InteractionSender, query: String) {
         // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
-        val user =
-            users.findByUuid(query)
-                ?: query
-                    .toLongOrNull()
-                    ?.let { tracker.getPlayerEntry(it) }
-                    ?.let { users.findByUuid(it.player.uuid) }
-                    ?: if (query.toLongOrNull() != null) users.findBySnowflake(query.toLong())
-                else null
+        var user = users.findByUuid(query)
+        if (user == null && query.toLongOrNull() != null) {
+            user = users.findBySnowflake(query.toLong())
+        }
         if (user == null) {
             actor.respond("Player not found.")
             return

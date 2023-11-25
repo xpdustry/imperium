@@ -40,6 +40,8 @@ data class User(
         SHOW_WELCOME_MESSAGE(true, "Show the welcome message when joining the server."),
         RESOURCE_HUD(true, "Show a HUD with the evolution of the resources."),
         REMEMBER_LOGIN(true, "Remember the last used login."),
-        DOUBLE_TAP_TILE_LOG(true, "Double tapping on a tile will display its history.")
+        DOUBLE_TAP_TILE_LOG(true, "Double tapping on a tile will display its history."),
+        ANTI_BAN_EVADE(
+            false, "Notifies you when a player leaves but rejoins with a different name.")
     }
 }

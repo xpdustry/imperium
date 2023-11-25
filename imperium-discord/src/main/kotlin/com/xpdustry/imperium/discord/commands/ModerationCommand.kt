@@ -19,7 +19,6 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -45,7 +44,6 @@ import org.javacord.api.entity.message.embed.EmbedBuilder
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
-    private val tracker = instances.get<PlayerTracker>()
 
     @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
@@ -133,14 +131,12 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     ) {
         var lookup = target.toInetAddressOrNull()?.let(Punishment::Target)
         if (lookup == null) {
-            val uuid =
-                target.toLongOrNull()?.let { tracker.getPlayerEntry(it) }?.player?.uuid ?: target
-            var user = users.findByUuid(uuid)
+            var user = users.findByUuid(target)
             if (user == null && target.toLongOrNull() != null) {
                 user = users.findBySnowflake(target.toLong())
             }
             if (user == null) {
-                actor.respond("Target is not a valid IP address, UUID, TEMP-ID or USER ID.")
+                actor.respond("Target is not a valid IP address, UUID or USER ID.")
                 return
             }
             lookup = Punishment.Target(user.lastAddress, user.uuid)
