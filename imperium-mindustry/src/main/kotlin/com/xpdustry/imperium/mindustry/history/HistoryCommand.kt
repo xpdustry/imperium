@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -47,6 +48,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val taps = PlayerMap<Long>(instances.get())
     private val users = instances.get<UserManager>()
     private val config = instances.get<ServerConfig.Mindustry>()
+    private val renderer = instances.get<TimeRenderer>()
 
     @Command(["history", "player"])
     @ClientSide
@@ -179,6 +181,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         if (position) {
             builder.append(" at [accent](").append(entry.x).append(", ").append(entry.y).append(")")
         }
+        builder.append(", [white]").append(renderer.renderRelativeInstant(entry.timestamp))
         return builder.toString()
     }
 

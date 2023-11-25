@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.user.UserManager
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration
@@ -83,6 +84,7 @@ class SimplePunishmentManager(
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
     private val account: AccountManager,
+    private val users: UserManager
 ) : PunishmentManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -114,9 +116,9 @@ class SimplePunishmentManager(
         reason: String,
         type: Punishment.Type,
         duration: Duration
-    ): Unit =
+    ) {
+        val snowflake = generator.generate()
         provider.newSuspendTransaction {
-            val snowflake = generator.generate()
             val punishmentAuthor = author.toAuthor()
             PunishmentTable.insert {
                 it[PunishmentTable.id] = snowflake
@@ -130,39 +132,43 @@ class SimplePunishmentManager(
                 it[PunishmentTable.duration] =
                     if (duration.isInfinite()) null else duration.toJavaDuration()
             }
-            messenger.publish(
-                PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake), local = true)
         }
+        messenger.publish(
+            PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake), local = true)
+    }
 
     override suspend fun pardon(
         author: Identity,
         snowflake: Snowflake,
         reason: String
     ): PardonResult =
-        provider.newSuspendTransaction {
-            val punishment =
-                PunishmentTable.slice(PunishmentTable.pardonTimestamp)
-                    .select { PunishmentTable.id eq snowflake }
-                    .firstOrNull()
-                    ?: return@newSuspendTransaction PardonResult.NOT_FOUND
+        provider
+            .newSuspendTransaction {
+                val punishment =
+                    PunishmentTable.slice(PunishmentTable.pardonTimestamp)
+                        .select { PunishmentTable.id eq snowflake }
+                        .firstOrNull()
+                        ?: return@newSuspendTransaction PardonResult.NOT_FOUND
 
-            if (punishment[PunishmentTable.pardonTimestamp] != null) {
-                return@newSuspendTransaction PardonResult.ALREADY_PARDONED
+                if (punishment[PunishmentTable.pardonTimestamp] != null) {
+                    return@newSuspendTransaction PardonResult.ALREADY_PARDONED
+                }
+
+                val punishmentAuthor = author.toAuthor()
+                PunishmentTable.update({ PunishmentTable.id eq snowflake }) {
+                    it[pardonTimestamp] = Instant.now()
+                    it[pardonReason] = reason
+                    it[pardonAuthorId] = punishmentAuthor.identifier
+                    it[pardonAuthorType] = punishmentAuthor.type
+                }
+
+                return@newSuspendTransaction PardonResult.SUCCESS
             }
-
-            val punishmentAuthor = author.toAuthor()
-            PunishmentTable.update({ PunishmentTable.id eq snowflake }) {
-                it[pardonTimestamp] = Instant.now()
-                it[pardonReason] = reason
-                it[pardonAuthorId] = punishmentAuthor.identifier
-                it[pardonAuthorType] = punishmentAuthor.type
+            .also {
+                messenger.publish(
+                    PunishmentMessage(author, PunishmentMessage.Type.PARDON, snowflake),
+                    local = true)
             }
-
-            messenger.publish(
-                PunishmentMessage(author, PunishmentMessage.Type.PARDON, snowflake), local = true)
-
-            return@newSuspendTransaction PardonResult.SUCCESS
-        }
 
     private suspend fun Identity.toAuthor(): Punishment.Author =
         when (this) {
@@ -170,7 +176,7 @@ class SimplePunishmentManager(
             is Identity.Discord -> {
                 val account = account.findByDiscord(id)
                 if (account == null) {
-                    Punishment.Author(0L, Punishment.Author.Type.DISCORD)
+                    Punishment.Author(id, Punishment.Author.Type.DISCORD)
                 } else {
                     Punishment.Author(account.snowflake, Punishment.Author.Type.ACCOUNT)
                 }
@@ -178,7 +184,8 @@ class SimplePunishmentManager(
             is Identity.Mindustry -> {
                 val account = account.findByIdentity(this)
                 if (account == null) {
-                    Punishment.Author(0L, Punishment.Author.Type.USER)
+                    Punishment.Author(
+                        users.getByIdentity(this).snowflake, Punishment.Author.Type.USER)
                 } else {
                     Punishment.Author(account.snowflake, Punishment.Author.Type.ACCOUNT)
                 }

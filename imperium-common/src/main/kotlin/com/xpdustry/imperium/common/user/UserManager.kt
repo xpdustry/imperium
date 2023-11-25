@@ -29,14 +29,16 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -91,7 +93,43 @@ class SimpleUserManager(
     }
 
     override suspend fun getByIdentity(identity: Identity.Mindustry): User =
-        provider.newSuspendTransaction { findBySnowflake(ensureUserExists(identity))!! }
+        provider.newSuspendTransaction {
+            withContext(USER_CREATE_CONTEXT) {
+                val user =
+                    UserTable.select { UserTable.uuid eq identity.uuid.toShortMuuid() }
+                        .firstOrNull()
+                        ?.toUser()
+                if (user != null) {
+                    return@withContext user
+                }
+
+                val snowflake = generator.generate()
+
+                UserTable.insert {
+                    it[id] = snowflake
+                    it[uuid] = identity.uuid.toShortMuuid()
+                    it[lastName] = identity.name.stripMindustryColors()
+                    it[lastAddress] = identity.address.address
+                }
+
+                UserNameTable.insert {
+                    it[UserNameTable.user] = snowflake
+                    it[name] = identity.name.stripMindustryColors()
+                }
+
+                UserAddressTable.insert {
+                    it[UserAddressTable.user] = snowflake
+                    it[address] = identity.address.address
+                }
+
+                User(
+                    snowflake = snowflake,
+                    uuid = identity.uuid,
+                    lastName = identity.name.stripMindustryColors(),
+                    lastAddress = identity.address,
+                    lastJoin = Instant.EPOCH)
+            }
+        }
 
     override suspend fun findBySnowflake(snowflake: Long): User? =
         provider.newSuspendTransaction {
@@ -133,9 +171,9 @@ class SimpleUserManager(
 
     override suspend fun incrementJoins(identity: Identity.Mindustry): Unit =
         provider.newSuspendTransaction {
-            val snowflake = ensureUserExists(identity)
+            val user = getByIdentity(identity)
 
-            UserTable.update({ UserTable.id eq snowflake }) {
+            UserTable.update({ UserTable.id eq user.snowflake }) {
                 it[lastName] = identity.name.stripMindustryColors()
                 it[lastAddress] = identity.address.address
                 it[timesJoined] = timesJoined.plus(1)
@@ -143,12 +181,12 @@ class SimpleUserManager(
             }
 
             UserNameTable.insertIgnore {
-                it[user] = snowflake
+                it[UserNameTable.user] = user.snowflake
                 it[name] = identity.name.stripMindustryColors()
             }
 
             UserAddressTable.insertIgnore {
-                it[user] = snowflake
+                it[UserAddressTable.user] = user.snowflake
                 it[address] = identity.address.address
             }
         }
@@ -175,9 +213,9 @@ class SimpleUserManager(
         value: Boolean
     ): Unit =
         provider.newSuspendTransaction {
-            val snowflake = ensureUserExists(identity)
+            val user = getByIdentity(identity)
             UserSettingTable.upsert {
-                it[user] = snowflake
+                it[UserSettingTable.user] = user.snowflake
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
@@ -189,47 +227,14 @@ class SimpleUserManager(
         settings: Map<User.Setting, Boolean>
     ): Unit =
         provider.newSuspendTransaction {
-            val snowflake = ensureUserExists(identity)
+            val user = getByIdentity(identity)
             UserSettingTable.batchUpsert(settings.entries) { (setting, value) ->
-                this[UserSettingTable.user] = snowflake
+                this[UserSettingTable.user] = user.snowflake
                 this[UserSettingTable.setting] = setting
                 this[UserSettingTable.value] = value
             }
             invalidateSettings(identity.uuid)
         }
-
-    private fun ensureUserExists(identity: Identity.Mindustry): Snowflake {
-        var snowflake =
-            UserTable.slice(UserTable.id)
-                .select { UserTable.uuid eq identity.uuid.toShortMuuid() }
-                .firstOrNull()
-                ?.get(UserTable.id)
-                ?.value
-        if (snowflake != null) {
-            return snowflake
-        }
-
-        snowflake = generator.generate()
-
-        UserTable.insert {
-            it[id] = snowflake
-            it[uuid] = identity.uuid.toShortMuuid()
-            it[lastName] = identity.name.stripMindustryColors()
-            it[lastAddress] = identity.address.address
-        }
-
-        UserNameTable.insert {
-            it[user] = snowflake
-            it[name] = identity.name.stripMindustryColors()
-        }
-
-        UserAddressTable.insert {
-            it[user] = snowflake
-            it[address] = identity.address.address
-        }
-
-        return snowflake
-    }
 
     private fun ResultRow.toUser() =
         User(
@@ -246,4 +251,9 @@ class SimpleUserManager(
     }
 
     @Serializable private data class UserSettingChangeMessage(val uuid: MindustryUUID) : Message
+
+    companion object {
+        @OptIn(ExperimentalCoroutinesApi::class)
+        private val USER_CREATE_CONTEXT = Dispatchers.Default.limitedParallelism(1)
+    }
 }

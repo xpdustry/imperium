@@ -28,6 +28,7 @@ import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.snowflake.timestamp
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.identity
@@ -44,6 +45,7 @@ import org.javacord.api.entity.message.embed.EmbedBuilder
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
+    private val renderer = instances.get<TimeRenderer>()
 
     @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
@@ -83,17 +85,18 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
                         .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
                         .addField("Type", punishment.type.toString(), true)
                         .addField("Reason", punishment.reason, false)
-                        .addField("Timestamp", punishment.snowflake.timestamp.toString(), true)
                         .addField(
-                            "Duration",
-                            if (punishment.duration.isInfinite()) "Permanent"
-                            else punishment.duration.toString(),
+                            "Timestamp",
+                            renderer.renderInstant(punishment.snowflake.timestamp),
                             true)
+                        .addField("Duration", renderer.renderDuration(punishment.duration), true)
                         .addField("Pardoned", if (punishment.pardon != null) "Yes" else "No", true)
                 if (punishment.pardon != null) {
                     embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
                     embed.addField(
-                        "Pardon Timestamp", punishment.pardon!!.timestamp.toString(), true)
+                        "Pardon Timestamp",
+                        renderer.renderInstant(punishment.pardon!!.timestamp),
+                        true)
                 }
                 embed
             }

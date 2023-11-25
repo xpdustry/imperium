@@ -50,6 +50,8 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
 import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.time.SimpleTimeRenderer
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.translator.DeeplTranslator
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.user.SimpleUserManager
@@ -100,7 +102,7 @@ fun CommonModule() =
 
         single<MindustryMapManager> { SimpleMindustryMapManager(get(), get()) }
 
-        single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
+        single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
 
         single<UserManager> { SimpleUserManager(get(), get(), get()) }
 
@@ -138,4 +140,6 @@ fun CommonModule() =
         single<ImperiumVersion> { ImperiumVersion(1, 1, 1) }
 
         single<PlayerTracker> { RequestingPlayerTracker(get()) }
+
+        single<TimeRenderer> { SimpleTimeRenderer(get()) }
     }

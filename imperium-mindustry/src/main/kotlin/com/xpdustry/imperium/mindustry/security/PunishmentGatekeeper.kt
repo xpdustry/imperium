@@ -58,6 +58,7 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
     }
 }
 
+// TODO Use TimeRenderer
 private fun formatDuration(duration: Duration): String =
     when {
         duration.isInfinite() -> "Permanent"

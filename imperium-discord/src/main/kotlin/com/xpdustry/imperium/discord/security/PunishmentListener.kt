@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
@@ -40,6 +41,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val messenger = instances.get<Messenger>()
+    private val renderer = instances.get<TimeRenderer>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { (author, type, snowflake) ->
@@ -53,11 +55,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             setTitle("Punishment ${punishment.snowflake}")
                             addField("Target", user?.lastName ?: "`<UNKNOWN>`", true)
                             addField("Type", punishment.type.toString(), true)
-                            addField(
-                                "Duration",
-                                if (punishment.duration.isInfinite()) "PERMANENT"
-                                else punishment.duration.toString(),
-                                true)
+                            addField("Duration", renderer.renderDuration(punishment.duration), true)
                             addField("Reason", punishment.reason, false)
                         }
                         PunishmentMessage.Type.PARDON -> {
