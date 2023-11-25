@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
+import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageAnalysisListener
 import com.xpdustry.imperium.mindustry.security.PunishmentListener
@@ -112,6 +113,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 WelcomeListener::class,
                 ResourceHudListener::class,
                 ImperiumLogicListener::class,
+                AntiEvadeListener::class,
             )) {
             application.register(listener)
         }
