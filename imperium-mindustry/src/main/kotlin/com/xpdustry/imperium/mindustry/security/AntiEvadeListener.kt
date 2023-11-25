@@ -51,7 +51,7 @@ class AntiEvadeListener(instances: InstanceManager) : ImperiumApplication.Listen
                 ImperiumScope.MAIN.launch {
                     if (users.getSetting(player.uuid(), User.Setting.ANTI_BAN_EVADE)) {
                         player.sendMessage(
-                            "[orange]Warning, the player [accent]${event.player.name.stripMindustryColors()}[] has changed his name. He was [accent]$previous[]")
+                            "[orange]Warning, the player [accent]${event.player.name.stripMindustryColors()}[] has changed his name. He was [accent]$previous[].")
                     }
                 }
             }
