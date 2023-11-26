@@ -26,13 +26,13 @@ import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.misc.Entities
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
-import mindustry.gen.Groups
 
 class AntiEvadeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
@@ -46,7 +46,7 @@ class AntiEvadeListener(instances: InstanceManager) : ImperiumApplication.Listen
     internal fun onPlayerJoinEvent(event: EventType.PlayerJoin) {
         val previous = quits.get(event.player.uuid()) { event.player.name.stripMindustryColors() }
         if (event.player.name.stripMindustryColors() != previous) {
-            for (player in Groups.player) {
+            for (player in Entities.getPlayers()) {
                 if (player.uuid() == event.player.uuid()) continue
                 ImperiumScope.MAIN.launch {
                     if (users.getSetting(player.uuid(), User.Setting.ANTI_BAN_EVADE)) {

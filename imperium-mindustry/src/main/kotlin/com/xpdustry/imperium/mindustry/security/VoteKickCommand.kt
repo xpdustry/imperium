@@ -29,11 +29,13 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -62,6 +64,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
     private val config = instances.get<ImperiumConfig>()
+    private val users = instances.get<UserManager>()
 
     @EventHandler
     internal fun onPlayerLeave(event: EventType.PlayerLeave) {
@@ -127,8 +130,7 @@ class VoteKickCommand(instances: InstanceManager) :
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
         punishments.punish(
             config.server.identity,
-            Punishment.Target(
-                session.objective.target.ip().toInetAddress(), session.objective.target.uuid()),
+            users.getByIdentity(session.objective.target.identity).snowflake,
             "Votekick: ${session.objective.reason}",
             Punishment.Type.BAN,
             NetServer.kickDuration.seconds,

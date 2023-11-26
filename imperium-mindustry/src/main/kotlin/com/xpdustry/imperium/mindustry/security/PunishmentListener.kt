@@ -24,10 +24,12 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import mindustry.game.EventType.PlayerBanEvent
@@ -36,19 +38,22 @@ import mindustry.gen.Call
 
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val messenger = instances.get<Messenger>()
-    private val bans = instances.get<PunishmentManager>()
+    private val punishments = instances.get<PunishmentManager>()
+    private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
-            val punishment = bans.findBySnowflake(message.snowflake) ?: return@consumer
+            val punishment = punishments.findBySnowflake(message.snowflake) ?: return@consumer
             if (punishment.type != Punishment.Type.BAN) {
                 return@consumer
             }
+            val user = users.findBySnowflake(punishment.target) ?: return@consumer
+            val data = users.findNamesAndAddressesBySnowflake(user.snowflake)
             runMindustryThread {
-                Events.fire(PlayerIpBanEvent(punishment.target.address.hostAddress))
+                Events.fire(PlayerIpBanEvent(user.lastAddress.hostAddress))
                 for (player in Entities.getPlayers()) {
-                    if (player.ip().toInetAddress() != punishment.target.address &&
-                        player.uuid() != punishment.target.uuid) {
+                    if (player.ip().toInetAddress() !in data.addresses &&
+                        player.uuid() != user.uuid) {
                         continue
                     }
                     Events.fire(PlayerBanEvent(player, player.uuid()))
@@ -67,7 +72,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         player.uuid(),
                         punishment.reason,
                     )
-                    Call.sendMessage("[scarlet]Player " + player.plainName() + " has been banned.")
+                    Call.sendMessage(
+                        "[scarlet]Player ${player.name.stripMindustryColors()} has been banned.")
                 }
             }
         }

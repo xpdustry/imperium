@@ -33,15 +33,14 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.toHexString
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.history.BlockHistory
-import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -239,8 +238,9 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             )
         }
 
-        // TODO This does not cover processors that are built then bound, but let's be honest, who
-        // does that ?
+        // TODO
+        //   This does not cover processors that are built then bound, but let's be honest, who
+        //   does that ?
         if (building is LogicBlock.LogicBuild) {
             building.links
                 .asSequence()
@@ -394,22 +394,11 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                             }
                         }
 
-                        val player = Entities.getPlayersAsync().find { it.uuid() == element.author }
-                        if (player != null) {
+                        val user = users.findByUuid(element.author)
+                        if (user != null) {
                             punishments.punish(
                                 config.identity,
-                                Punishment.Target(player.ip().toInetAddress(), player.uuid()),
-                                "Placing NSFW images",
-                                Punishment.Type.BAN,
-                                3.days)
-                            return@broadcast
-                        }
-
-                        val address = users.findByUuid(element.author)?.lastAddress
-                        if (address != null) {
-                            punishments.punish(
-                                config.identity,
-                                Punishment.Target(address, element.author),
+                                user.snowflake,
                                 "Placing NSFW images",
                                 Punishment.Type.BAN,
                                 3.days)

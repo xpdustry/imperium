@@ -33,7 +33,6 @@ import com.xpdustry.imperium.common.misc.MINDUSTRY_ORANGE_COLOR
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
-import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -51,7 +50,6 @@ import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Priority
 import java.awt.Color
 import java.text.DecimalFormat
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -94,10 +92,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 return@register ctx.message
             }
             val muted =
-                punishments
-                    .findAllByAddress(ctx.sender.ip().toInetAddress())
-                    .filter { !it.expired && it.type == Punishment.Type.MUTE }
-                    .firstOrNull()
+                punishments.findAllByIdentity(ctx.sender.identity).firstOrNull {
+                    !it.expired && it.type == Punishment.Type.MUTE
+                }
             if (muted != null) {
                 if (ctx.target == ctx.sender) {
                     ctx.sender.showInfoMessage(

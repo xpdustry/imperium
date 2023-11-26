@@ -22,23 +22,22 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.misc.toCRC32Muuid
-import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.user.UserAddressTable
 import com.xpdustry.imperium.common.user.UserManager
-import java.net.InetAddress
+import com.xpdustry.imperium.common.user.UserTable
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.JoinType
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.update
 
@@ -46,19 +45,19 @@ interface PunishmentManager {
 
     suspend fun findBySnowflake(snowflake: Snowflake): Punishment?
 
-    suspend fun findAllByAddress(target: InetAddress): Flow<Punishment>
+    suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment>
 
-    suspend fun findAllByUuid(uuid: MindustryUUID): Flow<Punishment>
+    suspend fun findAllByUser(snowflake: Snowflake): List<Punishment>
 
     suspend fun punish(
         author: Identity,
-        target: Punishment.Target,
+        user: Snowflake,
         reason: String,
         type: Punishment.Type,
         duration: Duration
     )
 
-    suspend fun pardon(author: Identity, snowflake: Snowflake, reason: String): PardonResult
+    suspend fun pardon(author: Identity, punishment: Snowflake, reason: String): PardonResult
 }
 
 enum class PardonResult {
@@ -96,37 +95,40 @@ class SimplePunishmentManager(
             PunishmentTable.select { PunishmentTable.id eq snowflake }.firstOrNull()?.toPunishment()
         }
 
-    override suspend fun findAllByAddress(target: InetAddress): Flow<Punishment> =
+    override suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment> =
         provider.newSuspendTransaction {
-            PunishmentTable.select { PunishmentTable.targetAddress eq target.address }
+            var query = Op.build { UserAddressTable.address eq identity.address.address }
+            users.findByUuid(identity.uuid)?.snowflake?.let { snowflake ->
+                query = query.or(Op.build { (PunishmentTable.target eq snowflake) })
+            }
+            PunishmentTable.join(
+                    UserAddressTable,
+                    JoinType.LEFT,
+                    onColumn = PunishmentTable.target,
+                    otherColumn = UserAddressTable.user)
+                .select(query)
                 .map { it.toPunishment() }
-                .asFlow()
         }
 
-    override suspend fun findAllByUuid(uuid: MindustryUUID): Flow<Punishment> =
+    override suspend fun findAllByUser(snowflake: Snowflake): List<Punishment> =
         provider.newSuspendTransaction {
-            PunishmentTable.select { PunishmentTable.targetUuid eq uuid.toShortMuuid() }
+            (PunishmentTable leftJoin UserTable)
+                .select { UserTable.id eq snowflake }
                 .map { it.toPunishment() }
-                .asFlow()
         }
 
     override suspend fun punish(
         author: Identity,
-        target: Punishment.Target,
+        user: Snowflake,
         reason: String,
         type: Punishment.Type,
         duration: Duration
     ) {
         val snowflake = generator.generate()
         provider.newSuspendTransaction {
-            val punishmentAuthor = author.toAuthor()
             PunishmentTable.insert {
                 it[PunishmentTable.id] = snowflake
-                it[authorId] = punishmentAuthor.identifier
-                it[authorType] = punishmentAuthor.type
-                it[targetAddress] = target.address.address
-                it[targetAddressMask] = target.mask
-                it[targetUuid] = target.uuid?.toShortMuuid()
+                it[target] = user
                 it[PunishmentTable.reason] = reason
                 it[PunishmentTable.type] = type
                 it[PunishmentTable.duration] =
@@ -139,85 +141,45 @@ class SimplePunishmentManager(
 
     override suspend fun pardon(
         author: Identity,
-        snowflake: Snowflake,
+        punishment: Snowflake,
         reason: String
     ): PardonResult =
         provider
             .newSuspendTransaction {
-                val punishment =
+                val data =
                     PunishmentTable.slice(PunishmentTable.pardonTimestamp)
-                        .select { PunishmentTable.id eq snowflake }
+                        .select { PunishmentTable.id eq punishment }
                         .firstOrNull()
                         ?: return@newSuspendTransaction PardonResult.NOT_FOUND
 
-                if (punishment[PunishmentTable.pardonTimestamp] != null) {
+                if (data[PunishmentTable.pardonTimestamp] != null) {
                     return@newSuspendTransaction PardonResult.ALREADY_PARDONED
                 }
 
-                val punishmentAuthor = author.toAuthor()
-                PunishmentTable.update({ PunishmentTable.id eq snowflake }) {
+                PunishmentTable.update({ PunishmentTable.id eq punishment }) {
                     it[pardonTimestamp] = Instant.now()
                     it[pardonReason] = reason
-                    it[pardonAuthorId] = punishmentAuthor.identifier
-                    it[pardonAuthorType] = punishmentAuthor.type
                 }
 
                 return@newSuspendTransaction PardonResult.SUCCESS
             }
             .also {
                 messenger.publish(
-                    PunishmentMessage(author, PunishmentMessage.Type.PARDON, snowflake),
+                    PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment),
                     local = true)
             }
 
-    private suspend fun Identity.toAuthor(): Punishment.Author =
-        when (this) {
-            is Identity.Server -> Punishment.Author(0L, Punishment.Author.Type.CONSOLE)
-            is Identity.Discord -> {
-                val account = account.findByDiscord(id)
-                if (account == null) {
-                    Punishment.Author(id, Punishment.Author.Type.DISCORD)
-                } else {
-                    Punishment.Author(account.snowflake, Punishment.Author.Type.ACCOUNT)
-                }
-            }
-            is Identity.Mindustry -> {
-                val account = account.findByIdentity(this)
-                if (account == null) {
-                    Punishment.Author(
-                        users.getByIdentity(this).snowflake, Punishment.Author.Type.USER)
-                } else {
-                    Punishment.Author(account.snowflake, Punishment.Author.Type.ACCOUNT)
-                }
-            }
-        }
-
     private fun ResultRow.toPunishment(): Punishment {
-        val target =
-            Punishment.Target(
-                InetAddress.getByAddress(this[PunishmentTable.targetAddress]),
-                this[PunishmentTable.targetUuid]?.toCRC32Muuid(),
-                this[PunishmentTable.targetAddressMask])
-
-        val author =
-            Punishment.Author(this[PunishmentTable.authorId], this[PunishmentTable.authorType])
-
         val pardon =
             if (this[PunishmentTable.pardonTimestamp] == null) {
                 null
             } else {
                 Punishment.Pardon(
-                    this[PunishmentTable.pardonTimestamp]!!,
-                    this[PunishmentTable.pardonReason]!!,
-                    Punishment.Author(
-                        this[PunishmentTable.pardonAuthorId]!!,
-                        this[PunishmentTable.pardonAuthorType]!!))
+                    this[PunishmentTable.pardonTimestamp]!!, this[PunishmentTable.pardonReason]!!)
             }
-
         return Punishment(
             snowflake = this[PunishmentTable.id].value,
-            author = author,
-            target = target,
+            target = this[PunishmentTable.target].value,
             reason = this[PunishmentTable.reason],
             type = this[PunishmentTable.type],
             duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
