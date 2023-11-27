@@ -30,8 +30,6 @@ import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.net.InetAddress
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toCollection
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {

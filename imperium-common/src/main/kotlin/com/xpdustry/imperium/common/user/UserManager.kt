@@ -33,8 +33,6 @@ import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -57,11 +55,11 @@ interface UserManager {
 
     suspend fun findByUuid(uuid: MindustryUUID): User?
 
-    suspend fun findByLastAddress(address: InetAddress): Flow<User>
+    suspend fun findByLastAddress(address: InetAddress): List<User>
 
     suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses
 
-    suspend fun searchUserByName(query: String): Flow<User>
+    suspend fun searchUserByName(query: String): List<User>
 
     suspend fun incrementJoins(identity: Identity.Mindustry)
 
@@ -141,11 +139,9 @@ class SimpleUserManager(
             UserTable.select { UserTable.uuid eq uuid.toShortMuuid() }.firstOrNull()?.toUser()
         }
 
-    override suspend fun findByLastAddress(address: InetAddress): Flow<User> =
+    override suspend fun findByLastAddress(address: InetAddress): List<User> =
         provider.newSuspendTransaction {
-            UserTable.select { UserTable.lastAddress eq address.address }
-                .asFlow()
-                .map { it.toUser() }
+            UserTable.select { UserTable.lastAddress eq address.address }.map { it.toUser() }
         }
 
     override suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses =
@@ -161,11 +157,10 @@ class SimpleUserManager(
             User.NamesAndAddresses(names, addresses)
         }
 
-    override suspend fun searchUserByName(query: String): Flow<User> =
+    override suspend fun searchUserByName(query: String): List<User> =
         provider.newSuspendTransaction {
             (UserTable leftJoin UserNameTable)
                 .select { UserNameTable.name like "%${query}%" }
-                .asFlow()
                 .map { it.toUser() }
         }
 

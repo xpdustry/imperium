@@ -25,9 +25,6 @@ import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.io.InputStream
 import java.util.function.Supplier
 import kotlin.math.roundToInt
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
 import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.ResultRow
@@ -43,6 +40,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.update
 
+// TODO Implement Pagination ?
 interface MindustryMapManager {
 
     suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap?
@@ -53,7 +51,7 @@ interface MindustryMapManager {
 
     suspend fun findRatingByMapAndUser(map: Snowflake, user: Snowflake): MindustryMap.Rating?
 
-    suspend fun findAllMaps(): Flow<MindustryMap>
+    suspend fun findAllMaps(): List<MindustryMap>
 
     suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double
 
@@ -81,7 +79,7 @@ interface MindustryMapManager {
 
     suspend fun getMapInputStream(map: Snowflake): InputStream?
 
-    suspend fun searchMapByName(query: String): Flow<MindustryMap>
+    suspend fun searchMapByName(query: String): List<MindustryMap>
 
     suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>): Boolean
 }
@@ -134,9 +132,9 @@ class SimpleMindustryMapManager(
                 ?.toMindustryMapRating()
         }
 
-    override suspend fun findAllMaps(): Flow<MindustryMap> =
+    override suspend fun findAllMaps(): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.sliceWithoutFile().selectAll().asFlow().map { it.toMindustryMap() }
+            MindustryMapTable.sliceWithoutFile().selectAll().map { it.toMindustryMap() }
         }
 
     override suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double =
@@ -162,7 +160,10 @@ class SimpleMindustryMapManager(
                         it[MindustryMapRatingTable.score]
                 }
                 .average()
-                .let { MindustryMap.Difficulty.entries[it.roundToInt()] }
+                .let {
+                    if (it.isNaN()) MindustryMap.Difficulty.NORMAL
+                    else MindustryMap.Difficulty.entries[it.roundToInt()]
+                }
         }
 
     override suspend fun deleteMapById(snowflake: Snowflake): Boolean =
@@ -221,11 +222,10 @@ class SimpleMindustryMapManager(
                 ?.inputStream
         }
 
-    override suspend fun searchMapByName(query: String): Flow<MindustryMap> =
+    override suspend fun searchMapByName(query: String): List<MindustryMap> =
         provider.newSuspendTransaction {
             MindustryMapTable.sliceWithoutFile()
                 .select { MindustryMapTable.name like "%$query%" }
-                .asFlow()
                 .map { it.toMindustryMap() }
         }
 

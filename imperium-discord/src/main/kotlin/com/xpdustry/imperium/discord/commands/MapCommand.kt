@@ -38,10 +38,6 @@ import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import kotlin.jvm.optionals.getOrNull
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.future.await
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
