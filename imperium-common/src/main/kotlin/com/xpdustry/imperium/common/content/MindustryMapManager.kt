@@ -144,7 +144,7 @@ class SimpleMindustryMapManager(
                 .firstOrNull()
                 ?.get(MindustryMapRatingTable.score.avg())
                 ?.toDouble()
-                ?: 0.0
+                ?: 2.5
         }
 
     // The difficulty enum is stored by the ordinal

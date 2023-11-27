@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.misc.toLong
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.command.ButtonCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
@@ -275,20 +276,16 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ButtonCommand(MAP_DOWNLOAD_BUTTON)
     private suspend fun onMapDownload(actor: InteractionSender.Button) {
-        val stream =
-            actor.message.embeds.first().getFieldValue("Identifier")?.let {
-                maps.getMapInputStream(it.toLong())
-            }
-
+        val snowflake = actor.message.embeds.first().getFieldValue("Identifier")?.toLong()
+        val stream = snowflake?.let { maps.getMapInputStream(it) }
         if (stream === null) {
             actor.respond("The map is no longer available")
             return
         }
-
         stream.use {
             actor.respond {
-                setContent("Here you go.")
-                addAttachment(it, "map.msav")
+                setContent("Here you go:")
+                addAttachment(it, "$snowflake.msav")
             }
         }
     }
