@@ -18,17 +18,23 @@
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.io.InputStream
+import java.time.Instant
 import java.util.function.Supplier
 import kotlin.math.roundToInt
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
+import kotlin.time.toKotlinDuration
 import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
@@ -38,6 +44,7 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.update
 
 // TODO Implement Pagination ?
@@ -53,11 +60,7 @@ interface MindustryMapManager {
 
     suspend fun findAllMaps(): List<MindustryMap>
 
-    suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double
-
-    suspend fun computeAverageDifficultyByMap(snowflake: Snowflake): MindustryMap.Difficulty
-
-    suspend fun deleteMapById(snowflake: Snowflake): Boolean
+    suspend fun deleteMapBySnowflake(snowflake: Snowflake): Boolean
 
     suspend fun createMap(
         name: String,
@@ -77,6 +80,24 @@ interface MindustryMapManager {
         stream: Supplier<InputStream>
     ): Boolean
 
+    // TODO This is horrible, pass a Params class instead
+    suspend fun addMapGame(
+        map: Snowflake,
+        start: Instant,
+        playtime: Duration,
+        unitsCreated: Int,
+        ennemiesKilled: Int,
+        wavesLasted: Int,
+        buildingsConstructed: Int,
+        buildingsDeconstructed: Int,
+        buildingsDestroyed: Int,
+        winner: UByte
+    )
+
+    suspend fun findMapGameBySnowflake(game: Snowflake): MindustryMap.Game?
+
+    suspend fun getMapStats(map: Snowflake): MindustryMap.Stats?
+
     suspend fun getMapInputStream(map: Snowflake): InputStream?
 
     suspend fun searchMapByName(query: String): List<MindustryMap>
@@ -86,13 +107,17 @@ interface MindustryMapManager {
 
 class SimpleMindustryMapManager(
     private val provider: SQLProvider,
-    private val generator: SnowflakeGenerator
+    private val generator: SnowflakeGenerator,
+    private val config: ImperiumConfig
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         provider.newTransaction {
             SchemaUtils.create(
-                MindustryMapTable, MindustryMapRatingTable, MindustryMapGamemodeTable)
+                MindustryMapTable,
+                MindustryMapRatingTable,
+                MindustryMapGamemodeTable,
+                MindustryMapGameTable)
         }
     }
 
@@ -137,36 +162,7 @@ class SimpleMindustryMapManager(
             MindustryMapTable.sliceWithoutFile().selectAll().map { it.toMindustryMap() }
         }
 
-    override suspend fun computeAverageScoreByMap(snowflake: Snowflake): Double =
-        provider.newSuspendTransaction {
-            MindustryMapRatingTable.slice(MindustryMapRatingTable.score.avg())
-                .select { MindustryMapRatingTable.map eq snowflake }
-                .firstOrNull()
-                ?.get(MindustryMapRatingTable.score.avg())
-                ?.toDouble()
-                ?: 2.5
-        }
-
-    // The difficulty enum is stored by the ordinal
-    override suspend fun computeAverageDifficultyByMap(
-        snowflake: Snowflake
-    ): MindustryMap.Difficulty =
-        provider.newSuspendTransaction {
-            MindustryMapRatingTable.slice(
-                    MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
-                .select { MindustryMapRatingTable.map eq snowflake }
-                .map {
-                    it[MindustryMapRatingTable.difficulty].ordinal *
-                        it[MindustryMapRatingTable.score]
-                }
-                .average()
-                .let {
-                    if (it.isNaN()) MindustryMap.Difficulty.NORMAL
-                    else MindustryMap.Difficulty.entries[it.roundToInt()]
-                }
-        }
-
-    override suspend fun deleteMapById(snowflake: Snowflake): Boolean =
+    override suspend fun deleteMapBySnowflake(snowflake: Snowflake): Boolean =
         provider.newSuspendTransaction {
             MindustryMapTable.deleteWhere { MindustryMapTable.id eq snowflake } > 0
         }
@@ -211,6 +207,88 @@ class SimpleMindustryMapManager(
                     it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
                 }
             rows != 0
+        }
+
+    override suspend fun addMapGame(
+        map: Snowflake,
+        start: Instant,
+        playtime: Duration,
+        unitsCreated: Int,
+        ennemiesKilled: Int,
+        wavesLasted: Int,
+        buildingsConstructed: Int,
+        buildingsDeconstructed: Int,
+        buildingsDestroyed: Int,
+        winner: UByte
+    ): Unit =
+        provider.newSuspendTransaction {
+            val snowflake = generator.generate()
+            MindustryMapGameTable.insert {
+                it[MindustryMapGameTable.id] = snowflake
+                it[MindustryMapGameTable.map] = map
+                it[server] = config.server.name
+                it[MindustryMapGameTable.start] = start
+                it[MindustryMapGameTable.playtime] = playtime.toJavaDuration()
+                it[MindustryMapGameTable.unitsCreated] = unitsCreated
+                it[MindustryMapGameTable.ennemiesKilled] = ennemiesKilled
+                it[MindustryMapGameTable.wavesLasted] = wavesLasted
+                it[MindustryMapGameTable.buildingsConstructed] = buildingsConstructed
+                it[MindustryMapGameTable.buildingsDeconstructed] = buildingsDeconstructed
+                it[MindustryMapGameTable.buildingsDestroyed] = buildingsDestroyed
+                it[MindustryMapGameTable.winner] = winner
+            }
+        }
+
+    override suspend fun findMapGameBySnowflake(game: Snowflake): MindustryMap.Game? =
+        provider.newSuspendTransaction {
+            MindustryMapGameTable.select { MindustryMapGameTable.id eq game }
+                .firstOrNull()
+                ?.toMindustryMapGame()
+        }
+
+    override suspend fun getMapStats(map: Snowflake): MindustryMap.Stats? =
+        provider.newSuspendTransaction {
+            if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
+                return@newSuspendTransaction null
+            }
+            val score =
+                MindustryMapRatingTable.slice(MindustryMapRatingTable.score.avg())
+                    .select { MindustryMapRatingTable.map eq map }
+                    .firstOrNull()
+                    ?.get(MindustryMapRatingTable.score.avg())
+                    ?.toDouble()
+                    ?: 2.5
+            val difficulty =
+                MindustryMapRatingTable.slice(
+                        MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
+                    .select { MindustryMapRatingTable.map eq map }
+                    .map {
+                        it[MindustryMapRatingTable.difficulty].ordinal *
+                            it[MindustryMapRatingTable.score]
+                    }
+                    .average()
+                    .let {
+                        if (it.isNaN()) MindustryMap.Difficulty.NORMAL
+                        else MindustryMap.Difficulty.entries[it.roundToInt()]
+                    }
+            val games =
+                MindustryMapGameTable.select { MindustryMapGameTable.map eq map }.count().toInt()
+            val playtime =
+                MindustryMapGameTable.slice(MindustryMapGameTable.playtime.sum())
+                    .select { MindustryMapGameTable.map eq map }
+                    .firstOrNull()
+                    ?.get(MindustryMapGameTable.playtime.sum())
+                    ?.toKotlinDuration()
+                    ?: Duration.ZERO
+            val record =
+                MindustryMapGameTable.slice(MindustryMapGameTable.id)
+                    .select { MindustryMapGameTable.map eq map }
+                    .orderBy(MindustryMapGameTable.playtime, SortOrder.DESC)
+                    .firstOrNull()
+                    ?.get(MindustryMapGameTable.id)
+                    ?.value
+
+            MindustryMap.Stats(score, difficulty, games, playtime, record)
         }
 
     override suspend fun getMapInputStream(map: Snowflake): InputStream? =
@@ -263,8 +341,6 @@ class SimpleMindustryMapManager(
             author = this[MindustryMapTable.author],
             width = this[MindustryMapTable.width],
             height = this[MindustryMapTable.height],
-            playtime = this[MindustryMapTable.playtime],
-            games = this[MindustryMapTable.games],
             lastUpdate = this[MindustryMapTable.lastUpdate],
             gamemodes = getMapGamemodes(this[MindustryMapTable.id].value))
 
@@ -273,4 +349,19 @@ class SimpleMindustryMapManager(
             user = this[MindustryMapRatingTable.user].value,
             score = this[MindustryMapRatingTable.score],
             difficulty = this[MindustryMapRatingTable.difficulty])
+
+    private fun ResultRow.toMindustryMapGame() =
+        MindustryMap.Game(
+            snowflake = this[MindustryMapGameTable.id].value,
+            map = this[MindustryMapGameTable.map].value,
+            server = this[MindustryMapGameTable.server],
+            start = this[MindustryMapGameTable.start],
+            playtime = this[MindustryMapGameTable.playtime].toKotlinDuration(),
+            unitsCreated = this[MindustryMapGameTable.unitsCreated],
+            ennemiesKilled = this[MindustryMapGameTable.ennemiesKilled],
+            wavesLasted = this[MindustryMapGameTable.wavesLasted],
+            buildingsConstructed = this[MindustryMapGameTable.buildingsConstructed],
+            buildingsDeconstructed = this[MindustryMapGameTable.buildingsDeconstructed],
+            buildingsDestroyed = this[MindustryMapGameTable.buildingsDestroyed],
+            winner = this[MindustryMapGameTable.winner])
 }

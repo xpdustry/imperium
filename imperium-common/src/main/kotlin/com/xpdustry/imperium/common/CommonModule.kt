@@ -103,7 +103,7 @@ fun CommonModule() =
 
         single<AccountManager> { SimpleAccountManager(get(), get(), get()) }
 
-        single<MindustryMapManager> { SimpleMindustryMapManager(get(), get()) }
+        single<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get()) }
 
         single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 
