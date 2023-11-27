@@ -33,12 +33,11 @@ import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -80,6 +79,7 @@ class SimpleUserManager(
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger
 ) : UserManager, ImperiumApplication.Listener {
+    private val userCreateMutex = Mutex()
     private val settingsCache =
         buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>>(
             expireAfterAccess = 5.minutes, maximumSize = 1000)
@@ -93,14 +93,14 @@ class SimpleUserManager(
     }
 
     override suspend fun getByIdentity(identity: Identity.Mindustry): User =
-        provider.newSuspendTransaction {
-            withContext(USER_CREATE_CONTEXT) {
+        userCreateMutex.withLock {
+            provider.newSuspendTransaction {
                 val user =
                     UserTable.select { UserTable.uuid eq identity.uuid.toShortMuuid() }
                         .firstOrNull()
                         ?.toUser()
                 if (user != null) {
-                    return@withContext user
+                    return@newSuspendTransaction user
                 }
 
                 val snowflake = generator.generate()
@@ -251,9 +251,4 @@ class SimpleUserManager(
     }
 
     @Serializable private data class UserSettingChangeMessage(val uuid: MindustryUUID) : Message
-
-    companion object {
-        @OptIn(ExperimentalCoroutinesApi::class)
-        private val USER_CREATE_CONTEXT = Dispatchers.Default.limitedParallelism(1)
-    }
 }
