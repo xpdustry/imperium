@@ -89,7 +89,7 @@ class SimpleUserManager(
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
         }
 
-        messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid) }
+        messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid, false) }
     }
 
     override suspend fun getByIdentity(identity: Identity.Mindustry): User =
@@ -219,7 +219,7 @@ class SimpleUserManager(
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
-            invalidateSettings(identity.uuid)
+            invalidateSettings(identity.uuid, true)
         }
 
     override suspend fun setSettings(
@@ -233,7 +233,7 @@ class SimpleUserManager(
                 this[UserSettingTable.setting] = setting
                 this[UserSettingTable.value] = value
             }
-            invalidateSettings(identity.uuid)
+            invalidateSettings(identity.uuid, true)
         }
 
     private fun ResultRow.toUser() =
@@ -245,9 +245,9 @@ class SimpleUserManager(
             timesJoined = this[UserTable.timesJoined],
             lastJoin = this[UserTable.lastJoin])
 
-    private suspend fun invalidateSettings(uuid: MindustryUUID) {
+    private suspend fun invalidateSettings(uuid: MindustryUUID, send: Boolean) {
         settingsCache.synchronous().invalidate(uuid)
-        messenger.publish(UserSettingChangeMessage(uuid))
+        if (send) messenger.publish(UserSettingChangeMessage(uuid))
     }
 
     @Serializable private data class UserSettingChangeMessage(val uuid: MindustryUUID) : Message
