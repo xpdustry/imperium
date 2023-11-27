@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
+import java.net.URL
 import java.util.Locale
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -38,6 +39,7 @@ data class ImperiumConfig(
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),
+    val webhook: WebhookConfig = WebhookConfig.None
 )
 
 data class NetworkConfig(
@@ -202,4 +204,10 @@ sealed interface ImageAnalysisConfig {
         val goreThreshold: Float = 0.5F,
         val offensiveThreshold: Float = 0.5F,
     ) : ImageAnalysisConfig
+}
+
+sealed interface WebhookConfig {
+    data object None : WebhookConfig
+
+    data class Discord(val discordWebhookUrl: URL) : WebhookConfig
 }

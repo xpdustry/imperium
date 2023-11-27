@@ -26,8 +26,11 @@ import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
+import com.xpdustry.imperium.common.image.ImageAnalysis
+import com.xpdustry.imperium.common.image.ImageFormat
 import com.xpdustry.imperium.common.image.LogicImage
-import com.xpdustry.imperium.common.image.LogicImageAnalysis
+import com.xpdustry.imperium.common.image.LogicImageRenderer
+import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -36,11 +39,12 @@ import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.common.webhook.WebhookMessage
+import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
-import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
@@ -68,13 +72,16 @@ import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.logic.CanvasBlock
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.LogicDisplay
+import okhttp3.MediaType.Companion.toMediaType
 
-class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val analyzer = instances.get<LogicImageAnalysis>()
+class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
     private val users = instances.get<UserManager>()
     private val punishments = instances.get<PunishmentManager>()
     private val config = instances.get<ServerConfig.Mindustry>()
+    private val webhook = instances.get<WebhookMessageSender>()
+    private val renderer = instances.get<LogicImageRenderer>()
+    private val analysis = instances.get<ImageAnalysis>()
 
     private val drawerQueue = PriorityBlockingQueue<Wrapper<Cluster<LogicImage.Drawer>>>()
     private val displays =
@@ -373,41 +380,72 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
                 }
                 queue.remove()
 
-                launch broadcast@{
+                launch {
                     logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
-                    if (analyzer.isUnsafe(element.value.blocks)) {
-                        logger.debug(
-                            "Cluster ({}, {}) is unsafe. Destroying.",
-                            element.value.x,
-                            element.value.y)
-                        runMindustryThread {
-                            for (block in element.value.blocks) {
-                                Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
-                                val data = block.data
-                                if (data is LogicImage.Drawer) {
-                                    for (processor in data.processors) {
-                                        Vars.world
-                                            .tile(processor.x, processor.y)
-                                            ?.setNet(Blocks.air)
+                    val image = renderer.render(element.value.blocks)
+
+                    when (val result = analysis.isUnsafe(image)) {
+                        is ImageAnalysis.Result.Failure ->
+                            logger.error("Failed to analyze image: {}", result.message)
+                        is ImageAnalysis.Result.Success -> {
+                            if (!result.unsafe) {
+                                logger.debug(
+                                    "Cluster ({}, {}) is safe", element.value.x, element.value.y)
+                                @Suppress("LABEL_NAME_CLASH") return@launch
+                            }
+                            logger.debug(
+                                "Cluster ({}, {}) is unsafe. Destroying.",
+                                element.value.x,
+                                element.value.y)
+
+                            runMindustryThread {
+                                for (block in element.value.blocks) {
+                                    Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
+                                    val data = block.data
+                                    if (data is LogicImage.Drawer) {
+                                        for (processor in data.processors) {
+                                            Vars.world
+                                                .tile(processor.x, processor.y)
+                                                ?.setNet(Blocks.air)
+                                        }
                                     }
                                 }
                             }
-                        }
 
-                        val user = users.findByUuid(element.author)
-                        if (user != null) {
-                            punishments.punish(
-                                config.identity,
-                                user.snowflake,
-                                "Placing NSFW images",
-                                Punishment.Type.BAN,
-                                3.days)
-                            return@broadcast
-                        }
+                            val user = users.findByUuid(element.author)
+                            if (user == null) {
+                                logger.warn("Could not find player with UUID ${element.author}")
+                                @Suppress("LABEL_NAME_CLASH") return@launch
+                            }
 
-                        logger.warn("Could not find player with UUID ${element.author}")
-                    } else {
-                        logger.debug("Cluster ({}, {}) is safe", element.value.x, element.value.y)
+                            val punishment =
+                                punishments.punish(
+                                    config.identity,
+                                    user.snowflake,
+                                    "Placing NSFW images",
+                                    Punishment.Type.BAN,
+                                    3.days)
+
+                            webhook.send(
+                                WebhookMessage(
+                                    content =
+                                        buildString {
+                                            appendLine("**NSFW image detected**")
+                                            appendLine("Related to punishment $punishment")
+                                            for ((entry, percent) in result.details) {
+                                                appendLine(
+                                                    "- ${entry.name}: ${"%.1f%".format(percent * 100)}")
+                                            }
+                                        },
+                                    attachments =
+                                        listOf(
+                                            WebhookMessage.Attachment(
+                                                "SPOILER_image.jpg",
+                                                "NSFW image",
+                                                "image/jpeg".toMediaType()) {
+                                                    image.inputStream(ImageFormat.JPG)
+                                                })))
+                        }
                     }
                 }
             }
@@ -434,7 +472,6 @@ class LogicImageAnalysisListener(instances: InstanceManager) : ImperiumApplicati
             .mapNotNull { it.author.uuid }
             .findMostCommon()
 
-    // Goofy ass Mindustry coordinate system
     private val Building.rx: Int
         get() = tileX() + block.sizeOffset
 

@@ -29,14 +29,15 @@ import com.xpdustry.imperium.common.config.ImperiumConfigFactory
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
+import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
 import com.xpdustry.imperium.common.image.ImageAnalysis
-import com.xpdustry.imperium.common.image.LogicImageAnalysis
+import com.xpdustry.imperium.common.image.LogicImageRenderer
 import com.xpdustry.imperium.common.image.SightEngineImageAnalysis
-import com.xpdustry.imperium.common.image.SimpleLogicImageAnalysis
+import com.xpdustry.imperium.common.image.SimpleLogicImageRenderer
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -57,6 +58,8 @@ import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.user.SimpleUserManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
+import com.xpdustry.imperium.common.webhook.DiscordWebhookMessageSender
+import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import java.util.concurrent.Executors
 import java.util.function.Supplier
 import kotlin.time.Duration.Companion.seconds
@@ -102,7 +105,7 @@ fun CommonModule() =
 
         single<MindustryMapManager> { SimpleMindustryMapManager(get(), get()) }
 
-        single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
+        single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 
         single<UserManager> { SimpleUserManager(get(), get(), get()) }
 
@@ -113,7 +116,7 @@ fun CommonModule() =
             }
         }
 
-        single<LogicImageAnalysis> { SimpleLogicImageAnalysis(get()) }
+        single<LogicImageRenderer> { SimpleLogicImageRenderer() }
 
         single<OkHttpClient> {
             OkHttpClient.Builder()
@@ -142,4 +145,12 @@ fun CommonModule() =
         single<PlayerTracker> { RequestingPlayerTracker(get()) }
 
         single<TimeRenderer> { SimpleTimeRenderer(get()) }
+
+        single<WebhookMessageSender> {
+            when (val webhookConfig = get<ImperiumConfig>().webhook) {
+                is WebhookConfig.None -> WebhookMessageSender.None
+                is WebhookConfig.Discord ->
+                    DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
+            }
+        }
     }

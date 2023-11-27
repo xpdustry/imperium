@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
@@ -55,7 +54,7 @@ interface PunishmentManager {
         reason: String,
         type: Punishment.Type,
         duration: Duration
-    )
+    ): Snowflake
 
     suspend fun pardon(author: Identity, punishment: Snowflake, reason: String): PardonResult
 }
@@ -82,7 +81,6 @@ class SimplePunishmentManager(
     private val provider: SQLProvider,
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
-    private val account: AccountManager,
     private val users: UserManager
 ) : PunishmentManager, ImperiumApplication.Listener {
 
@@ -123,7 +121,7 @@ class SimplePunishmentManager(
         reason: String,
         type: Punishment.Type,
         duration: Duration
-    ) {
+    ): Snowflake {
         val snowflake = generator.generate()
         provider.newSuspendTransaction {
             PunishmentTable.insert {
@@ -137,6 +135,7 @@ class SimplePunishmentManager(
         }
         messenger.publish(
             PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake), local = true)
+        return snowflake
     }
 
     override suspend fun pardon(
