@@ -17,9 +17,22 @@
  */
 package com.xpdustry.imperium.common.misc
 
+import org.jetbrains.exposed.sql.BlobColumnType
+import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.FieldSet
+import org.jetbrains.exposed.sql.IColumnType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
+import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 
 fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean = !select(where).empty()
+
+// TODO Probably better to replace by mediumBlob
+fun Table.blob(name: String, length: Int): Column<ExposedBlob> =
+    registerColumn(name, SizeableBlobColumnType(length))
+
+private class SizeableBlobColumnType(private val length: Int) : IColumnType by BlobColumnType() {
+    override fun sqlType(): String = "BLOB($length)"
+}

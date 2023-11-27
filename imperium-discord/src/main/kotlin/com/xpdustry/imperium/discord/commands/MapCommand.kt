@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
+import com.xpdustry.imperium.common.content.MindustryMapTable
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
@@ -64,9 +65,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        if (map.size > MAX_MAP_FILE_SIZE) {
+        if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
             actor.respond(
-                "The map file is bigger than ${MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
+                "The map file is bigger than ${MindustryMapTable.MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
             return
         }
 
@@ -351,7 +352,6 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
         private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
-        private const val MAX_MAP_SIDE_SIZE = 512
-        private const val MAX_MAP_FILE_SIZE = 50 * 1024
+        private const val MAX_MAP_SIDE_SIZE = 1024
     }
 }
