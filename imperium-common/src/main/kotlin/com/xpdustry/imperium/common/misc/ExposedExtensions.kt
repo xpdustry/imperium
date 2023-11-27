@@ -29,10 +29,9 @@ import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 
 fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean = !select(where).empty()
 
-// TODO Probably better to replace by mediumBlob
-fun Table.blob(name: String, length: Int): Column<ExposedBlob> =
-    registerColumn(name, SizeableBlobColumnType(length))
+fun Table.mediumblob(name: String): Column<ExposedBlob> =
+    registerColumn(name, MediumBlobColumnType())
 
-private class SizeableBlobColumnType(private val length: Int) : IColumnType by BlobColumnType() {
-    override fun sqlType(): String = "BLOB($length)"
+private class MediumBlobColumnType : IColumnType by BlobColumnType() {
+    override fun sqlType(): String = "MEDIUMBLOB"
 }

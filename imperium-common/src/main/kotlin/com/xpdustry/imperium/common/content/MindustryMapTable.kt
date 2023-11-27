@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.content
 
-import com.xpdustry.imperium.common.misc.blob
+import com.xpdustry.imperium.common.misc.mediumblob
 import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
 import com.xpdustry.imperium.common.user.UserTable
 import java.time.Duration
@@ -34,7 +34,7 @@ object MindustryMapTable : SnowflakeIdTable("mindustry_map") {
     val author = varchar("author", 64).nullable()
     val width = integer("width")
     val height = integer("height")
-    val file = blob("file", MAX_MAP_FILE_SIZE)
+    val file = mediumblob("file")
     val playtime = duration("playtime").default(Duration.ZERO)
     val games = integer("games").default(0)
     val lastUpdate = timestamp("last_update").defaultExpression(CurrentTimestamp())
