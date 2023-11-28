@@ -14,8 +14,7 @@ mindustry = "146"
 distributor = "3.2.1"
 junit = "5.10.1"
 testcontainers = "1.19.3"
-# Can't update guava because of gradle metadata skill issue, very anoying
-guava = "32.0.1-jre"
+guava = "32.0.1-jre" # Can't update guava because of gradle metadata skill issue, very anoying
 gson = "2.10.1"
 hoplite = "2.7.5"
 deepl = "1.4.0"
@@ -35,6 +34,8 @@ exposed = "0.44.1"
 h2 = "2.2.224"
 mariadb = "3.3.0"
 caffeine = "3.1.8"
+prettytime = "5.0.7.Final"
+time4j = "4.38"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -83,6 +84,8 @@ exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "e
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
+prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
+time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }

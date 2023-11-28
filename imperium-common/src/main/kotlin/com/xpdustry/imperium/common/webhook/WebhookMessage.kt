@@ -15,19 +15,31 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security
+package com.xpdustry.imperium.common.webhook
 
-import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
-import com.xpdustry.imperium.common.user.UserTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.javatime.duration
-import org.jetbrains.exposed.sql.javatime.timestamp
+import java.awt.Color
+import java.io.InputStream
+import okhttp3.MediaType
 
-object PunishmentTable : SnowflakeIdTable("punishment") {
-    val target = reference("target", UserTable, onDelete = ReferenceOption.CASCADE)
-    val reason = varchar("reason", 256)
-    val type = enumerationByName<Punishment.Type>("type", 32)
-    val duration = duration("duration").nullable()
-    val pardonTimestamp = timestamp("pardon_timestamp").nullable()
-    val pardonReason = varchar("pardon_reason", 256).nullable()
+data class WebhookMessage(
+    val content: String? = "",
+    val embeds: List<Embed> = emptyList(),
+    val attachments: List<Attachment> = emptyList()
+) {
+    data class Embed(
+        val title: String? = null,
+        val thumbnail: Media? = null,
+        val description: String? = null,
+        val color: Color? = null,
+        val image: Media? = null,
+    ) {
+        data class Media(val url: String)
+    }
+
+    data class Attachment(
+        val filename: String,
+        val description: String,
+        val type: MediaType,
+        val stream: () -> InputStream
+    )
 }

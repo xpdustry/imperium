@@ -127,7 +127,9 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
                 @Suppress("UNCHECKED_CAST")
                 val json = Json.encodeToString((message::class as KClass<M>).serializer(), message)
                 logger.trace(
-                    "Publishing ${message::class.simpleName ?: message::class.jvmName} message: $json")
+                    "Publishing {} message: {}",
+                    message::class.simpleName ?: message::class.jvmName,
+                    json)
                 val bytes = json.encodeToByteArray()
                 val headers =
                     mutableMapOf(

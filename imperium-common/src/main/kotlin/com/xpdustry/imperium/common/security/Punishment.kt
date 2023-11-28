@@ -17,19 +17,15 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.timestamp
-import java.net.Inet4Address
-import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 data class Punishment(
     val snowflake: Snowflake,
-    val author: Author,
-    val target: Target,
+    val target: Snowflake,
     val reason: String,
     val type: Type,
     val duration: Duration,
@@ -41,32 +37,12 @@ data class Punishment(
     val expiration: Instant
         get() =
             if (duration.isInfinite()) Instant.MAX
-            else snowflake.timestamp.plus(duration.toJavaDuration()) ?: Instant.MAX
+            else snowflake.timestamp.plus(duration.toJavaDuration())
 
     val permanent: Boolean
         get() = duration.isInfinite()
 
-    data class Target(
-        val address: InetAddress,
-        val uuid: MindustryUUID? = null,
-        val mask: Byte = 0
-    ) {
-        init {
-            val size = if (address is Inet4Address) 32 else 128
-            require(mask in 0..size) { "mask must be in range 0..$size" }
-        }
-    }
-
-    data class Author(val identifier: Long, val type: Type) {
-        enum class Type {
-            DISCORD,
-            ACCOUNT,
-            USER,
-            CONSOLE
-        }
-    }
-
-    data class Pardon(val timestamp: Instant, val reason: String, val author: Author)
+    data class Pardon(val timestamp: Instant, val reason: String)
 
     enum class Type {
         MUTE,

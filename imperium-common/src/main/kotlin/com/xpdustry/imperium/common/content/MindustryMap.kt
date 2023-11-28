@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.snowflake.Snowflake
-import java.time.Duration
 import java.time.Instant
+import kotlin.time.Duration
 
 data class MindustryMap(
     val snowflake: Snowflake,
@@ -28,8 +28,6 @@ data class MindustryMap(
     val author: String?,
     val width: Int,
     val height: Int,
-    val playtime: Duration,
-    val games: Int,
     val lastUpdate: Instant,
     val gamemodes: Set<MindustryGamemode>
 ) {
@@ -40,9 +38,31 @@ data class MindustryMap(
         EXPERT
     }
 
-    data class Rating(
-        val user: Snowflake,
-        val score: Int,
+    data class Rating(val user: Snowflake, val score: Int, val difficulty: Difficulty)
+
+    data class Stats(
+        val score: Double,
         val difficulty: Difficulty,
+        val games: Int,
+        val playtime: Duration,
+        val record: Snowflake?
+    )
+
+    // TODO
+    //   Add metadata instead of "winner" for special gamemodes
+    //   Such as PVP where I can add a MVP, or hexed with the winner, etc...
+    data class Game(
+        val snowflake: Snowflake,
+        val map: Snowflake,
+        val server: String,
+        val start: Instant,
+        val playtime: Duration,
+        val unitsCreated: Int,
+        val ennemiesKilled: Int,
+        val wavesLasted: Int,
+        val buildingsConstructed: Int,
+        val buildingsDeconstructed: Int,
+        val buildingsDestroyed: Int,
+        val winner: UByte
     )
 }

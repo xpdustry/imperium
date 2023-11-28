@@ -52,6 +52,8 @@ tasks.shadowJar {
         exclude(dependency(libs.exposed.jdbc.get()))
         exclude(dependency(libs.mariadb.get()))
         exclude(dependency(libs.caffeine.get()))
+        exclude(dependency(libs.prettytime.get()))
+        exclude(dependency(libs.time4j.core.get()))
     }
 }
 

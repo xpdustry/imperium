@@ -422,39 +422,43 @@ class SimpleAccountManager(
         account: Snowflake,
         achievement: Account.Achievement,
         value: Int
-    ) =
-        provider.newSuspendTransaction {
-            if (!existsBySnowflake(account)) {
-                return@newSuspendTransaction AccountResult.NotFound
-            }
-            val progression =
-                AccountAchievementTable.slice(
+    ): AccountResult {
+        if (!existsBySnowflake(account)) {
+            return AccountResult.NotFound
+        }
+        val (result, completed) =
+            provider.newSuspendTransaction {
+                val progression =
+                    AccountAchievementTable.slice(
                         AccountAchievementTable.progress, AccountAchievementTable.completed)
-                    .select {
-                        (AccountAchievementTable.account eq account) and
-                            (AccountAchievementTable.achievement eq achievement)
-                    }
-                    .firstOrNull()
-                    ?.toAchievementProgression()
-                    ?: Account.Achievement.Progression.ZERO
+                        .select {
+                            (AccountAchievementTable.account eq account) and
+                                    (AccountAchievementTable.achievement eq achievement)
+                        }
+                        .firstOrNull()
+                        ?.toAchievementProgression()
+                        ?: Account.Achievement.Progression.ZERO
 
-            if (progression.completed) {
-                return@newSuspendTransaction AccountResult.Success
-            }
+                if (progression.completed) {
+                    return@newSuspendTransaction AccountResult.Success to false
+                }
 
-            val completed = progression.progress + value >= achievement.goal
-            AccountAchievementTable.upsert {
-                it[AccountAchievementTable.account] = account
-                it[AccountAchievementTable.achievement] = achievement
-                it[AccountAchievementTable.completed] = completed
+                val completed = progression.progress + value >= achievement.goal
+                AccountAchievementTable.upsert {
+                    it[AccountAchievementTable.account] = account
+                    it[AccountAchievementTable.achievement] = achievement
+                    it[AccountAchievementTable.completed] = completed
+                }
+
+                AccountResult.Success to completed
             }
 
             if (completed) {
                 messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
             }
 
-            AccountResult.Success
-        }
+        return result
+    }
 
     override suspend fun getAchievements(
         snowflake: Snowflake
@@ -482,24 +486,25 @@ class SimpleAccountManager(
             } != 0
         }
 
-    override suspend fun setRank(snowflake: Snowflake, rank: Rank) =
-        provider.newSuspendTransaction {
-            val current =
-                AccountTable.slice(AccountTable.rank)
-                    .select { AccountTable.id eq snowflake }
-                    .firstOrNull()
-                    ?.get(AccountTable.rank)
-            if (current == rank) {
-                return@newSuspendTransaction
-            }
-            val changed =
+    override suspend fun setRank(snowflake: Snowflake, rank: Rank) {
+        val changed =
+            provider.newSuspendTransaction {
+                val current =
+                    AccountTable.slice(AccountTable.rank)
+                        .select { AccountTable.id eq snowflake }
+                        .firstOrNull()
+                        ?.get(AccountTable.rank)
+                if (current == rank) {
+                    return@newSuspendTransaction false
+                }
                 AccountTable.update({ AccountTable.id eq snowflake }) {
                     it[AccountTable.rank] = rank
                 } != 0
-            if (changed) {
-                messenger.publish(RankChangeEvent(snowflake), local = true)
             }
+        if (changed) {
+            messenger.publish(RankChangeEvent(snowflake), local = true)
         }
+    }
 
     @VisibleForTesting
     internal suspend fun createSessionHash(identity: Identity.Mindustry): ByteArray =

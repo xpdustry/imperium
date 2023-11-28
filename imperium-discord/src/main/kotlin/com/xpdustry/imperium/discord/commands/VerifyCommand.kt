@@ -24,7 +24,6 @@ import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -36,15 +35,12 @@ import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
-import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
 class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val config = instances.get<ImperiumConfig>()
     private val accounts = instances.get<AccountManager>()
-    private val api = instances.get<DiscordService>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
     private val pending =

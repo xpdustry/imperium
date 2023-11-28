@@ -66,7 +66,7 @@ private val PUNISHMENT_TARGET = stateKey<Identity.Mindustry>("punishment_target"
 
 class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
-    private val bans = instances.get<PunishmentManager>()
+    private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val accounts = instances.get<AccountManager>()
     private val config = instances.get<ServerConfig.Mindustry>()
@@ -82,12 +82,9 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 MenuOption("[green]Yes") { _ ->
                     view.closeAll()
                     ImperiumScope.MAIN.launch {
-                        bans.punish(
+                        punishments.punish(
                             view.viewer.identity,
-                            Punishment.Target(
-                                view.state[PUNISHMENT_TARGET]!!.address,
-                                view.state[PUNISHMENT_TARGET]!!.uuid,
-                            ),
+                            users.getByIdentity(view.state[PUNISHMENT_TARGET]!!).snowflake,
                             view.state[PUNISHMENT_REASON]!!,
                             Punishment.Type.BAN,
                             view.state[PUNISHMENT_DURATION]!!,
@@ -253,7 +250,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,
-                    bans.findAllByUuid(target.uuid()).count(),
+                    punishments.findAllByIdentity(target.identity).count(),
                     if (canSeeInfo)
                         historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
                     else arrayOf("Don't have permission to view addresses."),

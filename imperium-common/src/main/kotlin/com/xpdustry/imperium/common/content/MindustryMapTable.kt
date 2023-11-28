@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common.content
 
+import com.xpdustry.imperium.common.misc.mediumblob
 import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
 import com.xpdustry.imperium.common.user.UserTable
 import java.time.Duration
@@ -26,15 +27,29 @@ import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object MindustryMapTable : SnowflakeIdTable("mindustry_map") {
+    const val MAX_MAP_FILE_SIZE = 128 * 1024
+
     val name = varchar("name", 64)
     val description = text("description").nullable()
     val author = varchar("author", 64).nullable()
     val width = integer("width")
     val height = integer("height")
-    val file = blob("file")
-    val playtime = duration("playtime").default(Duration.ZERO)
-    val games = integer("games").default(0)
+    val file = mediumblob("file")
     val lastUpdate = timestamp("last_update").defaultExpression(CurrentTimestamp())
+}
+
+object MindustryMapGameTable : SnowflakeIdTable("mindustry_map_game") {
+    val map = reference("map_id", MindustryMapTable)
+    val server = varchar("server", 64)
+    val start = timestamp("start").defaultExpression(CurrentTimestamp())
+    val playtime = duration("playtime").default(Duration.ZERO)
+    val unitsCreated = integer("units_created").default(0)
+    val ennemiesKilled = integer("ennemies_killed").default(0)
+    val wavesLasted = integer("waves_lasted").default(0)
+    val buildingsConstructed = integer("buildings_constructed").default(0)
+    val buildingsDeconstructed = integer("buildings_deconstructed").default(0)
+    val buildingsDestroyed = integer("buildings_destroyed").default(0)
+    val winner = ubyte("winner").default(UByte.MIN_VALUE)
 }
 
 object MindustryMapGamemodeTable : Table("mindustry_map_gamemode") {
@@ -46,7 +61,7 @@ object MindustryMapGamemodeTable : Table("mindustry_map_gamemode") {
 object MindustryMapRatingTable : Table("mindustry_map_rating") {
     val map = reference("map_id", MindustryMapTable)
     val user = reference("user_id", UserTable)
-    val score = integer("score")
+    val score = integer("score").check { it.greater(0) }
     val difficulty = enumerationByName<MindustryMap.Difficulty>("difficulty", 32)
     override val primaryKey = PrimaryKey(map, user)
 }

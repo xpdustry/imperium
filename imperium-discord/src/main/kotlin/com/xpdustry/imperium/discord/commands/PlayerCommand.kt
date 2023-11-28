@@ -19,39 +19,31 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.snowflake.timestamp
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.net.InetAddress
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toCollection
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val tracker = instances.get<PlayerTracker>()
     private val users = instances.get<UserManager>()
     private val discord = instances.get<DiscordService>()
+    private val renderer = instances.get<TimeRenderer>()
 
     @Command(["player", "info"])
     suspend fun onPlayerInfo(actor: InteractionSender, query: String) {
         // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
-        val user =
-            users.findByUuid(query)
-                ?: query
-                    .toLongOrNull()
-                    ?.let { tracker.getPlayerEntry(it) }
-                    ?.let { users.findByUuid(it.player.uuid) }
-                    ?: if (query.toLongOrNull() != null) users.findBySnowflake(query.toLong())
-                else null
+        var user = users.findByUuid(query)
+        if (user == null && query.toLongOrNull() != null) {
+            user = users.findBySnowflake(query.toLong())
+        }
         if (user == null) {
             actor.respond("Player not found.")
             return
@@ -63,16 +55,8 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 .addField("ID", "`${user.snowflake}`", true)
                 .addField("Last Name", "`${user.lastName}`", true)
                 .addField("Names", details.names.joinToString(transform = { "`$it`" }), true)
-                .addField(
-                    "First Join",
-                    DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-                        user.snowflake.timestamp.atOffset(ZoneOffset.UTC)),
-                    true)
-                .addField(
-                    "Last Join",
-                    DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(
-                        user.lastJoin.atOffset(ZoneOffset.UTC)),
-                    true)
+                .addField("First Join", renderer.renderInstant(user.snowflake.timestamp), true)
+                .addField("Last Join", renderer.renderInstant(user.lastJoin), true)
                 .addField("Times Joined", user.timesJoined.toString(), true)
                 .apply {
                     if (discord.isAllowed(actor.user, Rank.ADMIN)) {

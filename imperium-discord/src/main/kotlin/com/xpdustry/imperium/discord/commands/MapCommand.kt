@@ -24,11 +24,14 @@ import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
+import com.xpdustry.imperium.common.content.MindustryMapTable
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.misc.toLong
 import com.xpdustry.imperium.common.snowflake.Snowflake
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.discord.command.ButtonCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
@@ -37,10 +40,6 @@ import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import kotlin.jvm.optionals.getOrNull
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.future.await
 import org.javacord.api.entity.Attachment
 import org.javacord.api.entity.channel.AutoArchiveDuration
@@ -55,6 +54,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
+    private val renderer = instances.get<TimeRenderer>()
 
     @Command(["map", "submit"])
     @NonEphemeral
@@ -64,9 +64,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        if (map.size > MAX_MAP_FILE_SIZE) {
+        if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
             actor.respond(
-                "The map file is bigger than ${MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
+                "The map file is bigger than ${MindustryMapTable.MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
             return
         }
 
@@ -247,6 +247,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
+        val stats = maps.getMapStats(id)!!
         actor.respond {
             addEmbed(
                 EmbedBuilder()
@@ -256,11 +257,10 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .addField("Identifier", "${map.snowflake}")
                     .addField("Description", map.description ?: "Unknown")
                     .addField("Size", "${map.width} x ${map.height}")
-                    .addField(
-                        "Score", "%.2f / 5".format(maps.computeAverageScoreByMap(map.snowflake)))
-                    .addField(
-                        "Difficulty",
-                        maps.computeAverageDifficultyByMap(map.snowflake).name.lowercase())
+                    .addField("Games", stats.games.toString())
+                    .addField("Score", "%.2f / 5".format(stats.score))
+                    .addField("Difficulty", stats.difficulty.toString().lowercase())
+                    .addField("World Record", stats.record.toString())
                     .addField(
                         "Gamemodes",
                         if (map.gamemodes.isEmpty()) "`none`"
@@ -276,22 +276,55 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
+    // TODO Add a way to navigate the games
+    @Command(["map", "game", "info"])
+    @NonEphemeral
+    private suspend fun onMapGameInfo(actor: InteractionSender, id: Snowflake) {
+        val game = maps.findMapGameBySnowflake(id)
+        if (game == null) {
+            actor.respond("Unknown game id")
+            return
+        }
+        actor.respond(
+            EmbedBuilder().apply {
+                setColor(MINDUSTRY_ACCENT_COLOR)
+                setTitle("Game ${game.snowflake}")
+                addField("Date", renderer.renderInstant(game.start))
+                addField("Playtime", renderer.renderDuration(game.playtime))
+                addField("Units Created", game.unitsCreated.toString())
+                addField("Ennemies Killed", game.ennemiesKilled.toString())
+                addField("Waves Lasted", game.wavesLasted.toString())
+                addField("Buildings Constructed", game.buildingsConstructed.toString())
+                addField("Buildings Deconstructed", game.buildingsDeconstructed.toString())
+                addField("Buildings Destroyed", game.buildingsDestroyed.toString())
+                addField("Winner", getWinnerName(game.winner))
+            })
+    }
+
+    private fun getWinnerName(id: UByte) =
+        when (id.toInt()) {
+            0 -> "derelict"
+            1 -> "sharded"
+            2 -> "crux"
+            3 -> "malis"
+            4 -> "green"
+            5 -> "blue"
+            6 -> "neoplastic"
+            else -> "team#$id"
+        }
+
     @ButtonCommand(MAP_DOWNLOAD_BUTTON)
     private suspend fun onMapDownload(actor: InteractionSender.Button) {
-        val stream =
-            actor.message.embeds.first().getFieldValue("Identifier")?.let {
-                maps.getMapInputStream(it.toLong())
-            }
-
+        val snowflake = actor.message.embeds.first().getFieldValue("Identifier")?.toLong()
+        val stream = snowflake?.let { maps.getMapInputStream(it) }
         if (stream === null) {
             actor.respond("The map is no longer available")
             return
         }
-
         stream.use {
             actor.respond {
-                setContent("Here you go.")
-                addAttachment(it, "map.msav")
+                setContent("Here you go:")
+                addAttachment(it, "$snowflake.msav")
             }
         }
     }
@@ -337,7 +370,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["map", "delete"], Rank.ADMIN)
     private suspend fun onMapDelete(actor: InteractionSender, id: Snowflake) {
-        if (maps.deleteMapById(id)) {
+        if (maps.deleteMapBySnowflake(id)) {
             actor.respond("Map deleted!")
         } else {
             actor.respond("Unknown map id")
@@ -351,7 +384,6 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
         private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
-        private const val MAX_MAP_SIDE_SIZE = 512
-        private const val MAX_MAP_FILE_SIZE = 50 * 1024
+        private const val MAX_MAP_SIDE_SIZE = 1024
     }
 }

@@ -31,6 +31,7 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -59,6 +60,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<OkHttpClient>()
     private val config = instances.get<ServerConfig.Mindustry>()
+    private val renderer = instances.get<TimeRenderer>()
 
     override fun onImperiumInit() {
         if (!config.security.gatekeeper) {
@@ -67,7 +69,8 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.security))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
-        pipeline.register("punishment", Priority.NORMAL, PunishmentGatekeeper(punishments))
+        pipeline.register(
+            "punishment", Priority.NORMAL, PunishmentGatekeeper(punishments, renderer))
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->

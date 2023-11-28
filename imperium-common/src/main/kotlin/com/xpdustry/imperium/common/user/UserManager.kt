@@ -29,14 +29,13 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toShortMuuid
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -50,15 +49,17 @@ import org.jetbrains.exposed.sql.upsert
 
 interface UserManager {
 
+    suspend fun getByIdentity(identity: Identity.Mindustry): User
+
     suspend fun findBySnowflake(snowflake: Long): User?
 
     suspend fun findByUuid(uuid: MindustryUUID): User?
 
-    suspend fun findByLastAddress(address: InetAddress): Flow<User>
+    suspend fun findByLastAddress(address: InetAddress): List<User>
 
     suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses
 
-    suspend fun searchUserByName(query: String): Flow<User>
+    suspend fun searchUserByName(query: String): List<User>
 
     suspend fun incrementJoins(identity: Identity.Mindustry)
 
@@ -76,6 +77,7 @@ class SimpleUserManager(
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger
 ) : UserManager, ImperiumApplication.Listener {
+    private val userCreateMutex = Mutex()
     private val settingsCache =
         buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>>(
             expireAfterAccess = 5.minutes, maximumSize = 1000)
@@ -85,8 +87,47 @@ class SimpleUserManager(
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
         }
 
-        messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid) }
+        messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid, false) }
     }
+
+    override suspend fun getByIdentity(identity: Identity.Mindustry): User =
+        userCreateMutex.withLock {
+            provider.newSuspendTransaction {
+                val user =
+                    UserTable.select { UserTable.uuid eq identity.uuid.toShortMuuid() }
+                        .firstOrNull()
+                        ?.toUser()
+                if (user != null) {
+                    return@newSuspendTransaction user
+                }
+
+                val snowflake = generator.generate()
+
+                UserTable.insert {
+                    it[id] = snowflake
+                    it[uuid] = identity.uuid.toShortMuuid()
+                    it[lastName] = identity.name.stripMindustryColors()
+                    it[lastAddress] = identity.address.address
+                }
+
+                UserNameTable.insert {
+                    it[UserNameTable.user] = snowflake
+                    it[name] = identity.name.stripMindustryColors()
+                }
+
+                UserAddressTable.insert {
+                    it[UserAddressTable.user] = snowflake
+                    it[address] = identity.address.address
+                }
+
+                User(
+                    snowflake = snowflake,
+                    uuid = identity.uuid,
+                    lastName = identity.name.stripMindustryColors(),
+                    lastAddress = identity.address,
+                    lastJoin = Instant.EPOCH)
+            }
+        }
 
     override suspend fun findBySnowflake(snowflake: Long): User? =
         provider.newSuspendTransaction {
@@ -98,11 +139,9 @@ class SimpleUserManager(
             UserTable.select { UserTable.uuid eq uuid.toShortMuuid() }.firstOrNull()?.toUser()
         }
 
-    override suspend fun findByLastAddress(address: InetAddress): Flow<User> =
+    override suspend fun findByLastAddress(address: InetAddress): List<User> =
         provider.newSuspendTransaction {
-            UserTable.select { UserTable.lastAddress eq address.address }
-                .asFlow()
-                .map { it.toUser() }
+            UserTable.select { UserTable.lastAddress eq address.address }.map { it.toUser() }
         }
 
     override suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses =
@@ -118,19 +157,18 @@ class SimpleUserManager(
             User.NamesAndAddresses(names, addresses)
         }
 
-    override suspend fun searchUserByName(query: String): Flow<User> =
+    override suspend fun searchUserByName(query: String): List<User> =
         provider.newSuspendTransaction {
             (UserTable leftJoin UserNameTable)
                 .select { UserNameTable.name like "%${query}%" }
-                .asFlow()
                 .map { it.toUser() }
         }
 
     override suspend fun incrementJoins(identity: Identity.Mindustry): Unit =
         provider.newSuspendTransaction {
-            val snowflake = ensureUserExists(identity)
+            val user = getByIdentity(identity)
 
-            UserTable.update({ UserTable.uuid eq identity.uuid.toShortMuuid() }) {
+            UserTable.update({ UserTable.id eq user.snowflake }) {
                 it[lastName] = identity.name.stripMindustryColors()
                 it[lastAddress] = identity.address.address
                 it[timesJoined] = timesJoined.plus(1)
@@ -138,12 +176,12 @@ class SimpleUserManager(
             }
 
             UserNameTable.insertIgnore {
-                it[user] = snowflake
+                it[UserNameTable.user] = user.snowflake
                 it[name] = identity.name.stripMindustryColors()
             }
 
             UserAddressTable.insertIgnore {
-                it[user] = snowflake
+                it[UserAddressTable.user] = user.snowflake
                 it[address] = identity.address.address
             }
         }
@@ -170,13 +208,13 @@ class SimpleUserManager(
         value: Boolean
     ): Unit =
         provider.newSuspendTransaction {
-            val snowflake = ensureUserExists(identity)
+            val user = getByIdentity(identity)
             UserSettingTable.upsert {
-                it[user] = snowflake
+                it[UserSettingTable.user] = user.snowflake
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
-            invalidateSettings(identity.uuid)
+            invalidateSettings(identity.uuid, true)
         }
 
     override suspend fun setSettings(
@@ -184,47 +222,14 @@ class SimpleUserManager(
         settings: Map<User.Setting, Boolean>
     ): Unit =
         provider.newSuspendTransaction {
-            val snowflake = ensureUserExists(identity)
+            val user = getByIdentity(identity)
             UserSettingTable.batchUpsert(settings.entries) { (setting, value) ->
-                this[UserSettingTable.user] = snowflake
+                this[UserSettingTable.user] = user.snowflake
                 this[UserSettingTable.setting] = setting
                 this[UserSettingTable.value] = value
             }
-            invalidateSettings(identity.uuid)
+            invalidateSettings(identity.uuid, true)
         }
-
-    private fun ensureUserExists(identity: Identity.Mindustry): Snowflake {
-        var snowflake =
-            UserTable.slice(UserTable.id)
-                .select { UserTable.uuid eq identity.uuid.toShortMuuid() }
-                .firstOrNull()
-                ?.get(UserTable.id)
-                ?.value
-        if (snowflake != null) {
-            return snowflake
-        }
-
-        snowflake = generator.generate()
-
-        UserTable.insert {
-            it[id] = snowflake
-            it[uuid] = identity.uuid.toShortMuuid()
-            it[lastName] = identity.name.stripMindustryColors()
-            it[lastAddress] = identity.address.address
-        }
-
-        UserNameTable.insert {
-            it[user] = snowflake
-            it[name] = identity.name.stripMindustryColors()
-        }
-
-        UserAddressTable.insert {
-            it[user] = snowflake
-            it[address] = identity.address.address
-        }
-
-        return snowflake
-    }
 
     private fun ResultRow.toUser() =
         User(
@@ -235,9 +240,9 @@ class SimpleUserManager(
             timesJoined = this[UserTable.timesJoined],
             lastJoin = this[UserTable.lastJoin])
 
-    private suspend fun invalidateSettings(uuid: MindustryUUID) {
+    private suspend fun invalidateSettings(uuid: MindustryUUID, send: Boolean) {
         settingsCache.synchronous().invalidate(uuid)
-        messenger.publish(UserSettingChangeMessage(uuid))
+        if (send) messenger.publish(UserSettingChangeMessage(uuid))
     }
 
     @Serializable private data class UserSettingChangeMessage(val uuid: MindustryUUID) : Message

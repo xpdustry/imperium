@@ -91,7 +91,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             for (entry in list) {
                 append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
                 append(" #")
-                append(entry.tid)
+                append(entry.snowflake)
                 append(" ")
                 append(entry.player.name)
                 append("\n")

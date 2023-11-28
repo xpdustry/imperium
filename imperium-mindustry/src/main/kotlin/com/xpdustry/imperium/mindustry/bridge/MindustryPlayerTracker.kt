@@ -25,7 +25,7 @@ import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.function
-import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
@@ -34,12 +34,12 @@ import mindustry.game.EventType
 class MindustryPlayerTracker(
     messenger: Messenger,
     private val config: ServerConfig.Mindustry,
-    private val snowflake: SnowflakeGenerator
+    private val users: UserManager
 ) : RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
     private val joins = LimitedList<PlayerTracker.Entry>(30)
     private val quits = LimitedList<PlayerTracker.Entry>(30)
-    private val online = mutableMapOf<Int, PlayerTracker.Entry>()
+    private val online = mutableMapOf<Long, PlayerTracker.Entry>()
 
     override fun onImperiumInit() {
         messenger.function<PlayerListRequest, PlayerListResponse> {
@@ -53,31 +53,22 @@ class MindustryPlayerTracker(
                     PlayerListRequest.Type.ONLINE -> online.values.toList()
                 })
         }
-
-        messenger.function<PlayerLookupRequest, PlayerLookupResponse> {
-            for (list in listOf(joins, quits)) {
-                for (entry in list) {
-                    if (entry.tid == it.tid) {
-                        return@function PlayerLookupResponse(entry)
-                    }
-                }
-            }
-            null
-        }
     }
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
         ImperiumScope.MAIN.launch {
-            val entry = PlayerTracker.Entry(event.player.identity, snowflake.generate())
+            val snowflake = users.getByIdentity(event.player.identity).snowflake
+            val entry = PlayerTracker.Entry(event.player.identity, snowflake)
             joins.add(entry)
-            online[event.player.id] = entry
+            online[snowflake] = entry
         }
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
         ImperiumScope.MAIN.launch {
-            val entry = online.remove(event.player.id)!!
+            val snowflake = users.getByIdentity(event.player.identity).snowflake
+            val entry = online.remove(snowflake)!!
             quits.add(entry)
         }
 }

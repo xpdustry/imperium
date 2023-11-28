@@ -18,35 +18,18 @@
 package com.xpdustry.imperium.common.image
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.geometry.Cluster
-import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.awt.Color
 import java.awt.geom.AffineTransform
 import java.awt.image.AffineTransformOp
 import java.awt.image.BufferedImage
-import kotlinx.coroutines.withContext
 
-interface LogicImageAnalysis {
-    suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Boolean
+interface LogicImageRenderer {
+    suspend fun render(blocks: List<Cluster.Block<out LogicImage>>): BufferedImage
 }
 
-internal class SimpleLogicImageAnalysis(
-    private val analysis: ImageAnalysis,
-) : LogicImageAnalysis, ImperiumApplication.Listener {
-
-    override suspend fun isUnsafe(blocks: List<Cluster.Block<out LogicImage>>): Boolean =
-        withContext(ImperiumScope.IO.coroutineContext) {
-            when (val result = analysis.isUnsafe(createImage(blocks))) {
-                is ImageAnalysis.Result.Success -> result.unsafe
-                is ImageAnalysis.Result.Failure -> {
-                    logger.error("Failed to analyze image: {}", result.message)
-                    false
-                }
-            }
-        }
-
-    private fun createImage(blocks: List<Cluster.Block<out LogicImage>>): BufferedImage {
+internal class SimpleLogicImageRenderer : LogicImageRenderer, ImperiumApplication.Listener {
+    override suspend fun render(blocks: List<Cluster.Block<out LogicImage>>): BufferedImage {
         val x = blocks.minOf { it.x }
         val y = blocks.minOf { it.y }
         val w = blocks.maxOf { it.x + it.size } - x
@@ -131,6 +114,5 @@ internal class SimpleLogicImageAnalysis(
 
     companion object {
         private const val RES_PER_BLOCK = 30
-        private val logger by LoggerDelegate()
     }
 }

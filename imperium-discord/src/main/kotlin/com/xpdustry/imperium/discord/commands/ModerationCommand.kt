@@ -19,16 +19,15 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.command.annotation.Min
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.isCRC32Muuid
-import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.timestamp
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.identity
@@ -36,8 +35,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import org.javacord.api.entity.message.embed.EmbedBuilder
@@ -45,57 +42,40 @@ import org.javacord.api.entity.message.embed.EmbedBuilder
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
-    private val tracker = instances.get<PlayerTracker>()
+    private val renderer = instances.get<TimeRenderer>()
 
     @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
         actor: InteractionSender,
-        target: String,
+        target: Snowflake,
         @Min(0) page: Int = 0
     ) {
-        var flow = emptyFlow<Punishment>()
-        val address = target.toInetAddressOrNull()
-        if (address != null) {
-            flow = merge(flow, punishments.findAllByAddress(address))
-        }
-        val long = target.toLongOrNull()
-        if (long != null) {
-            val user = users.findBySnowflake(long)
-            if (user != null) {
-                flow = merge(flow, punishments.findAllByUuid(user.uuid))
-            }
-        }
-        if (target.isCRC32Muuid()) {
-            flow = merge(flow, punishments.findAllByUuid(target))
-        }
-
-        val result = flow.drop(page * 10).take(10).toList()
+        val result = punishments.findAllByUser(target).drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
             actor.respond("No punishments found.")
             return
         }
-
         val embeds =
             Array<EmbedBuilder>(result.size) {
                 val punishment = result[it]
                 val embed =
                     EmbedBuilder()
-                        .setTitle("Punishment `${punishment.snowflake}`")
-                        .addField("Target IP", punishment.target.address.hostAddress, true)
-                        .addField("Target UUID", punishment.target.uuid ?: "N/A", true)
+                        .setTitle("Punishment ${punishment.snowflake}")
+                        .addField("Target ID", punishment.target.toString(), true)
                         .addField("Type", punishment.type.toString(), true)
                         .addField("Reason", punishment.reason, false)
-                        .addField("Timestamp", punishment.snowflake.timestamp.toString(), true)
                         .addField(
-                            "Duration",
-                            if (punishment.duration.isInfinite()) "Permanent"
-                            else punishment.duration.toString(),
+                            "Timestamp",
+                            renderer.renderInstant(punishment.snowflake.timestamp),
                             true)
+                        .addField("Duration", renderer.renderDuration(punishment.duration), true)
                         .addField("Pardoned", if (punishment.pardon != null) "Yes" else "No", true)
                 if (punishment.pardon != null) {
                     embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
                     embed.addField(
-                        "Pardon Timestamp", punishment.pardon!!.timestamp.toString(), true)
+                        "Pardon Timestamp",
+                        renderer.renderInstant(punishment.pardon!!.timestamp),
+                        true)
                 }
                 embed
             }
@@ -106,7 +86,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @Command(["ban"], Rank.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender,
-        target: String,
+        target: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
     ) {
@@ -116,7 +96,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @Command(["mute"], Rank.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender,
-        target: String,
+        target: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.ONE_HOUR
     ) {
@@ -127,26 +107,15 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         verb: String,
         type: Punishment.Type,
         actor: InteractionSender,
-        target: String,
+        target: Snowflake,
         reason: String,
         duration: Duration
     ) {
-        var lookup = target.toInetAddressOrNull()?.let(Punishment::Target)
-        if (lookup == null) {
-            val uuid =
-                target.toLongOrNull()?.let { tracker.getPlayerEntry(it) }?.player?.uuid ?: target
-            var user = users.findByUuid(uuid)
-            if (user == null && target.toLongOrNull() != null) {
-                user = users.findBySnowflake(target.toLong())
-            }
-            if (user == null) {
-                actor.respond("Target is not a valid IP address, UUID, TEMP-ID or USER ID.")
-                return
-            }
-            lookup = Punishment.Target(user.lastAddress, user.uuid)
+        if (users.findBySnowflake(target) == null) {
+            actor.respond("Target is not a valid IP address, UUID or USER ID.")
+            return
         }
-
-        punishments.punish(actor.user.identity, lookup, reason, type, duration)
+        punishments.punish(actor.user.identity, target, reason, type, duration)
         actor.respond("$verb user $target.")
     }
 

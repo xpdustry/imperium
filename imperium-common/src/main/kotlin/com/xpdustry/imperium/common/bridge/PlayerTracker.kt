@@ -33,12 +33,10 @@ interface PlayerTracker {
 
     suspend fun getOnlinePlayers(server: String): List<Entry>?
 
-    suspend fun getPlayerEntry(tid: Long): Entry?
-
     @Serializable
     data class Entry(
         val player: Identity.Mindustry,
-        val tid: Long,
+        val snowflake: Long,
         val timestamp: SerializableJInstant = Instant.now()
     )
 }
@@ -59,11 +57,6 @@ open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerT
             .request<PlayerListResponse>(PlayerListRequest(server, type), timeout = 1.seconds)
             ?.entries
 
-    override suspend fun getPlayerEntry(tid: Long): PlayerTracker.Entry? =
-        messenger
-            .request<PlayerLookupResponse>(PlayerLookupRequest(tid), timeout = 1.seconds)
-            ?.entry
-
     @Serializable
     protected data class PlayerListRequest(
         val server: String,
@@ -78,9 +71,4 @@ open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerT
 
     @Serializable
     protected data class PlayerListResponse(val entries: List<PlayerTracker.Entry>) : Message
-
-    @Serializable protected data class PlayerLookupRequest(val tid: Long) : Message
-
-    @Serializable
-    protected data class PlayerLookupResponse(val entry: PlayerTracker.Entry) : Message
 }

@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.misc
 
 import com.github.benmanes.caffeine.cache.AsyncCache
+import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.xpdustry.imperium.common.async.ImperiumScope
 import kotlin.time.Duration
@@ -26,18 +27,29 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
 
+// TODO Replace by builder block
 fun <K, V> buildAsyncCache(
     expireAfterAccess: Duration? = null,
+    expireAfterWrite: Duration? = null,
     maximumSize: Long = -1
 ): AsyncCache<K, V> {
     val builder = Caffeine.newBuilder()
     if (expireAfterAccess != null) {
         builder.expireAfterAccess(expireAfterAccess.toJavaDuration())
     }
+    if (expireAfterWrite != null) {
+        builder.expireAfterWrite(expireAfterWrite.toJavaDuration())
+    }
     if (maximumSize > 0) {
         builder.maximumSize(maximumSize)
     }
     return builder.buildAsync()
+}
+
+fun <K, V> buildCache(configure: Caffeine<K, V>.() -> Unit): Cache<K, V> {
+    @Suppress("UNCHECKED_CAST") val builder = Caffeine.newBuilder() as Caffeine<K, V>
+    configure(builder)
+    return builder.build()
 }
 
 suspend fun <K, V> AsyncCache<K, V>.getSuspending(key: K, compute: suspend (K) -> V): V =

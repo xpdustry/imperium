@@ -17,24 +17,23 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.snowflake.timestamp
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.processing.Processor
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.toList
 
 // TODO Improve ban message
-class PunishmentGatekeeper(private val bans: PunishmentManager) :
-    Processor<GatekeeperContext, GatekeeperResult> {
+class PunishmentGatekeeper(
+    private val punishments: PunishmentManager,
+    private val renderer: TimeRenderer
+) : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         val punishment =
-            bans
-                .findAllByAddress(context.address)
+            punishments
+                .findAllByIdentity(
+                    Identity.Mindustry("unknown", context.uuid, context.usid, context.address))
                 .filter { !it.expired && it.type == Punishment.Type.BAN }
                 .toList()
                 .maxByOrNull { it.snowflake.timestamp }
@@ -46,7 +45,7 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
                 """
                 [red]Oh no! You are currently banned from Chaotic Neutral!
                 [accent]Reason:[white] ${punishment.reason}
-                [accent]Duration:[white] ${formatDuration(punishment.duration)}
+                [accent]Duration:[white] ${renderer.renderDuration(punishment.duration)}
                 [accent]Expires:[white] ${punishment.expiration}
                 [accent]Punishment id:[white] ${punishment.snowflake}
 
@@ -57,12 +56,3 @@ class PunishmentGatekeeper(private val bans: PunishmentManager) :
         }
     }
 }
-
-private fun formatDuration(duration: Duration): String =
-    when {
-        duration.isInfinite() -> "Permanent"
-        duration >= 1.days -> "${duration.inWholeDays} days"
-        duration >= 1.hours -> "${duration.inWholeHours} hours"
-        duration >= 1.minutes -> "${duration.inWholeMinutes} minutes"
-        else -> "${duration.inWholeSeconds} seconds"
-    }
