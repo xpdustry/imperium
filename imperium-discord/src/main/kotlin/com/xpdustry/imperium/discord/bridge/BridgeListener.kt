@@ -45,8 +45,9 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
     override fun onImperiumInit() {
         discord.getMainServer().addMessageCreateListener { event ->
-            if (event.message.author.isBotUser || event.message.content.isBlank())
+            if (!event.message.author.isUser || event.message.content.isBlank()) {
                 return@addMessageCreateListener
+            }
             val channel =
                 event.channel.asServerTextChannel().getOrNull() ?: return@addMessageCreateListener
             if (channel.category.getOrNull()?.id == config.categories.liveChat) {
