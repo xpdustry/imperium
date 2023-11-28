@@ -199,8 +199,8 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         if (building is LogicDisplay.LogicDisplayBuild) {
+            displays.removeElement(building.rx, building.ry)
             if (event.breaking) {
-                displays.removeElement(building.rx, building.ry)
                 logger.trace("Removed display at ({}, {})", building.rx, building.ry)
                 return
             }
@@ -273,8 +273,8 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         if (building is CanvasBlock.CanvasBuild) {
+            canvases.removeElement(building.rx, building.ry)
             if (event.breaking) {
-                canvases.removeElement(building.rx, building.ry)
                 logger.trace("Removed canvas at ({}, {})", building.rx, building.ry)
                 return
             }

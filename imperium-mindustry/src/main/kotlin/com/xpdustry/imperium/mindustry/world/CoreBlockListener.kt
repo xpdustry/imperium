@@ -195,13 +195,12 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         }
 
         if (building is CoreBlock.CoreBuild) {
+            val manager = getManager(building.team)
+            manager.removeElement(building.rx, building.ry)
             if (event.breaking) {
-                val manager = getManager(building.team)
-                manager.removeElement(building.rx, building.ry)
                 logger.trace(
                     "Removed {} core at ({}, {})", building.team.name, building.rx, building.ry)
             } else {
-                val manager = getManager(building.team)
                 manager.addElement(
                     Cluster.Block(
                         building.rx,
