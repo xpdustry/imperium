@@ -83,7 +83,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                 runMindustryThread {
                     Core.settings.put(
                         "imperium-granted-session-achievements",
-                        Json.encodeToString(grantedSessionAchievements))
+                        Json.encodeToString<Map<Snowflake, Long>>(grantedSessionAchievements))
                 }
             }
         }
