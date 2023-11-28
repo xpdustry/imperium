@@ -430,10 +430,10 @@ class SimpleAccountManager(
             provider.newSuspendTransaction {
                 val progression =
                     AccountAchievementTable.slice(
-                        AccountAchievementTable.progress, AccountAchievementTable.completed)
+                            AccountAchievementTable.progress, AccountAchievementTable.completed)
                         .select {
                             (AccountAchievementTable.account eq account) and
-                                    (AccountAchievementTable.achievement eq achievement)
+                                (AccountAchievementTable.achievement eq achievement)
                         }
                         .firstOrNull()
                         ?.toAchievementProgression()
@@ -453,9 +453,9 @@ class SimpleAccountManager(
                 AccountResult.Success to completed
             }
 
-            if (completed) {
-                messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
-            }
+        if (completed) {
+            messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
+        }
 
         return result
     }
