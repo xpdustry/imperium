@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.content
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
@@ -108,7 +109,8 @@ interface MindustryMapManager {
 class SimpleMindustryMapManager(
     private val provider: SQLProvider,
     private val generator: SnowflakeGenerator,
-    private val config: ImperiumConfig
+    private val config: ImperiumConfig,
+    private val messenger: Messenger
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -310,18 +312,18 @@ class SimpleMindustryMapManager(
     override suspend fun setMapGamemodes(
         map: Snowflake,
         gamemodes: Set<MindustryGamemode>
-    ): Boolean =
+    ): Boolean {
+        val previous = findMapBySnowflake(map)?.gamemodes ?: return false
         provider.newSuspendTransaction {
-            if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
-                return@newSuspendTransaction false
-            }
             MindustryMapGamemodeTable.deleteWhere { MindustryMapGamemodeTable.map eq map }
             MindustryMapGamemodeTable.batchUpsert(gamemodes) {
                 this[MindustryMapGamemodeTable.map] = map
                 this[MindustryMapGamemodeTable.gamemode] = it
             }
-            true
         }
+        messenger.publish(MapReloadMessage(gamemodes + previous))
+        return true
+    }
 
     private fun ColumnSet.sliceWithoutFile() =
         slice((if (this is Join) table.columns else columns) - MindustryMapTable.file)
