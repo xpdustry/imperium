@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.google.common.cache.CacheBuilder
+import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.account.Rank
@@ -89,6 +90,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
         accounts.setRank(
             data.first, accounts.findByDiscord(actor.user.id)!!.rank.coerceAtLeast(Rank.VERIFIED))
+        accounts.progress(data.first, Account.Achievement.DISCORD)
         messenger.publish(VerificationMessage(data.first, data.second, code, true))
         actor.respond("You have been verified!")
     }

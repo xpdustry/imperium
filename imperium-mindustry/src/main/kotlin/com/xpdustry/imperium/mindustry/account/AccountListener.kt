@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
+import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -33,7 +34,10 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperResult
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
@@ -76,11 +80,27 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     internal fun onPlayerLeave(event: EventType.PlayerLeave) =
         ImperiumScope.MAIN.launch {
             val now = System.currentTimeMillis()
-
             val account = accounts.findByIdentity(event.player.identity)
             if (account != null) {
-                accounts.incrementPlaytime(
-                    account.snowflake, (now - (playtime.remove(event.player) ?: now)).milliseconds)
+                val playtime = (now - (playtime.remove(event.player) ?: now)).milliseconds
+                accounts.incrementPlaytime(account.snowflake, playtime)
+                if (playtime >= 8.hours) {
+                    accounts.progress(account.snowflake, Account.Achievement.GAMER)
+                }
+                if (playtime >= 30.minutes) {
+                    accounts.progress(account.snowflake, Account.Achievement.ACTIVE)
+                    accounts.progress(account.snowflake, Account.Achievement.HYPER)
+                }
+                val total = playtime + account.playtime
+                if (total >= 1.days) {
+                    accounts.progress(account.snowflake, Account.Achievement.DAY)
+                }
+                if (total >= 7.days) {
+                    accounts.progress(account.snowflake, Account.Achievement.WEEK)
+                }
+                if (total >= 30.days) {
+                    accounts.progress(account.snowflake, Account.Achievement.MONTH)
+                }
             }
             if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
                 accounts.logout(event.player.identity)

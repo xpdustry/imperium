@@ -103,9 +103,9 @@ interface AccountManager {
 
     // TODO Move the following methods in a account stat manager
     suspend fun progress(
-        identity: Identity.Mindustry,
+        account: Snowflake,
         achievement: Account.Achievement,
-        value: Int
+        value: Int = 1
     ): AccountResult
 
     suspend fun getAchievements(
@@ -419,19 +419,19 @@ class SimpleAccountManager(
         }
 
     override suspend fun progress(
-        identity: Identity.Mindustry,
+        account: Snowflake,
         achievement: Account.Achievement,
         value: Int
     ) =
         provider.newSuspendTransaction {
-            val snowflake =
-                findByIdentity(identity)?.snowflake
-                    ?: return@newSuspendTransaction AccountResult.NotFound
+            if (!existsBySnowflake(account)) {
+                return@newSuspendTransaction AccountResult.NotFound
+            }
             val progression =
                 AccountAchievementTable.slice(
                         AccountAchievementTable.progress, AccountAchievementTable.completed)
                     .select {
-                        (AccountAchievementTable.account eq snowflake) and
+                        (AccountAchievementTable.account eq account) and
                             (AccountAchievementTable.achievement eq achievement)
                     }
                     .firstOrNull()
@@ -444,13 +444,13 @@ class SimpleAccountManager(
 
             val completed = progression.progress + value >= achievement.goal
             AccountAchievementTable.upsert {
-                it[account] = snowflake
+                it[AccountAchievementTable.account] = account
                 it[AccountAchievementTable.achievement] = achievement
                 it[AccountAchievementTable.completed] = completed
             }
 
             if (completed) {
-                messenger.publish(AchievementCompletedMessage(snowflake, achievement), local = true)
+                messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
             }
 
             AccountResult.Success

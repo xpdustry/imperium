@@ -34,13 +34,11 @@ data class Account(
     enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
         ACTIVE(7, true),
         HYPER(30, true),
-        ADDICT(90, true),
-        GAMER(8 * 60),
-        STEAM,
+        GAMER,
         DISCORD,
-        DAY(24 * 60),
-        WEEK(7 * 24 * 60),
-        MONTH(30 * 24 * 60);
+        DAY,
+        WEEK,
+        MONTH;
 
         data class Progression(var progress: Int = 0, var completed: Boolean = false) {
             companion object {
