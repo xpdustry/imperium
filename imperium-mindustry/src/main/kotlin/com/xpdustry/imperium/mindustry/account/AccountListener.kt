@@ -82,7 +82,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                 accounts.incrementPlaytime(
                     account.snowflake, (now - (playtime.remove(event.player) ?: now)).milliseconds)
             }
-            if (users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
+            if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
                 accounts.logout(event.player.identity)
             }
         }
