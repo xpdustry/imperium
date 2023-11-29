@@ -53,11 +53,11 @@ object AccountAchievementTable : Table("account_achievement") {
 
 object LegacyAccountTable : IntIdTable("account_legacy") {
     val usernameHash = binary("username_hash", 32).uniqueIndex()
-    val passwordHash = binary("password_hash", 64)
-    val passwordSalt = binary("password_salt", 64)
+    val passwordHash = binary("password_hash", 32)
+    val passwordSalt = binary("password_salt", 16)
     val games = integer("games").default(0)
     val playtime = duration("playtime").default(Duration.ZERO)
-    val verified = bool("verified").default(false)
+    val rank = enumerationByName<Rank>("rank", 32)
 }
 
 object LegacyAccountAchievementTable : Table("account_legacy_achievement") {

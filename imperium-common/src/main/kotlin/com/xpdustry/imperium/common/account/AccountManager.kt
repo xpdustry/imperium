@@ -285,9 +285,7 @@ class SimpleAccountManager(
                     it[playtime] = oldAccount[LegacyAccountTable.playtime]
                     it[games] = oldAccount[LegacyAccountTable.games]
                     it[legacy] = true
-                    it[rank] =
-                        if (oldAccount[LegacyAccountTable.verified]) Rank.VERIFIED
-                        else Rank.EVERYONE
+                    it[rank] = oldAccount[LegacyAccountTable.rank]
                 }
 
             val oldAchievements =
