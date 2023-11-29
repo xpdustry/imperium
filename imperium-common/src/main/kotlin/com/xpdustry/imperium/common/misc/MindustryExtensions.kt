@@ -30,27 +30,109 @@ val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
 
 val MINDUSTRY_ORANGE_COLOR = Color(0xffa108)
 
+private val NAMED_COLORS =
+    setOf(
+        "CLEAR",
+        "BLACK",
+        "WHITE",
+        "LIGHTGRAY",
+        "GRAY",
+        "DARKGRAY",
+        "LIGHTGREY",
+        "GREY",
+        "DARKGREY",
+        "BLUE",
+        "NAVY",
+        "ROYAL",
+        "SLATE",
+        "SKY",
+        "CYAN",
+        "TEAL",
+        "GREEN",
+        "ACID",
+        "LIME",
+        "FOREST",
+        "OLIVE",
+        "YELLOW",
+        "GOLD",
+        "GOLDENROD",
+        "ORANGE",
+        "BROWN",
+        "TAN",
+        "BRICK",
+        "RED",
+        "SCARLET",
+        "CRIMSON",
+        "CORAL",
+        "SALMON",
+        "PINK",
+        "MAGENTA",
+        "PURPLE",
+        "VIOLET",
+        "MAROON",
+        "ACCENT",
+        "UNLAUNCHED",
+        "HIGHLIGTH",
+        "STAT",
+        "NEGSTAT")
+
+// https://github.com/Anuken/Arc/blob/eddce8f1e6b9d960a38fa4dfed3c07e3e211fca2/arc-core/src/arc/util/Strings.java#L118
 fun CharSequence.stripMindustryColors(): String {
     val out = StringBuilder(length)
-    var index = 0
-    while (index < length) {
-        val char = this[index]
-        if (char == '[') {
-            if (getOrNull(index + 1) == '[') {
-                out.append(char)
-                index += 2
+    var i = 0
+    while (i < length) {
+        val c: Char = get(i)
+        if (c == '[') {
+            val length = parseColorMarkup(this, i + 1, length)
+            if (length >= 0) {
+                i += length + 2
             } else {
-                while (index < length && this[index] != ']') {
-                    index++
-                }
-                index++
+                out.append(c)
+                i++
             }
         } else {
-            out.append(char)
-            index++
+            out.append(c)
+            i++
         }
     }
+
     return out.toString()
+}
+
+// I have no idea how it works
+// https://github.com/Anuken/Arc/blob/eddce8f1e6b9d960a38fa4dfed3c07e3e211fca2/arc-core/src/arc/util/Strings.java#L156
+private fun parseColorMarkup(str: CharSequence, start: Int, end: Int): Int {
+    if (start >= end) return -1
+    when (str[start]) {
+        '#' -> {
+            var i = start + 1
+            while (i < end) {
+                val ch = str[i]
+                if (ch == ']') {
+                    if (i < start + 2 || i > start + 9) break
+                    return i - start
+                }
+                if (!(ch in '0'..'9' || ch in 'a'..'f' || ch in 'A'..'F')) {
+                    break
+                }
+                i++
+            }
+            return -1
+        }
+        '[' -> return -2
+        ']' -> return 0
+    }
+    for (i in start + 1 until end) {
+        val ch = str[i]
+        if (ch != ']') continue
+        val name = str.substring(start, i).uppercase()
+        return if (name in NAMED_COLORS) {
+            i - start
+        } else {
+            -1
+        }
+    }
+    return -1
 }
 
 fun ByteArray.toCRC32Muuid(): MindustryUUID {
