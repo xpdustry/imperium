@@ -28,6 +28,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
@@ -127,7 +128,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.listeners.forEach { registry.parse(it) }
 
         // https://github.com/Anuken/Arc/pull/158
-        if (getMindustryVersion().build < 147) {
+        if (getMindustryVersion().build < 147 ||
+            getMindustryVersion().type == MindustryVersion.Type.BLEEDING_EDGE) {
             Core.app =
                 object : Application by Core.app {
                     override fun removeListener(listener: ApplicationListener) {
