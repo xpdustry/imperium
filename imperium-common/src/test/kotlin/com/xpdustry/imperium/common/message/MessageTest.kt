@@ -15,19 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.misc
+package com.xpdustry.imperium.common.message
 
-import com.xpdustry.imperium.common.message.Message
 import io.github.classgraph.ClassGraph
 import kotlin.reflect.jvm.jvmName
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 
-class EntityAndMessageTest {
+class MessageTest {
 
     @Test
-    fun `test entities and messages serializable`() {
+    fun `test messages serializable`() {
         val graph =
             ClassGraph()
                 .enableAnnotationInfo()

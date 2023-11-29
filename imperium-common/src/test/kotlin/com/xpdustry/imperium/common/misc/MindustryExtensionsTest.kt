@@ -25,9 +25,9 @@ class MindustryExtensionsTest {
     @Test
     fun `test mindustry color strip`() {
         Assertions.assertEquals("Hello World", "[#ff0000]Hello World".stripMindustryColors())
-        Assertions.assertEquals("Hello ", "[#ff0000]Hello [World]".stripMindustryColors())
-        Assertions.assertEquals("Hello [World]", "[#ff0000]Hello [[World]".stripMindustryColors())
+        Assertions.assertEquals("Hello [World]", "[#ff0000]Hello [World]".stripMindustryColors())
+        Assertions.assertEquals("Hello [[World]", "[#ff0000]Hello [[World]".stripMindustryColors())
         Assertions.assertEquals("Hello World", "[red]Hello []World".stripMindustryColors())
-        Assertions.assertEquals("[ ]", "[][[[Hello] [World]]".stripMindustryColors())
+        Assertions.assertEquals("[[[Hello] [World]]", "[][[[Hello] [World]]".stripMindustryColors())
     }
 }

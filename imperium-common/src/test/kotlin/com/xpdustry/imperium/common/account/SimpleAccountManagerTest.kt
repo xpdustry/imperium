@@ -202,6 +202,7 @@ class SimpleAccountManagerTest {
                         it[passwordSalt] = hashedPassword.salt
                         it[LegacyAccountTable.games] = games
                         it[LegacyAccountTable.playtime] = playtime
+                        it[rank] = Rank.OVERSEER
                     }
 
                 LegacyAccountAchievementTable.batchInsert(achievements) {
