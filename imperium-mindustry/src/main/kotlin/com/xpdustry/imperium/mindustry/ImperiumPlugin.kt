@@ -38,6 +38,7 @@ import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
+import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -124,6 +125,18 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         val registry = application.instances.get<CommandRegistry>()
         application.listeners.forEach { registry.parse(it) }
+
+        // https://github.com/Anuken/Arc/pull/158
+        if (getMindustryVersion().build < 147) {
+            Core.app =
+                object : Application by Core.app {
+                    override fun removeListener(listener: ApplicationListener) {
+                        synchronized(listeners) {
+                            listeners.replace(listener, object : ApplicationListener {})
+                        }
+                    }
+                }
+        }
     }
 
     override fun onExit() {
