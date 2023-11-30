@@ -18,65 +18,55 @@
 package com.xpdustry.imperium.discord.account
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
-import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.service.DiscordService
-import kotlin.jvm.optionals.getOrNull
-import kotlinx.coroutines.future.await
+import kotlinx.coroutines.launch
 
-class RankSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
     private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
-        messenger.consumer<RankChangeEvent> { (snowflake) ->
-            val account = accounts.findBySnowflake(snowflake) ?: return@consumer
-            val userId = account.discord ?: return@consumer
-            val user =
-                discord.api.getUserById(userId).exceptionally { null }.await() ?: return@consumer
-            val updater = discord.getMainServer().createUpdater()
+        discord.getMainServer().addServerMemberJoinListener {
+            ImperiumScope.MAIN.launch { discord.syncRoles(it.user) }
+        }
 
-            for (rank in account.rank.getRanksBelow()) {
-                val roleId = config.ranks2roles[rank] ?: continue
-                val role = discord.getMainServer().getRoleById(roleId).getOrNull() ?: continue
-                updater.addRoleToUser(user, role)
-                logger.debug(
-                    "Added role {} (rank={}) to {} (id={})", role.name, rank, user.name, user.id)
-            }
+        discord.getMainServer().addUserRoleAddListener {
+            ImperiumScope.MAIN.launch { discord.syncRoles(it.user) }
+        }
 
-            updater.update().await()
+        discord.getMainServer().addUserRoleRemoveListener {
+            ImperiumScope.MAIN.launch { discord.syncRoles(it.user) }
+        }
+
+        messenger.consumer<RankChangeEvent> { (snowflake) -> discord.syncRoles(snowflake) }
+
+        messenger.consumer<AchievementCompletedMessage> { (snowflake, _) ->
+            discord.syncRoles(snowflake)
         }
     }
 
-    @Command(["sync-rank"])
+    @Command(["sync-roles"])
     private suspend fun onSyncRolesCommand(sender: InteractionSender.Slash) {
         val account = accounts.findByDiscord(sender.user.id)
         if (account == null) {
             sender.respond("You are not linked to a cn account.")
             return
         }
-
-        var rank = Rank.EVERYONE
-        for (role in sender.user.getRoles(discord.getMainServer())) {
-            rank = maxOf(Rank.EVERYONE, config.roles2ranks[role.id] ?: Rank.EVERYONE)
-        }
-
-        accounts.setRank(account.snowflake, rank)
-        sender.respond("Your account rank have been synchronized with your discord roles.")
-    }
-
-    companion object {
-        private val logger by LoggerDelegate()
+        discord.syncRoles(account.snowflake)
+        sender.respond(
+            "Your discord roles have been synchronized with your account rank and achievements.")
     }
 }

@@ -35,7 +35,6 @@ data class Account(
         ACTIVE(7, true),
         HYPER(30, true),
         GAMER,
-        DISCORD,
         DAY,
         WEEK,
         MONTH;

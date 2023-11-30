@@ -17,36 +17,38 @@
  */
 package com.xpdustry.imperium.discord.commands
 
-import com.google.common.cache.CacheBuilder
-import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUID
+import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
 class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-
+    private val config = instances.get<ServerConfig.Discord>()
+    private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
     private val pending =
-        CacheBuilder.newBuilder()
-            .expireAfterWrite(10.minutes.toJavaDuration())
-            .build<Int, Pair<Snowflake, MindustryUUID>>()
+        buildCache<Int, Pair<Snowflake, MindustryUUID>> {
+            expireAfterWrite(10.minutes.toJavaDuration())
+        }
 
     override fun onImperiumInit() {
         messenger.consumer<VerificationMessage> { message ->
@@ -84,9 +86,13 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        accounts.setRank(
-            data.first, accounts.findByDiscord(actor.user.id)!!.rank.coerceAtLeast(Rank.VERIFIED))
-        accounts.progress(data.first, Account.Achievement.DISCORD)
+        var rank = accounts.findBySnowflake(data.first)!!.rank
+        for (role in actor.user.getRoles(discord.getMainServer())) {
+            rank = maxOf(rank, config.roles2ranks[role.id] ?: Rank.VERIFIED)
+        }
+        accounts.setRank(data.first, rank)
+
+        discord.syncRoles(actor.user)
         messenger.publish(VerificationMessage(data.first, data.second, code, true))
         actor.respond("You have been verified!")
     }

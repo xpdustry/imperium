@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.Secret
+import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
@@ -170,8 +171,9 @@ sealed interface ServerConfig {
     data class Discord(
         val token: Secret,
         val categories: Categories,
-        val ranks2roles: Map<Rank, Long> = emptyMap(),
         val channels: Channels,
+        val ranks2roles: Map<Rank, Long> = emptyMap(),
+        val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
         val mindustryVersion: String = "145",
     ) : ServerConfig {
         override val name: String = "discord"
