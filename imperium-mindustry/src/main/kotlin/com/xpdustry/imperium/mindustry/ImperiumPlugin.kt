@@ -133,9 +133,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             Core.app =
                 object : Application by Core.app {
                     override fun removeListener(listener: ApplicationListener) {
-                        synchronized(listeners) {
-                            listeners.replace(listener, object : ApplicationListener {})
-                        }
+                        post { synchronized(listeners) { listeners.remove(listener) } }
                     }
                 }
         }
