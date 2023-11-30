@@ -82,6 +82,7 @@ class SlashCommandRegistry(
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
+        registerHandler(Rank::class, EnumTypeHandler(Rank::class))
     }
 
     override fun onImperiumInit() {

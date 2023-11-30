@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.BridgeListener
+import com.xpdustry.imperium.discord.commands.AccountCommand
 import com.xpdustry.imperium.discord.commands.DebugCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
@@ -61,7 +62,8 @@ fun main() {
             PunishmentListener::class,
             RoleSyncListener::class,
             DebugCommand::class,
-            PlayerCommand::class)) {
+            PlayerCommand::class,
+            AccountCommand::class)) {
         application.register(listener)
     }
 
