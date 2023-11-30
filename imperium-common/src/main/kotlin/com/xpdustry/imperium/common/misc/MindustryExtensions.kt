@@ -72,7 +72,7 @@ private val NAMED_COLORS =
         "MAROON",
         "ACCENT",
         "UNLAUNCHED",
-        "HIGHLIGTH",
+        "HIGHLIGHT",
         "STAT",
         "NEGSTAT")
 
