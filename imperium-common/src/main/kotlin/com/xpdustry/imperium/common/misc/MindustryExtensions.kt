@@ -163,6 +163,6 @@ fun String.isCRC32Muuid(): Boolean {
 
 fun MindustryUUID.toShortMuuid(): ByteArray = Base64.getDecoder().decode(this).sliceArray(0..7)
 
-fun MindustryUUID.toLong(): Long = Longs.fromByteArray(toShortMuuid())
+fun MindustryUUID.toLongMuuid(): Long = Longs.fromByteArray(toShortMuuid())
 
 fun Long.toCRC32Muuid(): MindustryUUID = Longs.toByteArray(this).toCRC32Muuid()

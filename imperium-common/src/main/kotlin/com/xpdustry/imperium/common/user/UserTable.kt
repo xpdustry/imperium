@@ -24,7 +24,7 @@ import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object UserTable : SnowflakeIdTable("user") {
-    val uuid = binary("uuid", 8).uniqueIndex()
+    val uuid = long("uuid").uniqueIndex()
     val lastName = varchar("last_name", 64)
     val lastAddress = binary("last_address", 16)
     val timesJoined = integer("times_joined").default(0)

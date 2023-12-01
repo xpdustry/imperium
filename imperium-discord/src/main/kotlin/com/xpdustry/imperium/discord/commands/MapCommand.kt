@@ -29,7 +29,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.common.misc.toLong
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.discord.command.ButtonCommand
@@ -56,9 +55,53 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val renderer = instances.get<TimeRenderer>()
 
+    @Suppress("DuplicatedCode")
+    @Command(["map", "preview"])
+    @NonEphemeral
+    suspend fun onMapPreviewCommand(actor: InteractionSender, map: Attachment) {
+        if (!map.fileName.endsWith(".msav")) {
+            actor.respond("Invalid map file!")
+            return
+        }
+
+        if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
+            actor.respond(
+                "The map file is bigger than ${MindustryMapTable.MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
+            return
+        }
+
+        val (meta, preview) =
+            map.asInputStream().use { content.getMapMetadataWithPreview(it).getOrThrow() }
+
+        @Suppress("DuplicatedCode")
+        if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
+            actor.respond(
+                "The map is bigger than $MAX_MAP_SIDE_SIZE blocs, please submit reasonably sized maps.")
+            return
+        }
+
+        actor.respond {
+            addAttachment(map.asInputStream(), map.fileName)
+            addEmbed(
+                EmbedBuilder()
+                    .setColor(MINDUSTRY_ACCENT_COLOR)
+                    .setTitle("Map Submission")
+                    .addField("Name", meta.name.stripMindustryColors())
+                    .addField("Author", meta.author?.stripMindustryColors() ?: "Unknown")
+                    .addField("Description", meta.description?.stripMindustryColors() ?: "Unknown")
+                    .addField("Size", "${preview.width} x ${preview.height}")
+                    .setImage(preview))
+        }
+    }
+
+    @Suppress("DuplicatedCode")
     @Command(["map", "submit"])
     @NonEphemeral
-    suspend fun onSubmitCommand(actor: InteractionSender, map: Attachment, notes: String? = null) {
+    suspend fun onMapSubmitCommand(
+        actor: InteractionSender,
+        map: Attachment,
+        notes: String? = null
+    ) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")
             return
@@ -106,8 +149,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                                 addField("Updating Map", "`$updating`")
                             }
                         }
-                        .setImage(preview),
-                )
+                        .setImage(preview))
                 .addComponents(
                     ActionRow.of(
                         Button.primary(MAP_UPLOAD_BUTTON, "Upload", ImperiumEmojis.INBOX_TRAY),
@@ -188,11 +230,14 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .applyChanges()
             .await()
 
-        actor.message.embeds
-            .first()
-            .getFieldValue("Submitter")
-            ?.let { discord.api.getUserById(MENTION_TAG_REGEX.find(it)!!.groupValues[1].toLong()) }
-            ?.await()
+        discord
+            .getMainServer()
+            .getMemberById(
+                MENTION_TAG_REGEX.find(actor.message.embeds.first().getFieldValue("Submitter")!!)!!
+                    .groups[1]!!
+                    .value
+                    .toLong())
+            .getOrNull()
             ?.sendMessage(
                 EmbedBuilder()
                     .setColor(color)

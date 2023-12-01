@@ -27,13 +27,12 @@ import com.xpdustry.imperium.common.misc.buildAsyncCache
 import com.xpdustry.imperium.common.misc.getSuspending
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
-import com.xpdustry.imperium.common.misc.toShortMuuid
+import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -94,7 +93,7 @@ class SimpleUserManager(
         userCreateMutex.withLock {
             provider.newSuspendTransaction {
                 val user =
-                    UserTable.select { UserTable.uuid eq identity.uuid.toShortMuuid() }
+                    UserTable.select { UserTable.uuid eq identity.uuid.toLongMuuid() }
                         .firstOrNull()
                         ?.toUser()
                 if (user != null) {
@@ -105,7 +104,7 @@ class SimpleUserManager(
 
                 UserTable.insert {
                     it[id] = snowflake
-                    it[uuid] = identity.uuid.toShortMuuid()
+                    it[uuid] = identity.uuid.toLongMuuid()
                     it[lastName] = identity.name.stripMindustryColors()
                     it[lastAddress] = identity.address.address
                 }
@@ -136,7 +135,7 @@ class SimpleUserManager(
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? =
         provider.newSuspendTransaction {
-            UserTable.select { UserTable.uuid eq uuid.toShortMuuid() }.firstOrNull()?.toUser()
+            UserTable.select { UserTable.uuid eq uuid.toLongMuuid() }.firstOrNull()?.toUser()
         }
 
     override suspend fun findByLastAddress(address: InetAddress): List<User> =
@@ -197,7 +196,7 @@ class SimpleUserManager(
             provider.newSuspendTransaction {
                 (UserSettingTable leftJoin UserTable)
                     .slice(UserSettingTable.setting, UserSettingTable.value)
-                    .select { UserTable.uuid eq uuid.toShortMuuid() }
+                    .select { UserTable.uuid eq uuid.toLongMuuid() }
                     .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
             }
         }

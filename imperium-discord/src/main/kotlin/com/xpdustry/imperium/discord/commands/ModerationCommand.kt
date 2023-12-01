@@ -34,9 +34,6 @@ import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -47,10 +44,10 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
         actor: InteractionSender,
-        target: Snowflake,
+        player: Snowflake,
         @Min(0) page: Int = 0
     ) {
-        val result = punishments.findAllByUser(target).drop(page * 10).take(10).toList()
+        val result = punishments.findAllByUser(player).drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
             actor.respond("No punishments found.")
             return
@@ -86,54 +83,58 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @Command(["ban"], Rank.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender,
-        target: Snowflake,
+        player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
     ) {
-        onPunishCommand("Banned", Punishment.Type.BAN, actor, target, reason, duration.value)
+        onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
 
     @Command(["mute"], Rank.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender,
-        target: Snowflake,
+        player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.ONE_HOUR
     ) {
-        onPunishCommand("Muted", Punishment.Type.MUTE, actor, target, reason, duration.value)
+        onPunishCommand("Muted", Punishment.Type.MUTE, actor, player, reason, duration.value)
     }
 
     private suspend fun onPunishCommand(
         verb: String,
         type: Punishment.Type,
         actor: InteractionSender,
-        target: Snowflake,
+        player: Snowflake,
         reason: String,
         duration: Duration
     ) {
-        if (users.findBySnowflake(target) == null) {
+        if (users.findBySnowflake(player) == null) {
             actor.respond("Target is not a valid IP address, UUID or USER ID.")
             return
         }
-        punishments.punish(actor.user.identity, target, reason, type, duration)
-        actor.respond("$verb user $target.")
+        punishments.punish(actor.user.identity, player, reason, type, duration)
+        actor.respond("$verb user $player.")
     }
 
     @Command(["pardon"], Rank.MODERATOR)
-    private suspend fun onPardonCommand(actor: InteractionSender, id: String, reason: String) {
-        val snowflake = id.toLongOrNull()
+    private suspend fun onPardonCommand(
+        actor: InteractionSender,
+        punishment: String,
+        reason: String
+    ) {
+        val snowflake = punishment.toLongOrNull()
         if (snowflake == null) {
             actor.respond("Invalid Punishment ID.")
             return
         }
 
-        val punishment = punishments.findBySnowflake(snowflake)
-        if (punishment == null) {
+        val entry = punishments.findBySnowflake(snowflake)
+        if (entry == null) {
             actor.respond("Punishment not found.")
             return
         }
 
-        if (punishment.pardon != null) {
+        if (entry.pardon != null) {
             actor.respond("Punishment already pardoned.")
             return
         }
