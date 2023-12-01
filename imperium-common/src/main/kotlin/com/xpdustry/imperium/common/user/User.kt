@@ -42,6 +42,7 @@ data class User(
         REMEMBER_LOGIN(true, "Remember the last used login."),
         DOUBLE_TAP_TILE_LOG(true, "Double tapping on a tile will display its history."),
         ANTI_BAN_EVADE(
-            false, "Notifies you when a player leaves but rejoins with a different name.")
+            false, "Notifies you when a player leaves but rejoins with a different name."),
+        CHAT_TRANSLATOR(true, "Translates chat messages based on the language of your game.")
     }
 }

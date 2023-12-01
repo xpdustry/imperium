@@ -25,6 +25,8 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.translator.TranslatorResult
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Players
 import fr.xpdustry.distributor.api.util.Priority
@@ -34,13 +36,18 @@ import mindustry.game.EventType.PlayerJoin
 class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val translator = instances.get<Translator>()
+    private val users = instances.get<UserManager>()
     private val pipeline = instances.get<ChatMessagePipeline>()
 
     override fun onImperiumInit() {
-        pipeline.register("translator", Priority.LOW) { context ->
-            val sourceLocale = context.sender?.let(Players::getLocale) ?: config.language
-            val targetLocale = context.target?.let(Players::getLocale) ?: config.language
-            val rawMessage = Strings.stripColors(context.message)
+        pipeline.register("translator", Priority.LOW) { (sender, target, message) ->
+            if (target != null && !users.getSetting(target.uuid(), User.Setting.CHAT_TRANSLATOR)) {
+                return@register message
+            }
+
+            val sourceLocale = sender?.let(Players::getLocale) ?: config.language
+            val targetLocale = target?.let(Players::getLocale) ?: config.language
+            val rawMessage = Strings.stripColors(message)
 
             val result =
                 withTimeoutOrNull(3000L) {
@@ -71,11 +78,11 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
                     return@register if (rawMessage.lowercase(sourceLocale) ==
                         result.text.lowercase(targetLocale))
                         rawMessage
-                    else "${context.message} [lightgray](${result.text})"
+                    else "$message [lightgray](${result.text})"
                 }
             }
 
-            context.message
+            message
         }
     }
 
