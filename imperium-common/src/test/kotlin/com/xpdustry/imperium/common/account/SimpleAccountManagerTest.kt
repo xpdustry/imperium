@@ -179,9 +179,7 @@ class SimpleAccountManagerTest {
         val newUsername = randomUsername()
         val games = 10
         val playtime = Duration.ofHours(10L)
-        val achievements =
-            listOf(
-                Account.Achievement.ACTIVE, Account.Achievement.MONTH, Account.Achievement.DISCORD)
+        val achievements = listOf(Account.Achievement.ACTIVE, Account.Achievement.MONTH)
 
         assertEquals(
             AccountResult.NotFound, manager.migrate(oldUsername, newUsername, TEST_PASSWORD_1))
