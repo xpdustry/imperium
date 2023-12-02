@@ -249,11 +249,10 @@ class SimpleAccountManager(
     ): AccountResult =
         provider.newSuspendTransaction {
             val oldUsernameHash =
-                ShaHashFunction.create(oldUsername.toCharArray(), ShaType.SHA256).hash
+                ShaHashFunction.create(oldUsername.lowercase().toCharArray(), ShaType.SHA256).hash
 
             val oldAccount =
                 LegacyAccountTable.select { LegacyAccountTable.usernameHash eq oldUsernameHash }
-                    .limit(1)
                     .firstOrNull()
                     ?: return@newSuspendTransaction AccountResult.NotFound
 
