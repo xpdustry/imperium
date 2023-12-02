@@ -29,7 +29,6 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.service.DiscordService
-import java.net.InetAddress
 import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -61,10 +60,10 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 .apply {
                     if (discord.isAllowed(actor.user, Rank.ADMIN)) {
                         addField("Uuid", "`${user.uuid}`", true)
-                        addField("Last Address", user.lastAddress.hostAddress, true)
+                        addField("Last Address", "`${user.lastAddress.hostAddress}`", true)
                         addField(
                             "Addresses",
-                            details.addresses.joinToString(transform = InetAddress::getHostAddress),
+                            details.addresses.joinToString(transform = { "`${it.hostAddress}`" }),
                             true)
                     }
                 },

@@ -29,6 +29,8 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.version.MindustryVersion
+import com.xpdustry.imperium.common.webhook.WebhookMessage
+import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
@@ -63,6 +65,7 @@ import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import java.util.Locale
 import kotlin.system.exitProcess
+import kotlinx.coroutines.runBlocking
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
@@ -137,6 +140,13 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                     }
                 }
         }
+
+        // TODO This is not clean, find a better way
+        runBlocking {
+            application.instances
+                .get<WebhookMessageSender>()
+                .send(WebhookMessage(content = "The server has started."))
+        }
     }
 
     override fun onExit() {
@@ -152,6 +162,11 @@ private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
         if (exited) return
         exited = true
         super.exit(status)
+        runBlocking {
+            instances
+                .get<WebhookMessageSender>()
+                .send(WebhookMessage(content = "The server has exit with $status code."))
+        }
         when (status) {
             ExitStatus.EXIT,
             ExitStatus.INIT_FAILURE -> Core.app.exit()

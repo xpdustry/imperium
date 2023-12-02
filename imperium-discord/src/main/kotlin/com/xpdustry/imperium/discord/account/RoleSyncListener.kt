@@ -23,7 +23,6 @@ import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -36,7 +35,6 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
     private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
-    private val config = instances.get<ServerConfig.Discord>()
 
     override fun onImperiumInit() {
         discord.getMainServer().addServerMemberJoinListener {

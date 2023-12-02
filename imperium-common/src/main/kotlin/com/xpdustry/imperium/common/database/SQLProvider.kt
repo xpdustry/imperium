@@ -26,6 +26,9 @@ import java.nio.file.Path
 import java.sql.DriverManager
 import java.sql.SQLException
 import kotlin.io.path.absolutePathString
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -40,6 +43,8 @@ interface SQLProvider {
 class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val directory: Path) :
     SQLProvider, ImperiumApplication.Listener {
 
+    private val parent = SupervisorJob()
+    private val scope = CoroutineScope(ImperiumScope.IO.coroutineContext + parent)
     private lateinit var database: Database
     private lateinit var source: HikariDataSource
 
@@ -72,13 +77,15 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
     }
 
     override fun onImperiumExit() {
+        parent.complete()
+        runBlocking { parent.join() }
         source.close()
     }
 
     override fun <T> newTransaction(block: () -> T): T = transaction { block() }
 
     override suspend fun <T> newSuspendTransaction(block: suspend () -> T): T =
-        newSuspendedTransaction(ImperiumScope.IO.coroutineContext, database) { block() }
+        newSuspendedTransaction(scope.coroutineContext, database) { block() }
 
     private fun unregisterDriver(name: String) {
         // Calling Class.forName("com.mysql.cj.jdbc.Driver") is enough to call the static

@@ -446,6 +446,7 @@ class SimpleAccountManager(
                     it[AccountAchievementTable.account] = account
                     it[AccountAchievementTable.achievement] = achievement
                     it[AccountAchievementTable.completed] = completed
+                    it[progress] = progress.plus(value)
                 }
 
                 AccountResult.Success to completed
