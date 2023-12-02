@@ -27,7 +27,7 @@ import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object MindustryMapTable : SnowflakeIdTable("mindustry_map") {
-    const val MAX_MAP_FILE_SIZE = 128 * 1024
+    const val MAX_MAP_FILE_SIZE = 1024 * 1024
 
     val name = varchar("name", 64)
     val description = text("description").nullable()
