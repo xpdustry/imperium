@@ -54,7 +54,7 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
         playerSettingsInterface.addTransformer { view, pane ->
             pane.title = "Player Settings"
             pane.content = "Change your settings by clicking on the corresponding buttons."
-            for ((setting, value) in view.state[SETTINGS]!!) {
+            for ((setting, value) in view.state[SETTINGS]!!.entries.sortedBy { it.key.name }) {
                 val text = buildString {
                     append(setting.name.lowercase().replace("_", "-"))
                     append(": ")
