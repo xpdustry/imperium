@@ -52,33 +52,39 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             actor.respond("No punishments found.")
             return
         }
-        val embeds =
-            Array<EmbedBuilder>(result.size) {
-                val punishment = result[it]
-                val embed =
-                    EmbedBuilder()
-                        .setTitle("Punishment ${punishment.snowflake}")
-                        .addField("Target ID", punishment.target.toString(), true)
-                        .addField("Type", punishment.type.toString(), true)
-                        .addField("Reason", punishment.reason, false)
-                        .addField(
-                            "Timestamp",
-                            renderer.renderInstant(punishment.snowflake.timestamp),
-                            true)
-                        .addField("Duration", renderer.renderDuration(punishment.duration), true)
-                        .addField("Pardoned", if (punishment.pardon != null) "Yes" else "No", true)
-                if (punishment.pardon != null) {
-                    embed.addField("Pardon Reason", punishment.pardon!!.reason, false)
-                    embed.addField(
-                        "Pardon Timestamp",
-                        renderer.renderInstant(punishment.pardon!!.timestamp),
-                        true)
-                }
-                embed
-            }
-
-        actor.respond(*embeds)
+        actor.respond(*result.map { it.toEmbed() }.toTypedArray())
     }
+
+    @Command(["punishment", "info"], Rank.MODERATOR)
+    private suspend fun onPunishmentInfoCommand(actor: InteractionSender, punishment: String) {
+        val id = punishment.toLongOrNull()
+        if (id == null) {
+            actor.respond("Invalid id.")
+            return
+        }
+        val result = punishments.findBySnowflake(id)
+        if (result == null) {
+            actor.respond("No punishment found.")
+            return
+        }
+        actor.respond(result.toEmbed())
+    }
+
+    private fun Punishment.toEmbed() =
+        EmbedBuilder()
+            .setTitle("Punishment $snowflake")
+            .addField("Target ID", target.toString(), true)
+            .addField("Type", type.toString(), true)
+            .addField("Reason", reason, false)
+            .addField("Timestamp", renderer.renderInstant(snowflake.timestamp), true)
+            .addField("Duration", renderer.renderDuration(duration), true)
+            .addField("Pardoned", if (pardon != null) "Yes" else "No", true)
+            .apply {
+                if (pardon != null) {
+                    addField("Pardon Reason", pardon!!.reason, false)
+                    addField("Pardon Timestamp", renderer.renderInstant(pardon!!.timestamp), true)
+                }
+            }
 
     @Command(["ban"], Rank.MODERATOR)
     private suspend fun onBanCommand(
