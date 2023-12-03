@@ -434,7 +434,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                                             appendLine("Related to punishment $punishment")
                                             for ((entry, percent) in result.details) {
                                                 appendLine(
-                                                    "- ${entry.name}: ${"%.1f%".format(percent * 100)}")
+                                                    "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
                                             }
                                         },
                                     attachments =
