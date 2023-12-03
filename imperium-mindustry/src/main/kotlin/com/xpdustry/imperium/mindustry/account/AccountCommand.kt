@@ -43,8 +43,10 @@ import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
+import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
+import fr.xpdustry.distributor.api.util.MUUID
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -145,7 +147,9 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
 
         code = Random.nextInt(1000..9999)
-        messenger.publish(VerificationMessage(account.snowflake, sender.player.uuid(), code))
+        messenger.publish(
+            VerificationMessage(
+                account.snowflake, sender.player.uuid(), sender.player.usid(), code))
         verifications.put(account.snowflake, code)
 
         sender.sendMessage(
@@ -162,8 +166,15 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         messenger.consumer<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
+                DistributorProvider.get()
+                    .playerValidator
+                    .validate(MUUID.of(message.uuid, message.usid))
+
                 val player =
-                    Entities.getPlayersAsync().find { it.uuid() == message.uuid } ?: return@consumer
+                    Entities.getPlayersAsync().find {
+                        it.uuid() == message.uuid && it.usid() == message.usid
+                    }
+                        ?: return@consumer
                 player.showInfoMessage("You have been verified!")
                 player.tryGrantAdmin(manager)
             }

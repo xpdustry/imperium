@@ -21,6 +21,7 @@ import arc.Core
 import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -37,7 +38,9 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.GatekeeperResult
+import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.event.EventHandler
+import fr.xpdustry.distributor.api.util.MUUID
 import fr.xpdustry.distributor.api.util.Priority
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
@@ -91,7 +94,13 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         pipeline.register("account", Priority.LOWEST) {
-            accounts.refresh(Identity.Mindustry(it.name, it.uuid, it.usid, it.address))
+            val identity = Identity.Mindustry(it.name, it.uuid, it.usid, it.address)
+            accounts.refresh(identity)
+            if ((accounts.findByIdentity(identity)?.rank ?: Rank.EVERYONE) >= Rank.VERIFIED) {
+                DistributorProvider.get()
+                    .playerValidator
+                    .validate(MUUID.of(identity.uuid, identity.usid))
+            }
             GatekeeperResult.Success
         }
 
