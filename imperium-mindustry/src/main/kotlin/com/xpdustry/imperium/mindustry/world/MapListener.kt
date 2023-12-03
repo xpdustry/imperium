@@ -89,6 +89,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     internal fun onGameOverEvent(event: EventType.GameOverEvent) {
         val playtime = Vars.state.map.playtime
         val stats = Vars.state.stats
+        val waves = Vars.state.wave
         val start = Vars.state.map.start ?: Instant.now()
         val snowflake = Vars.state.map.snowflake ?: return
         if (playtime < 1.minutes) return
@@ -99,7 +100,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 playtime = playtime,
                 unitsCreated = stats.unitsCreated,
                 ennemiesKilled = stats.enemyUnitsDestroyed,
-                wavesLasted = stats.wavesLasted,
+                wavesLasted = waves.coerceAtLeast(0),
                 buildingsConstructed = stats.buildingsBuilt,
                 buildingsDeconstructed = stats.buildingsDeconstructed,
                 buildingsDestroyed = stats.buildingsDestroyed,
