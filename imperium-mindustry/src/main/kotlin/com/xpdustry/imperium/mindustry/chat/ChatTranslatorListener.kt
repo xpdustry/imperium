@@ -17,12 +17,12 @@
  */
 package com.xpdustry.imperium.mindustry.chat
 
-import arc.util.Strings
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.translator.TranslatorResult
 import com.xpdustry.imperium.common.user.User
@@ -47,7 +47,7 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
 
             val sourceLocale = sender?.let(Players::getLocale) ?: config.language
             val targetLocale = target?.let(Players::getLocale) ?: config.language
-            val rawMessage = Strings.stripColors(message)
+            val rawMessage = message.stripMindustryColors()
 
             val result =
                 withTimeoutOrNull(3000L) {
@@ -77,7 +77,7 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
                 is TranslatorResult.Success -> {
                     return@register if (rawMessage.lowercase(sourceLocale) ==
                         result.text.lowercase(targetLocale))
-                        rawMessage
+                        message
                     else "$message [lightgray](${result.text})"
                 }
             }
