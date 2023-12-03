@@ -25,7 +25,9 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.ReportMessage
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.service.DiscordService
+import java.awt.Color
 import kotlinx.coroutines.future.await
 import org.javacord.api.entity.channel.ServerTextChannel
 import org.javacord.api.entity.message.embed.EmbedBuilder
@@ -35,17 +37,24 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
     private val config = instances.get<ServerConfig.Discord>()
+    private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {
         messenger.consumer<ReportMessage> { report ->
+            // TODO Add quick action buttons ?
             getNotificationChannel()
                 .sendMessage(
                     EmbedBuilder()
+                        .setColor(Color.YELLOW)
                         .setTitle("Report from ${report.serverName}")
                         .addField(
-                            "Sender", "${report.sender.name} / `${report.sender.uuid}`", false)
+                            "Sender",
+                            "${report.sender.name} / `${users.getByIdentity(report.sender).snowflake}`",
+                            false)
                         .addField(
-                            "Target", "${report.target.name} / `${report.target.uuid}`", false)
+                            "Target",
+                            "${report.target.name} / `${users.getByIdentity(report.target).snowflake}`",
+                            false)
                         .addField(
                             "Reason",
                             "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})",
