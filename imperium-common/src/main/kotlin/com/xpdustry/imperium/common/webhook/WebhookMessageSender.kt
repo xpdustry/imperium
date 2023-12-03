@@ -111,10 +111,11 @@ class DiscordWebhookMessageSender(
                 .post(form.build())
                 .build()
 
-        val response = http.newCall(request).await()
-        if (response.code / 100 != 2) {
-            logger.error(
-                "Failed to send webhook message $message: ${response.body?.charStream()?.readText()}")
+        http.newCall(request).await().use { response ->
+            if (response.code / 100 != 2) {
+                logger.error(
+                    "Failed to send webhook message $message: ${response.body?.charStream()?.readText()}")
+            }
         }
     }
 
