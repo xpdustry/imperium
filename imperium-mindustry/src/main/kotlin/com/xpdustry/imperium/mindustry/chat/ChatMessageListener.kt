@@ -48,9 +48,7 @@ import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Priority
-import java.awt.Color
 import java.text.DecimalFormat
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
@@ -152,7 +150,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         ?.let { "#$it" }
                         ?: MINDUSTRY_ORANGE_COLOR.toHexString()
                 is Identity.Discord -> MINDUSTRY_ORANGE_COLOR.toHexString()
-                else -> "[scarlet]"
+                else -> config.color.toHexString()
             }
         }
     }
@@ -220,7 +218,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
                 target?.sendMessage(
-                    "[${Color.RED.toHexString()}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(config.identity, processed)}",
+                    "[${config.color.toHexString()}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(config.identity, processed)}",
                     null,
                     processed)
                 if (target == null) {
