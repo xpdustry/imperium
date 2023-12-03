@@ -165,7 +165,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 renderConfiguration(
                     builder,
                     entry,
-                    entry.configuration!!,
+                    entry.configuration,
                     indent,
                 )
         }
@@ -188,7 +188,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private fun renderConfiguration(
         builder: StringBuilder,
         entry: HistoryEntry,
-        config: HistoryConfig,
+        config: HistoryConfig?,
         ident: Int,
     ) {
         when (config) {
@@ -266,6 +266,13 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     .append(entry.block.name)
                     .append("[white] to [accent]")
                     .append(config.value?.toString() ?: "null")
+            }
+            null -> {
+                builder
+                    .append("Configured [accent]")
+                    .append(entry.block.name)
+                    .append("[white] to [accent]")
+                    .append("null")
             }
         }
     }
