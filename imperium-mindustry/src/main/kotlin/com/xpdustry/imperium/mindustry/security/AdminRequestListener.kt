@@ -245,7 +245,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 requester.con,
                 target,
                 TraceInfo(
-                    target.con.address,
+                    if (canSeeInfo) target.con.address
+                    else "Don't have permission to view addresses.",
                     if (canSeeInfo) target.uuid() else user.snowflake.toString(),
                     target.con.modclient,
                     target.con.mobile,
