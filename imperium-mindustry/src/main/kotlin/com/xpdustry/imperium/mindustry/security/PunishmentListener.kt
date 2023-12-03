@@ -73,7 +73,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         punishment.reason,
                     )
                     Call.sendMessage(
-                        "[scarlet]Player ${player.name.stripMindustryColors()} has been banned.")
+                        "[scarlet]Player ${player.name.stripMindustryColors()} has been banned for ${punishment.reason}.")
                 }
             }
         }
