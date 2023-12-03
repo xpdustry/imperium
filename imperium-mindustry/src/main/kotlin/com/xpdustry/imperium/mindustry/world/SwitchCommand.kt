@@ -53,8 +53,8 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             sender.sendMessage("[accent]Server is not a Mindustry server.")
             return
         }
-        if (data.state != Discovery.Data.Mindustry.State.PLAYING) {
-            sender.sendMessage("[accent]Server is not playing.")
+        if (data.state == Discovery.Data.Mindustry.State.STOPPED) {
+            sender.sendMessage("[accent]Server is not available.")
             return
         }
         if (data.gameVersion != getMindustryVersion()) {
