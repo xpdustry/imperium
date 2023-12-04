@@ -32,24 +32,14 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.snowflake
-import fr.xpdustry.distributor.api.event.EventHandler
 import java.nio.file.Path
-import java.time.Instant
 import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
-import mindustry.core.GameState
-import mindustry.game.EventType
 import mindustry.io.MapIO
 import mindustry.maps.Map
 
@@ -67,45 +57,6 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         reloadMaps()
-
-        ImperiumScope.MAIN.launch {
-            while (isActive) {
-                delay(5.seconds)
-                if (Vars.state.state != GameState.State.playing) continue
-                runMindustryThread { Vars.state.map.playtime += 5.seconds }
-            }
-        }
-    }
-
-    @EventHandler
-    internal fun onGameBeginEvent(event: MenuToPlayEvent) {
-        if (Vars.state.map.start == null) {
-            Vars.state.map.start = Instant.now()
-        }
-    }
-
-    // TODO Notify players when they beat the map world record
-    @EventHandler
-    internal fun onGameOverEvent(event: EventType.GameOverEvent) {
-        val playtime = Vars.state.map.playtime
-        val stats = Vars.state.stats
-        val waves = Vars.state.wave
-        val start = Vars.state.map.start ?: Instant.now()
-        val snowflake = Vars.state.map.snowflake ?: return
-        if (playtime < 1.minutes) return
-        ImperiumScope.MAIN.launch {
-            maps.addMapGame(
-                map = snowflake,
-                start = start,
-                playtime = playtime,
-                unitsCreated = stats.unitsCreated,
-                ennemiesKilled = stats.enemyUnitsDestroyed,
-                wavesLasted = waves.coerceAtLeast(0),
-                buildingsConstructed = stats.buildingsBuilt,
-                buildingsDeconstructed = stats.buildingsDeconstructed,
-                buildingsDestroyed = stats.buildingsDestroyed,
-                winner = event.winner.id.toUByte())
-        }
     }
 
     @Command(["reloadmaps"])
@@ -158,18 +109,6 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         logger.debug("Loaded map {} (id={}) from server pool.", map.name, map.snowflake)
         return MapIO.createMap(Fi(file.toFile()), true).also { it.snowflake = map.snowflake }
     }
-
-    private var Map.start: Instant?
-        get() = tags.get("imperium-map-start")?.toLongOrNull()?.let(Instant::ofEpochMilli)
-        set(value) {
-            tags.put("imperium-map-start", value?.toEpochMilli()?.toString())
-        }
-
-    private var Map.playtime: Duration
-        get() = tags.get("imperium-map-playtime")?.toLongOrNull()?.seconds ?: Duration.ZERO
-        set(value) {
-            tags.put("imperium-map-playtime", value.inWholeSeconds.toString())
-        }
 
     companion object {
         private val logger by LoggerDelegate()

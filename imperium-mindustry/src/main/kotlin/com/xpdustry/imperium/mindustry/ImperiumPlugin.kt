@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
@@ -71,10 +72,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
 
     override fun onInit() {
-        logger.info("Imperium plugin loaded!")
-    }
+        logger.info("Imperium plugin initialized!")
 
-    override fun onLoad() {
         val source =
             LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
         source.registerAll(
@@ -119,16 +118,13 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ResourceHudListener::class,
                 ImperiumLogicListener::class,
                 AntiEvadeListener::class,
-            )) {
+                GameListener::class)) {
             application.register(listener)
         }
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         }
         application.init()
-
-        val registry = application.instances.get<CommandRegistry>()
-        application.listeners.forEach { registry.parse(it) }
 
         // https://github.com/Anuken/Arc/pull/158
         if (getMindustryVersion().build < 147 ||
@@ -147,6 +143,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 .get<WebhookMessageSender>()
                 .send(WebhookMessage(content = "The server has started."))
         }
+    }
+
+    override fun onLoad() {
+        val registry = application.instances.get<CommandRegistry>()
+        application.listeners.forEach { registry.parse(it) }
+        logger.info("Parsed Imperium commands!")
     }
 
     override fun onExit() {

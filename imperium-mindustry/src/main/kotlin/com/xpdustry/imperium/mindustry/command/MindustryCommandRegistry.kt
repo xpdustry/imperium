@@ -38,7 +38,6 @@ import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -69,18 +68,18 @@ class MindustryCommandRegistry(
     plugin: MindustryPlugin,
     private val server: ServerConfig.Mindustry,
     private val config: ImperiumConfig,
-    private val accounts: AccountManager,
-    private val messenger: Messenger,
+    private val accounts: AccountManager
 ) : CommandRegistry, ImperiumApplication.Listener {
     private val clientCommandManager = createArcCommandManager(plugin)
     private val serverCommandManager = createArcCommandManager(plugin)
-
-    override fun onImperiumInit() {
-        clientCommandManager.initialize(Vars.netServer.clientCommands)
-        serverCommandManager.initialize(ServerControl.instance.handler)
-    }
+    private var initialized = false
 
     override fun parse(container: Any) {
+        if (!initialized) {
+            clientCommandManager.initialize(Vars.netServer.clientCommands)
+            serverCommandManager.initialize(ServerControl.instance.handler)
+            initialized = true
+        }
         for (function in container::class.declaredMemberFunctions) {
             val annotation = function.findAnnotation<Command>() ?: continue
             function.isAccessible = true
