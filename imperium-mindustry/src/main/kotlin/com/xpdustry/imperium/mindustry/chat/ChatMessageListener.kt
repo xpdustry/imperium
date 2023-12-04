@@ -264,8 +264,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
         // log commands before they are handled
         if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
+            val secured = if (escaped.startsWith("/login")) "/login" else escaped
             // log with brackets
-            rootLogger.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$escaped")
+            rootLogger.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$secured")
         }
 
         // check if it's a command

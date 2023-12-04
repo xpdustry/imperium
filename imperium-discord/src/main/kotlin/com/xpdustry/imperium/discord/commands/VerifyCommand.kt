@@ -28,6 +28,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.MindustryUSID
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
@@ -46,14 +47,12 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
     private val pending =
-        buildCache<Int, Pair<Snowflake, MindustryUUID>> {
-            expireAfterWrite(10.minutes.toJavaDuration())
-        }
+        buildCache<Int, Verification> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     override fun onImperiumInit() {
         messenger.consumer<VerificationMessage> { message ->
             if (message.response) return@consumer
-            pending.put(message.code, message.account to message.uuid)
+            pending.put(message.code, Verification(message.account, message.uuid, message.usid))
         }
     }
 
@@ -65,8 +64,8 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val data = pending.getIfPresent(code)
-        if (data == null) {
+        val verification = pending.getIfPresent(code)
+        if (verification == null) {
             actor.respond("Invalid code.")
             return
         }
@@ -78,7 +77,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        when (accounts.updateDiscord(data.first, actor.user.id)) {
+        when (accounts.updateDiscord(verification.account, actor.user.id)) {
             is AccountResult.Success -> Unit
             else -> {
                 actor.respond("An unexpected error occurred while verifying you.")
@@ -86,16 +85,24 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        var rank = accounts.findBySnowflake(data.first)!!.rank
+        var rank = accounts.findBySnowflake(verification.account)!!.rank
         for (role in actor.user.getRoles(discord.getMainServer())) {
             rank = maxOf(rank, config.roles2ranks[role.id] ?: Rank.VERIFIED)
         }
-        accounts.setRank(data.first, rank)
+        accounts.setRank(verification.account, rank)
 
         discord.syncRoles(actor.user)
-        messenger.publish(VerificationMessage(data.first, data.second, code, true))
+        messenger.publish(
+            VerificationMessage(
+                verification.account, verification.uuid, verification.usid, code, true))
         actor.respond("You have been verified!")
     }
+
+    data class Verification(
+        val account: Snowflake,
+        val uuid: MindustryUUID,
+        val usid: MindustryUSID,
+    )
 
     companion object {
         private val logger by LoggerDelegate()

@@ -155,8 +155,7 @@ fun createReportInterface(
             view.close()
             view.state[REPORT_PLAYER] = player
             reportReasonInterface.open(view)
-        },
-    )
+        })
 
     return playerListInterface
 }
