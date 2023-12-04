@@ -25,12 +25,14 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
+import com.xpdustry.imperium.mindustry.misc.playtime
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.snowflake
+import com.xpdustry.imperium.mindustry.misc.start
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
 import java.time.Instant
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
@@ -40,7 +42,6 @@ import mindustry.Vars
 import mindustry.core.GameState
 import mindustry.game.EventType
 import mindustry.io.SaveIO
-import mindustry.maps.Map
 import mindustry.net.Administration
 
 class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -52,7 +53,7 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(5.seconds)
-                if (Vars.state.state != GameState.State.playing) continue
+                if (Vars.state.state != GameState.State.playing || Vars.state.gameOver) continue
                 runMindustryThread { Vars.state.map.playtime += 5.seconds }
             }
         }
@@ -115,17 +116,7 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 buildingsDestroyed = stats.buildingsDestroyed,
                 winner = event.winner.id.toUByte())
         }
+        Vars.state.map.playtime = ZERO
+        Vars.state.map.start = null
     }
-
-    private var Map.start: Instant?
-        get() = tags.get("imperium-map-start")?.toLongOrNull()?.let(Instant::ofEpochMilli)
-        set(value) {
-            tags.put("imperium-map-start", value?.toEpochMilli()?.toString())
-        }
-
-    private var Map.playtime: Duration
-        get() = tags.get("imperium-map-playtime")?.toLongOrNull()?.seconds ?: Duration.ZERO
-        set(value) {
-            tags.put("imperium-map-playtime", value.inWholeSeconds.toString())
-        }
 }

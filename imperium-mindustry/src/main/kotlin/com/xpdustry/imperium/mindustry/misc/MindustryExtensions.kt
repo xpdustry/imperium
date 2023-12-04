@@ -19,7 +19,6 @@ package com.xpdustry.imperium.mindustry.misc
 
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.network.Discovery
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.version.MindustryVersion
 import java.net.InetAddress
 import mindustry.Vars
@@ -27,12 +26,6 @@ import mindustry.core.GameState
 import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.net.Administration
-
-var mindustry.maps.Map.snowflake: Snowflake?
-    get() = tags.get("imperium-map-id")?.toLongOrNull()
-    set(value) {
-        tags.put("imperium-map-id", value.toString())
-    }
 
 fun getMindustryServerInfo(): Discovery.Data.Mindustry =
     Discovery.Data.Mindustry(

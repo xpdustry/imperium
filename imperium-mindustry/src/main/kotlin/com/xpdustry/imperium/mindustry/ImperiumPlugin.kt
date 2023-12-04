@@ -42,6 +42,7 @@ import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
+import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
@@ -67,12 +68,14 @@ import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import java.util.Locale
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
+import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
 
     override fun onInit() {
         logger.info("Imperium plugin initialized!")
+        SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
         val source =
             LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
