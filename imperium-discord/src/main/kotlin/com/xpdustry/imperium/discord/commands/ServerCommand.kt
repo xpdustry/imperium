@@ -75,13 +75,14 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             actor.respond("Server not found.")
             return
         }
-        onServerPlayerList(actor, online, "Online")
+        onServerPlayerList(actor, online, "Online", time = false)
     }
 
     private suspend fun onServerPlayerList(
         actor: InteractionSender,
         list: List<PlayerTracker.Entry>,
-        name: String
+        name: String,
+        time: Boolean = true,
     ) {
         val text = buildString {
             append("```\n")
@@ -89,8 +90,11 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 append("No players found.\n")
             }
             for (entry in list) {
-                append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
-                append(" #")
+                if (time) {
+                    append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
+                    append(" ")
+                }
+                append("#")
                 append(entry.snowflake)
                 append(" ")
                 append(entry.player.name)
