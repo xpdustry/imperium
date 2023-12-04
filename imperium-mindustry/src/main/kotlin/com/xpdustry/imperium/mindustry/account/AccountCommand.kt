@@ -66,13 +66,14 @@ private val PASSWORD = stateKey<String>("password")
 private val OLD_USERNAME = stateKey<String>("old_username")
 private val OLD_PASSWORD = stateKey<String>("old_password")
 
-private const val ACCOUNT_LOGIN_WARNING =
+private val ACCOUNT_LOGIN_WARNING =
     """
-    [red]WARNING: CN HAS BEEN MIGRATED TO A COMPLETELY NEW INFRASTRUCTURE.[]
+    [red]CN HAS BEEN MIGRATED TO A COMPLETELY NEW INFRASTRUCTURE.[]
     IF YOU WANT TO LOGIN TO YOUR OLD ACCOUNT,
     MIGRATE IT FIRST USING THE [accent]/migrate[] COMMAND.
     [lightgray]THANK YOU FOR YOUR UNDERSTANDING.
     """
+        .trimIndent()
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val manager = instances.get<AccountManager>()
@@ -215,7 +216,7 @@ private fun createLoginInterface(
 
     usernameInterface.addTransformer { view, pane ->
         pane.title = "Login (1/2)"
-        pane.description = "Enter your username\n$ACCOUNT_LOGIN_WARNING"
+        pane.description = "Enter your username\n\n$ACCOUNT_LOGIN_WARNING"
         pane.placeholder = view.state[USERNAME] ?: ""
         pane.inputAction = BiAction { _, value ->
             view.close()
@@ -226,7 +227,7 @@ private fun createLoginInterface(
 
     passwordInterface.addTransformer { view, pane ->
         pane.title = "Login (2/2)"
-        pane.description = "Enter your password\n$ACCOUNT_LOGIN_WARNING"
+        pane.description = "Enter your password\n\n$ACCOUNT_LOGIN_WARNING"
         pane.placeholder = view.state[PASSWORD] ?: ""
         pane.inputAction = BiAction { _, value ->
             view.close()
