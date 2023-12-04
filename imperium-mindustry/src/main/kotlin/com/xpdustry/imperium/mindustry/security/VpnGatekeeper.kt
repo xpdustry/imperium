@@ -19,11 +19,15 @@ package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.VpnDetection
+import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.mindustry.processing.Processor
 
-class VpnGatekeeper(private val provider: VpnDetection) :
+class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: AddressWhitelist) :
     Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
+        if (whitelist.containsAddress(context.address)) {
+            return GatekeeperResult.Success
+        }
         val result = provider.isVpn(context.address)
         if (result is VpnDetection.Result.Success) {
             return if (result.vpn) GatekeeperResult.Failure("VPN detected")

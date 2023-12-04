@@ -47,7 +47,9 @@ import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnApiIoDetection
 import com.xpdustry.imperium.common.network.VpnDetection
+import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.common.security.PunishmentManager
+import com.xpdustry.imperium.common.security.SimpleAddressWhitelist
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
 import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
@@ -153,4 +155,6 @@ fun CommonModule() =
                     DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
             }
         }
+
+        single<AddressWhitelist> { SimpleAddressWhitelist(get()) }
     }

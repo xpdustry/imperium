@@ -33,6 +33,7 @@ import com.xpdustry.imperium.discord.commands.PlayerCommand
 import com.xpdustry.imperium.discord.commands.SchematicCommand
 import com.xpdustry.imperium.discord.commands.ServerCommand
 import com.xpdustry.imperium.discord.commands.VerifyCommand
+import com.xpdustry.imperium.discord.commands.WhitelistCommand
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
 import java.util.Scanner
@@ -63,7 +64,8 @@ fun main() {
             RoleSyncListener::class,
             DebugCommand::class,
             PlayerCommand::class,
-            AccountCommand::class)) {
+            AccountCommand::class,
+            WhitelistCommand::class)) {
         application.register(listener)
     }
 

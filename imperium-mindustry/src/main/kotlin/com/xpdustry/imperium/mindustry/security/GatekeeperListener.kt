@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
+import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -61,6 +62,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val http = instances.get<OkHttpClient>()
     private val config = instances.get<ServerConfig.Mindustry>()
     private val renderer = instances.get<TimeRenderer>()
+    private val whitelist = instances.get<AddressWhitelist>()
 
     override fun onImperiumInit() {
         if (!config.security.gatekeeper) {
@@ -71,7 +73,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register(
             "punishment", Priority.NORMAL, PunishmentGatekeeper(punishments, renderer))
-        pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn))
+        pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, whitelist))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
             interceptPlayerConnection(con, packet, pipeline, config)
