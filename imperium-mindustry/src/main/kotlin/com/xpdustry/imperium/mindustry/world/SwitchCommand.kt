@@ -80,7 +80,7 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         .map(Discovery.Server::data)
                         .filterIsInstance(Discovery.Data.Mindustry::class.java)
                         .filter {
-                            it.state == Discovery.Data.Mindustry.State.PLAYING &&
+                            it.state != Discovery.Data.Mindustry.State.STOPPED &&
                                 it.gameVersion == getMindustryVersion()
                         }
                         .sortedBy(Discovery.Data.Mindustry::name)
