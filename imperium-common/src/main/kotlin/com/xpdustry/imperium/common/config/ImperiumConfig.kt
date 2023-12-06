@@ -131,7 +131,7 @@ sealed interface ServerConfig {
         )
 
         data class World(
-            val maxExcavateSize: Int = 64,
+            val maxExcavateSize: Int = 256,
             val coreDamageAlertDelay: Duration = 10.seconds,
             val displayCoreId: Boolean = true,
             val displayResourceTracker: Boolean = true,
