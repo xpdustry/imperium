@@ -55,7 +55,9 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Iconc
+import mindustry.gen.Player
 import mindustry.gen.Sounds
+import mindustry.type.Item
 
 class ExcavateCommand(instances: InstanceManager) :
     AbstractVoteCommand<ExcavateCommand.ExcavateArea>(instances.get(), "excavate", 1.minutes),
@@ -63,8 +65,12 @@ class ExcavateCommand(instances: InstanceManager) :
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val config = instances.get<ServerConfig.Mindustry>()
+    private lateinit var item: Item
 
     override fun onImperiumInit() {
+        item =
+            Vars.content.item(config.world.excavationItem)
+                ?: error("${config.world.excavationItem} is not a valid mindustry item.")
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
@@ -117,7 +123,7 @@ class ExcavateCommand(instances: InstanceManager) :
     @Command(["excavate", "select"])
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
-    private fun onExcavateBeginCommand(sender: CommandSender) {
+    private fun onExcavateSelectCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
             areas.remove(sender.player)
             sender.sendMessage("You have cancelled selecting excavation points!")
@@ -156,6 +162,19 @@ class ExcavateCommand(instances: InstanceManager) :
     @ClientSide
     private fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
+    }
+
+    override fun canParticipantStart(player: Player, objective: ExcavateArea): Boolean {
+        val items = Vars.state.rules.defaultTeam.items()
+        val price = objective.blocks * config.world.excavationTilePrice
+        return if (items.has(item, price)) {
+            Vars.state.rules.defaultTeam.items().remove(item, price)
+            true
+        } else {
+            player.sendMessage(
+                "[scarlet]You are not rich enough to do that. [orange]${price - items.get(item)}[] more ${item.name} is needed.")
+            false
+        }
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateArea>): String {
@@ -205,6 +224,12 @@ class ExcavateCommand(instances: InstanceManager) :
             }
         }
         Call.sendMessage("The excavation has finished!")
+    }
+
+    override suspend fun onVoteSessionFailure(session: VoteManager.Session<ExcavateArea>) {
+        Vars.state.rules.defaultTeam
+            .items()
+            .add(item, session.objective.blocks * config.world.excavationTilePrice)
     }
 
     private fun renderZones() {
@@ -281,6 +306,7 @@ class ExcavateCommand(instances: InstanceManager) :
         val x2 = max(p1.x, p2.x)
         val y1 = min(p1.y, p2.y)
         val y2 = max(p1.y, p2.y)
+        val blocks = abs(x1 - x2) * abs(y1 - y2)
     }
 
     companion object {

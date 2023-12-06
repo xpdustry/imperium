@@ -132,6 +132,8 @@ sealed interface ServerConfig {
 
         data class World(
             val maxExcavateSize: Int = 256,
+            val excavationTilePrice: Int = 10,
+            val excavationItem: String = "blast-compound",
             val coreDamageAlertDelay: Duration = 10.seconds,
             val displayCoreId: Boolean = true,
             val displayResourceTracker: Boolean = true,

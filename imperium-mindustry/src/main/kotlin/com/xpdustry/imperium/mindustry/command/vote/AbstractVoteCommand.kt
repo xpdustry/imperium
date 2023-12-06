@@ -83,6 +83,8 @@ abstract class AbstractVoteCommand<O>(
 
     protected abstract suspend fun onVoteSessionSuccess(session: VoteManager.Session<O>)
 
+    protected open suspend fun onVoteSessionFailure(session: VoteManager.Session<O>) = Unit
+
     protected abstract fun getVoteSessionDetails(session: VoteManager.Session<O>): String
 
     protected open fun canParticipantVote(
@@ -117,6 +119,7 @@ abstract class AbstractVoteCommand<O>(
                         "[scarlet]The [orange]'$name'[] vote has failed."
                     }
                 getParticipants(session).forEach { it.sendMessage(message) }
+                ImperiumScope.MAIN.launch { onVoteSessionFailure(session) }
             }
             VoteManager.Status.SUCCESS -> {
                 val message = "[green]The [orange]'$name'[] vote has succeeded."
