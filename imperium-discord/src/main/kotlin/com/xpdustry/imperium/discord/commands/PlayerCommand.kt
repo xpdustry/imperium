@@ -89,7 +89,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 "No players found."
             } else {
                 users.joinToString(separator = "\n") {
-                    "- `${it.lastName.stripMindustryColors()}` (`${it.snowflake}`)"
+                    "- ${it.lastName.stripMindustryColors()} / `${it.snowflake}`"
                 }
             }
         if (hasMore) {

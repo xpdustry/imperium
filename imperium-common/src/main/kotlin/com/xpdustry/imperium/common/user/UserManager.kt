@@ -160,6 +160,7 @@ class SimpleUserManager(
         provider.newSuspendTransaction {
             (UserTable leftJoin UserNameTable)
                 .select { UserNameTable.name like "%${query}%" }
+                .groupBy(UserTable.id)
                 .map { it.toUser() }
         }
 
