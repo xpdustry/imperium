@@ -194,6 +194,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
         var building = event.tile.build
         if (event.breaking &&
             building is ConstructBlock.ConstructBuild &&
+            building.prevBuild != null &&
             !building.prevBuild.isEmpty) {
             building = building.prevBuild.first()
         }
