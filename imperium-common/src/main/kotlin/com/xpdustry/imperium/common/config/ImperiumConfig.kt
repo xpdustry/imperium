@@ -192,6 +192,7 @@ sealed interface ServerConfig {
         data class Channels(
             val notifications: Long,
             val maps: Long,
+            val reports: Long,
         )
     }
 }

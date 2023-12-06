@@ -42,7 +42,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     override fun onImperiumInit() {
         messenger.consumer<ReportMessage> { report ->
             // TODO Add quick action buttons ?
-            getNotificationChannel()
+            getReportChannel()
                 .sendMessage(
                     EmbedBuilder()
                         .setColor(Color.YELLOW)
@@ -50,11 +50,11 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                         .addField(
                             "Sender",
                             "${report.sender.name} / `${users.getByIdentity(report.sender).snowflake}`",
-                            false)
+                            true)
                         .addField(
                             "Target",
                             "${report.target.name} / `${users.getByIdentity(report.target).snowflake}`",
-                            false)
+                            true)
                         .addField(
                             "Reason",
                             "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})",
@@ -64,8 +64,8 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
         }
     }
 
-    private fun getNotificationChannel(): ServerTextChannel =
-        discord.getMainServer().getTextChannelById(config.channels.notifications).orElseThrow {
-            RuntimeException("The notifications channel is not found")
+    private fun getReportChannel(): ServerTextChannel =
+        discord.getMainServer().getTextChannelById(config.channels.reports).orElseThrow {
+            RuntimeException("The report channel is not found")
         }
 }
