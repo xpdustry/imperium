@@ -22,4 +22,4 @@ import java.net.URL
 
 val BLURPLE = Color(0x5865F2)
 
-val DISCORD_INVITATION_LINK = URL("https://discord.gg/chaotic-neutral-519293558599974912")
+val DISCORD_INVITATION_LINK = URL("https://discord.xpdustry.com")
