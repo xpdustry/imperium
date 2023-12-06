@@ -39,7 +39,3 @@ bin/
 ## OS Specific
 .DS_Store
 Thumbs.db
-
-## Imperium Specific
-
-imperium-migrator/
