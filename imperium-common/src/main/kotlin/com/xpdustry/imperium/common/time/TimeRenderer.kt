@@ -45,7 +45,7 @@ class SimpleTimeRenderer(private val config: ImperiumConfig) : TimeRenderer {
         INSTANT_FORMAT.format(instant.atOffset(ZoneOffset.UTC))
 
     override fun renderRelativeInstant(instant: Instant, locale: Locale?): String =
-        OCPSoftPrettyTime(instant).setLocale(locale ?: config.language).format(instant)
+        OCPSoftPrettyTime(instant).setLocale(locale ?: config.language).format(Instant.now())
 
     private fun getTime4JavaPrettyTime(locale: Locale): Time4JavaPrettyTime {
         val classLoader = Thread.currentThread().contextClassLoader
