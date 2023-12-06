@@ -19,6 +19,8 @@ package com.xpdustry.imperium.common.command
 
 import com.xpdustry.imperium.common.account.Rank
 
+// TODO
+//   When cloud 2, move permission to dedicated annotation
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
