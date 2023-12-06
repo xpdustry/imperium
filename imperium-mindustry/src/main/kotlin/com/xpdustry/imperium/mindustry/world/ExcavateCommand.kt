@@ -24,9 +24,11 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -113,57 +115,44 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     @Command(["excavate", "select"])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateBeginCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
-            sender.sendMessage("You have already started setting points!")
-            return
-        }
-        sender.sendMessage("You have started setting points! Tap on the first point.")
-        areas[sender.player] = ExcavateArea()
-    }
-
-    @Command(["excavate", "stop"])
-    @ClientSide
-    private fun onExcavateEndCommand(sender: CommandSender) {
-        val area = areas[sender.player]
-        if (area != null) {
             areas.remove(sender.player)
-            sender.sendMessage("You have cancelled setting points!")
+            sender.sendMessage("You have cancelled selecting excavation points!")
         } else {
-            sender.sendMessage("You have not started setting points yet!")
+            areas[sender.player] = ExcavateArea()
+            sender.sendMessage("You have started selecting excavation points!.")
         }
     }
 
-    @Command(["excavate", "start"])
+    @Command(["excavate", "y"])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
-    private fun onExcavateStartCommand(sender: CommandSender) {
+    private fun onExcavateYesCommand(sender: CommandSender) {
         val area = areas[sender.player]
         if (area == null) {
-            sender.sendMessage("You haven't started setting points yet!")
+            onPlayerVote(sender.player, manager.session, Vote.YES)
             return
         }
         if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
-            sender.sendMessage("You have not set both points yet!")
+            sender.sendMessage("You have not selected both points yet!")
             return
         }
         onVoteSessionStart(sender.player, manager.session, area)
         areas.remove(sender.player)
     }
 
-    @Command(["excavate", "y"])
-    @ClientSide
-    private fun onExcavateYesCommand(sender: CommandSender) {
-        onPlayerVote(sender.player, manager.session, Vote.YES)
-    }
-
     @Command(["excavate", "n"])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
     @Command(["excavate", "cancel"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
