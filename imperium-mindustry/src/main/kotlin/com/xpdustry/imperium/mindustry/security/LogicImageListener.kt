@@ -398,16 +398,25 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 element.value.x,
                                 element.value.y)
 
+                            // TODO
+                            //   Index and destroy every logic build a player has placed in the
+                            //   past 10 seconds
                             runMindustryThread {
                                 for (block in element.value.blocks) {
                                     Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
                                     val data = block.data
+                                    // TODO
+                                    //   Use TileChangeEvent for monitoring tile changes, this
+                                    //   trick is goofy
                                     if (data is LogicImage.Drawer) {
+                                        displays.removeElement(block.x, block.y)
                                         for (processor in data.processors) {
                                             Vars.world
                                                 .tile(processor.x, processor.y)
                                                 ?.setNet(Blocks.air)
                                         }
+                                    } else {
+                                        canvases.removeElement(block.x, block.y)
                                     }
                                 }
                             }
