@@ -222,8 +222,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .first()
                     .toBuilder()
                     .addField("Reviewer", actor.user.mentionTag)
-                    // Avoids the image expiring, I think...
-                    .setImage(actor.message.embeds.first().image.get().url.toString())
+                    .setImage(actor.message.embeds.first().image.get().asInputStream(discord.api))
                     .setColor(color),
             )
             .removeAllComponents()
