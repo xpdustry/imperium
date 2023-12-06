@@ -57,14 +57,14 @@ class WaveCommand(instances: InstanceManager) :
             }
         }
 
-    @Command(["wave", "set", "countdown"], Rank.ADMIN)
+    @Command(["wave", "set", "countdown"], Rank.MODERATOR)
     @ClientSide
     private fun onWaveSetTime(sender: CommandSender, duration: Duration) {
         Vars.state.wavetime = duration.seconds.toFloat() * 60F
         sender.sendMessage("Set wave countdown to $duration")
     }
 
-    @Command(["wave", "set", "counter"], Rank.ADMIN)
+    @Command(["wave", "set", "counter"], Rank.MODERATOR)
     @ClientSide
     private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
         Vars.state.wave = wave
@@ -72,7 +72,7 @@ class WaveCommand(instances: InstanceManager) :
         sender.sendMessage("Set wave to counter $wave")
     }
 
-    @Command(["wave", "run"], Rank.ADMIN)
+    @Command(["wave", "run"], Rank.MODERATOR)
     @ClientSide
     private fun onWaveRun(sender: CommandSender, @Min(1) @Max(20) count: Int = 1) {
         repeat(count) { Vars.logic.runWave() }
