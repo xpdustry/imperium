@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
@@ -70,6 +71,7 @@ data class PunishmentMessage(
     val author: Identity,
     val type: Type,
     val snowflake: Snowflake,
+    val server: String
 ) : Message {
     enum class Type {
         CREATE,
@@ -81,7 +83,8 @@ class SimplePunishmentManager(
     private val provider: SQLProvider,
     private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
-    private val users: UserManager
+    private val users: UserManager,
+    private val config: ImperiumConfig
 ) : PunishmentManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -134,7 +137,8 @@ class SimplePunishmentManager(
             }
         }
         messenger.publish(
-            PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake), local = true)
+            PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake, config.server.name),
+            local = true)
         return snowflake
     }
 
@@ -164,7 +168,8 @@ class SimplePunishmentManager(
             }
             .also {
                 messenger.publish(
-                    PunishmentMessage(author, PunishmentMessage.Type.PARDON, punishment),
+                    PunishmentMessage(
+                        author, PunishmentMessage.Type.PARDON, punishment, config.server.name),
                     local = true)
             }
 

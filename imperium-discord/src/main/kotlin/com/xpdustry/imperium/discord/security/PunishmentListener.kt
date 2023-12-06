@@ -44,35 +44,41 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val renderer = instances.get<TimeRenderer>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PunishmentMessage> { (author, type, snowflake) ->
+        messenger.consumer<PunishmentMessage> { (author, type, snowflake, server) ->
             val punishment = punishments.findBySnowflake(snowflake)!!
             val user = punishment.target.let { users.findBySnowflake(it) }!!
             val embed =
                 EmbedBuilder().apply {
+                    when (author) {
+                        is Identity.Discord -> setAuthor(discord.api.getUserById(author.id).await())
+                        is Identity.Mindustry -> setAuthor(author.name)
+                        is Identity.Server -> setAuthor("AUTO-MOD")
+                    }
+
                     when (type) {
                         PunishmentMessage.Type.CREATE -> {
                             setColor(Color.RED)
-                            setTitle("Punishment ${punishment.snowflake}")
+                            setTitle("Punishment")
                             addField("Target", user.lastName, true)
                             addField("Type", punishment.type.toString(), true)
-                            addField("Duration", renderer.renderDuration(punishment.duration), true)
+                            addField(
+                                "Duration", renderer.renderDuration(punishment.duration), false)
+                            if (server != config.name) {
+                                addField("Server", server, true)
+                            }
                             addField("Reason", punishment.reason, false)
                         }
                         PunishmentMessage.Type.PARDON -> {
                             setColor(Color.GREEN)
-                            setTitle("Pardoned ${punishment.snowflake}")
+                            setTitle("Pardon")
                             addField("Target", user.lastName, true)
                             addField("Type", punishment.type.toString(), true)
                             addField("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)
                         }
                     }
-                }
 
-            when (author) {
-                is Identity.Discord -> embed.setAuthor(discord.api.getUserById(author.id).await())
-                is Identity.Mindustry -> embed.setAuthor(author.name)
-                is Identity.Server -> embed.setAuthor("SYSTEM")
-            }
+                    setFooter("ID: ${punishment.snowflake}")
+                }
 
             val channel =
                 discord
