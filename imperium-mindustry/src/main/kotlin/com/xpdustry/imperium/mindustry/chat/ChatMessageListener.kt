@@ -45,10 +45,14 @@ import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
+import com.xpdustry.imperium.mindustry.processing.registerCaching
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.util.Priority
 import java.text.DecimalFormat
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
@@ -108,17 +112,19 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             ctx.message
         }
 
-        placeholderPipeline.register("subject_playtime") { (subject, query) ->
+        val chaoticHourFormat = DecimalFormat("000")
+        placeholderPipeline.registerCaching("subject_playtime", 10.seconds, ::getContextKey) {
+            (subject, query) ->
             val playtime =
                 when (subject) {
                     is Identity.Mindustry -> accounts.findByIdentity(subject)?.playtime
                     is Identity.Discord -> accounts.findByDiscord(subject.id)?.playtime
                     else -> null
                 }
-                    ?: return@register ""
+                    ?: return@registerCaching ""
             when (query) {
                 "hours" -> playtime.inWholeHours.toString()
-                "chaotic" -> DecimalFormat("000").format(playtime.inWholeHours)
+                "chaotic" -> chaoticHourFormat.format(playtime.inWholeHours)
                 else -> invalidQueryError(query)
             }
         }
@@ -128,16 +134,15 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 "plain" -> subject.name
                 "display" ->
                     when (subject) {
-                        is Identity.Mindustry ->
-                            Entities.getPlayersAsync().find { it.uuid() == subject.uuid }?.name
-                                ?: subject.name
+                        is Identity.Mindustry -> subject.displayName
                         else -> subject.name
                     }
                 else -> invalidQueryError(query)
             }
         }
 
-        placeholderPipeline.register("subject_color") { (subject, query) ->
+        placeholderPipeline.registerCaching("subject_color", 10.seconds, ::getContextKey) {
+            (subject, query) ->
             if (query != "hex") {
                 invalidQueryError(query)
             }
@@ -153,7 +158,27 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 else -> config.color.toHexString()
             }
         }
+
+        ImperiumScope.MAIN.launch {
+            while (isActive) {
+                delay(1.seconds)
+                val result =
+                    Entities.getPlayersAsync().map { player ->
+                        player to
+                            placeholderPipeline.pump(
+                                PlaceholderContext(player.identity, config.templates.playerName))
+                    }
+                runMindustryThread { result.forEach { (player, name) -> player.name(name) } }
+            }
+        }
     }
+
+    private fun getContextKey(context: PlaceholderContext): String =
+        when (context.subject) {
+            is Identity.Server -> "server"
+            is Identity.Mindustry -> context.subject.uuid + ":" + context.subject.usid
+            is Identity.Discord -> context.subject.id.toString()
+        }
 
     @Command(["t"])
     @ClientSide

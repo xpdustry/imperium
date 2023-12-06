@@ -146,6 +146,8 @@ sealed interface ServerConfig {
             val chatPrefix: String = "<%prefix%>",
             val chatFormat: String =
                 "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display% [accent]>[white]",
+            val playerName: String =
+                "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display%",
         )
 
         data class Hub(

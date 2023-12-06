@@ -52,5 +52,11 @@ fun <K, V> buildCache(configure: Caffeine<K, V>.() -> Unit): Cache<K, V> {
     return builder.build()
 }
 
+fun <K, V> buildAsyncCache(configure: Caffeine<K, V>.() -> Unit): AsyncCache<K, V> {
+    @Suppress("UNCHECKED_CAST") val builder = Caffeine.newBuilder() as Caffeine<K, V>
+    configure(builder)
+    return builder.buildAsync()
+}
+
 suspend fun <K, V> AsyncCache<K, V>.getSuspending(key: K, compute: suspend (K) -> V): V =
     get(key) { k, _ -> ImperiumScope.IO.async { compute(k) }.asCompletableFuture() }.await()

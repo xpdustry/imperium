@@ -29,7 +29,8 @@ sealed interface Identity {
         override val name: String,
         val uuid: String,
         val usid: String,
-        val address: SerializableInetAddress
+        val address: SerializableInetAddress,
+        val displayName: String = name
     ) : Identity
 
     @Serializable data class Discord(override val name: String, val id: Long) : Identity

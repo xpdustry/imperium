@@ -33,7 +33,9 @@ import mindustry.net.Packets.KickReason
 import org.slf4j.event.Level
 
 val Player.identity: Identity.Mindustry
-    get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress())
+    get() =
+        Identity.Mindustry(
+            info.plainLastName(), uuid(), usid(), con.address.toInetAddress(), info.lastName)
 
 val Player.joinTime: Instant
     get() = Instant.ofEpochMilli(con.connectTime)
