@@ -98,5 +98,5 @@ class RockTheVoteCommand(instances: InstanceManager) :
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Map?>): String =
-        "Type [accent]/rtv y[] to vote to change the map to ${session.objective?.name() ?: "a random one"}."
+        "[white]Type [accent]/rtv y[] to vote to change the map to [accent]${session.objective?.name() ?: "a random one"}[white]."
 }

@@ -55,7 +55,7 @@ abstract class AbstractVoteCommand<O>(
                 return
             }
             val message =
-                "[orange]A vote for [yellow]'$name'[] has been started by ${player.name}. [yellow]${newSession.required}[] vote(s) are required. [lightgray]${getVoteSessionDetails(newSession)}"
+                "[orange]A vote for [yellow]'$name'[] has been started by ${player.name}[orange]. [yellow]${newSession.required}[] vote(s) are required. [lightgray]${getVoteSessionDetails(newSession)}"
             getParticipants(newSession).forEach { it.sendMessage(message) }
         }
     }
@@ -67,7 +67,7 @@ abstract class AbstractVoteCommand<O>(
         }
         if (canParticipantVote(player, session)) {
             val message =
-                "[green]${player.name} has voted ${vote.name.lowercase()} for the '$name' vote. (${session.votes + vote.asInt()}/${session.required})."
+                "[orange]${player.plainName()}[green] has voted [accent]${vote.name.lowercase()}[] for the '$name' vote. (${session.votes + vote.asInt()}/${session.required})."
             getParticipants(session).forEach { it.sendMessage(message) }
             session.setVote(player, vote)
         }
