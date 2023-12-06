@@ -23,13 +23,12 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildCache
-import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
-import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
@@ -39,19 +38,19 @@ class AntiEvadeListener(instances: InstanceManager) : ImperiumApplication.Listen
     private val quits =
         buildCache<MindustryUUID, String> {
             maximumSize(1000)
-            expireAfterWrite(10.minutes.toJavaDuration())
+            expireAfterWrite(3.hours.toJavaDuration())
         }
 
     @EventHandler(priority = Priority.LOW)
     internal fun onPlayerJoinEvent(event: EventType.PlayerJoin) {
-        val previous = quits.get(event.player.uuid()) { event.player.name.stripMindustryColors() }
-        if (event.player.name.stripMindustryColors() != previous) {
+        val previous = quits.get(event.player.uuid()) { event.player.info.plainLastName() }
+        if (event.player.info.plainLastName() != previous) {
             for (player in Entities.getPlayers()) {
                 if (player.uuid() == event.player.uuid()) continue
                 ImperiumScope.MAIN.launch {
                     if (users.getSetting(player.uuid(), User.Setting.ANTI_BAN_EVADE)) {
                         player.sendMessage(
-                            "[orange]Warning, the player [accent]${event.player.name.stripMindustryColors()}[] has changed his name. He was [accent]$previous[].")
+                            "[orange]Warning, the player [accent]${event.player.info.plainLastName()}[] has changed his name. He was [accent]$previous[].")
                     }
                 }
             }
@@ -60,6 +59,6 @@ class AntiEvadeListener(instances: InstanceManager) : ImperiumApplication.Listen
 
     @EventHandler(priority = Priority.LOW)
     internal fun onPlayerQuitEvent(event: EventType.PlayerLeave) {
-        quits.put(event.player.uuid(), event.player.name.stripMindustryColors())
+        quits.put(event.player.uuid(), event.player.info.plainLastName())
     }
 }
