@@ -432,7 +432,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 punishments.punish(
                                     config.identity,
                                     user.snowflake,
-                                    "Placing NSFW images",
+                                    "Placing NSFW image",
                                     Punishment.Type.BAN,
                                     3.days)
 
@@ -499,7 +499,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
         private val clusterAuthor: (Cluster<T>) -> MindustryUUID?,
     ) : ClusterManager.Listener<T> {
         override fun onClusterEvent(cluster: Cluster<T>, event: ClusterManager.Event) {
-            val removed = queue.removeIf { it.value.x == cluster.x && it.value.y == cluster.y }
+            val removed = queue.removeIf { it.value.isAdjacentOrContains(cluster) }
             if (event == ClusterManager.Event.NEW || event == ClusterManager.Event.UPDATE) {
                 if (!clusterFilter(cluster)) {
                     logger.trace("Cluster (${cluster.x}, ${cluster.y}) does not pass the filter")
