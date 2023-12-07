@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
@@ -45,13 +46,17 @@ import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
+import fr.xpdustry.distributor.api.util.MUUID
 import java.net.InetAddress
+import java.util.Collections
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
+import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.Team
 import mindustry.gen.Player
 import mindustry.net.Administration
@@ -65,9 +70,18 @@ class VoteKickCommand(instances: InstanceManager) :
     private val votekickInterface = createVotekickInterface()
     private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
+    private val recentBans =
+        Collections.newSetFromMap(
+            buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
+
+    @EventHandler
+    internal fun onPlayerBanEvent(event: PlayerBanEvent) {
+        recentBans.add(MUUID.of(event.player))
+    }
 
     @EventHandler
     internal fun onPlayerLeave(event: EventType.PlayerLeave) {
+        if (MUUID.of(event.player) in recentBans) return
         manager.sessions.values
             .filter { it.objective.target == event.player }
             .forEach(VoteManager.Session<Context>::success)
