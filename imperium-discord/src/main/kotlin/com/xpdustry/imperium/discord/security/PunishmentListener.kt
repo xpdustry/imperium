@@ -24,7 +24,10 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
+import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.time.TimeRenderer
@@ -55,18 +58,26 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         is Identity.Server -> setAuthor("AUTO-MOD")
                     }
 
+                    // TODO Move embed creation to a single method for "/punishment info"
                     when (type) {
                         PunishmentMessage.Type.CREATE -> {
                             setColor(Color.RED)
                             setTitle("Punishment")
                             addField("Target", user.lastName, true)
                             addField("Type", punishment.type.toString(), true)
-                            addField(
-                                "Duration", renderer.renderDuration(punishment.duration), false)
+                            addField("Duration", renderer.renderDuration(punishment.duration), true)
                             if (server != config.name) {
                                 addField("Server", server, true)
                             }
                             addField("Reason", punishment.reason, false)
+
+                            when (val metadata = punishment.metadata) {
+                                is Punishment.Metadata.None -> Unit
+                                is Punishment.Metadata.Votekick -> {
+                                    addField("Votes for", renderPlayerList(metadata.yes), true)
+                                    addField("Votes against", renderPlayerList(metadata.nay), true)
+                                }
+                            }
                         }
                         PunishmentMessage.Type.PARDON -> {
                             setColor(Color.GREEN)
@@ -91,6 +102,17 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
 
             channel.sendMessage(embed)
+        }
+    }
+
+    private suspend fun renderPlayerList(players: Iterable<MindustryUUIDAsLong>) = buildString {
+        for (player in players) {
+            val user = users.findByUuid(player.toCRC32Muuid())
+            if (user == null) {
+                appendLine("- unknown")
+            } else {
+                appendLine("- ${user.lastName} / `${user.snowflake}`")
+            }
         }
     }
 

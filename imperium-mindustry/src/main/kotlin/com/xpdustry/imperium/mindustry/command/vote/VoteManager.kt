@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.command.vote
 
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import java.time.Instant
 import java.util.UUID
 import kotlin.time.Duration
@@ -41,6 +42,7 @@ interface VoteManager<O> {
         val objective: T
         val votes: Int
         val required: Int
+        val voters: Map<MindustryUUID, Vote>
 
         fun getVote(player: Player): Vote?
 

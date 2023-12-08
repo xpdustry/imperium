@@ -24,6 +24,8 @@ import java.util.zip.CRC32
 
 typealias MindustryUUID = String
 
+typealias MindustryUUIDAsLong = Long
+
 typealias MindustryUSID = String
 
 val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
@@ -163,6 +165,6 @@ fun String.isCRC32Muuid(): Boolean {
 
 fun MindustryUUID.toShortMuuid(): ByteArray = Base64.getDecoder().decode(this).sliceArray(0..7)
 
-fun MindustryUUID.toLongMuuid(): Long = Longs.fromByteArray(toShortMuuid())
+fun MindustryUUID.toLongMuuid(): MindustryUUIDAsLong = Longs.fromByteArray(toShortMuuid())
 
 fun Long.toCRC32Muuid(): MindustryUUID = Longs.toByteArray(this).toCRC32Muuid()

@@ -24,9 +24,11 @@ import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
@@ -142,13 +144,18 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
+        val yes = mutableSetOf<MindustryUUIDAsLong>()
+        val nay = mutableSetOf<MindustryUUIDAsLong>()
+        for ((voter, vote) in session.voters) {
+            (if (vote.asBoolean()) yes else nay) += voter.toLongMuuid()
+        }
         punishments.punish(
             config.server.identity,
             users.getByIdentity(session.objective.target.identity).snowflake,
             "Votekick: ${session.objective.reason}",
             Punishment.Type.BAN,
             NetServer.kickDuration.seconds,
-        )
+            Punishment.Metadata.Votekick(yes, nay))
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {

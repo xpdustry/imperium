@@ -18,10 +18,12 @@
 package com.xpdustry.imperium.mindustry.command.vote
 
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import fr.xpdustry.distributor.api.util.Priority
 import java.time.Instant
+import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
@@ -90,12 +92,10 @@ internal class SimpleVoteManager<O>(
         override val duration: Duration
             get() = this@SimpleVoteManager.duration
 
-        private val voted = mutableSetOf<String>()
         private val _status = AtomicReference(VoteManager.Status.RUNNING)
         override val status: VoteManager.Status
             get() = _status.get()
 
-        private val voters = mutableMapOf<String, Vote>()
         override var canceller: Player? = null
         override val id: UUID = UUID.randomUUID()
         override val start: Instant = Instant.now()
@@ -103,24 +103,26 @@ internal class SimpleVoteManager<O>(
         override val votes: Int
             get() = voters.values.sumOf(Vote::asInt)
 
+        private val _voters = mutableMapOf<VoteKey, Vote>()
+        override val voters: Map<MindustryUUID, Vote>
+            get() = _voters.mapKeys { it.key.uuid }
+
         override fun setVote(player: Player, vote: Vote) {
             setVote0(player, vote)
         }
 
         fun setVote0(player: Player, vote: Vote?) {
             if (vote == null) {
-                voters -= player.ip()
-                voted -= player.ip()
+                _voters.remove(player.key)
             } else {
-                voters[player.ip()] = vote
-                voted += player.ip()
+                _voters[player.key] = vote
             }
             if (votes >= required) {
                 success()
             }
         }
 
-        override fun getVote(player: Player): Vote? = voters[player.ip()]
+        override fun getVote(player: Player): Vote? = _voters[player.key]
 
         override fun success() = tryFinishWithStatus(VoteManager.Status.SUCCESS)
 
@@ -134,5 +136,13 @@ internal class SimpleVoteManager<O>(
                 finished(this)
             }
         }
+
+        private val Player.key: VoteKey
+            get() = VoteKey(ip(), uuid())
+    }
+
+    @Suppress("EqualsOrHashCode")
+    data class VoteKey(val ip: String, val uuid: MindustryUUID) {
+        override fun hashCode(): Int = Objects.hash(ip)
     }
 }

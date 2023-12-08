@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.user.UserTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
+import org.jetbrains.exposed.sql.json.json
 
 object PunishmentTable : SnowflakeIdTable("punishment") {
     val target = reference("target", UserTable, onDelete = ReferenceOption.CASCADE)
@@ -30,4 +31,7 @@ object PunishmentTable : SnowflakeIdTable("punishment") {
     val duration = duration("duration").nullable()
     val pardonTimestamp = timestamp("pardon_timestamp").nullable()
     val pardonReason = varchar("pardon_reason", 256).nullable()
+    val server = varchar("server", 32)
+    val metadata =
+        json("metadata", ::encodeMetadata, ::decodeMetadata).default(Punishment.Metadata.None)
 }
