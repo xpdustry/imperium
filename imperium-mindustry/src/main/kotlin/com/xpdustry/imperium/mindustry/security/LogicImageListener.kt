@@ -257,7 +257,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                     val display =
                         Vars.world.tile(link.x, link.y)?.build as? LogicDisplay.LogicDisplayBuild
                             ?: return@forEach
-                    val (_, block) = displays.getElement(display.rx, display.ry)!!
+                    val (_, block) = displays.getElement(display.rx, display.ry) ?: return
                     displays.removeElement(block.x, block.y)
                     val processors = block.data.processors.toMutableList()
                     if (event.breaking) {
