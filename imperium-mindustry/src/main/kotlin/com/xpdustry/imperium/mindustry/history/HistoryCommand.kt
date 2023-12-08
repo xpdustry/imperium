@@ -33,7 +33,6 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlin.time.Duration.Companion.milliseconds
@@ -53,7 +52,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @Command(["history", "player"])
     @ClientSide
     @ServerSide
-    private fun onPlayerHistoryCommand(
+    private suspend fun onPlayerHistoryCommand(
         sender: CommandSender,
         player: PlayerInfo,
         @Min(1) @Max(50) limit: Int = 10
@@ -65,15 +64,16 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
         val builder =
             StringBuilder("[accent]History of player [white]").append(player.plainLastName())
-        if (canSeeUuid(sender)) {
-            builder.append(" [accent](").append(player.id).append(")")
-        }
+        builder
+            .append(" [lightgray](#")
+            .append(users.findByUuid(player.id)?.snowflake ?: "unknown")
+            .append(")")
         builder.append(":")
         for (entry in entries) {
             builder
                 .append("\n[accent] > ")
                 .append(
-                    renderEntry(entry, name = false, uuid = false, position = true, indent = 3),
+                    renderEntry(entry, name = false, id = false, position = true, indent = 3),
                 )
         }
 
@@ -90,10 +90,8 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     (System.currentTimeMillis() - last).milliseconds <
                         config.history.doubleClickDelay) {
                     taps.remove(event.player)
-                    runMindustryThread {
-                        onTileHistoryCommand(
-                            CommandSender.player(event.player), event.tile.x, event.tile.y)
-                    }
+                    onTileHistoryCommand(
+                        CommandSender.player(event.player), event.tile.x, event.tile.y)
                 } else {
                     taps[event.player] = System.currentTimeMillis()
                 }
@@ -103,7 +101,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @Command(["history", "tile"])
     @ClientSide
     @ServerSide
-    private fun onTileHistoryCommand(
+    private suspend fun onTileHistoryCommand(
         sender: CommandSender,
         @Min(1) x: Short,
         @Min(1) y: Short,
@@ -124,25 +122,26 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         for (entry in entries) {
             builder
                 .append("\n[accent] > ")
-                .append(renderEntry(entry, true, canSeeUuid(sender), false, 3))
+                .append(renderEntry(entry, name = true, position = false, 3))
         }
 
         sender.sendMessage(
             if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
     }
 
-    private fun renderEntry(
+    private suspend fun renderEntry(
         entry: HistoryEntry,
         name: Boolean,
-        uuid: Boolean,
         position: Boolean,
-        indent: Int
+        indent: Int,
+        id: Boolean = true,
     ): String {
         val builder = StringBuilder("[white]")
         if (name) {
             builder.append(getName(entry.author))
-            if (uuid && entry.author.uuid != null) {
-                builder.append(" [gray](").append(entry.author.uuid).append(")")
+            if (id && entry.author.uuid != null) {
+                val snowflake = users.findByUuid(entry.author.uuid)?.snowflake ?: "unknown"
+                builder.append(" [lightgray](#").append(snowflake).append(")")
             }
             builder.append("[white]: ")
         }
@@ -281,10 +280,6 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         return if (author.uuid != null) Vars.netServer.admins.getInfo(author.uuid).lastName
         else author.team.name.lowercase() + " " + author.unit.name
     }
-
-    // TODO Use our permission system
-    private fun canSeeUuid(sender: CommandSender): Boolean =
-        sender.isConsole || sender.player.admin()
 
     // First we sort by timestamp from latest to earliest, then we take the first N elements,
     // then we reverse the list so the latest entries are at the end
