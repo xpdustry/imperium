@@ -205,7 +205,7 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
-        "Type [accent]/vote y[] to kick ${session.objective.target.name.stripMindustryColors()} from the game. Reason being [accent]${session.objective.reason}[]."
+        "Type [accent]/vote y[] to kick [accent]${session.objective.target.name.stripMindustryColors()}[] from the game for [accent]${session.objective.reason}[]."
 
     private fun getSession(team: Team): VoteManager.Session<Context>? =
         manager.sessions.values.firstOrNull { it.objective.team == team }
