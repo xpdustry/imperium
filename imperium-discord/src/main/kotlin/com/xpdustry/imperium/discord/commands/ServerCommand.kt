@@ -69,8 +69,17 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["server", "player", "online"])
     @NonEphemeral
-    suspend fun onServerPlayerOnline(actor: InteractionSender, server: String) {
-        val online = tracker.getOnlinePlayers(server)
+    suspend fun onServerPlayerOnline(actor: InteractionSender, server: String? = null) {
+        val online =
+            if (server != null) {
+                tracker.getOnlinePlayers(server)
+            } else {
+                discovery.servers.flatMap { (name, server) ->
+                    if (server.data is Discovery.Data.Mindustry)
+                        tracker.getOnlinePlayers(name) ?: emptyList()
+                    else emptyList()
+                }
+            }
         if (online == null) {
             actor.respond("Server not found.")
             return
