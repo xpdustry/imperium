@@ -125,7 +125,7 @@ sealed interface ServerConfig {
         }
 
         data class History(
-            val tileEntriesLimit: Int = 10,
+            val tileEntriesLimit: Int = 20,
             val playerEntriesLimit: Int = 200,
             val doubleClickDelay: Duration = 200.milliseconds
         )

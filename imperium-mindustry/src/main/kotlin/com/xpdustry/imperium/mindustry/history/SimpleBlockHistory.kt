@@ -34,7 +34,6 @@ import com.xpdustry.imperium.mindustry.history.factory.POWER_NODE_CONFIGURATION_
 import com.xpdustry.imperium.mindustry.history.factory.UNIT_FACTORY_CONFIGURATION_FACTORY
 import fr.xpdustry.distributor.api.event.EventHandler
 import fr.xpdustry.distributor.api.util.Priority
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.superclasses
@@ -54,8 +53,8 @@ import mindustry.world.blocks.units.UnitFactory
 
 class SimpleBlockHistory(private val config: ServerConfig.Mindustry) :
     BlockHistory, ImperiumApplication.Listener {
-    private val positions = ConcurrentHashMap<Int, LimitedList<HistoryEntry>>()
-    private val players = ConcurrentHashMap<String, LimitedList<HistoryEntry>>()
+    private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
+    private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()
     private val factories = mutableMapOf<KClass<out Building>, HistoryConfig.Factory<*>>()
 
     override fun onImperiumInit() {

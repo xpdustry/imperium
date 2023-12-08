@@ -33,6 +33,7 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import kotlin.time.Duration.Companion.milliseconds
@@ -57,7 +58,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         player: PlayerInfo,
         @Min(1) @Max(50) limit: Int = 10
     ) {
-        val entries = normalize(history.getHistory(player.id), limit)
+        val entries = runMindustryThread { normalize(history.getHistory(player.id), limit) }
         if (entries.none()) {
             sender.sendWarning("No history found.")
             return
@@ -107,7 +108,9 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         @Min(1) y: Short,
         @Min(1) @Max(50) limit: Int = 10,
     ) {
-        val entries = normalize(history.getHistory(x.toInt(), y.toInt()), limit)
+        val entries = runMindustryThread {
+            normalize(history.getHistory(x.toInt(), y.toInt()), limit)
+        }
         if (entries.none()) {
             sender.sendWarning("No history found.")
             return
@@ -147,16 +150,16 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
         when (entry.type) {
             HistoryEntry.Type.PLACING ->
-                builder.append("Began construction of [accent]").append(entry.block.name)
+                builder.append("Constructing [accent]").append(entry.block.name)
             HistoryEntry.Type.PLACE ->
                 builder.append("Constructed [accent]").append(entry.block.name)
             HistoryEntry.Type.BREAKING ->
-                builder.append("Began deconstruction of [accent]").append(entry.block.name)
+                builder.append("Deconstructing [accent]").append(entry.block.name)
             HistoryEntry.Type.BREAK ->
                 builder.append("Deconstructed [accent]").append(entry.block.name)
             HistoryEntry.Type.ROTATE ->
                 builder
-                    .append("Set direction of [accent]")
+                    .append("Rotated [accent]")
                     .append(entry.block.name)
                     .append(" [white]to [accent]")
                     .append(getOrientation(entry.rotation))
@@ -180,7 +183,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         if (position) {
             builder.append(" at [accent](").append(entry.x).append(", ").append(entry.y).append(")")
         }
-        builder.append(", [white]").append(renderer.renderRelativeInstant(entry.timestamp))
+        builder.append(" [white]").append(renderer.renderRelativeInstant(entry.timestamp))
         return builder.toString()
     }
 
@@ -204,7 +207,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
             is HistoryConfig.Text -> {
                 builder
-                    .append("Changed the [accent]")
+                    .append("Edited [accent]")
                     .append(config.type.name.lowercase())
                     .append("[white] of [accent]")
                     .append(entry.block.name)
@@ -214,7 +217,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
             is HistoryConfig.Link -> {
                 if (config.type === HistoryConfig.Link.Type.RESET) {
-                    builder.append("Reset the links of [accent]").append(entry.block.name)
+                    builder.append("Reset [accent]").append(entry.block.name)
                     return
                 }
                 builder
@@ -233,11 +236,11 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     )
             }
             is HistoryConfig.Canvas -> {
-                builder.append("Changed the content of [accent]").append(entry.block.name)
+                builder.append("Edited [accent]").append(entry.block.name)
             }
             is HistoryConfig.Content -> {
                 if (config.value == null) {
-                    builder.append("Reset the content of [accent]").append(entry.block.name)
+                    builder.append("Reset [accent]").append(entry.block.name)
                     return
                 }
                 builder
@@ -270,8 +273,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 builder
                     .append("Configured [accent]")
                     .append(entry.block.name)
-                    .append("[white] to [accent]")
-                    .append("null")
+                    .append("[white] to [accent]null")
             }
         }
     }
@@ -281,14 +283,19 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         else author.team.name.lowercase() + " " + author.unit.name
     }
 
-    // First we sort by timestamp from latest to earliest, then we take the first N elements,
-    // then we reverse the list so the latest entries are at the end
     private fun normalize(entries: List<HistoryEntry>, limit: Int) =
         entries
+            .asReversed()
             .asSequence()
-            .sortedByDescending(HistoryEntry::timestamp)
+            .withIndex()
+            .filter {
+                it.index == 0 ||
+                    (it.value.type != HistoryEntry.Type.BREAKING &&
+                        it.value.type != HistoryEntry.Type.PLACING)
+            }
+            .map { it.value }
             .take(limit)
-            .sortedBy(HistoryEntry::timestamp)
+            .toList()
 
     private fun getOrientation(rotation: Int): String =
         when (rotation % 4) {
