@@ -207,8 +207,8 @@ sealed interface ImageAnalysisConfig {
     data class SightEngine(
         val sightEngineClient: String,
         val sightEngineSecret: Secret,
-        val nudityThreshold: Float = 0.5F,
-        val goreThreshold: Float = 0.5F,
+        val warningThreshold: Float = 0.4F,
+        val triggerThreshold: Float = 0.7F
     ) : ImageAnalysisConfig
 }
 

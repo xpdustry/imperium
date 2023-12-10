@@ -49,6 +49,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.Color
+import java.awt.image.BufferedImage
 import java.time.Instant
 import java.util.Queue
 import java.util.concurrent.PriorityBlockingQueue
@@ -375,90 +376,111 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
-                val element = queue.peek()
-                if (element == null || element.instant > Instant.now()) {
+                val (cluster, instant, author) = queue.peek() ?: continue
+                if (instant > Instant.now()) {
                     continue
                 }
+
                 queue.remove()
 
                 launch {
-                    logger.debug("Processing cluster ({}, {})", element.value.x, element.value.y)
-                    val image = renderer.render(element.value.blocks)
+                    logger.debug("Processing cluster ({}, {})", cluster.x, cluster.y)
+                    val image = renderer.render(cluster.blocks)
 
                     when (val result = analysis.isUnsafe(image)) {
-                        is ImageAnalysis.Result.Failure ->
+                        is ImageAnalysis.Result.Failure -> {
                             logger.error("Failed to analyze image: {}", result.message)
+                        }
                         is ImageAnalysis.Result.Success -> {
-                            if (!result.unsafe) {
-                                logger.debug(
-                                    "Cluster ({}, {}) is safe", element.value.x, element.value.y)
-                                @Suppress("LABEL_NAME_CLASH") return@launch
-                            }
-                            logger.debug(
-                                "Cluster ({}, {}) is unsafe. Destroying.",
-                                element.value.x,
-                                element.value.y)
+                            when (result.rating) {
+                                ImageAnalysis.Rating.NONE -> {
+                                    logger.debug("Cluster ({}, {}) is safe", cluster.x, cluster.y)
+                                }
+                                ImageAnalysis.Rating.WARNING -> {
+                                    logger.debug(
+                                        "Cluster ({}, {}) is possibly unsafe.",
+                                        cluster.x,
+                                        cluster.y)
+                                    webhook.send(
+                                        WebhookMessage(
+                                            content =
+                                                buildString {
+                                                    appendLine("**Possible NSFW image detected**")
+                                                    appendLine(
+                                                        "Located at ${cluster.x}, ${cluster.y}")
+                                                    for ((entry, percent) in result.details) {
+                                                        appendLine(
+                                                            "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
+                                                    }
+                                                },
+                                            attachments = listOf(image.toUnsafeAttachment())))
+                                }
+                                ImageAnalysis.Rating.TRIGGER -> {
+                                    logger.debug(
+                                        "Cluster ({}, {}) is unsafe. Destroying.",
+                                        cluster.x,
+                                        cluster.y)
 
-                            // TODO
-                            //   Index and destroy every logic build a player has placed in the
-                            //   past 10 seconds
-                            runMindustryThread {
-                                for (block in element.value.blocks) {
-                                    Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
-                                    val data = block.data
                                     // TODO
-                                    //   Use TileChangeEvent for monitoring tile changes, this
-                                    //   trick is goofy
-                                    if (data is LogicImage.Drawer) {
-                                        displays.removeElement(block.x, block.y)
-                                        for (processor in data.processors) {
-                                            Vars.world
-                                                .tile(processor.x, processor.y)
-                                                ?.setNet(Blocks.air)
+                                    //   Index and destroy every logic build a player has placed in
+                                    //   the past 10 seconds
+                                    runMindustryThread {
+                                        for (block in cluster.blocks) {
+                                            Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
+                                            val data = block.data
+                                            // TODO
+                                            //   Use TileChangeEvent for monitoring tile changes,
+                                            //   this trick is goofy
+                                            if (data is LogicImage.Drawer) {
+                                                displays.removeElement(block.x, block.y)
+                                                for (processor in data.processors) {
+                                                    Vars.world
+                                                        .tile(processor.x, processor.y)
+                                                        ?.setNet(Blocks.air)
+                                                }
+                                            } else {
+                                                canvases.removeElement(block.x, block.y)
+                                            }
                                         }
-                                    } else {
-                                        canvases.removeElement(block.x, block.y)
                                     }
+
+                                    val user = users.findByUuid(author)
+                                    if (user == null) {
+                                        logger.warn("Could not find player with UUID $author")
+                                        @Suppress("LABEL_NAME_CLASH") return@launch
+                                    }
+
+                                    val punishment =
+                                        punishments.punish(
+                                            config.identity,
+                                            user.snowflake,
+                                            "Placing NSFW image",
+                                            Punishment.Type.BAN,
+                                            3.days)
+
+                                    webhook.send(
+                                        WebhookMessage(
+                                            content =
+                                                buildString {
+                                                    appendLine("**NSFW image detected**")
+                                                    appendLine("Related to punishment $punishment")
+                                                    for ((entry, percent) in result.details) {
+                                                        appendLine(
+                                                            "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
+                                                    }
+                                                },
+                                            attachments = listOf(image.toUnsafeAttachment())))
                                 }
                             }
-
-                            val user = users.findByUuid(element.author)
-                            if (user == null) {
-                                logger.warn("Could not find player with UUID ${element.author}")
-                                @Suppress("LABEL_NAME_CLASH") return@launch
-                            }
-
-                            val punishment =
-                                punishments.punish(
-                                    config.identity,
-                                    user.snowflake,
-                                    "Placing NSFW image",
-                                    Punishment.Type.BAN,
-                                    3.days)
-
-                            webhook.send(
-                                WebhookMessage(
-                                    content =
-                                        buildString {
-                                            appendLine("**NSFW image detected**")
-                                            appendLine("Related to punishment $punishment")
-                                            for ((entry, percent) in result.details) {
-                                                appendLine(
-                                                    "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
-                                            }
-                                        },
-                                    attachments =
-                                        listOf(
-                                            WebhookMessage.Attachment(
-                                                "SPOILER_image.jpg",
-                                                "NSFW image",
-                                                "image/jpeg".toMediaType()) {
-                                                    image.inputStream(ImageFormat.JPG)
-                                                })))
                         }
                     }
                 }
             }
+        }
+
+    private fun BufferedImage.toUnsafeAttachment() =
+        WebhookMessage.Attachment("SPOILER_image.jpg", "NSFW image", "image/jpeg".toMediaType()) {
+            inputStream(ImageFormat.JPG)
         }
 
     private fun filterDrawer(cluster: Cluster<LogicImage.Drawer>): Boolean =

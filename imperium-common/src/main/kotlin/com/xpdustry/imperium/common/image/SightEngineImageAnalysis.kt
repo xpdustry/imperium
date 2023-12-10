@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import java.awt.image.BufferedImage
+import kotlin.math.max
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -43,6 +44,7 @@ class SightEngineImageAnalysis(
             withContext(ImperiumScope.IO.coroutineContext) {
                 image.inputStream(ImageFormat.JPG).readAllBytes()
             }
+
         val request =
             MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
@@ -73,19 +75,23 @@ class SightEngineImageAnalysis(
 
         logger.trace("SightEngine response: {}", json)
 
-        val explicitNudityFields = listOf("sexual_activity", "sexual_display", "sextoy", "erotica")
-        val nudity =
-            json["nudity"].asJsonObject.let { obj ->
-                explicitNudityFields.maxOf { obj[it].asFloat }
-            }
+        val nudity = EXPLICIT_NUDITY_FIELDS.maxOf { json["nudity"].asJsonObject[it].asFloat }
         val gore = json["gore"].asJsonObject["prob"].asFloat
+        val result = max(nudity, gore)
+        val rating =
+            when {
+                result > config.triggerThreshold -> ImageAnalysis.Rating.TRIGGER
+                result > config.warningThreshold -> ImageAnalysis.Rating.WARNING
+                else -> ImageAnalysis.Rating.NONE
+            }
 
         return ImageAnalysis.Result.Success(
-            nudity >= config.nudityThreshold || gore >= config.goreThreshold,
-            mapOf(UnsafeImageType.NUDITY to nudity, UnsafeImageType.GORE to gore))
+            rating, mapOf(ImageAnalysis.King.NUDITY to nudity, ImageAnalysis.King.GORE to gore))
     }
 
     companion object {
         private val logger by LoggerDelegate()
+        private val EXPLICIT_NUDITY_FIELDS =
+            listOf("sexual_activity", "sexual_display", "sextoy", "erotica")
     }
 }
