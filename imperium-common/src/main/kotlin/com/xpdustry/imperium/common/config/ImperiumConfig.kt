@@ -209,7 +209,6 @@ sealed interface ImageAnalysisConfig {
         val sightEngineSecret: Secret,
         val nudityThreshold: Float = 0.5F,
         val goreThreshold: Float = 0.5F,
-        val offensiveThreshold: Float = 0.5F,
     ) : ImageAnalysisConfig
 }
 

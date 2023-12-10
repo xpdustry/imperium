@@ -48,7 +48,7 @@ class SightEngineImageAnalysis(
                 .setType(MultipartBody.FORM)
                 .addFormDataPart("api_user", config.sightEngineClient)
                 .addFormDataPart("api_secret", config.sightEngineSecret.value)
-                .addFormDataPart("models", "nudity-2.0,offensive,gore")
+                .addFormDataPart("models", "nudity-2.0,gore")
                 .addFormDataPart(
                     "media",
                     "image.jpg",
@@ -78,19 +78,11 @@ class SightEngineImageAnalysis(
             json["nudity"].asJsonObject.let { obj ->
                 explicitNudityFields.maxOf { obj[it].asFloat }
             }
-        val offensive = json["offensive"].asJsonObject["prob"].asFloat
         val gore = json["gore"].asJsonObject["prob"].asFloat
 
         return ImageAnalysis.Result.Success(
-            nudity >= config.nudityThreshold ||
-                offensive >= config.offensiveThreshold ||
-                gore >= config.goreThreshold,
-            mapOf(
-                UnsafeImageType.NUDITY to nudity,
-                UnsafeImageType.OFFENSIVE to offensive,
-                UnsafeImageType.GORE to gore,
-            ),
-        )
+            nudity >= config.nudityThreshold || gore >= config.goreThreshold,
+            mapOf(UnsafeImageType.NUDITY to nudity, UnsafeImageType.GORE to gore))
     }
 
     companion object {

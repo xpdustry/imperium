@@ -20,5 +20,4 @@ package com.xpdustry.imperium.common.image
 enum class UnsafeImageType {
     NUDITY,
     GORE,
-    OFFENSIVE,
 }
