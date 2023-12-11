@@ -428,6 +428,6 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
         private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
-        private const val MAX_MAP_SIDE_SIZE = 1024
+        private const val MAX_MAP_SIDE_SIZE = 1440//p
     }
 }
