@@ -65,8 +65,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
-            actor.respond(
-                "The map file is bigger than 1mb, please submit reasonably sized maps.")
+            actor.respond("The map file is bigger than 1mb, please submit reasonably sized maps.")
             return
         }
 
@@ -108,8 +107,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
-            actor.respond(
-                "The map file is bigger than 1mb, please submit reasonably sized maps.")
+            actor.respond("The map file is bigger than 1mb, please submit reasonably sized maps.")
             return
         }
 
