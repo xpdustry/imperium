@@ -373,7 +373,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @Command(["map", "gamemode", "add"], Rank.ADMIN)
+    @Command(["map", "gamemode", "add"], Rank.MODERATOR)
     private suspend fun onMapGamemodeAdd(
         actor: InteractionSender,
         id: Snowflake,
@@ -393,7 +393,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "gamemode", "remove"], Rank.ADMIN)
+    @Command(["map", "gamemode", "remove"], Rank.MODERATOR)
     private suspend fun onMapGamemodeRemove(
         actor: InteractionSender,
         id: Snowflake,
