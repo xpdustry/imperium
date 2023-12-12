@@ -65,8 +65,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
-            actor.respond(
-                "The map file is bigger than ${MindustryMapTable.MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
+            actor.respond("The map file is bigger than 1mb, please submit reasonably sized maps.")
             return
         }
 
@@ -76,7 +75,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         @Suppress("DuplicatedCode")
         if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
             actor.respond(
-                "The map is bigger than $MAX_MAP_SIDE_SIZE blocs, please submit reasonably sized maps.")
+                "The map is bigger than $MAX_MAP_SIDE_SIZE blocks, please submit reasonably sized maps.")
             return
         }
 
@@ -108,8 +107,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
-            actor.respond(
-                "The map file is bigger than ${MindustryMapTable.MAX_MAP_FILE_SIZE / 1024}kb, please submit reasonably sized maps.")
+            actor.respond("The map file is bigger than 1mb, please submit reasonably sized maps.")
             return
         }
 
@@ -118,7 +116,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
         if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
             actor.respond(
-                "The map is bigger than $MAX_MAP_SIDE_SIZE blocs, please submit reasonably sized maps.")
+                "The map is bigger than $MAX_MAP_SIDE_SIZE blocks, please submit reasonably sized maps.")
             return
         }
 
@@ -373,7 +371,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @Command(["map", "gamemode", "add"], Rank.ADMIN)
+    @Command(["map", "gamemode", "add"], Rank.MODERATOR)
     private suspend fun onMapGamemodeAdd(
         actor: InteractionSender,
         id: Snowflake,
@@ -393,7 +391,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "gamemode", "remove"], Rank.ADMIN)
+    @Command(["map", "gamemode", "remove"], Rank.MODERATOR)
     private suspend fun onMapGamemodeRemove(
         actor: InteractionSender,
         id: Snowflake,
