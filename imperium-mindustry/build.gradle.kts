@@ -25,6 +25,7 @@ dependencies {
     mindustryDependencies()
     compileOnly(libs.distributor.api)
     compileOnly(libs.distributor.kotlin)
+    compileOnly(libs.nohorny)
 
     implementation(libs.jsoup)
 
@@ -104,6 +105,14 @@ val downloadDistributorKotlin =
         version.set(libs.versions.distributor.map { "v$it" })
     }
 
+val downloadNoHorny =
+    tasks.register<GithubArtifactDownload>("downloadNoHorny") {
+        user.set("xpdustry")
+        repo.set("nohorny")
+        name.set("nohorny.jar")
+        version.set(libs.versions.nohorny.map { "v$it" })
+    }
+
 tasks.runMindustryClient { mods.setFrom() }
 
 tasks.register<MindustryExec>("runMindustryClient2") {
@@ -120,6 +129,7 @@ tasks.runMindustryServer {
         tasks.shadowJar,
         downloadDistributorCore,
         downloadDistributorKotlin,
+        downloadNoHorny,
     )
 }
 
@@ -135,5 +145,6 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         tasks.shadowJar,
         downloadDistributorCore,
         downloadDistributorKotlin,
+        downloadNoHorny,
     )
 }
