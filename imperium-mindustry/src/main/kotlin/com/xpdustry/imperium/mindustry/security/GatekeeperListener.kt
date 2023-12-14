@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
@@ -70,9 +71,18 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.security))
-        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register(
             "punishment", Priority.NORMAL, PunishmentGatekeeper(punishments, renderer))
+
+        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
+        pipeline.register("links", Priority.NORMAL) { context ->
+            if (context.name.containsLink()) {
+                GatekeeperResult.Failure("Your name cannot contain a link.")
+            } else {
+                GatekeeperResult.Success
+            }
+        }
+
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, whitelist))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->

@@ -123,7 +123,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         for (player in Entities.getPlayers()) {
             if (player.team() == building.team) {
                 player.sendMessage(
-                    "[scarlet]The core cluster [orange]#${index + 1}[] at ([orange]${cluster.x}[], [orange]${cluster.x}[]) is under attack!")
+                    "[scarlet]The core cluster [orange]#${index + 1}[] at ([orange]${cluster.x}[], [orange]${cluster.y}[]) is under attack!")
             }
         }
     }

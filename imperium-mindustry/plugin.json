@@ -9,6 +9,7 @@
   "dependencies": [
     "distributor-core",
     "distributor-kotlin",
-    "kotlin-runtime"
+    "kotlin-runtime",
+    "nohorny"
   ]
 }

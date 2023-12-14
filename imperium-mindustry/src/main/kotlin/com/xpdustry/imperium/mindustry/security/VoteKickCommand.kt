@@ -24,8 +24,11 @@ import com.xpdustry.imperium.common.command.annotation.Greedy
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
+import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
@@ -45,13 +48,17 @@ import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import fr.xpdustry.distributor.api.event.EventHandler
+import fr.xpdustry.distributor.api.util.MUUID
 import java.net.InetAddress
+import java.util.Collections
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
+import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.Team
 import mindustry.gen.Player
 import mindustry.net.Administration
@@ -65,9 +72,18 @@ class VoteKickCommand(instances: InstanceManager) :
     private val votekickInterface = createVotekickInterface()
     private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
+    private val recentBans =
+        Collections.newSetFromMap(
+            buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
+
+    @EventHandler
+    internal fun onPlayerBanEvent(event: PlayerBanEvent) {
+        recentBans.add(MUUID.of(event.player))
+    }
 
     @EventHandler
     internal fun onPlayerLeave(event: EventType.PlayerLeave) {
+        if (MUUID.of(event.player) in recentBans) return
         manager.sessions.values
             .filter { it.objective.target == event.player }
             .forEach(VoteManager.Session<Context>::success)
@@ -128,13 +144,18 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
+        val yes = mutableSetOf<MindustryUUIDAsLong>()
+        val nay = mutableSetOf<MindustryUUIDAsLong>()
+        for ((voter, vote) in session.voters) {
+            (if (vote.asBoolean()) yes else nay) += voter.toLongMuuid()
+        }
         punishments.punish(
             config.server.identity,
             users.getByIdentity(session.objective.target.identity).snowflake,
             "Votekick: ${session.objective.reason}",
             Punishment.Type.BAN,
             NetServer.kickDuration.seconds,
-        )
+            Punishment.Metadata.Votekick(yes, nay))
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {
@@ -184,7 +205,7 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
-        "Type [accent]/vote y[] to kick ${session.objective.target.name.stripMindustryColors()} from the game. Reason being [accent]${session.objective.reason}[]."
+        "Type [accent]/vote y[] to kick [accent]${session.objective.target.name.stripMindustryColors()}[] from the game for [accent]${session.objective.reason}[]."
 
     private fun getSession(team: Team): VoteManager.Session<Context>? =
         manager.sessions.values.firstOrNull { it.objective.team == team }

@@ -23,12 +23,24 @@ interface ImageAnalysis {
     suspend fun isUnsafe(image: BufferedImage): Result
 
     object Noop : ImageAnalysis {
-        override suspend fun isUnsafe(image: BufferedImage) = Result.Success(false, emptyMap())
+        override suspend fun isUnsafe(image: BufferedImage) =
+            Result.Success(Rating.NONE, emptyMap())
     }
 
     sealed interface Result {
-        data class Success(val unsafe: Boolean, val details: Map<UnsafeImageType, Float>) : Result
+        data class Success(val rating: Rating, val details: Map<King, Float>) : Result
 
         data class Failure(val message: String) : Result
+    }
+
+    enum class King {
+        NUDITY,
+        GORE,
+    }
+
+    enum class Rating {
+        NONE,
+        WARNING,
+        TRIGGER
     }
 }

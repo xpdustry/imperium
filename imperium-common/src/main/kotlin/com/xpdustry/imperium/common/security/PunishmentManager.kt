@@ -54,7 +54,8 @@ interface PunishmentManager {
         user: Snowflake,
         reason: String,
         type: Punishment.Type,
-        duration: Duration
+        duration: Duration,
+        metadata: Punishment.Metadata = Punishment.Metadata.None
     ): Snowflake
 
     suspend fun pardon(author: Identity, punishment: Snowflake, reason: String): PardonResult
@@ -123,7 +124,8 @@ class SimplePunishmentManager(
         user: Snowflake,
         reason: String,
         type: Punishment.Type,
-        duration: Duration
+        duration: Duration,
+        metadata: Punishment.Metadata
     ): Snowflake {
         val snowflake = generator.generate()
         provider.newSuspendTransaction {
@@ -134,6 +136,8 @@ class SimplePunishmentManager(
                 it[PunishmentTable.type] = type
                 it[PunishmentTable.duration] =
                     if (duration.isInfinite()) null else duration.toJavaDuration()
+                it[server] = config.server.name
+                it[PunishmentTable.metadata] = metadata
             }
         }
         messenger.publish(
@@ -187,6 +191,8 @@ class SimplePunishmentManager(
             reason = this[PunishmentTable.reason],
             type = this[PunishmentTable.type],
             duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
-            pardon = pardon)
+            pardon = pardon,
+            server = this[PunishmentTable.server],
+            metadata = this[PunishmentTable.metadata])
     }
 }

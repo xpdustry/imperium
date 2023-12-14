@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ORANGE_COLOR
+import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
@@ -110,6 +111,18 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 return@register ""
             }
             ctx.message
+        }
+
+        chatMessagePipeline.register("anti-links", Priority.NORMAL) { ctx ->
+            if (ctx.sender == null || !ctx.message.containsLink()) {
+                return@register ctx.message
+            } else {
+                if (ctx.target == ctx.sender) {
+                    ctx.sender.sendMessage(
+                        "[scarlet]You can't send discord invitations or links in the chat.")
+                }
+                return@register ""
+            }
         }
 
         val chaoticHourFormat = DecimalFormat("000")

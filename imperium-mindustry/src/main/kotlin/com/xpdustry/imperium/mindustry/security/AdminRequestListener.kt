@@ -30,7 +30,6 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -47,7 +46,6 @@ import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
@@ -237,10 +235,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             }
             val canSeeInfo =
                 (accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE) >= Rank.ADMIN
-            var historic: User.NamesAndAddresses = User.NamesAndAddresses.EMPTY
-            if (canSeeInfo) {
-                historic = users.findNamesAndAddressesBySnowflake(user.snowflake)
-            }
+            val historic = users.findNamesAndAddressesBySnowflake(user.snowflake)
             Call.traceInfo(
                 requester.con,
                 target,

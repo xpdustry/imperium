@@ -36,6 +36,7 @@ mariadb = "3.3.0"
 caffeine = "3.1.8"
 prettytime = "5.0.7.Final"
 time4j = "4.38"
+nohorny = "2.0.0-rc.3"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -86,6 +87,7 @@ mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mari
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
 time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
+nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }

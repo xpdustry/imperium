@@ -51,7 +51,7 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
         }
         val candidates = mutableListOf<Int>()
         for (i in _clusters.indices) {
-            if (canBePartOfCluster(_clusters[i], block)) {
+            if (_clusters[i].isAdjacentOrContains(block)) {
                 candidates += i
             }
         }
@@ -109,7 +109,7 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
             do {
                 added = false
                 for (i in blocks.indices) {
-                    if (canBePartOfCluster(cluster, blocks[i])) {
+                    if (cluster.isAdjacentOrContains(blocks[i])) {
                         cluster._blocks += blocks.removeAt(i)
                         added = true
                         break
@@ -145,26 +145,6 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
         _clusters.sortWith(compareBy(Cluster<T>::x, Cluster<T>::y))
     }
 
-    private fun canBePartOfCluster(cluster: Cluster<T>, block: Cluster.Block<T>): Boolean =
-        cluster._blocks.any {
-            val r1 = it.x + it.size + 1
-            val l1 = it.x - 1
-            val b1 = it.y - 1
-            val t1 = it.y + it.size + 1
-
-            val r2 = block.x + block.size + 1
-            val l2 = block.x - 1
-            val b2 = block.y - 1
-            val t2 = block.y + block.size + 1
-
-            val x1 = maxOf(l1, l2)
-            val y1 = maxOf(b1, b2)
-            val x2 = minOf(r1, r2)
-            val y2 = minOf(t1, t2)
-
-            maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
-        }
-
     fun interface Listener<T : Any> {
         fun onClusterEvent(cluster: Cluster<T>, event: Event)
     }
@@ -193,6 +173,29 @@ class Cluster<T : Any>(blocks: List<Block<T>> = emptyList()) {
         get() = _blocks
 
     @Suppress("PropertyName") internal val _blocks: MutableList<Block<T>> = blocks.toMutableList()
+
+    fun isAdjacentOrContains(block: Block<*>): Boolean =
+        _blocks.any {
+            val r1 = it.x + it.size + 1
+            val l1 = it.x - 1
+            val b1 = it.y - 1
+            val t1 = it.y + it.size + 1
+
+            val r2 = block.x + block.size + 1
+            val l2 = block.x - 1
+            val b2 = block.y - 1
+            val t2 = block.y + block.size + 1
+
+            val x1 = maxOf(l1, l2)
+            val y1 = maxOf(b1, b2)
+            val x2 = minOf(r1, r2)
+            val y2 = minOf(t1, t2)
+
+            maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
+        }
+
+    fun isAdjacentOrContains(cluster: Cluster<*>): Boolean =
+        cluster._blocks.any(::isAdjacentOrContains)
 
     fun copy() =
         Cluster<T>().also {

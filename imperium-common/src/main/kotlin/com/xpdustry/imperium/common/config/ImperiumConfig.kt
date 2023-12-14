@@ -125,13 +125,13 @@ sealed interface ServerConfig {
         }
 
         data class History(
-            val tileEntriesLimit: Int = 10,
+            val tileEntriesLimit: Int = 20,
             val playerEntriesLimit: Int = 200,
             val doubleClickDelay: Duration = 200.milliseconds
         )
 
         data class World(
-            val maxExcavateSize: Int = 256,
+            val maxExcavateSize: Int = 1024,
             val excavationTilePrice: Int = 10,
             val excavationItem: String = "blast-compound",
             val coreDamageAlertDelay: Duration = 10.seconds,
@@ -207,9 +207,8 @@ sealed interface ImageAnalysisConfig {
     data class SightEngine(
         val sightEngineClient: String,
         val sightEngineSecret: Secret,
-        val nudityThreshold: Float = 0.5F,
-        val goreThreshold: Float = 0.5F,
-        val offensiveThreshold: Float = 0.5F,
+        val warningThreshold: Float = 0.4F,
+        val triggerThreshold: Float = 0.7F
     ) : ImageAnalysisConfig
 }
 
