@@ -220,13 +220,15 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             Vars.netServer.admins.filterMessage(sender.player, message)
         }
         if (filtered1.isNullOrBlank()) return
-        val filtered2 = chatMessagePipeline.pump(ChatMessageContext(sender.player, target, message))
-        if (filtered2.isBlank()) return
 
-        val formatted =
-            "[gray]${getChatPrefix("W")}[] ${getChatFormat(sender.player.identity, filtered2)}"
-        sender.player.sendMessage(formatted, sender.player, filtered2)
-        target.sendMessage(formatted, sender.player, filtered2)
+        for (receiver in listOf(sender.player, target)) {
+            val filtered2 =
+                chatMessagePipeline.pump(ChatMessageContext(sender.player, receiver, message))
+            if (filtered2.isBlank()) continue
+            val formatted =
+                "[gray]${getChatPrefix("W")}[] ${getChatFormat(sender.player.identity, filtered2)}"
+            receiver.sendMessage(formatted, sender.player, filtered2)
+        }
     }
 
     @Command(["say"])
