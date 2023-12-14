@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
@@ -75,8 +76,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register("links", Priority.NORMAL) { context ->
-            val name = context.name.lowercase()
-            if (name.contains("discord.gg") || context.name.matches(Regex("https?://"))) {
+            if (context.name.containsLink()) {
                 GatekeeperResult.Failure("Your name cannot contain a link.")
             } else {
                 GatekeeperResult.Success

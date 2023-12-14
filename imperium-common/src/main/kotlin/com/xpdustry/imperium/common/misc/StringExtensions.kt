@@ -39,3 +39,7 @@ fun String.toInetAddressOrNull(): InetAddress? =
 fun ByteArray.encodeBase64(): String = Base64.getEncoder().encodeToString(this)
 
 fun String.decodeBase64(): ByteArray = Base64.getDecoder().decode(this)
+
+private val LINK_REGEX = Regex("(https?://|discord.gg)")
+
+fun String.containsLink(): Boolean = LINK_REGEX.containsMatchIn(lowercase())
