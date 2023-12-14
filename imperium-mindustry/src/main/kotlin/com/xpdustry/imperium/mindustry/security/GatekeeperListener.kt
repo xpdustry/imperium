@@ -70,9 +70,19 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.security))
-        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register(
             "punishment", Priority.NORMAL, PunishmentGatekeeper(punishments, renderer))
+
+        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
+        pipeline.register("links", Priority.NORMAL) { context ->
+            val name = context.name.lowercase()
+            if (name.contains("discord.gg") || context.name.matches(Regex("https?://"))) {
+                GatekeeperResult.Failure("Your name cannot contain a link.")
+            } else {
+                GatekeeperResult.Success
+            }
+        }
+
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, whitelist))
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
