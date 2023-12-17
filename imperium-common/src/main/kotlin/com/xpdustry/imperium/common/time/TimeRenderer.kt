@@ -39,7 +39,8 @@ interface TimeRenderer {
 class SimpleTimeRenderer(private val config: ImperiumConfig) : TimeRenderer {
 
     override fun renderDuration(duration: Duration, locale: Locale?): String =
-        getTime4JavaPrettyTime(locale ?: config.language).print(duration.toJavaDuration())
+        if (duration.isInfinite()) "∞"
+        else getTime4JavaPrettyTime(locale ?: config.language).print(duration.toJavaDuration())
 
     override fun renderInstant(instant: Instant): String =
         INSTANT_FORMAT.format(instant.atOffset(ZoneOffset.UTC))
