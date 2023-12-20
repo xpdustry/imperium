@@ -17,50 +17,44 @@
  */
 package com.xpdustry.imperium.discord.command
 
-import kotlinx.coroutines.future.await
-import org.javacord.api.DiscordApi
-import org.javacord.api.entity.channel.TextChannel
-import org.javacord.api.entity.message.Message
-import org.javacord.api.entity.message.embed.EmbedBuilder
-import org.javacord.api.entity.user.User
-import org.javacord.api.event.interaction.ButtonClickEvent
-import org.javacord.api.event.interaction.SlashCommandCreateEvent
-import org.javacord.api.interaction.ButtonInteraction
-import org.javacord.api.interaction.InteractionBase
-import org.javacord.api.interaction.SlashCommandInteraction
-import org.javacord.api.interaction.callback.ExtendedInteractionMessageBuilderBase
+import com.xpdustry.imperium.discord.misc.await
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
+import net.dv8tion.jda.api.utils.messages.MessageCreateBuilder
 
-sealed class InteractionSender {
-    val discord: DiscordApi
-        get() = interaction.api
+sealed class InteractionSender<T> where T : IReplyCallback {
+    val jda: JDA
+        get() = interaction.jda
 
-    val user: User
-        get() = interaction.user
+    val member: Member
+        get() = interaction.member!!
 
-    protected abstract val interaction: InteractionBase
+    protected abstract val interaction: T
 
-    suspend fun respond(
-        block: suspend ExtendedInteractionMessageBuilderBase<*>.() -> Unit
-    ): Message = interaction.createFollowupMessageBuilder().apply { block() }.send().await()
+    suspend fun respond(block: suspend MessageCreateBuilder.() -> Unit): Message =
+        interaction.hook.sendMessage(MessageCreateBuilder().apply { block() }.build()).await()
 
-    suspend fun respond(message: String): Message =
-        interaction.createFollowupMessageBuilder().setContent(message).send().await()
+    suspend fun respond(message: String): Message = interaction.hook.sendMessage(message).await()
 
-    suspend fun respond(vararg embed: EmbedBuilder): Message =
-        interaction.createFollowupMessageBuilder().addEmbeds(*embed).send().await()
+    suspend fun respond(vararg embeds: MessageEmbed): Message =
+        interaction.hook.sendMessageEmbeds(embeds.toList()).await()
 
-    class Slash(private val event: SlashCommandCreateEvent) : InteractionSender() {
-        val channel: TextChannel
-            get() = event.slashCommandInteraction.channel.get()
+    class Slash(private val event: SlashCommandInteraction) :
+        InteractionSender<SlashCommandInteraction>() {
 
         override val interaction: SlashCommandInteraction
-            get() = event.slashCommandInteraction
+            get() = event
     }
 
-    class Button(private val event: ButtonClickEvent) : InteractionSender() {
+    class Button(private val event: ButtonInteraction) : InteractionSender<ButtonInteraction>() {
         val message: Message
-            get() = event.buttonInteraction.message
+            get() = event.message
 
-        override var interaction: ButtonInteraction = event.buttonInteraction
+        override var interaction: ButtonInteraction = event
     }
 }

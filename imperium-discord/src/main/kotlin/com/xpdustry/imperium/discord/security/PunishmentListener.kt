@@ -32,11 +32,10 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
-import kotlin.jvm.optionals.getOrNull
-import kotlinx.coroutines.future.await
-import org.javacord.api.entity.message.embed.EmbedBuilder
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
@@ -50,58 +49,54 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         messenger.consumer<PunishmentMessage> { (author, type, snowflake, server) ->
             val punishment = punishments.findBySnowflake(snowflake)!!
             val user = punishment.target.let { users.findBySnowflake(it) }!!
-            val embed =
-                EmbedBuilder().apply {
-                    when (author) {
-                        is Identity.Discord -> setAuthor(discord.api.getUserById(author.id).await())
-                        is Identity.Mindustry -> setAuthor(author.name)
-                        is Identity.Server -> setAuthor("AUTO-MOD")
+            (getNotificationChannel() ?: return@consumer).sendMessageEmbeds(
+                Embed {
+                    author {
+                        when (author) {
+                            is Identity.Mindustry -> name = author.name
+                            is Identity.Server -> name = "AUTO-MOD"
+                            is Identity.Discord -> {
+                                val member = discord.getMainServer().getMemberById(author.id)
+                                if (member == null) {
+                                    name = "unknown"
+                                } else {
+                                    name = member.effectiveName
+                                    iconUrl = member.avatarUrl
+                                }
+                            }
+                        }
                     }
 
                     // TODO Move embed creation to a single method for "/punishment info"
                     when (type) {
                         PunishmentMessage.Type.CREATE -> {
-                            setColor(Color.RED)
-                            setTitle("Punishment")
-                            addField("Target", user.lastName, true)
-                            addField("Type", punishment.type.toString(), true)
-                            addField("Duration", renderer.renderDuration(punishment.duration), true)
-                            if (server != config.name) {
-                                addField("Server", server, true)
-                            }
-                            addField("Reason", punishment.reason, false)
+                            color = Color.RED.rgb
+                            title = "Punishment"
+                            field("Target", user.lastName)
+                            field("Type", punishment.type.toString())
+                            field("Duration", renderer.renderDuration(punishment.duration))
+                            if (server != config.name) field("Server", server)
+                            field("Reason", punishment.reason, false)
 
                             when (val metadata = punishment.metadata) {
                                 is Punishment.Metadata.None -> Unit
                                 is Punishment.Metadata.Votekick -> {
-                                    addField("Votes for", renderPlayerList(metadata.yes), true)
-                                    addField("Votes against", renderPlayerList(metadata.nay), true)
+                                    field("Votes for", renderPlayerList(metadata.yes))
+                                    field("Votes against", renderPlayerList(metadata.nay))
                                 }
                             }
                         }
                         PunishmentMessage.Type.PARDON -> {
-                            setColor(Color.GREEN)
-                            setTitle("Pardon")
-                            addField("Target", user.lastName, true)
-                            addField("Type", punishment.type.toString(), true)
-                            addField("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)
+                            color = Color.GREEN.rgb
+                            title = "Pardon"
+                            field("Target", user.lastName)
+                            field("Type", punishment.type.toString())
+                            field("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)
                         }
                     }
 
-                    setFooter("ID: ${punishment.snowflake}")
-                }
-
-            val channel =
-                discord
-                    .getMainServer()
-                    .getTextChannelById(config.channels.notifications)
-                    .getOrNull()
-            if (channel == null) {
-                logger.error("Could not find notifications channel")
-                return@consumer
-            }
-
-            channel.sendMessage(embed)
+                    footer("ID: ${punishment.snowflake}")
+                })
         }
     }
 
@@ -116,7 +111,15 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
     }
 
+    private fun getNotificationChannel(): TextChannel? {
+        val channel = discord.getMainServer().getTextChannelById(config.channels.notifications)
+        if (channel == null) {
+            LOGGER.error("Could not find notifications channel")
+        }
+        return channel
+    }
+
     companion object {
-        private val logger by LoggerDelegate()
+        private val LOGGER by LoggerDelegate()
     }
 }

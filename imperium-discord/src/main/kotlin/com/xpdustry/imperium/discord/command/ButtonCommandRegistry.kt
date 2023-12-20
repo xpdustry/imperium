@@ -19,10 +19,11 @@ package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
@@ -32,8 +33,7 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
-import org.javacord.api.entity.message.MessageFlag
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 
 class ButtonCommandRegistry(private val discord: DiscordService) :
     CommandRegistry, ImperiumApplication.Listener {
@@ -45,41 +45,28 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
             register0(container)
         }
 
-        discord.getMainServer().addButtonClickListener { event ->
-            ImperiumScope.MAIN.launch {
-                val handler = handlers[event.buttonInteraction.customId]
-                if (handler == null) {
-                    event.buttonInteraction
-                        .createImmediateResponder()
-                        .setContent("This button is no longer valid")
-                        .setFlags(MessageFlag.EPHEMERAL)
-                        .respond()
-                        .await()
-                    return@launch
-                }
+        discord.jda.addSuspendingEventListener<ButtonInteractionEvent> { event ->
+            val handler = handlers[event.componentId]
+            if (handler == null) {
+                event.deferReply(true).await().sendMessage("This button is no longer valid").await()
+                return@addSuspendingEventListener
+            }
 
-                val updater = event.buttonInteraction.respondLater(handler.ephemeral).await()
+            val updater = event.deferReply(handler.ephemeral).await()
 
-                if (!discord.isAllowed(event.buttonInteraction.user, handler.rank)) {
-                    updater
-                        .setContent(":warning: **You do not have permission to use this command.**")
-                        .update()
-                        .await()
-                    return@launch
-                }
+            if (!discord.isAllowed(event.user, handler.rank)) {
+                updater
+                    .sendMessage(":warning: **You do not have permission to use this command.**")
+                    .await()
+                return@addSuspendingEventListener
+            }
 
-                val actor = InteractionSender.Button(event)
-                try {
-                    handler.function.callSuspend(handler.container, actor)
-                } catch (e: Exception) {
-                    logger.error(
-                        "Error while executing button ${event.buttonInteraction.customId}", e)
-                    updater
-                        .setContent("An error occurred while executing this button")
-                        .setFlags(MessageFlag.EPHEMERAL)
-                        .update()
-                        .await()
-                }
+            val actor = InteractionSender.Button(event)
+            try {
+                handler.function.callSuspend(handler.container, actor)
+            } catch (e: Exception) {
+                logger.error("Error while executing button ${event.componentId}", e)
+                updater.sendMessage("An error occurred while executing this button").await()
             }
         }
     }

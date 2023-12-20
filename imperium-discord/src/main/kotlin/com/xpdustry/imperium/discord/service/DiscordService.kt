@@ -23,134 +23,139 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.snowflake.Snowflake
-import java.util.concurrent.TimeUnit
-import kotlin.jvm.optionals.getOrNull
+import com.xpdustry.imperium.discord.misc.await
+import com.xpdustry.imperium.discord.misc.snowflake
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.future.await
-import org.javacord.api.DiscordApi
-import org.javacord.api.DiscordApiBuilder
-import org.javacord.api.entity.intent.Intent
-import org.javacord.api.entity.permission.Role
-import org.javacord.api.entity.server.Server
-import org.javacord.api.entity.user.User
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.FileProxy
+import net.dv8tion.jda.api.utils.MemberCachePolicy
+import okhttp3.OkHttpClient
 
 interface DiscordService {
-    val api: DiscordApi
+    val jda: JDA
 
-    fun getMainServer(): Server
+    fun getMainServer(): Guild
 
     suspend fun isAllowed(user: User, rank: Rank): Boolean
 
-    suspend fun syncRoles(user: User)
-
     suspend fun syncRoles(snowflake: Snowflake)
+
+    suspend fun syncRoles(member: Member)
 }
 
 class SimpleDiscordService(
     private val config: ServerConfig.Discord,
-    private val accounts: AccountManager
+    private val http: OkHttpClient,
+    private val accounts: AccountManager,
 ) : DiscordService, ImperiumApplication.Listener {
-    override lateinit var api: DiscordApi
+    override lateinit var jda: JDA
 
     override fun onImperiumInit() {
-        api =
-            DiscordApiBuilder()
+        FileProxy.setDefaultHttpClient(http)
+        jda =
+            JDABuilder.create(
+                    GatewayIntent.MESSAGE_CONTENT,
+                    GatewayIntent.GUILD_MEMBERS,
+                    GatewayIntent.GUILD_MESSAGES,
+                    GatewayIntent.GUILD_MESSAGE_REACTIONS,
+                    GatewayIntent.DIRECT_MESSAGES)
                 .setToken(config.token.value)
-                .setUserCacheEnabled(true)
-                .addIntents(
-                    Intent.MESSAGE_CONTENT,
-                    Intent.GUILDS,
-                    Intent.GUILD_MEMBERS,
-                    Intent.GUILD_MESSAGES,
-                    Intent.GUILD_MESSAGE_REACTIONS,
-                    Intent.DIRECT_MESSAGES,
-                )
-                .login()
-                .orTimeout(15L, TimeUnit.SECONDS)
-                .join()
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .build()
+                .awaitReady()
     }
 
-    override fun getMainServer(): Server = api.servers.first()
+    override fun getMainServer(): Guild = jda.guildCache.first()
 
     override suspend fun isAllowed(user: User, rank: Rank): Boolean {
         if (rank == Rank.EVERYONE) {
             return true
         }
-        if ((accounts.findByDiscord(user.id)?.rank ?: Rank.EVERYONE) >= rank) {
+        if ((accounts.findByDiscord(user.idLong)?.rank ?: Rank.EVERYONE) >= rank) {
             return true
         }
+
         var max = Rank.EVERYONE
-        for (role in user.getRoles(getMainServer())) {
-            max = maxOf(max, config.roles2ranks[role.id] ?: Rank.EVERYONE)
+        for (role in (getMainServer().getMemberById(user.idLong)?.roles ?: emptyList())) {
+            max = maxOf(max, config.roles2ranks[role.idLong] ?: Rank.EVERYONE)
         }
         return max >= rank
     }
 
-    override suspend fun syncRoles(user: User) {
-        val account = accounts.findByDiscord(user.id) ?: return
+    override suspend fun syncRoles(member: Member) {
+        val account = accounts.findByDiscord(member.idLong) ?: return
         syncRoles(account.snowflake)
     }
 
     override suspend fun syncRoles(snowflake: Snowflake) {
         val account = accounts.findBySnowflake(snowflake)
         val discord = account?.discord ?: return
-        val user = getMainServer().getMemberById(discord).getOrNull() ?: return
-        val updater = getMainServer().createUpdater()
-        val roles = getMainServer().getRoles(user).map(Role::getId)
+        val member = getMainServer().getMemberById(discord) ?: return
+        val roles = member.roles.associateBy(Role::getIdLong)
 
         for ((achievement, progression) in accounts.getAchievements(snowflake)) {
             val roleId = config.achievements2roles[achievement] ?: continue
-            val role = getMainServer().getRoleById(roleId).getOrNull() ?: continue
+            val role = roles[roleId] ?: continue
             if (progression.completed) {
-                if (roleId in roles) continue
-                updater.addRoleToUser(user, role)
+                if (roleId in roles.keys) continue
+                getMainServer().addRoleToMember(member.snowflake, role).await()
                 logger.debug(
                     "Added achievement role {} (achievement={}) to {} (id={})",
                     role.name,
                     achievement,
-                    user.name,
-                    user.id)
+                    member.effectiveName,
+                    member.idLong)
             } else {
-                if (roleId !in roles) continue
-                updater.removeRoleFromUser(user, role)
+                if (roleId !in roles.keys) continue
+                getMainServer().removeRoleFromMember(member.snowflake, role).await()
                 logger.debug(
                     "Removed achievement role {} (achievement={}) from {} (id={})",
                     role.name,
                     achievement,
-                    user.name,
-                    user.id)
+                    member.effectiveName,
+                    member.idLong)
             }
         }
 
         val ranks = account.rank.getRanksBelow()
         for (rank in Rank.entries) {
             val roleId = config.ranks2roles[rank] ?: continue
-            val role = getMainServer().getRoleById(roleId).getOrNull() ?: continue
+            val role = roles[roleId] ?: continue
             if (rank in ranks) {
                 if (roleId in roles) continue
-                updater.addRoleToUser(user, role)
+                getMainServer().addRoleToMember(member.snowflake, role).await()
                 logger.debug(
                     "Added rank role {} (rank={}) to {} (id={})",
                     role.name,
                     rank,
-                    user.name,
-                    user.id)
+                    member.effectiveName,
+                    member.idLong)
             } else {
                 if (roleId !in roles) continue
-                updater.removeRoleFromUser(user, role)
+                getMainServer().removeRoleFromMember(member.snowflake, role).await()
                 logger.debug(
                     "Removed rank role {} (rank={}) from {} (id={})",
                     role.name,
                     rank,
-                    user.name,
-                    user.id)
+                    member.effectiveName,
+                    member.idLong)
             }
         }
-
-        updater.update().await()
     }
 
     override fun onImperiumExit() {
-        api.disconnect().orTimeout(15L, TimeUnit.SECONDS).join()
+        jda.shutdown()
+        if (!jda.awaitShutdown(15.seconds.toJavaDuration())) {
+            jda.shutdownNow()
+        }
     }
 
     companion object {

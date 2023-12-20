@@ -41,7 +41,7 @@ fun DiscordModule() =
     module("discord") {
         include(CommonModule())
 
-        single<DiscordService> { SimpleDiscordService(get(), get()) }
+        single<DiscordService> { SimpleDiscordService(get(), get(), get()) }
 
         single<Path>("directory") { Path(".") }
 

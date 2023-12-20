@@ -19,25 +19,28 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
-import java.io.ByteArrayInputStream
+import com.xpdustry.imperium.discord.misc.Embed
 import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import kotlin.random.Random
 import kotlin.random.nextInt
-import org.javacord.api.entity.Attachment
-import org.javacord.api.entity.message.embed.EmbedBuilder
+import kotlinx.coroutines.future.await
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.utils.FileUpload
 
 class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val content = instances.get<MindustryContentHandler>()
 
     @Command(["schematic", "text"])
     @NonEphemeral
-    suspend fun onSchematicCommand(actor: InteractionSender, schematic: String) {
+    suspend fun onSchematicCommand(actor: InteractionSender.Slash, schematic: String) {
         val result = content.getSchematic(schematic)
         if (result.isFailure) {
             actor.respond("Failed to parse the schematic.")
@@ -45,25 +48,27 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
         }
 
         val parsed = result.getOrThrow()
+        val preview = content.getSchematicPreview(parsed).getOrThrow()
         val bytes = ByteArrayOutputStream()
         content.writeSchematic(parsed, bytes).getOrThrow()
-
         val name = "${parsed.name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"
+
         actor.respond {
-            addAttachment(ByteArrayInputStream(bytes.toByteArray()), name)
-            addEmbed(
-                EmbedBuilder()
-                    .setAuthor(actor.user)
-                    .setTitle(parsed.name())
-                    .setImage(content.getSchematicPreview(parsed).getOrThrow())
-                    .setTimestampToNow(),
-            )
+            addFiles(
+                FileUpload.fromData(bytes.toByteArray(), name),
+                FileUpload.fromStreamSupplier("preview.png", preview::inputStream))
+            addEmbeds(
+                Embed {
+                    author(actor.member)
+                    title = parsed.name()
+                    image = "attachment://preview.png"
+                })
         }
     }
 
     @Command(["schematic", "file"])
     @NonEphemeral
-    suspend fun onSchematicCommand(actor: InteractionSender, file: Attachment) {
+    suspend fun onSchematicCommand(actor: InteractionSender.Slash, file: Message.Attachment) {
         if (!file.fileName.endsWith(".msch")) {
             actor.respond("Invalid schematic file!")
             return
@@ -74,23 +79,27 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
             return
         }
 
-        val result = content.getSchematic(file.asInputStream())
+        val bytes = file.proxy.download().await().use(InputStream::readBytes)
+        val result = content.getSchematic(bytes.inputStream())
         if (result.isFailure) {
             actor.respond("Failed to parse the schematic.")
             return
         }
 
         val parsed = result.getOrThrow()
+        val preview = content.getSchematicPreview(parsed).getOrThrow()
         val name = "${parsed.name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"
+
         actor.respond {
-            addAttachment(file.asInputStream(), name)
-            addEmbed(
-                EmbedBuilder()
-                    .setAuthor(actor.user)
-                    .setTitle(parsed.name())
-                    .setImage(content.getSchematicPreview(parsed).getOrThrow())
-                    .setTimestampToNow(),
-            )
+            addFiles(
+                FileUpload.fromStreamSupplier(name, bytes::inputStream),
+                FileUpload.fromStreamSupplier("preview.png", preview::inputStream))
+            addEmbeds(
+                Embed {
+                    author(actor.member)
+                    title = parsed.name()
+                    image = "attachment://preview.png"
+                })
         }
     }
 

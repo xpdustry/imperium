@@ -21,15 +21,15 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.service.DiscordService
-import kotlinx.coroutines.launch
+import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
 
 class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
@@ -37,16 +37,8 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
     private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
-        discord.getMainServer().addServerMemberJoinListener {
-            ImperiumScope.MAIN.launch { discord.syncRoles(it.user) }
-        }
-
-        discord.getMainServer().addUserRoleAddListener {
-            ImperiumScope.MAIN.launch { discord.syncRoles(it.user) }
-        }
-
-        discord.getMainServer().addUserRoleRemoveListener {
-            ImperiumScope.MAIN.launch { discord.syncRoles(it.user) }
+        discord.jda.addSuspendingEventListener<GuildMemberJoinEvent> {
+            discord.syncRoles(it.member)
         }
 
         messenger.consumer<RankChangeEvent> { (snowflake) -> discord.syncRoles(snowflake) }
@@ -58,7 +50,7 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
 
     @Command(["sync-roles"])
     private suspend fun onSyncRolesCommand(sender: InteractionSender.Slash) {
-        val account = accounts.findByDiscord(sender.user.id)
+        val account = accounts.findByDiscord(sender.member.idLong)
         if (account == null) {
             sender.respond("You are not linked to a cn account.")
             return

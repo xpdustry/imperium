@@ -12,10 +12,11 @@ toxopid {
 dependencies {
     implementation(projects.imperiumCommon)
     runtimeOnly(kotlin("stdlib"))
-    implementation(libs.javacord.api)
-    runtimeOnly(libs.javacord.core)
-    runtimeOnly(libs.log4j.to.slf4j)
+    runtimeOnly(kotlin("reflect"))
     implementation(libs.logback.classic)
+    implementation(libs.jda) {
+        exclude(module = "opus-java")
+    }
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
 }

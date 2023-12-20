@@ -25,11 +25,11 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.misc.Embed
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.Locale
-import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
@@ -37,17 +37,17 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["server", "list"])
     @NonEphemeral
-    suspend fun onServerList(actor: InteractionSender) =
+    suspend fun onServerList(actor: InteractionSender.Slash) =
         actor.respond(
-            EmbedBuilder()
-                .setTitle("Server List")
-                .setDescription(
-                    discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }),
-        )
+            Embed {
+                title = "Server List"
+                description =
+                    discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
+            })
 
     @Command(["server", "player", "joins"])
     @NonEphemeral
-    suspend fun onServerPlayerJoin(actor: InteractionSender, server: String) {
+    suspend fun onServerPlayerJoin(actor: InteractionSender.Slash, server: String) {
         val joins = tracker.getPlayerJoins(server)
         if (joins == null) {
             actor.respond("Server not found.")
@@ -58,7 +58,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["server", "player", "quits"])
     @NonEphemeral
-    suspend fun onServerPlayerQuit(actor: InteractionSender, server: String) {
+    suspend fun onServerPlayerQuit(actor: InteractionSender.Slash, server: String) {
         val quits = tracker.getPlayerQuits(server)
         if (quits == null) {
             actor.respond("Server not found.")
@@ -69,7 +69,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["server", "player", "online"])
     @NonEphemeral
-    suspend fun onServerPlayerOnline(actor: InteractionSender, server: String? = null) {
+    suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
         val online =
             if (server != null) {
                 tracker.getOnlinePlayers(server)
@@ -88,7 +88,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private suspend fun onServerPlayerList(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         list: List<PlayerTracker.Entry>,
         name: String,
         time: Boolean = true,
@@ -112,7 +112,11 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             append("```")
         }
 
-        actor.respond(EmbedBuilder().setTitle("Player $name List").setDescription(text))
+        actor.respond(
+            Embed {
+                title = "Player $name List"
+                description = text
+            })
     }
 
     companion object {

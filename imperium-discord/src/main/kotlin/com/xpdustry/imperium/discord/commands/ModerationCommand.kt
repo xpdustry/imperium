@@ -30,11 +30,11 @@ import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
-import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -43,7 +43,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @Command(["punishment", "list"], Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         player: Snowflake,
         @Min(0) page: Int = 0
     ) {
@@ -56,7 +56,10 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     }
 
     @Command(["punishment", "info"], Rank.MODERATOR)
-    private suspend fun onPunishmentInfoCommand(actor: InteractionSender, punishment: String) {
+    private suspend fun onPunishmentInfoCommand(
+        actor: InteractionSender.Slash,
+        punishment: String
+    ) {
         val id = punishment.toLongOrNull()
         if (id == null) {
             actor.respond("Invalid id.")
@@ -70,25 +73,22 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(result.toEmbed())
     }
 
-    private fun Punishment.toEmbed() =
-        EmbedBuilder()
-            .setTitle("Punishment $snowflake")
-            .addField("Target ID", target.toString(), true)
-            .addField("Type", type.toString(), true)
-            .addField("Reason", reason, false)
-            .addField("Timestamp", renderer.renderInstant(snowflake.timestamp), true)
-            .addField("Duration", renderer.renderDuration(duration), true)
-            .addField("Pardoned", if (pardon != null) "Yes" else "No", true)
-            .apply {
-                if (pardon != null) {
-                    addField("Pardon Reason", pardon!!.reason, false)
-                    addField("Pardon Timestamp", renderer.renderInstant(pardon!!.timestamp), true)
-                }
-            }
+    private fun Punishment.toEmbed() = Embed {
+        title = "Punishment $snowflake"
+        field("Target ID", target.toString(), true)
+        field("Type", type.toString(), true)
+        field("Reason", reason, false)
+        field("Timestamp", renderer.renderInstant(snowflake.timestamp), true)
+        field("Duration", renderer.renderDuration(duration), true)
+        if (pardon != null) {
+            field("Pardon Reason", pardon!!.reason, false)
+            field("Pardon Timestamp", renderer.renderInstant(pardon!!.timestamp), true)
+        }
+    }
 
     @Command(["ban"], Rank.MODERATOR)
     private suspend fun onBanCommand(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
@@ -98,7 +98,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @Command(["mute"], Rank.MODERATOR)
     private suspend fun onMuteCommand(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.ONE_HOUR
@@ -109,7 +109,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private suspend fun onPunishCommand(
         verb: String,
         type: Punishment.Type,
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
         duration: Duration
@@ -118,13 +118,13 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             actor.respond("Target is not a valid IP address, UUID or USER ID.")
             return
         }
-        punishments.punish(actor.user.identity, player, reason, type, duration)
+        punishments.punish(actor.member.identity, player, reason, type, duration)
         actor.respond("$verb user $player.")
     }
 
     @Command(["pardon"], Rank.MODERATOR)
     private suspend fun onPardonCommand(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         punishment: String,
         reason: String
     ) {
@@ -145,7 +145,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             return
         }
 
-        punishments.pardon(actor.user.identity, snowflake, reason)
+        punishments.pardon(actor.member.identity, snowflake, reason)
         actor.respond("Pardoned user.")
     }
 }

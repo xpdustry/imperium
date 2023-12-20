@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MindustryMapTable
+import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
@@ -35,18 +36,21 @@ import com.xpdustry.imperium.discord.command.ButtonCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
+import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
+import com.xpdustry.imperium.discord.misc.MessageCreate
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
-import kotlin.jvm.optionals.getOrNull
+import java.io.InputStream
 import kotlinx.coroutines.future.await
-import org.javacord.api.entity.Attachment
-import org.javacord.api.entity.channel.AutoArchiveDuration
-import org.javacord.api.entity.message.MessageBuilder
-import org.javacord.api.entity.message.component.ActionRow
-import org.javacord.api.entity.message.component.Button
-import org.javacord.api.entity.message.embed.Embed
-import org.javacord.api.entity.message.embed.EmbedBuilder
+import kotlinx.coroutines.runBlocking
+import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
+import net.dv8tion.jda.api.interactions.components.ActionRow
+import net.dv8tion.jda.api.interactions.components.buttons.Button
+import net.dv8tion.jda.api.utils.FileUpload
 
 class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
@@ -58,7 +62,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Suppress("DuplicatedCode")
     @Command(["map", "preview"])
     @NonEphemeral
-    suspend fun onMapPreviewCommand(actor: InteractionSender, map: Attachment) {
+    suspend fun onMapPreviewCommand(actor: InteractionSender.Slash, map: Message.Attachment) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")
             return
@@ -69,8 +73,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val (meta, preview) =
-            map.asInputStream().use { content.getMapMetadataWithPreview(it).getOrThrow() }
+        val bytes = map.proxy.download().await().use(InputStream::readBytes)
+        val (meta, preview) = content.getMapMetadataWithPreview(bytes.inputStream()).getOrThrow()
 
         @Suppress("DuplicatedCode")
         if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
@@ -80,16 +84,20 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         actor.respond {
-            addAttachment(map.asInputStream(), map.fileName)
-            addEmbed(
-                EmbedBuilder()
-                    .setColor(MINDUSTRY_ACCENT_COLOR)
-                    .setTitle("Map Submission")
-                    .addField("Name", meta.name.stripMindustryColors())
-                    .addField("Author", meta.author?.stripMindustryColors() ?: "Unknown")
-                    .addField("Description", meta.description?.stripMindustryColors() ?: "Unknown")
-                    .addField("Size", "${preview.width} x ${preview.height}")
-                    .setImage(preview))
+            addFiles(
+                FileUpload.fromStreamSupplier(map.fileName, bytes::inputStream),
+                FileUpload.fromStreamSupplier("preview.png", preview::inputStream))
+            addEmbeds(
+                Embed {
+                    color = MINDUSTRY_ACCENT_COLOR.rgb
+                    title = "Map Submission"
+                    image = "attachment://preview.png"
+                    field("Name", meta.name.stripMindustryColors(), false)
+                    field("Author", meta.author?.stripMindustryColors() ?: "Unknown", false)
+                    field(
+                        "Description", meta.description?.stripMindustryColors() ?: "Unknown", false)
+                    field("Size", "${preview.width} x ${preview.height}", false)
+                })
         }
     }
 
@@ -97,8 +105,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @Command(["map", "submit"])
     @NonEphemeral
     suspend fun onMapSubmitCommand(
-        actor: InteractionSender,
-        map: Attachment,
+        actor: InteractionSender.Slash,
+        map: Message.Attachment,
         notes: String? = null
     ) {
         if (!map.fileName.endsWith(".msav")) {
@@ -111,8 +119,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val (meta, preview) =
-            map.asInputStream().use { content.getMapMetadataWithPreview(it).getOrThrow() }
+        val bytes = map.proxy.download().await().use(InputStream::readBytes)
+        val (meta, preview) = content.getMapMetadataWithPreview(bytes.inputStream()).getOrThrow()
 
         if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
             actor.respond(
@@ -121,53 +129,57 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         val channel =
-            discord.getMainServer().getTextChannelById(config.channels.maps).getOrNull()
+            discord.getMainServer().getTextChannelById(config.channels.maps)
                 ?: throw IllegalStateException("Map submission channel not found")
 
         val message =
-            MessageBuilder()
-                .addAttachment(map.asInputStream(), map.fileName)
-                .addEmbed(
-                    EmbedBuilder()
-                        .setColor(MINDUSTRY_ACCENT_COLOR)
-                        .setTitle("Map Submission")
-                        .addField("Submitter", actor.user.mentionTag)
-                        .addField("Name", meta.name.stripMindustryColors())
-                        .addField("Author", meta.author?.stripMindustryColors() ?: "Unknown")
-                        .addField(
-                            "Description", meta.description?.stripMindustryColors() ?: "Unknown")
-                        .addField("Size", "${preview.width} x ${preview.height}")
-                        .apply {
+            channel
+                .sendMessage(
+                    MessageCreate {
+                        files += FileUpload.fromStreamSupplier(map.fileName, bytes::inputStream)
+                        files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
+                        embeds += Embed {
+                            color = MINDUSTRY_ACCENT_COLOR.rgb
+                            title = "Map Submission"
+                            field("Submitter", actor.member.asMention, false)
+                            field("Name", meta.name.stripMindustryColors(), false)
+                            field("Author", meta.author?.stripMindustryColors() ?: "Unknown", false)
+                            field(
+                                "Description",
+                                meta.description?.stripMindustryColors() ?: "Unknown",
+                                false)
+                            field("Size", "${preview.width} x ${preview.height}", false)
                             if (notes != null) {
-                                addField("Notes", notes)
+                                field("Notes", notes, false)
                             }
                             val updating =
                                 maps.findMapByName(meta.name.stripMindustryColors())?.snowflake
                             if (updating != null) {
-                                addField("Updating Map", "`$updating`")
+                                field("Updating Map", "`$updating`", false)
                             }
+                            image = "attachment://preview.png"
                         }
-                        .setImage(preview))
-                .addComponents(
-                    ActionRow.of(
-                        Button.primary(MAP_UPLOAD_BUTTON, "Upload", ImperiumEmojis.INBOX_TRAY),
-                        Button.danger(MAP_REJECT_BUTTON, "Reject", ImperiumEmojis.WASTE_BASKET),
-                    ),
-                )
-                .send(channel)
+                        components +=
+                            ActionRow.of(
+                                Button.primary(MAP_UPLOAD_BUTTON, "Upload")
+                                    .withEmoji(ImperiumEmojis.INBOX_TRAY),
+                                Button.danger(MAP_REJECT_BUTTON, "Reject")
+                                    .withEmoji(ImperiumEmojis.WASTE_BASKET),
+                            )
+                    })
                 .await()
 
         message
-            .createThread(
-                "Comments for ${meta.name.stripMindustryColors()}", AutoArchiveDuration.THREE_DAYS)
+            .createThreadChannel("Comments for ${meta.name.stripMindustryColors()}")
+            .setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_3_DAYS)
             .await()
 
         actor.respond(
-            EmbedBuilder()
-                .setColor(MINDUSTRY_ACCENT_COLOR)
-                .setDescription(
-                    "Your map has been submitted for review. Check the status [here](${message.link})."),
-        )
+            Embed {
+                color = MINDUSTRY_ACCENT_COLOR.rgb
+                description =
+                    "Your map has been submitted for review. Check the status [here](${message.jumpUrl})."
+            })
     }
 
     @ButtonCommand(MAP_REJECT_BUTTON, Rank.ADMIN)
@@ -179,7 +191,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ButtonCommand(MAP_UPLOAD_BUTTON, Rank.ADMIN)
     private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
-        val meta = attachment.asInputStream().use { content.getMapMetadata(it).getOrThrow() }
+        val meta =
+            attachment.proxy.download().await().use { content.getMapMetadata(it).getOrThrow() }
 
         val map = maps.findMapByName(meta.name.stripMindustryColors())
         val snowflake: Snowflake
@@ -191,7 +204,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     author = meta.author?.stripMindustryColors(),
                     width = meta.width,
                     height = meta.height,
-                    stream = attachment::asInputStream)
+                    stream = { attachment.proxy.download().join() })
         } else {
             snowflake = map.snowflake
             maps.updateMap(
@@ -200,7 +213,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 author = meta.author?.stripMindustryColors(),
                 width = meta.width,
                 height = meta.height,
-                stream = attachment::asInputStream)
+                stream = { attachment.proxy.download().join() })
         }
 
         updateSubmissionEmbed(actor, Color.GREEN, "uploaded")
@@ -213,18 +226,12 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         verb: String
     ) {
         actor.message
-            .createUpdater()
-            .removeAllEmbeds()
-            .addEmbed(
-                actor.message.embeds
-                    .first()
-                    .toBuilder()
-                    .addField("Reviewer", actor.user.mentionTag)
-                    .setImage(actor.message.embeds.first().image.get().asInputStream(discord.api))
-                    .setColor(color),
-            )
-            .removeAllComponents()
-            .applyChanges()
+            .editMessageEmbeds(
+                Embed(actor.message.embeds.first()) {
+                    field("Reviewer", actor.member.asMention, false)
+                    this@Embed.color = color.rgb
+                })
+            .setComponents()
             .await()
 
         discord
@@ -234,20 +241,21 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .groups[1]!!
                     .value
                     .toLong())
-            .getOrNull()
-            ?.sendMessage(
-                EmbedBuilder()
-                    .setColor(color)
-                    .setDescription(
-                        "Your [map submission](${actor.message.link}) has been $verb by ${actor.user.mentionTag}."),
-            )
+            ?.user
+            ?.openPrivateChannel()
             ?.await()
+            ?.sendMessageEmbeds(
+                Embed {
+                    this@Embed.color = color.rgb
+                    description =
+                        "Your [map submission](${actor.message.jumpUrl}) has been $verb by ${actor.member.asMention}."
+                })
     }
 
     @Command(["map", "list"])
     @NonEphemeral
     private suspend fun onMapList(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         @Min(1) page: Int = 1,
         query: String? = null,
         gamemode: MindustryGamemode? = null
@@ -262,27 +270,28 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         if (hasMore) {
             result.removeLast()
         }
-        val embed = EmbedBuilder().setColor(MINDUSTRY_ACCENT_COLOR).setTitle("Map list result")
 
-        if (result.isEmpty()) {
-            embed.setDescription("No maps found")
-        } else {
-            embed.setDescription(
-                buildString {
-                    append(result.joinToString("\n") { "- ${it.name} / `${it.snowflake}`" })
-                    if (hasMore) {
-                        append("\n\n...and more")
+        actor.respond(
+            Embed {
+                color = MINDUSTRY_ACCENT_COLOR.rgb
+                title = "Map list result"
+                description =
+                    if (result.isEmpty()) {
+                        "No maps found"
+                    } else {
+                        buildString {
+                            append(result.joinToString("\n") { "- ${it.name} / `${it.snowflake}`" })
+                            if (hasMore) {
+                                append("\n\n...and more")
+                            }
+                        }
                     }
-                },
-            )
-        }
-
-        actor.respond(embed)
+            })
     }
 
     @Command(["map", "info"])
     @NonEphemeral
-    private suspend fun onMapInfo(actor: InteractionSender, id: Snowflake) {
+    private suspend fun onMapInfo(actor: InteractionSender.Slash, id: Snowflake) {
         val map = maps.findMapBySnowflake(id)
         if (map == null) {
             actor.respond("Unknown map id")
@@ -291,55 +300,66 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
         val stats = maps.getMapStats(id)!!
         actor.respond {
-            addEmbed(
-                EmbedBuilder()
-                    .setColor(MINDUSTRY_ACCENT_COLOR)
-                    .setTitle(map.name)
-                    .addField("Author", map.author ?: "Unknown")
-                    .addField("Identifier", "${map.snowflake}")
-                    .addField("Description", map.description ?: "Unknown")
-                    .addField("Size", "${map.width} x ${map.height}")
-                    .addField("Games", stats.games.toString())
-                    .addField("Score", "%.2f / 5".format(stats.score))
-                    .addField("Difficulty", stats.difficulty.toString().lowercase())
-                    .addField("World Record", stats.record.toString())
-                    .addField(
+            addFiles(
+                FileUpload.fromStreamSupplier("preview.png") {
+                    runBlocking {
+                        maps.getMapInputStream(map.snowflake)!!.use {
+                            this@MapCommand.content
+                                .getMapMetadataWithPreview(it)
+                                .getOrThrow()
+                                .second
+                                .inputStream()
+                        }
+                    }
+                })
+            addEmbeds(
+                Embed {
+                    color = MINDUSTRY_ACCENT_COLOR.rgb
+                    title = map.name
+                    field("Author", map.author ?: "Unknown", false)
+                    field("Identifier", "${map.snowflake}", false)
+                    field("Description", map.description ?: "Unknown", false)
+                    field("Size", "${map.width} x ${map.height}", false)
+                    field("Games", stats.games.toString(), false)
+                    field("Score", "%.2f / 5".format(stats.score), false)
+                    field("Difficulty", stats.difficulty.toString().lowercase(), false)
+                    field("World Record", stats.record.toString(), false)
+                    field(
                         "Gamemodes",
                         if (map.gamemodes.isEmpty()) "`none`"
-                        else map.gamemodes.joinToString { it.name.lowercase() })
-                    .setImage(
-                        maps.getMapInputStream(map.snowflake)!!.use {
-                            content.getMapMetadataWithPreview(it).getOrThrow().second
-                        }))
+                        else map.gamemodes.joinToString { it.name.lowercase() },
+                        false)
+                    image = "attachment://preview.png"
+                })
             addComponents(
                 ActionRow.of(
-                    Button.primary(MAP_DOWNLOAD_BUTTON, "Download", ImperiumEmojis.DOWN_ARROW)),
-            )
+                    Button.primary(MAP_DOWNLOAD_BUTTON, "Download")
+                        .withEmoji(ImperiumEmojis.DOWN_ARROW)))
         }
     }
 
     // TODO Add a way to navigate the games
     @Command(["map", "game", "info"])
     @NonEphemeral
-    private suspend fun onMapGameInfo(actor: InteractionSender, id: Snowflake) {
+    private suspend fun onMapGameInfo(actor: InteractionSender.Slash, id: Snowflake) {
         val game = maps.findMapGameBySnowflake(id)
         if (game == null) {
             actor.respond("Unknown game id")
             return
         }
         actor.respond(
-            EmbedBuilder().apply {
-                setColor(MINDUSTRY_ACCENT_COLOR)
-                setTitle("Game ${game.snowflake}")
-                addField("Date", renderer.renderInstant(game.start))
-                addField("Playtime", renderer.renderDuration(game.playtime))
-                addField("Units Created", game.unitsCreated.toString())
-                addField("Ennemies Killed", game.ennemiesKilled.toString())
-                addField("Waves Lasted", game.wavesLasted.toString())
-                addField("Buildings Constructed", game.buildingsConstructed.toString())
-                addField("Buildings Deconstructed", game.buildingsDeconstructed.toString())
-                addField("Buildings Destroyed", game.buildingsDestroyed.toString())
-                addField("Winner", getWinnerName(game.winner))
+            Embed {
+                color = MINDUSTRY_ACCENT_COLOR.rgb
+                title = "Game ${game.snowflake}"
+                field("Date", renderer.renderInstant(game.start))
+                field("Playtime", renderer.renderDuration(game.playtime))
+                field("Units Created", game.unitsCreated.toString())
+                field("Ennemies Killed", game.ennemiesKilled.toString())
+                field("Waves Lasted", game.wavesLasted.toString())
+                field("Buildings Constructed", game.buildingsConstructed.toString())
+                field("Buildings Deconstructed", game.buildingsDeconstructed.toString())
+                field("Buildings Destroyed", game.buildingsDestroyed.toString())
+                field("Winner", getWinnerName(game.winner))
             })
     }
 
@@ -363,17 +383,15 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             actor.respond("The map is no longer available")
             return
         }
-        stream.use {
-            actor.respond {
-                setContent("Here you go:")
-                addAttachment(it, "$snowflake.msav")
-            }
+        actor.respond {
+            setContent("Here you go:")
+            addFiles(FileUpload.fromStreamSupplier("$snowflake.msav") { stream })
         }
     }
 
     @Command(["map", "gamemode", "add"], Rank.MODERATOR)
     private suspend fun onMapGamemodeAdd(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         id: Snowflake,
         gamemode: MindustryGamemode
     ) {
@@ -393,7 +411,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["map", "gamemode", "remove"], Rank.MODERATOR)
     private suspend fun onMapGamemodeRemove(
-        actor: InteractionSender,
+        actor: InteractionSender.Slash,
         id: Snowflake,
         gamemode: MindustryGamemode
     ) {
@@ -411,7 +429,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command(["map", "delete"], Rank.ADMIN)
-    private suspend fun onMapDelete(actor: InteractionSender, id: Snowflake) {
+    private suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
         if (maps.deleteMapBySnowflake(id)) {
             actor.respond("Map deleted!")
         } else {
@@ -419,7 +437,8 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    private fun Embed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
+    private fun MessageEmbed.getFieldValue(name: String): String? =
+        fields.find { it.name == name }?.value
 
     companion object {
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")

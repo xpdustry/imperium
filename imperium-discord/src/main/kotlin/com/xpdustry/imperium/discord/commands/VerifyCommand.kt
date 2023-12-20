@@ -58,8 +58,8 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["verify"])
     @NonEphemeral
-    private suspend fun onVerifyCommand(actor: InteractionSender, code: Int) {
-        if (!limiter.incrementAndCheck(actor.user.id)) {
+    private suspend fun onVerifyCommand(actor: InteractionSender.Slash, code: Int) {
+        if (!limiter.incrementAndCheck(actor.member.idLong)) {
             actor.respond("You made too many attempts! Wait 10 minutes and try again.")
             return
         }
@@ -70,28 +70,28 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val bound = accounts.findByDiscord(actor.user.id)
+        val bound = accounts.findByDiscord(actor.member.idLong)
         if (bound != null) {
             actor.respond(
                 "Your discord account is already bound to the cn account ${bound.username}.")
             return
         }
 
-        when (accounts.updateDiscord(verification.account, actor.user.id)) {
+        when (accounts.updateDiscord(verification.account, actor.member.idLong)) {
             is AccountResult.Success -> Unit
             else -> {
                 actor.respond("An unexpected error occurred while verifying you.")
-                logger.error("Failed to update user discord ${actor.user.name}")
+                logger.error("Failed to update user discord ${actor.member.effectiveName}")
             }
         }
 
         var rank = accounts.findBySnowflake(verification.account)!!.rank
-        for (role in actor.user.getRoles(discord.getMainServer())) {
-            rank = maxOf(rank, config.roles2ranks[role.id] ?: Rank.VERIFIED)
+        for (role in actor.member.roles) {
+            rank = maxOf(rank, config.roles2ranks[role.idLong] ?: Rank.VERIFIED)
         }
         accounts.setRank(verification.account, rank)
 
-        discord.syncRoles(actor.user)
+        discord.syncRoles(actor.member)
         messenger.publish(
             VerificationMessage(
                 verification.account, verification.uuid, verification.usid, code, true))

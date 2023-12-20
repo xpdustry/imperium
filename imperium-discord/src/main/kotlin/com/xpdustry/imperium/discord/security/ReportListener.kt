@@ -24,13 +24,15 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.capitalize
+import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.discord.misc.Embed
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import kotlinx.coroutines.future.await
-import org.javacord.api.entity.channel.ServerTextChannel
-import org.javacord.api.entity.message.embed.EmbedBuilder
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 
 // TODO Sanitize player names... Mmmh... Sanitize strings in general with an extension function?
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -42,30 +44,44 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     override fun onImperiumInit() {
         messenger.consumer<ReportMessage> { report ->
             // TODO Add quick action buttons ?
-            getReportChannel()
-                .sendMessage(
-                    EmbedBuilder()
-                        .setColor(Color.YELLOW)
-                        .setTitle("Report from ${report.serverName}")
-                        .addField(
-                            "Sender",
-                            "${report.sender.name} / `${users.getByIdentity(report.sender).snowflake}`",
-                            true)
-                        .addField(
-                            "Target",
-                            "${report.target.name} / `${users.getByIdentity(report.target).snowflake}`",
-                            true)
-                        .addField(
-                            "Reason",
-                            "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})",
-                            false),
-                )
+            (getReportChannel() ?: return@consumer)
+                .sendMessageEmbeds(
+                    Embed {
+                        color = Color.YELLOW.rgb
+                        title = "Report from ${report.serverName}"
+
+                        field {
+                            name = "Sender"
+                            value =
+                                "${report.sender.name} / `${users.getByIdentity(report.sender).snowflake}`"
+                        }
+
+                        field {
+                            name = "Target"
+                            value =
+                                "${report.target.name} / `${users.getByIdentity(report.target).snowflake}`"
+                        }
+
+                        field {
+                            name = "Reason"
+                            value =
+                                "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})"
+                            inline = false
+                        }
+                    })
                 .await()
         }
     }
 
-    private fun getReportChannel(): ServerTextChannel =
-        discord.getMainServer().getTextChannelById(config.channels.reports).orElseThrow {
-            RuntimeException("The report channel is not found")
+    private fun getReportChannel(): TextChannel? {
+        val channel = discord.getMainServer().getTextChannelById(config.channels.reports)
+        if (channel == null) {
+            LOGGER.error("The report channel is not defined found.")
         }
+        return channel
+    }
+
+    companion object {
+        private val LOGGER = logger<ReportListener>()
+    }
 }

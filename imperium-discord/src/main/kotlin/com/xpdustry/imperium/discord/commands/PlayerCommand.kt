@@ -28,8 +28,8 @@ import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.service.DiscordService
-import org.javacord.api.entity.message.embed.EmbedBuilder
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
@@ -37,7 +37,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val renderer = instances.get<TimeRenderer>()
 
     @Command(["player", "info"])
-    suspend fun onPlayerInfoCommand(actor: InteractionSender, player: String) {
+    suspend fun onPlayerInfoCommand(actor: InteractionSender.Slash, player: String) {
         // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
         var user = users.findByUuid(player)
         if (user == null && player.toLongOrNull() != null) {
@@ -49,30 +49,27 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
         val details = users.findNamesAndAddressesBySnowflake(user.snowflake)
         actor.respond(
-            EmbedBuilder()
-                .setTitle("Player Info")
-                .addField("ID", "`${user.snowflake}`", true)
-                .addField("Last Name", "`${user.lastName}`", true)
-                .addField("Names", details.names.joinToString(transform = { "`$it`" }), true)
-                .addField("First Join", renderer.renderInstant(user.snowflake.timestamp), true)
-                .addField("Last Join", renderer.renderInstant(user.lastJoin), true)
-                .addField("Times Joined", user.timesJoined.toString(), true)
-                .apply {
-                    if (discord.isAllowed(actor.user, Rank.ADMIN)) {
-                        addField("Uuid", "`${user.uuid}`", true)
-                        addField("Last Address", "`${user.lastAddress.hostAddress}`", true)
-                        addField(
-                            "Addresses",
-                            details.addresses.joinToString(transform = { "`${it.hostAddress}`" }),
-                            true)
-                    }
-                },
-        )
+            Embed {
+                title = "Player Info"
+                field("ID", "`${user.snowflake}`")
+                field("Last Name", "`${user.lastName}`")
+                field("Names", details.names.joinToString(transform = { "`$it`" }))
+                field("First Join", renderer.renderInstant(user.snowflake.timestamp))
+                field("Last Join", renderer.renderInstant(user.lastJoin))
+                field("Times Joined", user.timesJoined.toString())
+                if (discord.isAllowed(actor.member.user, Rank.ADMIN)) {
+                    field("Uuid", "`${user.uuid}`")
+                    field("Last Address", "`${user.lastAddress.hostAddress}`")
+                    field(
+                        "Addresses",
+                        details.addresses.joinToString(transform = { "`${it.hostAddress}`" }))
+                }
+            })
     }
 
     @Command(["player", "search"])
     @NonEphemeral
-    suspend fun onPlayerSearch(actor: InteractionSender, query: String) {
+    suspend fun onPlayerSearch(actor: InteractionSender.Slash, query: String) {
         val users = users.searchUserByName(query).take(21).toCollection(mutableListOf())
         if (users.isEmpty()) {
             actor.respond("No players found.")
@@ -96,6 +93,10 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             text += "\n\nAnd more..."
         }
 
-        actor.respond(EmbedBuilder().setTitle("Player Search").setDescription(text))
+        actor.respond(
+            Embed {
+                title = "Player Search"
+                description = text
+            })
     }
 }

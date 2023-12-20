@@ -17,28 +17,13 @@
  */
 package com.xpdustry.imperium.discord.misc
 
-import java.util.Optional
-import org.javacord.api.entity.emoji.CustomEmoji
-import org.javacord.api.entity.emoji.Emoji
-import org.javacord.api.entity.emoji.KnownCustomEmoji
+import net.dv8tion.jda.api.entities.emoji.Emoji
 
 object ImperiumEmojis {
-    val CHECK_MARK: Emoji = UnicodeEmoji("✔️")
-    val CROSS_MARK: Emoji = UnicodeEmoji("❌")
-    val DOWN_ARROW: Emoji = UnicodeEmoji("⬇️")
-    val PENCIL: Emoji = UnicodeEmoji("✏️")
-    val INBOX_TRAY: Emoji = UnicodeEmoji("📥")
-    val WASTE_BASKET: Emoji = UnicodeEmoji("🗑️")
-
-    private data class UnicodeEmoji(private val emoji: String) : Emoji {
-        override fun getMentionTag() = emoji
-
-        override fun asUnicodeEmoji() = Optional.of(emoji)
-
-        override fun asCustomEmoji() = Optional.empty<CustomEmoji>()
-
-        override fun asKnownCustomEmoji() = Optional.empty<KnownCustomEmoji>()
-
-        override fun isAnimated() = false
-    }
+    val CHECK_MARK = Emoji.fromUnicode("✔️")
+    val CROSS_MARK = Emoji.fromUnicode("❌")
+    val DOWN_ARROW = Emoji.fromUnicode("⬇️")
+    val PENCIL = Emoji.fromUnicode("✏️")
+    val INBOX_TRAY = Emoji.fromUnicode("📥")
+    val WASTE_BASKET = Emoji.fromUnicode("🗑️")
 }

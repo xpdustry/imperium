@@ -20,7 +20,7 @@ package com.xpdustry.imperium.discord.misc
 import java.util.Locale
 import java.util.MissingResourceException
 import java.util.ResourceBundle
-import org.javacord.api.interaction.DiscordLocale
+import net.dv8tion.jda.api.interactions.DiscordLocale
 
 fun getTranslatedTextOrNull(key: String, locale: Locale): String? =
     try {
@@ -30,7 +30,7 @@ fun getTranslatedTextOrNull(key: String, locale: Locale): String? =
     }
 
 fun Locale.toDiscordLocale(): DiscordLocale? {
-    val locale = DiscordLocale.fromLocaleCode(toLanguageTag())
+    val locale = DiscordLocale.from(this)
     if (locale != DiscordLocale.UNKNOWN) {
         return locale
     }

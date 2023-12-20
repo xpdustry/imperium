@@ -30,7 +30,7 @@ class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listene
     private val whitelist = instances.get<AddressWhitelist>()
 
     @Command(["whitelist", "add"], Rank.ADMIN)
-    private suspend fun onWhitelistAddCommand(sender: InteractionSender, address: String) {
+    private suspend fun onWhitelistAddCommand(sender: InteractionSender.Slash, address: String) {
         // TODO Add InetAddress parser, with option to prevent the use of loopback addresses
         val ip = address.toInetAddressOrNull()
         if (ip == null) {
@@ -46,7 +46,7 @@ class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listene
     }
 
     @Command(["whitelist", "remove"], Rank.ADMIN)
-    private suspend fun onWhitelistRemoveCommand(sender: InteractionSender, address: String) {
+    private suspend fun onWhitelistRemoveCommand(sender: InteractionSender.Slash, address: String) {
         val ip = address.toInetAddressOrNull()
         if (ip == null) {
             sender.respond("The ip address is not valid.")
