@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.misc.mediumblob
 import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
 import com.xpdustry.imperium.common.user.UserTable
 import java.time.Duration
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.duration
@@ -39,7 +40,7 @@ object MindustryMapTable : SnowflakeIdTable("mindustry_map") {
 }
 
 object MindustryMapGameTable : SnowflakeIdTable("mindustry_map_game") {
-    val map = reference("map_id", MindustryMapTable)
+    val map = reference("map_id", MindustryMapTable, onDelete = ReferenceOption.CASCADE)
     val server = varchar("server", 64)
     val start = timestamp("start").defaultExpression(CurrentTimestamp())
     val playtime = duration("playtime").default(Duration.ZERO)
