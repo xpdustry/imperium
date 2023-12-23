@@ -39,6 +39,7 @@ import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
 import mindustry.Vars
+import mindustry.content.Blocks
 import okhttp3.MediaType.Companion.toMediaType
 
 class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -77,12 +78,11 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
 
                     runMindustryThread {
                         for (block in event.cluster.blocks) {
-                            // TODO Do queued destruction
-                            Vars.world.tile(block.x, block.y)?.build?.kill()
-                            val data = block.payload
-                            if (data is NoHornyImage.Display) {
-                                for (processor in data.processors.keys) {
-                                    Vars.world.tile(processor.x, processor.y)?.build?.kill()
+                            Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
+                            val payload = block.payload
+                            if (payload is NoHornyImage.Display) {
+                                for (processor in payload.processors.keys) {
+                                    Vars.world.tile(processor.x, processor.y)?.setNet(Blocks.air)
                                 }
                             }
                         }
