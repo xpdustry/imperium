@@ -216,20 +216,24 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 stream = { attachment.proxy.download().join() })
         }
 
-        updateSubmissionEmbed(actor, Color.GREEN, "uploaded")
+        updateSubmissionEmbed(actor, Color.GREEN, "uploaded", snowflake)
         actor.respond("Map submission uploaded! The map id is `$snowflake`.")
     }
 
     private suspend fun updateSubmissionEmbed(
         actor: InteractionSender.Button,
         color: Color,
-        verb: String
+        verb: String,
+        snowflake: Snowflake? = null
     ) {
         actor.message
             .editMessageEmbeds(
                 Embed(actor.message.embeds.first()) {
-                    field("Reviewer", actor.member.asMention, false)
                     this@Embed.color = color.rgb
+                    field("Reviewer", actor.member.asMention, false)
+                    if (snowflake != null) {
+                        field("Identifier", "`$snowflake`", false)
+                    }
                 })
             .setComponents()
             .await()
