@@ -55,12 +55,11 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Iconc
-import mindustry.gen.Player
 import mindustry.gen.Sounds
 import mindustry.type.Item
 
 class ExcavateCommand(instances: InstanceManager) :
-    AbstractVoteCommand<ExcavateCommand.ExcavateArea>(instances.get(), "excavate", 1.minutes),
+    AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", 1.minutes),
     ImperiumApplication.Listener {
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
@@ -98,12 +97,6 @@ class ExcavateCommand(instances: InstanceManager) :
                 areas[event.player] = ExcavateArea()
                 event.player.sendMessage(
                     "The chosen excavate point is too far from the other point, try again!")
-                return
-            }
-            if (dx == 0 || dy == 0) {
-                areas[event.player] = ExcavateArea()
-                event.player.sendMessage(
-                    "The chosen excavate point is on the same axis as the other point, try again!")
                 return
             }
         }
@@ -146,7 +139,25 @@ class ExcavateCommand(instances: InstanceManager) :
             sender.sendMessage("You have not selected both points yet!")
             return
         }
-        onVoteSessionStart(sender.player, manager.session, area)
+
+        var price = 0
+        for (x in area.x1..area.x2) {
+            for (y in area.y1..area.y2) {
+                if (Vars.world.tile(x, y).block()?.isStatic == true) {
+                    price += config.world.excavationTilePrice
+                }
+            }
+        }
+        val items = Vars.state.rules.defaultTeam.items()
+        if (items.has(item, price)) {
+            Vars.state.rules.defaultTeam.items().remove(item, price)
+        } else {
+            sender.sendMessage(
+                "[scarlet]You are not rich enough to do that. [orange]${price - items.get(item)}[] more ${item.name} is needed.")
+            return
+        }
+
+        onVoteSessionStart(sender.player, manager.session, ExcavateData(price, area))
         areas.remove(sender.player)
     }
 
@@ -164,21 +175,8 @@ class ExcavateCommand(instances: InstanceManager) :
         onPlayerCancel(sender.player, manager.session)
     }
 
-    override fun canParticipantStart(player: Player, objective: ExcavateArea): Boolean {
-        val items = Vars.state.rules.defaultTeam.items()
-        val price = objective.blocks * config.world.excavationTilePrice
-        return if (items.has(item, price)) {
-            Vars.state.rules.defaultTeam.items().remove(item, price)
-            true
-        } else {
-            player.sendMessage(
-                "[scarlet]You are not rich enough to do that. [orange]${price - items.get(item)}[] more ${item.name} is needed.")
-            false
-        }
-    }
-
-    override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateArea>): String {
-        val area = session.objective
+    override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {
+        val area = session.objective.area
         return "Type [accent]/excavate y[] to remove the static blocks in the area between (${area.x1}, ${area.y1}) and (${area.x2}, ${area.y2})."
     }
 
@@ -197,20 +195,20 @@ class ExcavateCommand(instances: InstanceManager) :
             else -> 4
         }
 
-    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<ExcavateArea>) {
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<ExcavateData>) {
         val sequence = AtomicInteger(0)
-        val area = session.objective
+        val area = session.objective.area
         for (y in area.y1..area.y2) {
             delay(100.milliseconds)
             runMindustryThread {
                 for (x in area.x1..area.x2) {
                     val tile = Vars.world.tile(x, y)
-                    val block = tile.block()
-                    if (block == null || !block.isStatic) {
+                    if (tile.block()?.isStatic != true) {
                         continue
                     }
+                    val floor = tile.floor()
                     Call.setTile(tile, Blocks.air, Team.derelict, 0)
-                    Call.setFloor(tile, getFloorOfWall(block), Blocks.air)
+                    Call.setFloor(tile, floor, Blocks.air)
                     Call.effect(
                         Fx.flakExplosion,
                         x.toFloat() * Vars.tilesize,
@@ -226,10 +224,8 @@ class ExcavateCommand(instances: InstanceManager) :
         Call.sendMessage("The excavation has finished!")
     }
 
-    override suspend fun onVoteSessionFailure(session: VoteManager.Session<ExcavateArea>) {
-        Vars.state.rules.defaultTeam
-            .items()
-            .add(item, session.objective.blocks * config.world.excavationTilePrice)
+    override suspend fun onVoteSessionFailure(session: VoteManager.Session<ExcavateData>) {
+        Vars.state.rules.defaultTeam.items().add(item, session.objective.price)
     }
 
     private fun renderZones() {
@@ -256,7 +252,7 @@ class ExcavateCommand(instances: InstanceManager) :
             }
         }
 
-        val area = manager.session?.objective ?: return
+        val area = manager.session?.objective?.area ?: return
         for (y in area.y1..area.y2) {
             for (x in area.x1..area.x2) {
                 if (x == area.x1 || x == area.x2 || y == area.y1 || y == area.y2) {
@@ -283,19 +279,11 @@ class ExcavateCommand(instances: InstanceManager) :
         if (sequence.incrementAndGet() > 30) {
             sequence.set(0)
         }
+        // Anuke black magic
         return 1f + Mathf.clamp(sequence.get() / 30f) * 1.9f
     }
 
-    private fun getFloorOfWall(block: mindustry.world.Block) =
-        when (block) {
-            Blocks.stoneWall -> Blocks.stone
-            Blocks.sandWall -> Blocks.sand
-            Blocks.iceWall -> Blocks.ice
-            Blocks.snowWall -> Blocks.snow
-            Blocks.dirtWall -> Blocks.dirt
-            Blocks.shaleWall -> Blocks.shale
-            else -> Blocks.stone
-        }
+    data class ExcavateData(val price: Int, val area: ExcavateArea)
 
     data class ExcavateArea(
         val p1: ImmutablePoint = UNSET_POINT,
@@ -306,7 +294,6 @@ class ExcavateCommand(instances: InstanceManager) :
         val x2 = max(p1.x, p2.x)
         val y1 = min(p1.y, p2.y)
         val y2 = max(p1.y, p2.y)
-        val blocks = abs(x1 - x2) * abs(y1 - y2)
     }
 
     companion object {
