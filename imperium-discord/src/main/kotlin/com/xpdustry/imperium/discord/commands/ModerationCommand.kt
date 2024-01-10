@@ -101,7 +101,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
-        duration: PunishmentDuration = PunishmentDuration.FIFTEEN_MINUTES
+        duration: PunishmentDuration = PunishmentDuration.FIFTEEN_MINUTES //Phinner, it would be amazing if you could make it so they cant choose a duration, thx 
     ) {
         onPunishCommand("Kicked", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
