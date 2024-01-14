@@ -33,6 +33,7 @@ import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 
@@ -101,7 +102,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
-        duration: PunishmentDuration = PunishmentDuration.FIFTEEN_MINUTES //Phinner, it would be amazing if you could make it so they cant choose a duration, thx 
+        duration: PunishmentDuration = PunishmentDuration.FIFTEEN_MINUTES 
     ) {
         onPunishCommand("Kicked", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
