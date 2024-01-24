@@ -45,7 +45,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
             })
 
-    @Command(["server", "player", "joins"])
+    @Command(["player", "joins"])
     @NonEphemeral
     suspend fun onServerPlayerJoin(actor: InteractionSender.Slash, server: String) {
         val joins = tracker.getPlayerJoins(server)
@@ -56,7 +56,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         onServerPlayerList(actor, joins, "Join")
     }
 
-    @Command(["server", "player", "quits"])
+    @Command(["player", "quits"])
     @NonEphemeral
     suspend fun onServerPlayerQuit(actor: InteractionSender.Slash, server: String) {
         val quits = tracker.getPlayerQuits(server)
@@ -67,7 +67,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         onServerPlayerList(actor, quits, "Quit")
     }
 
-    @Command(["server", "player", "online"])
+    @Command(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
         val online =
