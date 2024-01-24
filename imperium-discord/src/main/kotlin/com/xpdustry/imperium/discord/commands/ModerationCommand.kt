@@ -92,7 +92,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
-        duration: PunishmentDuration = PunishmentDuration.THIRTY_MINUTES
+        duration: PunishmentDuration = PunishmentDuration.THREE_DAYS
     ) {
         onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
