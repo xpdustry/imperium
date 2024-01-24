@@ -46,6 +46,7 @@ import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
@@ -122,7 +123,9 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                             },
                         )
 
+                    addDuration("[green]15 minutes", 15.minutes)
                     addDuration("[green]1 hour", 1.hours)
+                    addDuration("[green]3 hour", 3.hours)
                     addDuration("[green]6 hours", 6.hours)
                     addDuration("[green]1 day", 1.days)
                     addDuration("[green]3 days", 3.days)
@@ -262,8 +265,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
     private fun handleWaveSkip(requester: Player) =
         ImperiumScope.MAIN.launch {
             val rank = accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE
-            if (rank >= Rank.ADMIN ||
-                (rank >= Rank.MODERATOR && config.gamemode == MindustryGamemode.SANDBOX)) {
+            if (rank >= Rank.MODERATOR) { //TODO: find out if this works (phinner is weird)
                 runMindustryThread {
                     Vars.logic.skipWave()
                     logger.info(
