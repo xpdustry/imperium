@@ -35,6 +35,7 @@ import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -91,7 +92,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
-        duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
+        duration: PunishmentDuration = PunishmentDuration.THREE_DAYS
     ) {
         onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
@@ -101,7 +102,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
-        duration: PunishmentDuration = PunishmentDuration.ONE_HOUR
+        duration: PunishmentDuration = PunishmentDuration.ONE_DAY
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, actor, player, reason, duration.value)
     }
@@ -151,6 +152,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 }
 
 enum class PunishmentDuration(val value: Duration) {
+    THIRTY_MINUTES(30.minutes),
     ONE_HOUR(1.hours),
     THREE_HOURS(3.hours),
     ONE_DAY(1.days),
