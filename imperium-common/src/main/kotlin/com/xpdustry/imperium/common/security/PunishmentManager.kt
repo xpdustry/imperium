@@ -72,7 +72,8 @@ data class PunishmentMessage(
     val author: Identity,
     val type: Type,
     val snowflake: Snowflake,
-    val server: String
+    val server: String,
+    val metadata: Punishment.Metadata
 ) : Message {
     enum class Type {
         CREATE,
@@ -137,11 +138,11 @@ class SimplePunishmentManager(
                 it[PunishmentTable.duration] =
                     if (duration.isInfinite()) null else duration.toJavaDuration()
                 it[server] = config.server.name
-                it[PunishmentTable.metadata] = metadata
             }
         }
         messenger.publish(
-            PunishmentMessage(author, PunishmentMessage.Type.CREATE, snowflake, config.server.name),
+            PunishmentMessage(
+                author, PunishmentMessage.Type.CREATE, snowflake, config.server.name, metadata),
             local = true)
         return snowflake
     }
@@ -173,7 +174,11 @@ class SimplePunishmentManager(
             .also {
                 messenger.publish(
                     PunishmentMessage(
-                        author, PunishmentMessage.Type.PARDON, punishment, config.server.name),
+                        author,
+                        PunishmentMessage.Type.PARDON,
+                        punishment,
+                        config.server.name,
+                        Punishment.Metadata.None),
                     local = true)
             }
 
@@ -192,7 +197,6 @@ class SimplePunishmentManager(
             type = this[PunishmentTable.type],
             duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
             pardon = pardon,
-            server = this[PunishmentTable.server],
-            metadata = this[PunishmentTable.metadata])
+            server = this[PunishmentTable.server])
     }
 }

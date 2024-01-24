@@ -47,7 +47,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val renderer = instances.get<TimeRenderer>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PunishmentMessage> { (author, type, snowflake, server) ->
+        messenger.consumer<PunishmentMessage> { (author, type, snowflake, server, metadata) ->
             val punishment = punishments.findBySnowflake(snowflake)!!
             val user = punishment.target.let { users.findBySnowflake(it) }!!
             (getNotificationChannel() ?: return@consumer).sendMessageEmbeds(
@@ -79,7 +79,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             if (server != config.name) field("Server", server)
                             field("Reason", punishment.reason, false)
 
-                            when (val metadata = punishment.metadata) {
+                            when (metadata) {
                                 is Punishment.Metadata.None -> Unit
                                 is Punishment.Metadata.Votekick -> {
                                     field(

@@ -31,8 +31,7 @@ data class Punishment(
     val type: Type,
     val duration: Duration,
     val pardon: Pardon?,
-    val server: String,
-    val metadata: Metadata,
+    val server: String
 ) {
     val expired: Boolean
         get() = pardon != null || expiration < Instant.now()
