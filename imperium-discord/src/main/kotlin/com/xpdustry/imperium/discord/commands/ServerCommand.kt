@@ -30,6 +30,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.Locale
+import net.dv8tion.jda.api.entities.MessageEmbed
 
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
@@ -53,7 +54,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             actor.respond("Server not found.")
             return
         }
-        onServerPlayerList(actor, joins, "Join")
+        actor.respond(createPlayerListEmbed(joins, "Join"))
     }
 
     @Command(["player", "quits"])
@@ -64,59 +65,64 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             actor.respond("Server not found.")
             return
         }
-        onServerPlayerList(actor, quits, "Quit")
+        actor.respond(createPlayerListEmbed(quits, "Quit"))
     }
 
     @Command(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
-        val online =
-            if (server != null) {
-                tracker.getOnlinePlayers(server)
-            } else {
-                discovery.servers.flatMap { (name, server) ->
-                    if (server.data is Discovery.Data.Mindustry)
-                        tracker.getOnlinePlayers(name) ?: emptyList()
-                    else emptyList()
+        if (server != null) {
+            val online = tracker.getOnlinePlayers(server)
+            if (online == null) {
+                actor.respond("Server not found.")
+                return
+            }
+            actor.respond(createPlayerListEmbed(online, "Online", time = false))
+        } else {
+            val embeds = mutableListOf<MessageEmbed>()
+            for ((key, value) in discovery.servers) {
+                if (value.data is Discovery.Data.Mindustry) {
+                    val players = tracker.getOnlinePlayers(key) ?: emptyList()
+                    if (players.isNotEmpty()) {
+                        embeds +=
+                            createPlayerListEmbed(players, "Online", time = false, server = key)
+                    }
                 }
             }
-        if (online == null) {
-            actor.respond("Server not found.")
-            return
+            actor.respond { addEmbeds(embeds) }
         }
-        onServerPlayerList(actor, online, "Online", time = false)
     }
 
-    private suspend fun onServerPlayerList(
-        actor: InteractionSender.Slash,
+    private fun createPlayerListEmbed(
         list: List<PlayerTracker.Entry>,
         name: String,
         time: Boolean = true,
-    ) {
-        val text = buildString {
-            append("```\n")
-            if (list.isEmpty()) {
-                append("No players found.\n")
+        server: String? = null
+    ): MessageEmbed {
+        return Embed {
+            title = "Player $name List"
+            if (server != null) {
+                title += " in $server"
             }
-            for (entry in list) {
-                if (time) {
-                    append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
-                    append(" ")
+            description = buildString {
+                append("```\n")
+                if (list.isEmpty()) {
+                    append("No players found.\n")
                 }
-                append("#")
-                append(entry.snowflake)
-                append(" ")
-                append(entry.player.name)
-                append("\n")
+                for (entry in list) {
+                    if (time) {
+                        append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
+                        append(" ")
+                    }
+                    append("#")
+                    append(entry.snowflake)
+                    append(" ")
+                    append(entry.player.name)
+                    append("\n")
+                }
+                append("```")
             }
-            append("```")
         }
-
-        actor.respond(
-            Embed {
-                title = "Player $name List"
-                description = text
-            })
     }
 
     companion object {
