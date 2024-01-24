@@ -41,26 +41,32 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
     @Command(["schematic", "text"])
     @NonEphemeral
     suspend fun onSchematicCommand(actor: InteractionSender.Slash, schematic: String) {
-        val result = content.getSchematic(schematic)
-        if (result.isFailure) {
-            actor.respond("Failed to parse the schematic.")
+        val parsed = content.getSchematic(schematic)
+        if (parsed.isFailure) {
+            actor.respond("Failed to parse the schematic: ${parsed.exceptionOrNull()!!.message}")
             return
         }
 
-        val parsed = result.getOrThrow()
-        val preview = content.getSchematicPreview(parsed).getOrThrow()
-        val bytes = ByteArrayOutputStream()
-        content.writeSchematic(parsed, bytes).getOrThrow()
-        val name = "${parsed.name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"
+        val preview = content.getSchematicPreview(parsed.getOrThrow())
+        if (preview.isFailure) {
+            actor.respond(
+                "Failed to generate schematic preview: ${preview.exceptionOrNull()!!.message}")
+            return
+        }
+
+        val stream = ByteArrayOutputStream()
+        content.writeSchematic(parsed.getOrThrow(), stream).getOrThrow()
 
         actor.respond {
             addFiles(
-                FileUpload.fromData(bytes.toByteArray(), name),
-                FileUpload.fromStreamSupplier("preview.png", preview::inputStream))
+                FileUpload.fromData(
+                    stream.toByteArray(),
+                    "${parsed.getOrThrow().name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"),
+                FileUpload.fromStreamSupplier("preview.png", preview.getOrThrow()::inputStream))
             addEmbeds(
                 Embed {
                     author(actor.member)
-                    title = parsed.name()
+                    title = parsed.getOrThrow().name()
                     image = "attachment://preview.png"
                 })
         }
@@ -74,7 +80,7 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
             return
         }
 
-        if (file.size > MAX_FILE_SIZE) {
+        if (file.size > SCHEMATIC_MAX_FILE_SIZE) {
             actor.respond("Schematic file is too large!")
             return
         }
@@ -82,7 +88,7 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
         val bytes = file.proxy.download().await().use(InputStream::readBytes)
         val result = content.getSchematic(bytes.inputStream())
         if (result.isFailure) {
-            actor.respond("Failed to parse the schematic.")
+            actor.respond("Failed to parse the schematic: ${result.exceptionOrNull()!!.message}")
             return
         }
 
@@ -105,6 +111,6 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
     companion object {
         // 2MB
-        private const val MAX_FILE_SIZE = 2 * 1024 * 1024
+        private const val SCHEMATIC_MAX_FILE_SIZE = 2 * 1024 * 1024
     }
 }

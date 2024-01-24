@@ -350,7 +350,8 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             }
 
             val total = data.readInt()
-            if (total > 64 * 64) throw IOException("Schematic has too many blocks.")
+            if (total > MAX_SCHEMATIC_SIDE_SIZE * MAX_SCHEMATIC_SIDE_SIZE)
+                throw IOException("Schematic has too many blocks.")
             val tiles = Seq<Schematic.Stile>(total)
             for (i in 0 until total) {
                 val block = blocks[data.readByte().toInt()]
@@ -377,8 +378,10 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
     override suspend fun getSchematicPreview(schematic: Schematic): Result<BufferedImage> =
         withContext(SCHEMATIC_PREVIEW_SCOPE.coroutineContext) {
             runCatching {
-                if (schematic.width > 64 || schematic.height > 64) {
-                    throw IOException("Schematic cannot be larger than 64x64.")
+                if (schematic.width > MAX_SCHEMATIC_SIDE_SIZE ||
+                    schematic.height > MAX_SCHEMATIC_SIDE_SIZE) {
+                    throw IOException(
+                        "Schematic cannot be larger than $MAX_SCHEMATIC_SIDE_SIZE x $MAX_SCHEMATIC_SIDE_SIZE.")
                 }
 
                 val image =
@@ -621,5 +624,6 @@ class AnukenMindustryContentHandler(directory: Path, private val config: ServerC
             CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
         private val SCHEMATIC_HEADER =
             byteArrayOf('m'.code.toByte(), 's'.code.toByte(), 'c'.code.toByte(), 'h'.code.toByte())
+        private const val MAX_SCHEMATIC_SIDE_SIZE = 256
     }
 }
