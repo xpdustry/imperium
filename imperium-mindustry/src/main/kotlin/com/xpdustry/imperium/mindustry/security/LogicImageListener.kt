@@ -53,11 +53,22 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
         ImperiumScope.MAIN.launch {
             when (event.result.rating) {
                 ImageAnalyzer.Rating.SAFE -> {
-                    logger.debug("Cluster ({}, {}) is safe", event.cluster.x, event.cluster.y)
+                    logger.debug(
+                        "Cluster {} in rect ({}, {}, {}, {}) is safe",
+                        event.cluster.identifier,
+                        event.cluster.x,
+                        event.cluster.y,
+                        event.cluster.w,
+                        event.cluster.h)
                 }
                 ImageAnalyzer.Rating.WARNING -> {
                     logger.debug(
-                        "Cluster ({}, {}) is possibly unsafe.", event.cluster.x, event.cluster.y)
+                        "Cluster {} in rect ({}, {}, {}, {}) is possibly unsafe.",
+                        event.cluster.identifier,
+                        event.cluster.x,
+                        event.cluster.y,
+                        event.cluster.w,
+                        event.cluster.h)
 
                     webhook.send(
                         WebhookMessage(
@@ -73,8 +84,13 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                             attachments = listOf(event.image.toUnsafeAttachment())))
                 }
                 ImageAnalyzer.Rating.UNSAFE -> {
-                    logger.debug(
-                        "Cluster ({}, {}) is unsafe. Destroying.", event.cluster.x, event.cluster.y)
+                    logger.info(
+                        "Cluster {} in rect ({}, {}, {}, {}) is unsafe. Destroying blocks.",
+                        event.cluster.identifier,
+                        event.cluster.x,
+                        event.cluster.y,
+                        event.cluster.w,
+                        event.cluster.h)
 
                     runMindustryThread {
                         for (block in event.cluster.blocks) {
