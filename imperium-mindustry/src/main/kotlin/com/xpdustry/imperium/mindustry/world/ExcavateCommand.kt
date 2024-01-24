@@ -148,6 +148,12 @@ class ExcavateCommand(instances: InstanceManager) :
                 }
             }
         }
+
+        if (price == 0) {
+            sender.sendWarning("[scarlet]The area you selected does no contain any static block.")
+            return
+        }
+
         val items = Vars.state.rules.defaultTeam.items()
         if (items.has(item, price)) {
             Vars.state.rules.defaultTeam.items().remove(item, price)
