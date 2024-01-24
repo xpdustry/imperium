@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ORANGE_COLOR
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
@@ -64,7 +65,7 @@ import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
-private val rootLogger = logger("ROOT")
+private val ROOT_LOGGER = logger("ROOT")
 
 class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
@@ -172,14 +173,23 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             }
         }
 
+        // TODO
+        //   - Move to dedicated class
+        //   - Better processing perhaps
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
                 val result =
                     Entities.getPlayersAsync().map { player ->
                         player to
-                            placeholderPipeline.pump(
-                                PlaceholderContext(player.identity, config.templates.playerName))
+                            try {
+                                placeholderPipeline.pump(
+                                    PlaceholderContext(
+                                        player.identity, config.templates.playerName))
+                            } catch (e: Exception) {
+                                LOGGER.error("Failed to format name of player {}", player.uuid(), e)
+                                "[#${player.color}]${player.info.lastName}"
+                            }
                     }
                 runMindustryThread { result.forEach { (player, name) -> player.name(name) } }
             }
@@ -306,7 +316,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         if (escaped.startsWith(Vars.netServer.clientCommands.getPrefix())) {
             val secured = if (escaped.startsWith("/login")) "/login" else escaped
             // log with brackets
-            rootLogger.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$secured")
+            ROOT_LOGGER.info("<&fi{}: {}&fr>", "&lk${sender.plainName()}", "&lw$secured")
         }
 
         // check if it's a command
@@ -334,7 +344,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 if (filtered2.isBlank()) return@launch
                 target?.sendMessage(getChatFormat(sender.identity, filtered2), sender, filtered2)
                 if (target == null) {
-                    rootLogger.info(
+                    ROOT_LOGGER.info(
                         "&fi{}: {}",
                         "&lc${sender.name().stripMindustryColors()}",
                         "&lw${filtered2.stripMindustryColors()}")
@@ -346,5 +356,9 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 }
             }
         }
+    }
+
+    companion object {
+        private val LOGGER by LoggerDelegate()
     }
 }
