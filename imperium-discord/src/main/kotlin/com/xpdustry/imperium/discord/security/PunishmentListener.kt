@@ -31,6 +31,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.time.TimeRenderer
+import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -72,7 +73,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         PunishmentMessage.Type.CREATE -> {
                             color = Color.RED.rgb
                             title = "Punishment"
-                            field("Target", user.lastName)
+                            field("Target", user.toLastNameWithSnowflake())
                             field("Type", punishment.type.toString())
                             field("Duration", renderer.renderDuration(punishment.duration))
                             if (server != config.name) field("Server", server)
@@ -81,8 +82,13 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             when (val metadata = punishment.metadata) {
                                 is Punishment.Metadata.None -> Unit
                                 is Punishment.Metadata.Votekick -> {
-                                    field("Votes for", renderPlayerList(metadata.yes))
-                                    field("Votes against", renderPlayerList(metadata.nay))
+                                    field(
+                                        "Votekick starter",
+                                        users
+                                            .findByUuid(metadata.starter.toCRC32Muuid())
+                                            .toLastNameWithSnowflake())
+                                    field("Yes votes", renderPlayerList(metadata.yes))
+                                    field("Nay votes", renderPlayerList(metadata.nay))
                                 }
                             }
                         }
@@ -100,13 +106,12 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
     }
 
-    private suspend fun renderPlayerList(players: Iterable<MindustryUUIDAsLong>) = buildString {
-        for (player in players) {
-            val user = users.findByUuid(player.toCRC32Muuid())
-            if (user == null) {
-                appendLine("- unknown")
-            } else {
-                appendLine("- ${user.lastName} / `${user.snowflake}`")
+    private suspend fun renderPlayerList(players: Collection<MindustryUUIDAsLong>) = buildString {
+        if (players.isEmpty()) {
+            appendLine("`none`")
+        } else {
+            for (player in players) {
+                appendLine("- ${users.findByUuid(player.toCRC32Muuid()).toLastNameWithSnowflake()}")
             }
         }
     }
@@ -118,6 +123,9 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
         return channel
     }
+
+    private fun User?.toLastNameWithSnowflake() =
+        if (this == null) "unknown" else "$lastName / `$snowflake`"
 
     companion object {
         private val LOGGER by LoggerDelegate()

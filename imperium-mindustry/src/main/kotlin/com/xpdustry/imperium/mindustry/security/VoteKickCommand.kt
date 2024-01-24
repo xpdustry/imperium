@@ -155,7 +155,7 @@ class VoteKickCommand(instances: InstanceManager) :
             "Votekick: ${session.objective.reason}",
             Punishment.Type.BAN,
             NetServer.kickDuration.seconds,
-            Punishment.Metadata.Votekick(yes, nay))
+            Punishment.Metadata.Votekick(session.initiator!!.uuid().toLongMuuid(), yes, nay))
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {
