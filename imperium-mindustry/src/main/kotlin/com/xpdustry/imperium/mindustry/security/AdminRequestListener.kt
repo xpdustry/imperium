@@ -264,7 +264,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
     private fun handleWaveSkip(requester: Player) =
         ImperiumScope.MAIN.launch {
             val rank = accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE
-            if (rank >= Rank.MODERATOR) { // TODO: find out if this works (phinner is weird)
+            if (rank >= Rank.MODERATOR) {
                 runMindustryThread {
                     Vars.logic.skipWave()
                     logger.info(
