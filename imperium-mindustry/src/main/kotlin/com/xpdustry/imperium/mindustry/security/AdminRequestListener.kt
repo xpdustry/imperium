@@ -23,7 +23,6 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -265,7 +264,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
     private fun handleWaveSkip(requester: Player) =
         ImperiumScope.MAIN.launch {
             val rank = accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE
-            if (rank >= Rank.MODERATOR) { //TODO: find out if this works (phinner is weird)
+            if (rank >= Rank.MODERATOR) { // TODO: find out if this works (phinner is weird)
                 runMindustryThread {
                     Vars.logic.skipWave()
                     logger.info(
