@@ -34,6 +34,7 @@ import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.misc.Embed
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
@@ -50,59 +51,61 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         messenger.consumer<PunishmentMessage> { (author, type, snowflake, server, metadata) ->
             val punishment = punishments.findBySnowflake(snowflake)!!
             val user = punishment.target.let { users.findBySnowflake(it) }!!
-            (getNotificationChannel() ?: return@consumer).sendMessageEmbeds(
-                Embed {
-                    author {
-                        when (author) {
-                            is Identity.Mindustry -> name = author.name
-                            is Identity.Server -> name = "AUTO-MOD"
-                            is Identity.Discord -> {
-                                val member = discord.getMainServer().getMemberById(author.id)
-                                if (member == null) {
-                                    name = "unknown"
-                                } else {
-                                    name = member.effectiveName
-                                    iconUrl = member.avatarUrl
+            (getNotificationChannel() ?: return@consumer)
+                .sendMessageEmbeds(
+                    Embed {
+                        author {
+                            when (author) {
+                                is Identity.Mindustry -> name = author.name
+                                is Identity.Server -> name = "AUTO-MOD"
+                                is Identity.Discord -> {
+                                    val member = discord.getMainServer().getMemberById(author.id)
+                                    if (member == null) {
+                                        name = "unknown"
+                                    } else {
+                                        name = member.effectiveName
+                                        iconUrl = member.avatarUrl
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    // TODO Move embed creation to a single method for "/punishment info"
-                    when (type) {
-                        PunishmentMessage.Type.CREATE -> {
-                            color = Color.RED.rgb
-                            title = "Punishment"
-                            field("Target", user.toLastNameWithSnowflake())
-                            field("Type", punishment.type.toString())
-                            field("Duration", renderer.renderDuration(punishment.duration))
-                            if (server != config.name) field("Server", server)
-                            field("Reason", punishment.reason, false)
+                        // TODO Move embed creation to a single method for "/punishment info"
+                        when (type) {
+                            PunishmentMessage.Type.CREATE -> {
+                                color = Color.RED.rgb
+                                title = "Punishment"
+                                field("Target", user.toLastNameWithSnowflake())
+                                field("Type", punishment.type.toString())
+                                field("Duration", renderer.renderDuration(punishment.duration))
+                                if (server != config.name) field("Server", server)
+                                field("Reason", punishment.reason, false)
 
-                            when (metadata) {
-                                is Punishment.Metadata.None -> Unit
-                                is Punishment.Metadata.Votekick -> {
-                                    field(
-                                        "Votekick starter",
-                                        users
-                                            .findByUuid(metadata.starter.toCRC32Muuid())
-                                            .toLastNameWithSnowflake())
-                                    field("Yes votes", renderPlayerList(metadata.yes))
-                                    field("Nay votes", renderPlayerList(metadata.nay))
+                                when (metadata) {
+                                    is Punishment.Metadata.None -> Unit
+                                    is Punishment.Metadata.Votekick -> {
+                                        field(
+                                            "Votekick starter",
+                                            users
+                                                .findByUuid(metadata.starter.toCRC32Muuid())
+                                                .toLastNameWithSnowflake())
+                                        field("Yes votes", renderPlayerList(metadata.yes))
+                                        field("Nay votes", renderPlayerList(metadata.nay))
+                                    }
                                 }
                             }
+                            PunishmentMessage.Type.PARDON -> {
+                                color = Color.GREEN.rgb
+                                title = "Pardon"
+                                field("Target", user.lastName)
+                                field("Type", punishment.type.toString())
+                                field("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)
+                            }
                         }
-                        PunishmentMessage.Type.PARDON -> {
-                            color = Color.GREEN.rgb
-                            title = "Pardon"
-                            field("Target", user.lastName)
-                            field("Type", punishment.type.toString())
-                            field("Reason", punishment.pardon?.reason ?: "`<UNKNOWN>`", false)
-                        }
-                    }
 
-                    footer("ID: ${punishment.snowflake}")
-                })
+                        footer("ID: ${punishment.snowflake}")
+                    })
+                .await()
         }
     }
 

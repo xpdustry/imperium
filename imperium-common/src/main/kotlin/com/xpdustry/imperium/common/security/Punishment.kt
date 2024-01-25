@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.snowflake.timestamp
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
+import kotlinx.serialization.Serializable
 
 data class Punishment(
     val snowflake: Snowflake,
@@ -51,9 +52,12 @@ data class Punishment(
         BAN
     }
 
+    @Serializable
     sealed interface Metadata {
-        data object None : Metadata
 
+        @Serializable data object None : Metadata
+
+        @Serializable
         data class Votekick(
             val starter: MindustryUUIDAsLong,
             val yes: Set<MindustryUUIDAsLong>,
