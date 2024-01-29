@@ -65,6 +65,7 @@ import com.xpdustry.imperium.mindustry.world.WelcomeListener
 import fr.xpdustry.distributor.api.DistributorProvider
 import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry
 import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+import fr.xpdustry.distributor.api.plugin.PluginAnnotationParser
 import java.util.Locale
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -72,6 +73,8 @@ import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
+    internal val parser: PluginAnnotationParser
+        get() = pluginAnnotationParser
 
     override fun onInit() {
         logger.info("Imperium plugin initialized!")
@@ -92,8 +95,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         DistributorProvider.get().globalLocalizationSource.addLocalizationSource(source)
 
         application.instances.createSingletons()
-        for (listener in
-            listOf(
+        sequenceOf(
                 ConventionListener::class,
                 GatekeeperListener::class,
                 ChatTranslatorListener::class,
@@ -121,9 +123,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ResourceHudListener::class,
                 ImperiumLogicListener::class,
                 AntiEvadeListener::class,
-                GameListener::class)) {
-            application.register(listener)
-        }
+                GameListener::class)
+            .forEach(application::register)
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         }
@@ -181,8 +182,7 @@ private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
 
     override fun onListenerRegistration(listener: ImperiumApplication.Listener) {
         super.onListenerRegistration(listener)
-        DistributorProvider.get().eventBus.parse(plugin, listener)
-        DistributorProvider.get().pluginScheduler.parse(plugin, listener)
+        plugin.parser.parse(listener)
     }
 }
 

@@ -50,8 +50,7 @@ fun main() {
     val application = ImperiumDiscord()
 
     application.instances.createSingletons()
-    for (listener in
-        listOf(
+    sequenceOf(
             BridgeListener::class,
             PingCommand::class,
             ServerCommand::class,
@@ -65,9 +64,8 @@ fun main() {
             DebugCommand::class,
             PlayerCommand::class,
             AccountCommand::class,
-            WhitelistCommand::class)) {
-        application.register(listener)
-    }
+            WhitelistCommand::class)
+        .forEach(application::register)
 
     val commands = application.instances.get<CommandRegistry>("slash")
     val buttons = application.instances.get<CommandRegistry>("button")
