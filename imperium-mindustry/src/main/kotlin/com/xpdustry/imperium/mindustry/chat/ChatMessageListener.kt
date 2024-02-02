@@ -168,7 +168,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         ?.toString()
                         ?.let { "#$it" }
                         ?: MINDUSTRY_ORANGE_COLOR.toHexString()
-                is Identity.Discord -> MINDUSTRY_ORANGE_COLOR.toHexString()
+                is Identity.Discord -> MINDUSTRY_BLUE_COLOR.toHexString()
                 else -> config.color.toHexString()
             }
         }
