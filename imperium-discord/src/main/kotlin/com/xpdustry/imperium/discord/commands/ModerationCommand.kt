@@ -36,6 +36,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -152,6 +153,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 }
 
 enum class PunishmentDuration(val value: Duration) {
+    DISCONNECT(1.seconds),
     THIRTY_MINUTES(30.minutes),
     ONE_HOUR(1.hours),
     THREE_HOURS(3.hours),
