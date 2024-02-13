@@ -25,7 +25,6 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.BridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
-import com.xpdustry.imperium.discord.commands.DebugCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
 import com.xpdustry.imperium.discord.commands.PingCommand
@@ -61,7 +60,6 @@ fun main() {
             ModerationCommand::class,
             PunishmentListener::class,
             RoleSyncListener::class,
-            DebugCommand::class,
             PlayerCommand::class,
             AccountCommand::class,
             WhitelistCommand::class)
