@@ -46,7 +46,7 @@ class PunishmentGatekeeper(
                 [red]Oh no! You are currently banned from Chaotic Neutral!
                 [accent]Reason:[white] ${punishment.reason}
                 [accent]Duration:[white] ${renderer.renderDuration(punishment.duration)}
-                [accent]Expires:[white] ${punishment.expiration}
+                [accent]Expires:[white] ${punishment.expiration ?: "NEVER"}
                 [accent]Punishment id:[white] ${punishment.snowflake}
 
                 [accent]Appeal in our discord server: [white]https://discord.xpdustry.com

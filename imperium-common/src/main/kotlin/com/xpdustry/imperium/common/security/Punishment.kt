@@ -35,12 +35,11 @@ data class Punishment(
     val server: String
 ) {
     val expired: Boolean
-        get() = pardon != null || expiration < Instant.now()
+        get() = pardon != null || (expiration ?: Instant.MAX) < Instant.now()
 
-    val expiration: Instant
+    val expiration: Instant?
         get() =
-            if (duration.isInfinite()) Instant.MAX
-            else snowflake.timestamp.plus(duration.toJavaDuration())
+            if (duration.isInfinite()) null else snowflake.timestamp.plus(duration.toJavaDuration())
 
     val permanent: Boolean
         get() = duration.isInfinite()
