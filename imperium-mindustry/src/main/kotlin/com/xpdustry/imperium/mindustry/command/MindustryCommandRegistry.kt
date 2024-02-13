@@ -105,15 +105,17 @@ class MindustryCommandRegistry(
         function: KFunction<*>,
         annotation: Command
     ) {
-        val base = mutableListOf(annotation.name)
+        var names = annotation.name.toNameWithAliases()
+        val base = mutableListOf(names.first)
         val scope = function.findAnnotation<Scope>()?.gamemodes?.toSet() ?: emptySet()
         var builder =
             manager
-                .commandBuilder(annotation.name, createLiteralDescription(base))
-                .permission(createPermission(annotation.rank, annotation.name, scope))
+                .commandBuilder(names.first, createLiteralDescription(base), *names.second)
+                .permission(createPermission(annotation.rank, names.first, scope))
         for (rest in annotation.path.drop(1)) {
-            base += rest
-            builder = builder.literal(rest, createLiteralDescription(base))
+            names = rest.toNameWithAliases()
+            base += names.first
+            builder = builder.literal(rest, createLiteralDescription(base), *names.second)
         }
         for (argument in function.parameters.drop(1)) {
             if (argument.type.classifier == CommandSender::class) continue
@@ -145,8 +147,6 @@ class MindustryCommandRegistry(
                     (current >= rank && (scope.isEmpty() || server.gamemode in scope))
             }
         }
-
-    private fun getRank(sender: CommandSender) {}
 
     private fun <T : Any> createCommandArgument(
         manager: ArcCommandManager<CommandSender>,
@@ -205,6 +205,11 @@ class MindustryCommandRegistry(
         } else {
             runMindustryThread { function.callBy(arguments) }
         }
+    }
+
+    private fun String.toNameWithAliases(): Pair<String, Array<String>> {
+        val parts = split("|")
+        return parts[0] to parts.drop(1).toTypedArray()
     }
 }
 
