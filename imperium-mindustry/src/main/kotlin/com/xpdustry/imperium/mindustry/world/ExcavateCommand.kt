@@ -113,7 +113,7 @@ class ExcavateCommand(instances: InstanceManager) :
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
     }
 
-    @Command(["excavate", "select"])
+    @Command(["excavate|e", "select|s"])
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateSelectCommand(sender: CommandSender) {
@@ -126,7 +126,7 @@ class ExcavateCommand(instances: InstanceManager) :
         }
     }
 
-    @Command(["excavate", "y"])
+    @Command(["excavate|e", "y"])
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateYesCommand(sender: CommandSender) {
@@ -167,14 +167,14 @@ class ExcavateCommand(instances: InstanceManager) :
         areas.remove(sender.player)
     }
 
-    @Command(["excavate", "n"])
+    @Command(["excavate|e", "n"])
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["excavate", "cancel"], Rank.MODERATOR)
+    @Command(["excavate|e", "cancel|c"], Rank.MODERATOR)
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateCancelCommand(sender: CommandSender) {
