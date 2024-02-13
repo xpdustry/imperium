@@ -32,13 +32,12 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.snowflake
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.io.MapIO
 import mindustry.maps.Map
@@ -56,45 +55,43 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
             if (config.gamemode in it.gamemodes || it.gamemodes.isEmpty()) reloadMaps()
         }
 
-        ImperiumScope.MAIN.launch { reloadMaps() }
+        reloadMaps()
     }
 
     @Command(["reloadmaps"])
     @ServerSide
-    private suspend fun onMapReloadCommand() {
+    private fun onMapReloadCommand() {
         reloadMaps()
     }
 
-    private suspend fun reloadMaps() {
-        val old = runMindustryThread {
-            val before = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
-            Vars.maps.reload()
-            return@runMindustryThread before
-        }
+    private fun reloadMaps() {
+        val old = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
+        Vars.maps.reload()
 
         val pool =
-            maps.findAllMapsByGamemode(config.gamemode).mapNotNull {
-                try {
-                    downloadMapFromPool(it)
-                } catch (e: Exception) {
-                    logger.error(
-                        "Failed to load map from server pool, falling back to local maps.", e)
-                    null
+            runBlocking(ImperiumScope.IO.coroutineContext) {
+                maps.findAllMapsByGamemode(config.gamemode).mapNotNull {
+                    try {
+                        downloadMapFromPool(it)
+                    } catch (e: Exception) {
+                        logger.error(
+                            "Failed to load map from server pool, falling back to local maps.", e)
+                        null
+                    }
                 }
             }
+
         if (pool.isEmpty()) {
             logger.warn("No maps found in server pool, falling back to local maps.")
         }
 
-        runMindustryThread {
-            Vars.maps.all().addAll(pool)
-            val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
-            logger.info(
-                "Reloaded {} maps (added={}, removed={}).",
-                now.size,
-                (now - old).size,
-                (old - now).size)
-        }
+        Vars.maps.all().addAll(pool)
+        val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
+        logger.info(
+            "Reloaded {} maps (added={}, removed={}).",
+            now.size,
+            (now - old).size,
+            (old - now).size)
     }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
