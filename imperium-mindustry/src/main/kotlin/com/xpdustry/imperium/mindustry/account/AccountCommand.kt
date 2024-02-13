@@ -119,6 +119,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 sender.player.sendMessage("You are not logged in!")
             } else {
                 manager.logout(sender.player.identity)
+                sender.player.admin = false
                 sender.player.sendMessage("You have been logged out!")
             }
         }
