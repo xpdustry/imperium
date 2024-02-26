@@ -32,6 +32,7 @@ import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import mindustry.Vars
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Call
@@ -40,6 +41,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val messenger = instances.get<Messenger>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
+    private val freezes = instances.get<FreezeManager>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
@@ -76,6 +78,21 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         "[scarlet]Player ${player.name.stripMindustryColors()} has been banned for ${punishment.reason}.")
                 }
             }
+        }
+
+        Vars.netServer.admins.addActionFilter { action ->
+            val freeze = freezes.getFreeze(action.player) ?: return@addActionFilter true
+
+            action.player.sendMessage(
+                buildString {
+                    appendLine("[scarlet]You are currently frozen! You can't do any action.")
+                    appendLine("Reason: \"${freeze.reason}\"")
+                    if (freeze.punishment != null) {
+                        appendLine("ID: ${freeze.punishment}")
+                    }
+                })
+
+            return@addActionFilter true
         }
     }
 
