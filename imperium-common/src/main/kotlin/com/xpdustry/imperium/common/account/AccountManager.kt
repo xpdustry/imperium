@@ -263,7 +263,8 @@ class SimpleAccountManager(
                 ShaHashFunction.create(oldUsername.lowercase().toCharArray(), ShaType.SHA256).hash
 
             val oldAccount =
-                LegacyAccountTable.select { LegacyAccountTable.usernameHash eq oldUsernameHash }
+                LegacyAccountTable.selectAll()
+                    .where { LegacyAccountTable.usernameHash eq oldUsernameHash }
                     .firstOrNull()
                     ?: return@newSuspendTransaction AccountResult.NotFound
 
@@ -299,7 +300,7 @@ class SimpleAccountManager(
                 }
 
             val oldAchievements =
-                LegacyAccountAchievementTable.select {
+                LegacyAccountAchievementTable.selectAll().where {
                     LegacyAccountAchievementTable.account eq oldAccount[LegacyAccountTable.id]
                 }
 
