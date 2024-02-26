@@ -42,7 +42,6 @@ import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.sum
@@ -125,16 +124,16 @@ class SimpleMindustryMapManager(
 
     override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.sliceWithoutFile()
-                .select { MindustryMapTable.id eq snowflake }
+            MindustryMapTable.selectAllWithoutFile()
+                .where { MindustryMapTable.id eq snowflake }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.sliceWithoutFile()
-                .select { MindustryMapTable.name eq name }
+            MindustryMapTable.selectAllWithoutFile()
+                .where { MindustryMapTable.name eq name }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
@@ -142,8 +141,8 @@ class SimpleMindustryMapManager(
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
         provider.newSuspendTransaction {
             (MindustryMapTable leftJoin MindustryMapGamemodeTable)
-                .sliceWithoutFile()
-                .select { (MindustryMapGamemodeTable.gamemode eq gamemode) }
+                .selectAllWithoutFile()
+                .where { (MindustryMapGamemodeTable.gamemode eq gamemode) }
                 .map { it.toMindustryMap() }
         }
 
@@ -152,7 +151,8 @@ class SimpleMindustryMapManager(
         user: Snowflake
     ): MindustryMap.Rating? =
         provider.newSuspendTransaction {
-            MindustryMapRatingTable.select {
+            MindustryMapRatingTable.selectAll()
+                .where {
                     (MindustryMapRatingTable.map eq map) and (MindustryMapRatingTable.user eq user)
                 }
                 .firstOrNull()
@@ -161,7 +161,7 @@ class SimpleMindustryMapManager(
 
     override suspend fun findAllMaps(): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.sliceWithoutFile().selectAll().map { it.toMindustryMap() }
+            MindustryMapTable.selectAllWithoutFile().map { it.toMindustryMap() }
         }
 
     override suspend fun deleteMapBySnowflake(snowflake: Snowflake): Boolean =
@@ -243,7 +243,8 @@ class SimpleMindustryMapManager(
 
     override suspend fun findMapGameBySnowflake(game: Snowflake): MindustryMap.Game? =
         provider.newSuspendTransaction {
-            MindustryMapGameTable.select { MindustryMapGameTable.id eq game }
+            MindustryMapGameTable.selectAll()
+                .where { MindustryMapGameTable.id eq game }
                 .firstOrNull()
                 ?.toMindustryMapGame()
         }
@@ -254,16 +255,16 @@ class SimpleMindustryMapManager(
                 return@newSuspendTransaction null
             }
             val score =
-                MindustryMapRatingTable.slice(MindustryMapRatingTable.score.avg())
-                    .select { MindustryMapRatingTable.map eq map }
+                MindustryMapRatingTable.select(MindustryMapRatingTable.score.avg())
+                    .where { MindustryMapRatingTable.map eq map }
                     .firstOrNull()
                     ?.get(MindustryMapRatingTable.score.avg())
                     ?.toDouble()
                     ?: 2.5
             val difficulty =
-                MindustryMapRatingTable.slice(
+                MindustryMapRatingTable.select(
                         MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
-                    .select { MindustryMapRatingTable.map eq map }
+                    .where { MindustryMapRatingTable.map eq map }
                     .map {
                         it[MindustryMapRatingTable.difficulty].ordinal *
                             it[MindustryMapRatingTable.score]
@@ -274,17 +275,20 @@ class SimpleMindustryMapManager(
                         else MindustryMap.Difficulty.entries[it.roundToInt()]
                     }
             val games =
-                MindustryMapGameTable.select { MindustryMapGameTable.map eq map }.count().toInt()
+                MindustryMapGameTable.selectAll()
+                    .where { MindustryMapGameTable.map eq map }
+                    .count()
+                    .toInt()
             val playtime =
-                MindustryMapGameTable.slice(MindustryMapGameTable.playtime.sum())
-                    .select { MindustryMapGameTable.map eq map }
+                MindustryMapGameTable.select(MindustryMapGameTable.playtime.sum())
+                    .where { MindustryMapGameTable.map eq map }
                     .firstOrNull()
                     ?.get(MindustryMapGameTable.playtime.sum())
                     ?.toKotlinDuration()
                     ?: Duration.ZERO
             val record =
-                MindustryMapGameTable.slice(MindustryMapGameTable.id)
-                    .select { MindustryMapGameTable.map eq map }
+                MindustryMapGameTable.select(MindustryMapGameTable.id)
+                    .where { MindustryMapGameTable.map eq map }
                     .orderBy(MindustryMapGameTable.playtime, SortOrder.DESC)
                     .firstOrNull()
                     ?.get(MindustryMapGameTable.id)
@@ -295,8 +299,8 @@ class SimpleMindustryMapManager(
 
     override suspend fun getMapInputStream(map: Snowflake): InputStream? =
         provider.newSuspendTransaction {
-            MindustryMapTable.slice(MindustryMapTable.file)
-                .select { MindustryMapTable.id eq map }
+            MindustryMapTable.select(MindustryMapTable.file)
+                .where { MindustryMapTable.id eq map }
                 .firstOrNull()
                 ?.get(MindustryMapTable.file)
                 ?.inputStream
@@ -304,8 +308,8 @@ class SimpleMindustryMapManager(
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.sliceWithoutFile()
-                .select { MindustryMapTable.name like "%$query%" }
+            MindustryMapTable.selectAllWithoutFile()
+                .where { MindustryMapTable.name like "%$query%" }
                 .map { it.toMindustryMap() }
         }
 
@@ -325,13 +329,13 @@ class SimpleMindustryMapManager(
         return true
     }
 
-    private fun ColumnSet.sliceWithoutFile() =
-        slice((if (this is Join) table.columns else columns) - MindustryMapTable.file)
+    private fun ColumnSet.selectAllWithoutFile() =
+        select((if (this is Join) table.columns else columns) - MindustryMapTable.file)
 
     private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
         provider.newSuspendTransaction {
-            MindustryMapGamemodeTable.slice(MindustryMapGamemodeTable.gamemode)
-                .select { MindustryMapGamemodeTable.map eq map }
+            MindustryMapGamemodeTable.select(MindustryMapGamemodeTable.gamemode)
+                .where { MindustryMapGamemodeTable.map eq map }
                 .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
         }
 

@@ -38,7 +38,7 @@ import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 
 interface PunishmentManager {
@@ -95,7 +95,10 @@ class SimplePunishmentManager(
 
     override suspend fun findBySnowflake(snowflake: Snowflake): Punishment? =
         provider.newSuspendTransaction {
-            PunishmentTable.select { PunishmentTable.id eq snowflake }.firstOrNull()?.toPunishment()
+            PunishmentTable.selectAll()
+                .where { PunishmentTable.id eq snowflake }
+                .firstOrNull()
+                ?.toPunishment()
         }
 
     override suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment> =
@@ -109,14 +112,16 @@ class SimplePunishmentManager(
                     JoinType.LEFT,
                     onColumn = PunishmentTable.target,
                     otherColumn = UserAddressTable.user)
-                .select(query)
+                .selectAll()
+                .where(query)
                 .map { it.toPunishment() }
         }
 
     override suspend fun findAllByUser(snowflake: Snowflake): List<Punishment> =
         provider.newSuspendTransaction {
             (PunishmentTable leftJoin UserTable)
-                .select { UserTable.id eq snowflake }
+                .selectAll()
+                .where { UserTable.id eq snowflake }
                 .map { it.toPunishment() }
         }
 
@@ -155,8 +160,8 @@ class SimplePunishmentManager(
         provider
             .newSuspendTransaction {
                 val data =
-                    PunishmentTable.slice(PunishmentTable.pardonTimestamp)
-                        .select { PunishmentTable.id eq punishment }
+                    PunishmentTable.select(PunishmentTable.pardonTimestamp)
+                        .where { PunishmentTable.id eq punishment }
                         .firstOrNull()
                         ?: return@newSuspendTransaction PardonResult.NOT_FOUND
 

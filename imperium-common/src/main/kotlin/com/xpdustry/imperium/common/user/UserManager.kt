@@ -42,7 +42,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsert
 
@@ -93,7 +93,8 @@ class SimpleUserManager(
         userCreateMutex.withLock {
             provider.newSuspendTransaction {
                 val user =
-                    UserTable.select { UserTable.uuid eq identity.uuid.toLongMuuid() }
+                    UserTable.selectAll()
+                        .where { UserTable.uuid eq identity.uuid.toLongMuuid() }
                         .firstOrNull()
                         ?.toUser()
                 if (user != null) {
@@ -130,26 +131,33 @@ class SimpleUserManager(
 
     override suspend fun findBySnowflake(snowflake: Long): User? =
         provider.newSuspendTransaction {
-            UserTable.select { UserTable.id eq snowflake }.firstOrNull()?.toUser()
+            UserTable.selectAll().where { UserTable.id eq snowflake }.firstOrNull()?.toUser()
         }
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? =
         provider.newSuspendTransaction {
-            UserTable.select { UserTable.uuid eq uuid.toLongMuuid() }.firstOrNull()?.toUser()
+            UserTable.selectAll()
+                .where { UserTable.uuid eq uuid.toLongMuuid() }
+                .firstOrNull()
+                ?.toUser()
         }
 
     override suspend fun findByLastAddress(address: InetAddress): List<User> =
         provider.newSuspendTransaction {
-            UserTable.select { UserTable.lastAddress eq address.address }.map { it.toUser() }
+            UserTable.selectAll()
+                .where { UserTable.lastAddress eq address.address }
+                .map { it.toUser() }
         }
 
     override suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses =
         provider.newSuspendTransaction {
             val names =
-                UserNameTable.select { UserNameTable.user eq snowflake }
+                UserNameTable.selectAll()
+                    .where { UserNameTable.user eq snowflake }
                     .mapTo(mutableSetOf()) { it[UserNameTable.name] }
             val addresses =
-                UserAddressTable.select { UserAddressTable.user eq snowflake }
+                UserAddressTable.selectAll()
+                    .where { UserAddressTable.user eq snowflake }
                     .mapTo(mutableSetOf()) {
                         InetAddress.getByAddress(it[UserAddressTable.address])
                     }
@@ -159,7 +167,8 @@ class SimpleUserManager(
     override suspend fun searchUserByName(query: String): List<User> =
         provider.newSuspendTransaction {
             (UserTable leftJoin UserNameTable)
-                .select { UserNameTable.name like "%${query}%" }
+                .selectAll()
+                .where { UserNameTable.name like "%${query}%" }
                 .groupBy(UserTable.id)
                 .map { it.toUser() }
         }
@@ -196,8 +205,8 @@ class SimpleUserManager(
         settingsCache.getSuspending(uuid) {
             provider.newSuspendTransaction {
                 (UserSettingTable leftJoin UserTable)
-                    .slice(UserSettingTable.setting, UserSettingTable.value)
-                    .select { UserTable.uuid eq uuid.toLongMuuid() }
+                    .select(UserSettingTable.setting, UserSettingTable.value)
+                    .where { UserTable.uuid eq uuid.toLongMuuid() }
                     .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
             }
         }

@@ -57,6 +57,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsert
 
@@ -161,24 +162,34 @@ class SimpleAccountManager(
 
     override suspend fun findByUsername(username: String): Account? =
         provider.newSuspendTransaction {
-            AccountTable.select { AccountTable.username eq username }.firstOrNull()?.toAccount()
+            AccountTable.selectAll()
+                .where { AccountTable.username eq username }
+                .firstOrNull()
+                ?.toAccount()
         }
 
     override suspend fun findBySnowflake(snowflake: Snowflake): Account? =
         provider.newSuspendTransaction {
-            AccountTable.select { AccountTable.id eq snowflake }.firstOrNull()?.toAccount()
+            AccountTable.selectAll()
+                .where { AccountTable.id eq snowflake }
+                .firstOrNull()
+                ?.toAccount()
         }
 
     override suspend fun findByDiscord(discord: Long): Account? =
         provider.newSuspendTransaction {
-            AccountTable.select { AccountTable.discord eq discord }.firstOrNull()?.toAccount()
+            AccountTable.selectAll()
+                .where { AccountTable.discord eq discord }
+                .firstOrNull()
+                ?.toAccount()
         }
 
     override suspend fun findByIdentity(identity: Identity.Mindustry): Account? =
         provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
             (AccountTable leftJoin AccountSessionTable)
-                .select {
+                .selectAll()
+                .where {
                     (AccountSessionTable.hash eq sessionHash) and
                         (AccountSessionTable.expiration greater Instant.now())
                 }
@@ -313,8 +324,8 @@ class SimpleAccountManager(
             val sessionHash = createSessionHash(identity)
             val account =
                 (AccountTable leftJoin AccountSessionTable)
-                    .slice(AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
-                    .select { AccountSessionTable.hash eq sessionHash }
+                    .select(AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
+                    .where { AccountSessionTable.hash eq sessionHash }
                     .firstOrNull()
                     ?: return@newSuspendTransaction AccountResult.NotFound
 
@@ -348,9 +359,9 @@ class SimpleAccountManager(
     ): AccountResult =
         provider.newSuspendTransaction {
             val result =
-                AccountTable.slice(
+                AccountTable.select(
                         AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
-                    .select { AccountTable.username eq username }
+                    .where { AccountTable.username eq username }
                     .firstOrNull()
                     ?: return@newSuspendTransaction AccountResult.NotFound
 
@@ -401,8 +412,8 @@ class SimpleAccountManager(
         provider.newSuspendTransaction {
             val sessionHash = createSessionHash(identity)
             val session =
-                AccountSessionTable.slice(AccountSessionTable.account)
-                    .select { AccountSessionTable.hash eq sessionHash }
+                AccountSessionTable.select(AccountSessionTable.account)
+                    .where { AccountSessionTable.hash eq sessionHash }
                     .firstOrNull()
                     ?: return@newSuspendTransaction AccountResult.NotFound
 
@@ -426,9 +437,9 @@ class SimpleAccountManager(
         val (result, completed) =
             provider.newSuspendTransaction {
                 val progression =
-                    AccountAchievementTable.slice(
+                    AccountAchievementTable.select(
                             AccountAchievementTable.progress, AccountAchievementTable.completed)
-                        .select {
+                        .where {
                             (AccountAchievementTable.account eq account) and
                                 (AccountAchievementTable.achievement eq achievement)
                         }
@@ -462,11 +473,11 @@ class SimpleAccountManager(
         snowflake: Snowflake
     ): Map<Account.Achievement, Account.Achievement.Progression> =
         provider.newSuspendTransaction {
-            AccountAchievementTable.slice(
+            AccountAchievementTable.select(
                     AccountAchievementTable.achievement,
                     AccountAchievementTable.progress,
                     AccountAchievementTable.completed)
-                .select { AccountAchievementTable.account eq snowflake }
+                .where { AccountAchievementTable.account eq snowflake }
                 .associate {
                     it[AccountAchievementTable.achievement] to it.toAchievementProgression()
                 }
@@ -488,8 +499,8 @@ class SimpleAccountManager(
         val changed =
             provider.newSuspendTransaction {
                 val current =
-                    AccountTable.slice(AccountTable.rank)
-                        .select { AccountTable.id eq snowflake }
+                    AccountTable.select(AccountTable.rank)
+                        .where { AccountTable.id eq snowflake }
                         .firstOrNull()
                         ?.get(AccountTable.rank)
                 if (current == rank) {
