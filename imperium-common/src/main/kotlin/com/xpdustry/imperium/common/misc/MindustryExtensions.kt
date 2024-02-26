@@ -32,6 +32,8 @@ val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
 
 val MINDUSTRY_ORANGE_COLOR = Color(0xffa108)
 
+val MINDUSTRY_BLUE_COLOR = Color(0x0000ff)
+
 private val NAMED_COLORS =
     setOf(
         "CLEAR",

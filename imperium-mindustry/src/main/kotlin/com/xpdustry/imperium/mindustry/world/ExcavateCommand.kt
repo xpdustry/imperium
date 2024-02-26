@@ -150,7 +150,7 @@ class ExcavateCommand(instances: InstanceManager) :
         }
 
         if (price == 0) {
-            sender.sendWarning("[scarlet]The area you selected does no contain any static block.")
+            sender.sendWarning("[scarlet]The area you selected does no contain any walls.")
             return
         }
 
@@ -159,7 +159,7 @@ class ExcavateCommand(instances: InstanceManager) :
             Vars.state.rules.defaultTeam.items().remove(item, price)
         } else {
             sender.sendMessage(
-                "[scarlet]You are not rich enough to do that. [orange]${price - items.get(item)}[] more ${item.name} is needed.")
+                "[scarlet]You do not have enough ${item.name} to do that. [orange]${price - items.get(item)}[] more ${item.name} is needed; You have ${item.get(item)} ${item.name}.")
             return
         }
 
@@ -183,7 +183,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {
         val area = session.objective.area
-        return "Type [accent]/excavate y[] to remove the static blocks in the area between (${area.x1}, ${area.y1}) and (${area.x2}, ${area.y2})."
+        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2})."
     }
 
     override fun getRequiredVotes(players: Int): Int =
