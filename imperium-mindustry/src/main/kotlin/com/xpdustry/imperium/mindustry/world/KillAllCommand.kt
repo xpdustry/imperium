@@ -58,7 +58,7 @@ class KillAllCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["killall|ku", "c"]. Rank.MODERATOR)
+    @Command(["killall|ku", "c"], Rank.MODERATOR)
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsCancelCommand(sender: CommandSender) {
