@@ -24,14 +24,18 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
+import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import kotlin.time.Duration.Companion.seconds
+import mindustry.Vars
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Call
@@ -40,8 +44,11 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val messenger = instances.get<Messenger>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
+    private val freezes = instances.get<FreezeManager>()
+    private val freezeMessageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
 
     override fun onImperiumInit() {
+        // TODO Properly notify the target when it gets punished by a non-ban punishment
         messenger.consumer<PunishmentMessage> { message ->
             val punishment = punishments.findBySnowflake(message.snowflake) ?: return@consumer
             if (punishment.type != Punishment.Type.BAN) {
@@ -76,6 +83,23 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         "[scarlet]Player ${player.name.stripMindustryColors()} has been banned for ${punishment.reason}.")
                 }
             }
+        }
+
+        Vars.netServer.admins.addActionFilter { action ->
+            val freeze = freezes.getFreeze(action.player) ?: return@addActionFilter true
+
+            if (freezeMessageCooldowns.incrementAndCheck(action.player.uuid())) {
+                action.player.sendMessage(
+                    buildString {
+                        appendLine("[scarlet]You are currently frozen! You can't do any action.")
+                        appendLine("Reason: [orange]\"${freeze.reason}\"")
+                        if (freeze.punishment != null) {
+                            appendLine("[lightgray]ID: ${freeze.punishment}")
+                        }
+                    })
+            }
+
+            return@addActionFilter false
         }
     }
 

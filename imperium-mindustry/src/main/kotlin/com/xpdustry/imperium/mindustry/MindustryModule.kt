@@ -36,7 +36,9 @@ import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
+import com.xpdustry.imperium.mindustry.security.FreezeManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
+import com.xpdustry.imperium.mindustry.security.SimpleFreezeManager
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import java.nio.file.Path
@@ -71,4 +73,6 @@ fun MindustryModule(plugin: ImperiumPlugin) =
         single<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().descriptor.version) }
 
         single<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
+
+        single<FreezeManager> { SimpleFreezeManager(get(), get(), get(), get()) }
     }

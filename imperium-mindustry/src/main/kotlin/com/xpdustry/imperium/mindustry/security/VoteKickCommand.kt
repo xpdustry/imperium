@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -72,6 +73,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val votekickInterface = createVotekickInterface()
     private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
+    private val freezes = instances.get<FreezeManager>()
     private val recentBans =
         Collections.newSetFromMap(
             buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
@@ -144,6 +146,7 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
+        runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
         val yes = mutableSetOf<MindustryUUIDAsLong>()
         val nay = mutableSetOf<MindustryUUIDAsLong>()
         for ((voter, vote) in session.voters) {
@@ -156,6 +159,10 @@ class VoteKickCommand(instances: InstanceManager) :
             Punishment.Type.BAN,
             NetServer.kickDuration.seconds,
             Punishment.Metadata.Votekick(session.initiator!!.uuid().toLongMuuid(), yes, nay))
+    }
+
+    override suspend fun onVoteSessionFailure(session: VoteManager.Session<Context>) {
+        runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {
@@ -173,7 +180,9 @@ class VoteKickCommand(instances: InstanceManager) :
                 "[scarlet]You are limited to one votekick per minute. Please try again later.")
             return false
         }
-        return super.canParticipantStart(player, objective)
+        freezes.setTemporaryFreeze(
+            objective.target, FreezeManager.Freeze("You are currently being votekicked."))
+        return true
     }
 
     override fun canParticipantVote(

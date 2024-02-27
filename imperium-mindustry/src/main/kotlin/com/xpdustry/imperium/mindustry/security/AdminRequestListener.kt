@@ -22,7 +22,6 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -61,31 +60,43 @@ import mindustry.net.Packets.AdminAction
 private val PUNISHMENT_DURATION = stateKey<Duration>("punishment_duration")
 private val PUNISHMENT_REASON = stateKey<String>("punishment_reason")
 private val PUNISHMENT_TARGET = stateKey<Identity.Mindustry>("punishment_target")
+private val PUNISHMENT_TYPE = stateKey<Punishment.Type>("punishment_type")
 
 class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val accounts = instances.get<AccountManager>()
-    private val config = instances.get<ServerConfig.Mindustry>()
-    private lateinit var banInterface: Interface
+    private lateinit var adminActionInterface: Interface
 
     override fun onImperiumInit() {
         val banConfirmationInterface = MenuInterface.create(plugin)
         banConfirmationInterface.addTransformer { view, pane ->
-            val type = if (view.state[PUNISHMENT_DURATION] == null) "permanently" else "temporarily"
+            pane.title = "Admin Action (4/4)"
+            val duration =
+                if (view.state[PUNISHMENT_DURATION] == null) "permanently" else "temporarily"
             pane.content =
-                "Are you sure you want to [scarlet]$type[] ban [accent]${view.state[PUNISHMENT_TARGET]!!.name}[] for [accent]${view.state[PUNISHMENT_REASON]!!}[] ?"
+                "Are you sure you want to [scarlet]$duration[] ${view.state[PUNISHMENT_TYPE].toString().lowercase()} [accent]${view.state[PUNISHMENT_TARGET]!!.name}[] for [accent]${view.state[PUNISHMENT_REASON]!!}[] ?"
             pane.options.addRow(
                 MenuOption("[green]Yes") { _ ->
                     view.closeAll()
                     ImperiumScope.MAIN.launch {
+                        val target = users.getByIdentity(view.state[PUNISHMENT_TARGET]!!)
                         punishments.punish(
                             view.viewer.identity,
-                            users.getByIdentity(view.state[PUNISHMENT_TARGET]!!).snowflake,
+                            target.snowflake,
                             view.state[PUNISHMENT_REASON]!!,
-                            Punishment.Type.BAN,
+                            view.state[PUNISHMENT_TYPE]!!,
                             view.state[PUNISHMENT_DURATION]!!,
+                        )
+                        // TODO Move to PunishmentListener ?
+                        logger.info(
+                            "{} ({}) has {} {} ({})",
+                            view.viewer.plainName(),
+                            view.viewer.uuid(),
+                            view.state[PUNISHMENT_TYPE]!!.name.lowercase(),
+                            target.lastName,
+                            target.uuid,
                         )
                     }
                 },
@@ -95,9 +106,10 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         }
 
         val detailsInterface = TextInputInterface.create(plugin)
-        detailsInterface.addTransformer { _, pane ->
-            pane.title = "Ban (2/3)"
-            pane.description = "Enter the reason of your ban."
+        detailsInterface.addTransformer { v, pane ->
+            pane.title = "Admin Action (3/4)"
+            pane.description =
+                "Enter the reason of the ${v.state[PUNISHMENT_TYPE].toString().lowercase()}"
             pane.inputAction = BiAction { view, input ->
                 view.close()
                 view.state[PUNISHMENT_REASON] = input
@@ -105,12 +117,12 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             }
         }
 
-        banInterface =
+        val durationInterface =
             MenuInterface.create(plugin).apply {
                 addTransformer { view, pane ->
-                    pane.title = "Ban (1/3)"
+                    pane.title = "Ban (2/4)"
                     pane.content =
-                        "Select duration of the ban of ${view.state[PUNISHMENT_TARGET]!!.name}"
+                        "Select duration of the ${view.state[PUNISHMENT_TYPE].toString().lowercase()} of ${view.state[PUNISHMENT_TARGET]!!.name}"
 
                     // TODO Goofy aah function, use proper library to display durations
                     fun addDuration(display: String, duration: Duration) =
@@ -131,6 +143,25 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     addDuration("[green]1 week", 7.days)
                     addDuration("[green]1 month", 30.days)
                     addDuration("[red]Permanent", Duration.INFINITE)
+                    pane.options.addRow(MenuOption("[red]Cancel", View::back))
+                }
+            }
+
+        adminActionInterface =
+            MenuInterface.create(plugin).apply {
+                addTransformer { _, pane ->
+                    pane.title = "Admin Action (1/4)"
+                    pane.content = "What kind of action you want to take ?"
+
+                    Punishment.Type.entries.forEach { type ->
+                        pane.options.addRow(
+                            MenuOption(type.name.lowercase()) { view ->
+                                view.close()
+                                view.state[PUNISHMENT_TYPE] = type
+                                durationInterface.open(view)
+                            })
+                    }
+
                     pane.options.addRow(MenuOption("[red]Cancel", View::back))
                 }
             }
@@ -179,7 +210,9 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             AdminAction.wave -> handleWaveSkip(con.player)
             AdminAction.trace -> handleTraceInfo(con.player, packet.other)
             AdminAction.ban ->
-                banInterface.open(con.player) { it[PUNISHMENT_TARGET] = packet.other.identity }
+                adminActionInterface.open(con.player) {
+                    it[PUNISHMENT_TARGET] = packet.other.identity
+                }
             AdminAction.kick -> {
                 packet.other.kick(Packets.KickReason.kick, 0L)
                 logger.info(

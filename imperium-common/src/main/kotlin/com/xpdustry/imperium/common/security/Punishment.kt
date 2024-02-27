@@ -48,7 +48,8 @@ data class Punishment(
 
     enum class Type {
         MUTE,
-        BAN
+        BAN,
+        FREEZE
     }
 
     @Serializable
