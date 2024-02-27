@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.content.MindustryGamemode
@@ -37,25 +38,32 @@ class KillAllCommand(instances: InstanceManager) :
     AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds),
     ImperiumApplication.Listener {
 
-    @Command(["killall"])
+    @Command(["killall|ku"])
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsCommand(sender: CommandSender) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
-    @Command(["killall", "y"])
+    @Command(["killall|ku", "y"])
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
-    @Command(["killall", "n"])
+    @Command(["killall|ku", "n"])
     @ClientSide
     @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
+    }
+
+    @Command(["killall|ku", "c"], Rank.MODERATOR)
+    @ClientSide
+    @Scope(MindustryGamemode.SANDBOX)
+    private fun onKillUnitsCancelCommand(sender: CommandSender) {
+        onPlayerCancel(sender.player, manager.session)
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Unit>): String =

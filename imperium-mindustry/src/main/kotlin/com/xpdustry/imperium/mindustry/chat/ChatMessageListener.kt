@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ORANGE_COLOR
 import com.xpdustry.imperium.common.misc.containsLink
@@ -168,7 +169,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         ?.toString()
                         ?.let { "#$it" }
                         ?: MINDUSTRY_ORANGE_COLOR.toHexString()
-                is Identity.Discord -> MINDUSTRY_ORANGE_COLOR.toHexString()
+                is Identity.Discord -> BLURPLE.toHexString()
                 else -> config.color.toHexString()
             }
         }
