@@ -159,7 +159,11 @@ class ExcavateCommand(instances: InstanceManager) :
             Vars.state.rules.defaultTeam.items().remove(item, price)
         } else {
             sender.sendMessage(
-                "[scarlet]You do not have enough ${item.name} to do that. [orange]${price - items.get(item)}[] more ${item.name} is needed; You have ${items.get(item)} ${item.name}.")
+                """
+                [scarlet]You do not have enough ${item.name} to do that.
+                You currently have [orange]${items.get(item)}[] ${item.name} but [orange]${price - items.get(item)}[] more is needed.
+                """
+                    .trimIndent())
             return
         }
 
