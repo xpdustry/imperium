@@ -48,6 +48,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val freezeMessageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
 
     override fun onImperiumInit() {
+        // TODO Properly notify the target when it gets punished by a non-ban punishment
         messenger.consumer<PunishmentMessage> { message ->
             val punishment = punishments.findBySnowflake(message.snowflake) ?: return@consumer
             if (punishment.type != Punishment.Type.BAN) {
@@ -93,7 +94,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         appendLine("[scarlet]You are currently frozen! You can't do any action.")
                         appendLine("Reason: [orange]\"${freeze.reason}\"")
                         if (freeze.punishment != null) {
-                            appendLine("ID: ${freeze.punishment}")
+                            appendLine("[lightgray]ID: ${freeze.punishment}")
                         }
                     })
             }

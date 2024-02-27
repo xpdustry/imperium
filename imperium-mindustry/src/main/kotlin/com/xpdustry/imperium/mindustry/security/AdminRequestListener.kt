@@ -81,12 +81,22 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 MenuOption("[green]Yes") { _ ->
                     view.closeAll()
                     ImperiumScope.MAIN.launch {
+                        val target = users.getByIdentity(view.state[PUNISHMENT_TARGET]!!)
                         punishments.punish(
                             view.viewer.identity,
-                            users.getByIdentity(view.state[PUNISHMENT_TARGET]!!).snowflake,
+                            target.snowflake,
                             view.state[PUNISHMENT_REASON]!!,
                             view.state[PUNISHMENT_TYPE]!!,
                             view.state[PUNISHMENT_DURATION]!!,
+                        )
+                        // TODO Move to PunishmentListener ?
+                        logger.info(
+                            "{} ({}) has {} {} ({})",
+                            view.viewer.plainName(),
+                            view.viewer.uuid(),
+                            view.state[PUNISHMENT_TYPE]!!.name.lowercase(),
+                            target.lastName,
+                            target.uuid,
                         )
                     }
                 },
