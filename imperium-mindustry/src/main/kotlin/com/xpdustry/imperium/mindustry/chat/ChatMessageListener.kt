@@ -44,7 +44,6 @@ import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
@@ -102,7 +101,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 }
             if (muted != null) {
                 if (ctx.target == ctx.sender) {
-                    ctx.sender.showInfoMessage(
+                    ctx.sender.sendMessage(
                         """
                         [scarlet]You can't talk. You are currently muted for '${muted.reason}'.
                         [orange]You can appeal this decision with the punishment id [cyan]${muted.snowflake}[].
