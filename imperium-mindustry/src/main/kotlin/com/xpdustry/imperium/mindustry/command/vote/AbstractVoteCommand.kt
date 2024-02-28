@@ -81,6 +81,14 @@ abstract class AbstractVoteCommand<O>(
         }
     }
 
+    protected open fun onPlayerForceSuccess(player: Player, session: VoteManager.Session<O>?) {
+        if (session == null) {
+            player.sendMessage("[scarlet]There is no vote for [orange]'$name'[] in progress!")
+        } else {
+            session.success()
+        }
+    }
+
     protected abstract suspend fun onVoteSessionSuccess(session: VoteManager.Session<O>)
 
     protected open suspend fun onVoteSessionFailure(session: VoteManager.Session<O>) = Unit

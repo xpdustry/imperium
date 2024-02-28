@@ -185,6 +185,13 @@ class ExcavateCommand(instances: InstanceManager) :
         onPlayerCancel(sender.player, manager.session)
     }
 
+    @Command(["excavate|e", "force|f"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
+    @ClientSide
+    private fun onRtvForceCommand(sender: CommandSender) {
+        onPlayerForceSuccess(sender.player, manager.session)
+    }
+
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {
         val area = session.objective.area
         return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2})."
