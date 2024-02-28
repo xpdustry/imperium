@@ -32,6 +32,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import fr.xpdustry.distributor.api.command.sender.CommandSender
 import kotlin.time.Duration.Companion.seconds
+import mindustry.game.Team
 import mindustry.gen.Call
 
 class KillAllCommand(instances: InstanceManager) :
@@ -64,6 +65,19 @@ class KillAllCommand(instances: InstanceManager) :
     @Scope(MindustryGamemode.SANDBOX)
     private fun onKillUnitsCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
+    }
+
+    @Command(["killall|ku", "team|t"], Rank.MODERATOR)
+    @ClientSide
+    private fun onKillUnitsTeamCommand(sender: CommandSender, team: Team) {
+        var count = 0
+        for (unit in Entities.getUnits().toList()) {
+            if (!unit.isPlayer && team == unit.team()) {
+                count++
+                Call.unitDespawn(unit)
+            }
+        }
+        sender.sendMessage("Killed $count unit(s) from team ${team.coloredName()}")
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Unit>): String =

@@ -222,6 +222,8 @@ private fun createArcCommandManager(plugin: MindustryPlugin) =
         )
         .apply {
             setSetting(CommandManager.ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
+            setSetting(CommandManager.ManagerSettings.ENFORCE_INTERMEDIARY_PERMISSIONS, false)
+
             parserRegistry().registerAnnotationMapper<Greedy, String>(Greedy::class.java) { _, _ ->
                 ParserParameters.single(StandardParameters.GREEDY, true)
             }
