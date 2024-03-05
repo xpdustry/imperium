@@ -97,6 +97,12 @@ class WaveCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
+    @Command(["ws", "c|cancel"])
+    @ClientSide
+    private fun onWaveSkipCancelCommand(sender: CommandSender) {
+        onPlayerCancel(sender.player, manager.session)
+    }
+    
     override fun getVoteSessionDetails(session: VoteManager.Session<Int>): String =
         "Type [accent]/ws y[] to vote to skip [accent]${session.objective}[] wave(s)."
 
