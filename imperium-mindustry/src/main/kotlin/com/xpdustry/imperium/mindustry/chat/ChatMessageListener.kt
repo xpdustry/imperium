@@ -42,6 +42,7 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
@@ -74,6 +75,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     private val punishments = instances.get<PunishmentManager>()
     private val config = instances.get<ServerConfig.Mindustry>()
     private val messenger = instances.get<Messenger>()
+    // Why tf this goofy ahh client breaks the chat when the sender is specified >:(
+    private val fooClients = PlayerMap<Boolean>(instances.get())
 
     override fun onImperiumInit() {
         // Intercept chat messages, so they go through the async processing pipeline
@@ -81,6 +84,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             if (con.player == null || packet.message == null) return@handleServer
             interceptChatMessage(con.player, packet.message)
         }
+
+        Vars.netServer.addPacketHandler("fooCheck") { player, _ -> fooClients[player] = true }
 
         // I don't know why but Foo client appends invisible characters to the end of messages,
         // this is very annoying for the discord bridge.
@@ -221,7 +226,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
                 target.sendMessage(
                     "[#${sender.player.team().color}]${getChatPrefix("T")} ${getChatFormat(sender.player.identity, filtered2)}",
-                    sender.player,
+                    sender.player.takeUnless { target.isFooClient() },
                     filtered2,
                 )
             }
@@ -250,7 +255,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             if (filtered2.isBlank()) continue
             val formatted =
                 "[gray]${getChatPrefix("W")}[] ${getChatFormat(sender.player.identity, filtered2)}"
-            receiver.sendMessage(formatted, sender.player, filtered2)
+            receiver.sendMessage(
+                formatted, sender.player.takeUnless { receiver.isFooClient() }, filtered2)
         }
     }
 
@@ -342,7 +348,10 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val filtered2 =
                     chatMessagePipeline.pump(ChatMessageContext(sender, target, filtered1))
                 if (filtered2.isBlank()) return@launch
-                target?.sendMessage(getChatFormat(sender.identity, filtered2), sender, filtered2)
+                target?.sendMessage(
+                    getChatFormat(sender.identity, filtered2),
+                    sender.takeUnless { target.isFooClient() },
+                    filtered2)
                 if (target == null) {
                     ROOT_LOGGER.info(
                         "&fi{}: {}",
@@ -357,6 +366,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             }
         }
     }
+
+    private fun Player.isFooClient() = fooClients[this] == true
 
     companion object {
         private val LOGGER by LoggerDelegate()
