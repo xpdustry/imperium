@@ -34,7 +34,7 @@ sealed class InteractionSender<T> where T : IReplyCallback {
     val member: Member
         get() = interaction.member!!
 
-    protected abstract val interaction: T
+    abstract val interaction: T
 
     suspend fun respond(block: suspend MessageCreateBuilder.() -> Unit): Message =
         interaction.hook.sendMessage(MessageCreateBuilder().apply { block() }.build()).await()

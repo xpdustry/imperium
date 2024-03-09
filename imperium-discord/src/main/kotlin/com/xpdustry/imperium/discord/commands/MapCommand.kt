@@ -52,7 +52,7 @@ import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.utils.FileUpload
 
-class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
     private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
@@ -259,7 +259,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["map", "list"])
     @NonEphemeral
-    private suspend fun onMapList(
+    suspend fun onMapList(
         actor: InteractionSender.Slash,
         @Min(1) page: Int = 1,
         query: String? = null,
@@ -296,7 +296,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Command(["map", "info"])
     @NonEphemeral
-    private suspend fun onMapInfo(actor: InteractionSender.Slash, id: Snowflake) {
+    suspend fun onMapInfo(actor: InteractionSender.Slash, id: Snowflake) {
         val map = maps.findMapBySnowflake(id)
         if (map == null) {
             actor.respond("Unknown map id")
@@ -346,7 +346,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     // TODO Add a way to navigate the games
     @Command(["map", "game", "info"])
     @NonEphemeral
-    private suspend fun onMapGameInfo(actor: InteractionSender.Slash, id: Snowflake) {
+    suspend fun onMapGameInfo(actor: InteractionSender.Slash, id: Snowflake) {
         val game = maps.findMapGameBySnowflake(id)
         if (game == null) {
             actor.respond("Unknown game id")
@@ -381,7 +381,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     @ButtonCommand(MAP_DOWNLOAD_BUTTON)
-    private suspend fun onMapDownload(actor: InteractionSender.Button) {
+    suspend fun onMapDownload(actor: InteractionSender.Button) {
         val snowflake = actor.message.embeds.first().getFieldValue("Identifier")?.toLong()
         val stream = snowflake?.let { maps.getMapInputStream(it) }
         if (stream === null) {
@@ -395,7 +395,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command(["map", "gamemode", "add"], Rank.MODERATOR)
-    private suspend fun onMapGamemodeAdd(
+    suspend fun onMapGamemodeAdd(
         actor: InteractionSender.Slash,
         id: Snowflake,
         gamemode: MindustryGamemode
@@ -415,7 +415,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command(["map", "gamemode", "remove"], Rank.MODERATOR)
-    private suspend fun onMapGamemodeRemove(
+    suspend fun onMapGamemodeRemove(
         actor: InteractionSender.Slash,
         id: Snowflake,
         gamemode: MindustryGamemode
@@ -434,7 +434,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Command(["map", "delete"], Rank.ADMIN)
-    private suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
+    suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
         if (maps.deleteMapBySnowflake(id)) {
             actor.respond("Map deleted!")
         } else {

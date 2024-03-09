@@ -38,6 +38,8 @@ prettytime = "5.0.7.Final"
 time4j = "4.38"
 nohorny = "2.1.0"
 jda = "5.0.0-beta.20"
+cloud-common = "2.0.0-beta.3"
+cloud-discord = "1.0.0-beta.2"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -90,6 +92,10 @@ prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "pret
 time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
 nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
+cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-common" }
+cloud-kotlin-annotations = { module = "org.incendo:cloud-kotlin-coroutines-annotations", version.ref = "cloud-common" }
+cloud-kotlin-coroutines = { module = "org.incendo:cloud-kotlin-coroutines", version.ref = "cloud-common" }
+cloud-jda5 = { module = "org.incendo:cloud-jda5", version.ref = "cloud-discord" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
