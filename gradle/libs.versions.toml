@@ -40,6 +40,7 @@ time4j = "4.38"
 nohorny = "2.2.0"
 jda = "5.0.0-beta.20"
 cloud-core = "2.0.0-beta.4"
+cloud-discord = "1.0.0-beta.2"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -100,6 +101,7 @@ cloud-annotations = { module = "org.incendo:cloud-annotations", version.ref = "c
 cloud-kotlin-coroutines-annotations = { module = "org.incendo:cloud-kotlin-coroutines-annotations", version.ref = "cloud-core" }
 cloud-kotlin-coroutines = { module = "org.incendo:cloud-kotlin-coroutines", version.ref = "cloud-core" }
 cloud-kotlin-extensions = { module = "org.incendo:cloud-kotlin-extensions", version.ref = "cloud-core" }
+cloud-jda5 = { module = "org.incendo:cloud-jda5", version.ref = "cloud-core" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
