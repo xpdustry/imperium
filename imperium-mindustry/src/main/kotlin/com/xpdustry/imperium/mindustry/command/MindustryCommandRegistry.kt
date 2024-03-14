@@ -115,7 +115,7 @@ class MindustryCommandRegistry(
         for (rest in annotation.path.drop(1)) {
             names = rest.toNameWithAliases()
             base += names.first
-            builder = builder.literal(rest, createLiteralDescription(base), *names.second)
+            builder = builder.literal(names.first, createLiteralDescription(base), *names.second)
         }
         for (argument in function.parameters.drop(1)) {
             if (argument.type.classifier == CommandSender::class) continue
@@ -222,6 +222,8 @@ private fun createArcCommandManager(plugin: MindustryPlugin) =
         )
         .apply {
             setSetting(CommandManager.ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
+            setSetting(CommandManager.ManagerSettings.ENFORCE_INTERMEDIARY_PERMISSIONS, false)
+
             parserRegistry().registerAnnotationMapper<Greedy, String>(Greedy::class.java) { _, _ ->
                 ParserParameters.single(StandardParameters.GREEDY, true)
             }

@@ -97,6 +97,16 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
 
+    @Command(["freeze"], Rank.MODERATOR)
+    private suspend fun onFreezeCommand(
+        actor: InteractionSender.Slash,
+        player: Snowflake,
+        reason: String,
+        duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
+    ) {
+        onPunishCommand("Frozen", Punishment.Type.FREEZE, actor, player, reason, duration.value)
+    }
+
     @Command(["mute"], Rank.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender.Slash,

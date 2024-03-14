@@ -236,7 +236,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     }
                 })
             .setComponents()
-            .setAttachments()
+            .setAttachments(actor.message.attachments)
             .await()
 
         discord

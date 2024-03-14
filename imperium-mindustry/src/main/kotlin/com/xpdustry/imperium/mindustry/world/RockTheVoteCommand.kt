@@ -84,10 +84,16 @@ class RockTheVoteCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["rtv", "c"], Rank.MODERATOR)
+    @Command(["rtv", "cancel|c"], Rank.MODERATOR)
     @ClientSide
     private fun onRtvCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
+    }
+
+    @Command(["rtv", "force|f"], Rank.MODERATOR)
+    @ClientSide
+    private fun onRtvForceCommand(sender: CommandSender) {
+        onPlayerForceSuccess(sender.player, manager.session)
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Map?>) {
