@@ -44,7 +44,6 @@ import mindustry.net.Administration.PlayerInfo
 
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
-    // TODO Have a general click manager to avoid collisions with others
     private val taps = PlayerMap<Long>(instances.get())
     private val users = instances.get<UserManager>()
     private val config = instances.get<ServerConfig.Mindustry>()

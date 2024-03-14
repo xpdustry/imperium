@@ -36,7 +36,6 @@ data class ImperiumConfig(
     val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
     val server: ServerConfig = ServerConfig.None,
-    val imageAnalysis: ImageAnalysisConfig = ImageAnalysisConfig.None,
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),
@@ -199,17 +198,6 @@ sealed interface ServerConfig {
             val reports: Long,
         )
     }
-}
-
-sealed interface ImageAnalysisConfig {
-    data object None : ImageAnalysisConfig
-
-    data class SightEngine(
-        val sightEngineClient: String,
-        val sightEngineSecret: Secret,
-        val warningThreshold: Float = 0.4F,
-        val triggerThreshold: Float = 0.7F
-    ) : ImageAnalysisConfig
 }
 
 sealed interface WebhookConfig {

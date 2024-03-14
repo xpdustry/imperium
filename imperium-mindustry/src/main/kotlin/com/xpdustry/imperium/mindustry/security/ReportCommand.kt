@@ -47,8 +47,6 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
-// TODO
-//  - Implement tile reporting ?
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val reportInterface =

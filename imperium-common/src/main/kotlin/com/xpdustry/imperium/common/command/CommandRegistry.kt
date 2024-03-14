@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.command
 
-// TODO Add lock method to persist the commands
 interface CommandRegistry {
     fun parse(container: Any)
 }

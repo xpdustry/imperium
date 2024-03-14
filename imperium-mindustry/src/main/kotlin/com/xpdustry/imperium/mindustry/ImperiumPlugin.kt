@@ -141,7 +141,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 }
         }
 
-        // TODO This is not clean, find a better way
         runBlocking {
             application.instances
                 .get<WebhookMessageSender>()

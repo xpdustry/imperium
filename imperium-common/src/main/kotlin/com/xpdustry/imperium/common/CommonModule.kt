@@ -23,7 +23,6 @@ import com.xpdustry.imperium.common.account.SimpleAccountManager
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.DatabaseConfig
-import com.xpdustry.imperium.common.config.ImageAnalysisConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigFactory
 import com.xpdustry.imperium.common.config.MessengerConfig
@@ -34,10 +33,6 @@ import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
-import com.xpdustry.imperium.common.image.ImageAnalysis
-import com.xpdustry.imperium.common.image.LogicImageRenderer
-import com.xpdustry.imperium.common.image.SightEngineImageAnalysis
-import com.xpdustry.imperium.common.image.SimpleLogicImageRenderer
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
@@ -110,15 +105,6 @@ fun CommonModule() =
         single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
 
         single<UserManager> { SimpleUserManager(get(), get(), get()) }
-
-        single<ImageAnalysis> {
-            when (val config = get<ImperiumConfig>().imageAnalysis) {
-                is ImageAnalysisConfig.None -> ImageAnalysis.Noop
-                is ImageAnalysisConfig.SightEngine -> SightEngineImageAnalysis(config, get())
-            }
-        }
-
-        single<LogicImageRenderer> { SimpleLogicImageRenderer() }
 
         single<OkHttpClient> {
             OkHttpClient.Builder()

@@ -234,7 +234,6 @@ private fun createLoginInterface(
             view.close()
             view.state[PASSWORD] = value
             ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
-                // TODO Return account object on login ?
                 when (val result =
                     manager.login(
                         view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {

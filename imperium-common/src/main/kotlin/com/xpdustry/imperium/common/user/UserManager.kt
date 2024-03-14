@@ -33,6 +33,7 @@ import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
@@ -78,8 +79,10 @@ class SimpleUserManager(
 ) : UserManager, ImperiumApplication.Listener {
     private val userCreateMutex = Mutex()
     private val settingsCache =
-        buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>>(
-            expireAfterAccess = 5.minutes, maximumSize = 1000)
+        buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>> {
+            expireAfterAccess(5.minutes.toJavaDuration())
+            maximumSize(1000)
+        }
 
     override fun onImperiumInit() {
         provider.newTransaction {

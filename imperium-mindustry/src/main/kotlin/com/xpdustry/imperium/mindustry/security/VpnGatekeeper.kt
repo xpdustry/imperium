@@ -31,7 +31,6 @@ class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: A
         }
         val result = provider.isVpn(context.address)
         if (result is VpnDetection.Result.Success) {
-            // TODO Add proper command for ip unblocks, such as "/request unblock"
             return if (result.vpn)
                 GatekeeperResult.Failure(
                     """

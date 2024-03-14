@@ -38,7 +38,6 @@ class CachingProcessor<I : Any, O : Any, K : Any>(
         cache.getSuspending(extractor(context)) { delegate.process(context) }
 }
 
-// TODO Add invalidation handle
 fun <I : Any, O : Any, K : Any> ProcessorPipeline<I, O>.registerCaching(
     name: String,
     expiration: Duration,

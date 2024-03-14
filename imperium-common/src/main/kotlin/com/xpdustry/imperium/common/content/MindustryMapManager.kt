@@ -47,7 +47,6 @@ import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.update
 
-// TODO Implement Pagination ?
 interface MindustryMapManager {
 
     suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap?

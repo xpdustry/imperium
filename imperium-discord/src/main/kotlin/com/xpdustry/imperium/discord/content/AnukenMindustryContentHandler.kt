@@ -100,7 +100,6 @@ import mindustry.world.blocks.legacy.LegacyBlock
 
 // The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a
 // multithreaded environment.
-// TODO Add proper logging
 class AnukenMindustryContentHandler(directory: Path, private val config: ServerConfig.Discord) :
     MindustryContentHandler, ImperiumApplication.Listener {
     private var currentSchematicGraphics: Graphics2D? = null
