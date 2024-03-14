@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.inject.single
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
-import com.xpdustry.imperium.discord.command.CloudSlashCommandRegistry
+import com.xpdustry.imperium.discord.command.CloudCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -45,7 +45,7 @@ fun DiscordModule() =
 
         single<Path>("directory") { Path(".") }
 
-        single<CommandRegistry>("slash") { CloudSlashCommandRegistry(get()) }
+        single<CommandRegistry>("slash") { CloudCommandRegistry(get(), get()) }
 
         single<CommandRegistry>("button") { ButtonCommandRegistry(get()) }
 
