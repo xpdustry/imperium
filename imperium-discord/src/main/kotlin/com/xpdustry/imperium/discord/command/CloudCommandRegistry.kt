@@ -25,7 +25,9 @@ import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.command.validate
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.command.parser.UserParser
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
@@ -45,13 +47,14 @@ import org.incendo.cloud.discord.slash.CommandScope
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.key.CloudKey
 import org.incendo.cloud.kotlin.coroutines.annotations.installCoroutineSupport
+import org.incendo.cloud.kotlin.coroutines.asParserDescriptor
 import org.incendo.cloud.meta.CommandMeta
 import org.incendo.cloud.parser.ParserDescriptor
 import org.incendo.cloud.parser.ParserParameter
 import org.incendo.cloud.parser.ParserParameters
 import org.incendo.cloud.parser.standard.EnumParser
 
-class CloudSlashCommandRegistry(private val discord: DiscordService) :
+class CloudCommandRegistry(private val discord: DiscordService, private val users: UserManager) :
     CommandRegistry, ImperiumApplication.Listener {
 
     private val manager =
@@ -63,6 +66,10 @@ class CloudSlashCommandRegistry(private val discord: DiscordService) :
                     .registerParser(enumParser<PunishmentDuration>())
                     .registerParser(enumParser<Rank>())
                     .registerParser(enumParser<MindustryGamemode>())
+                    .registerParser(
+                        UserParser<InteractionSender.Slash>(users)
+                            .asParserDescriptor(
+                                ImperiumScope.MAIN, ImperiumScope.MAIN.coroutineContext))
 
                 registerCommandPostProcessor {
                     runBlocking {
