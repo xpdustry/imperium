@@ -205,8 +205,10 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getRequiredVotes(players: Int): Int =
-        if (players < 5) {
+        if (players < 4) {
             2
+        } else if (players < 5) {
+            3
         } else if (players < 21) {
             (players / 2F).roundToInt()
         } else {
@@ -214,6 +216,7 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
+        // TODO: Make this log like
         "Type [accent]/vote y[] to kick [accent]${session.objective.target.name.stripMindustryColors()}[] from the game for [accent]${session.objective.reason}[]."
 
     private fun getSession(team: Team): VoteManager.Session<Context>? =
