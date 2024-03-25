@@ -22,7 +22,9 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
+import fr.xpdustry.distributor.api.util.Players
 import java.time.Instant
+import java.util.Locale
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import mindustry.Vars
@@ -39,6 +41,9 @@ val Player.identity: Identity.Mindustry
 
 val Player.joinTime: Instant
     get() = Instant.ofEpochMilli(con.connectTime)
+
+val Player.javaLocale: Locale
+    get() = Players.getLocale(this)
 
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
 

@@ -41,6 +41,7 @@ import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
+import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
@@ -123,7 +124,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ResourceHudListener::class,
                 ImperiumLogicListener::class,
                 AntiEvadeListener::class,
-                GameListener::class)
+                GameListener::class,
+                TipListener::class)
             .forEach(application::register)
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
