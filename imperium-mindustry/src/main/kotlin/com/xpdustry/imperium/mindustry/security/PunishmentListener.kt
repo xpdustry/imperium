@@ -31,6 +31,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -46,6 +47,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val users = instances.get<UserManager>()
     private val freezes = instances.get<FreezeManager>()
     private val freezeMessageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
+    private val renderer = instances.get<TimeRenderer>()
 
     override fun onImperiumInit() {
         // TODO Properly notify the target when it gets punished by a non-ban punishment
@@ -80,7 +82,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         punishment.reason,
                     )
                     Call.sendMessage(
-                        "[scarlet]Player ${player.name.stripMindustryColors()} has been banned for ${punishment.reason}.")
+                        "[scarlet]Player [orange]${player.name.stripMindustryColors()}[] has been banned for [orange]${punishment.reason}[] for [orange]${renderer.renderDuration(punishment.duration)}[].")
                 }
             }
         }
