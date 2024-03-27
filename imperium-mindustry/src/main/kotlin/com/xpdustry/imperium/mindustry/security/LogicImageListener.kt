@@ -111,7 +111,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                             user.snowflake,
                             "Placing NSFW image",
                             Punishment.Type.BAN,
-                            3.days)
+                            Duration.INFINITE)
 
                     webhook.send(
                         WebhookMessage(
