@@ -36,7 +36,7 @@ import com.xpdustry.nohorny.analyzer.ImageAnalyzer
 import com.xpdustry.nohorny.analyzer.ImageAnalyzerEvent
 import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.image.BufferedImage
-import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
