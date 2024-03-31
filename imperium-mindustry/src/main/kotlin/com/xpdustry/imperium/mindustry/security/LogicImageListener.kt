@@ -36,7 +36,7 @@ import com.xpdustry.nohorny.analyzer.ImageAnalyzer
 import com.xpdustry.nohorny.analyzer.ImageAnalyzerEvent
 import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.image.BufferedImage
-import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -111,7 +111,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                             user.snowflake,
                             "Placing NSFW image",
                             Punishment.Type.BAN,
-                            Duration.INFINITE)
+                            30.days)
 
                     webhook.send(
                         WebhookMessage(
