@@ -163,6 +163,7 @@ class VoteKickCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionFailure(session: VoteManager.Session<Context>) {
         runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
+        session.objective.target.sendMessage("[sky]You are involved in a vote kick so you will be temporarily frozen. Being frozen prevents you from building or interacting. You will be un-frozen once the vote kick ends."
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {
@@ -216,8 +217,8 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
-        // TODO: Make this log like
-        "Type [accent]/vote y[] to kick [accent]${session.objective.target.name.stripMindustryColors()}[] from the game for [accent]${session.objective.reason}[]."
+        "[red]VK[]: Vote started to kick ${session.objective.target.name}[] out of the server. /vote y/n in order to vote. Reason: ${session.objective.reason}."
+        
 
     private fun getSession(team: Team): VoteManager.Session<Context>? =
         manager.sessions.values.firstOrNull { it.objective.team == team }
