@@ -47,7 +47,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val users = instances.get<UserManager>()
     private val freezes = instances.get<FreezeManager>()
     private val freezeMessageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
-    private val renderer = instances.get<TimeRenderer>()
 
     override fun onImperiumInit() {
         // TODO Properly notify the target when it gets punished by a non-ban punishment
@@ -68,9 +67,9 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                     Events.fire(PlayerBanEvent(player, player.uuid()))
                     player.kick(
                         """
-                        [scarlet]You have been banned for '${punishment.reason}'.
-                        [white]You can appeal your ban in our discord server at [cyan]https://discord.xpdustry.com[].
-                        [accent]Your punishment id is [white]${punishment.snowflake}[].
+                        You have been banned for [red]'${punishment.reason}'.
+                        You can [accent]appeal[] your ban in our discord server at [cyan]https://discord.xpdustry.com[].
+                        Your punishment id is [lightgrey]${punishment.snowflake}[].
                         """
                             .trimIndent(),
                         0,
@@ -82,7 +81,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         punishment.reason,
                     )
                     Call.sendMessage(
-                        "[scarlet]Player [orange]${player.name.stripMindustryColors()}[] has been banned for [orange]${punishment.reason}[] for [orange]${renderer.renderDuration(punishment.duration)}[].")
+                        "[scarlet]Player []${player.name.stripMindustryColors()}[scarlet] has been banned for ${punishment.reason} for [white]${renderer.renderDuration(punishment.duration)}.")
                 }
             }
         }
@@ -93,8 +92,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             if (freezeMessageCooldowns.incrementAndCheck(action.player.uuid())) {
                 action.player.sendMessage(
                     buildString {
-                        appendLine("[scarlet]You are currently frozen! You can't do any action.")
-                        appendLine("Reason: [orange]\"${freeze.reason}\"")
+                        appendLine("You are [cyan]Frozen[white]! You can't interact with anything until a moderator unfreezes you.")
+                        appendLine("Reason: \"${freeze.reason}\"")
                         if (freeze.punishment != null) {
                             appendLine("[lightgray]ID: ${freeze.punishment}")
                         }
