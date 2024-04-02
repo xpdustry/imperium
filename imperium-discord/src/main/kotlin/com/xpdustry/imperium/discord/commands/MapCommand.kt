@@ -232,7 +232,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     this@Embed.color = color.rgb
                     field("Reviewer", actor.member.asMention, false)
                     if (snowflake != null) {
-                        field("Identifier", "`$snowflake`", false)
+                        field("Identifier", "$snowflake", false)
                     }
                 })
             .setComponents()
@@ -285,7 +285,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         "No maps found"
                     } else {
                         buildString {
-                            append(result.joinToString("\n") { "- ${it.name} / `${it.snowflake}`" })
+                            append(result.joinToString("\n") { "- ${it.name} / ${it.snowflake}" })
                             if (hasMore) {
                                 append("\n\n...and more")
                             }
