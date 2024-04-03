@@ -163,7 +163,7 @@ class VoteKickCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionFailure(session: VoteManager.Session<Context>) {
         runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
-        session.objective.target.sendMessage("[sky]You are no longer involved in a vote kick, you have been unfrozen."
+        session.objective.target.sendMessage("[sky]You are no longer involved in a vote kick, you have been unfrozen.")
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {
