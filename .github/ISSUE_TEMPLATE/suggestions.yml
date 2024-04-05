@@ -1,4 +1,4 @@
-name: "Suggestion"
+name: Suggestion
   description: "Suggest a new feature or change an existing one"
   label: ["enhancement"]
 
