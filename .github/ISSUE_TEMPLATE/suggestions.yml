@@ -1,1 +1,10 @@
-placeholder
+name: Suggestion
+  description: Suggest a new feature or change an existing one
+  label: ["enhancement"]
+
+body:
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: What you are suggesting
+      placeholder: What you want to suggest, either a new mechanic, a change to an existing one, or something else.
