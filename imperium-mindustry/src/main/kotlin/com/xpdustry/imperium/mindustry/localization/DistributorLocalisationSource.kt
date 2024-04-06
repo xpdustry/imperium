@@ -15,14 +15,16 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command.annotation
+package com.xpdustry.imperium.mindustry.localization
 
-@Target(AnnotationTarget.VALUE_PARAMETER)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class Min(val value: Long)
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.localization.LocalizationSource
+import java.util.Locale
 
-@Target(AnnotationTarget.VALUE_PARAMETER)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class Max(val value: Long)
+class DistributorLocalisationSource(private val config: ImperiumConfig) : LocalizationSource {
+    override fun format(key: String, locale: Locale?, vararg arguments: Any): String =
+        DistributorProvider.get()
+            .globalLocalizationSource
+            .format(key, locale ?: config.language, *arguments)
+}

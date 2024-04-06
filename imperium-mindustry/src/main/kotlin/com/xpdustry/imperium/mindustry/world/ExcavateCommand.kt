@@ -19,18 +19,18 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.graphics.Color
 import arc.math.Mathf
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -113,8 +113,13 @@ class ExcavateCommand(instances: InstanceManager) :
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
     }
 
-    @Command(["excavate|e", "select|s"])
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(["excavate|e", "select|s"])
+    @ImperiumPermission(
+        gamemodes =
+            [
+                MindustryGamemode.SURVIVAL,
+                MindustryGamemode.ATTACK,
+                MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
     private fun onExcavateSelectCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
@@ -126,8 +131,13 @@ class ExcavateCommand(instances: InstanceManager) :
         }
     }
 
-    @Command(["excavate|e", "y"])
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(["excavate|e", "y"])
+    @ImperiumPermission(
+        gamemodes =
+            [
+                MindustryGamemode.SURVIVAL,
+                MindustryGamemode.ATTACK,
+                MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
     private fun onExcavateYesCommand(sender: CommandSender) {
         val area = areas[sender.player]
@@ -171,22 +181,37 @@ class ExcavateCommand(instances: InstanceManager) :
         areas.remove(sender.player)
     }
 
-    @Command(["excavate|e", "n"])
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(["excavate|e", "n"])
+    @ImperiumPermission(
+        gamemodes =
+            [
+                MindustryGamemode.SURVIVAL,
+                MindustryGamemode.ATTACK,
+                MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
     private fun onExcavateNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["excavate|e", "cancel|c"], Rank.MODERATOR)
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(["excavate|e", "cancel|c"])
+    @ImperiumPermission(
+        Rank.MODERATOR,
+        MindustryGamemode.SURVIVAL,
+        MindustryGamemode.ATTACK,
+        MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @Command(["excavate|e", "force|f"], Rank.MODERATOR)
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(
+        ["excavate|e", "force|f"],
+    )
+    @ImperiumPermission(
+        Rank.MODERATOR,
+        MindustryGamemode.SURVIVAL,
+        MindustryGamemode.ATTACK,
+        MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)

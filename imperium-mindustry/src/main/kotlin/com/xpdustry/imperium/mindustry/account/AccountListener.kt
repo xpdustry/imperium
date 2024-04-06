@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.account
 
 import arc.Core
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager

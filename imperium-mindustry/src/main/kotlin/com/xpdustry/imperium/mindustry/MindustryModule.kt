@@ -20,20 +20,20 @@ package com.xpdustry.imperium.mindustry
 import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.bridge.PlayerTracker
-import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
-import com.xpdustry.imperium.mindustry.command.MindustryCommandRegistry
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
+import com.xpdustry.imperium.mindustry.localization.DistributorLocalisationSource
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
@@ -66,7 +66,7 @@ fun MindustryModule(plugin: ImperiumPlugin) =
                 ?: error("The current server configuration is not Mindustry")
         }
 
-        single<CommandRegistry> { MindustryCommandRegistry(get(), get(), get(), get()) }
+        single<LocalizationSource> { DistributorLocalisationSource(get()) }
 
         single<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
 

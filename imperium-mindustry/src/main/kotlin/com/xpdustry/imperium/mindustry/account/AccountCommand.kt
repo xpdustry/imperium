@@ -24,7 +24,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -85,7 +85,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             .expireAfterWrite(10.minutes.toJavaDuration())
             .build<Snowflake, Int>()
 
-    @Command(["login"])
+    @ImperiumCommand(["login"])
     @ClientSide
     private suspend fun onLoginCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
@@ -97,19 +97,19 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-    @Command(["register"])
+    @ImperiumCommand(["register"])
     @ClientSide
     private fun onRegisterCommand(sender: CommandSender) {
         registerInterface.open(sender.player)
     }
 
-    @Command(["migrate"])
+    @ImperiumCommand(["migrate"])
     @ClientSide
     private fun onMigrateCommand(sender: CommandSender) {
         migrateInterface.open(sender.player)
     }
 
-    @Command(["logout"])
+    @ImperiumCommand(["logout"])
     @ClientSide
     private suspend fun onLogoutCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
@@ -122,13 +122,13 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-    @Command(["change-password"])
+    @ImperiumCommand(["change-password"])
     @ClientSide
     private fun onChangePasswordCommand(sender: CommandSender) {
         changePasswordInterface.open(sender.player)
     }
 
-    @Command(["verify", "discord"])
+    @ImperiumCommand(["verify", "discord"])
     @ClientSide
     private suspend fun onVerifyCommand(sender: CommandSender) {
         val account = manager.findByIdentity(sender.player.identity)

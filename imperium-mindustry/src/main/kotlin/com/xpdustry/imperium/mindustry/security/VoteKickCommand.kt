@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.distributor.player.MUUID
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Greedy
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -63,6 +63,7 @@ import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.Team
 import mindustry.gen.Player
 import mindustry.net.Administration
+import org.incendo.cloud.annotation.specifier.Greedy
 
 class VoteKickCommand(instances: InstanceManager) :
     AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", 1.minutes),
@@ -91,25 +92,26 @@ class VoteKickCommand(instances: InstanceManager) :
             .forEach(VoteManager.Session<Context>::success)
     }
 
-    @Command(["vote", "y"])
+    @ImperiumCommand(["vote", "y"])
     @ClientSide
     private fun onVoteYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.YES)
     }
 
-    @Command(["vote", "n"])
+    @ImperiumCommand(["vote", "n"])
     @ClientSide
     private fun onVoteNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
-    @Command(["vote", "c"], Rank.MODERATOR)
+    @ImperiumCommand(["vote", "c"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))
     }
 
-    @Command(["votekick"])
+    @ImperiumCommand(["votekick"])
     @ClientSide
     private fun onVotekickCommand(
         sender: CommandSender,

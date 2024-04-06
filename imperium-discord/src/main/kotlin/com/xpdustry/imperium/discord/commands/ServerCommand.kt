@@ -19,7 +19,7 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.Discovery
@@ -36,7 +36,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
     private val tracker = instances.get<PlayerTracker>()
 
-    @Command(["server", "list"])
+    @ImperiumCommand(["server", "list"])
     @NonEphemeral
     suspend fun onServerList(actor: InteractionSender.Slash) =
         actor.respond(
@@ -46,7 +46,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
             })
 
-    @Command(["player", "joins"])
+    @ImperiumCommand(["player", "joins"])
     @NonEphemeral
     suspend fun onServerPlayerJoin(actor: InteractionSender.Slash, server: String) {
         val joins = tracker.getPlayerJoins(server)
@@ -57,7 +57,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(createPlayerListEmbed(joins, "Join"))
     }
 
-    @Command(["player", "quits"])
+    @ImperiumCommand(["player", "quits"])
     @NonEphemeral
     suspend fun onServerPlayerQuit(actor: InteractionSender.Slash, server: String) {
         val quits = tracker.getPlayerQuits(server)
@@ -68,7 +68,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(createPlayerListEmbed(quits, "Quit"))
     }
 
-    @Command(["player", "online"])
+    @ImperiumCommand(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
         if (server != null) {

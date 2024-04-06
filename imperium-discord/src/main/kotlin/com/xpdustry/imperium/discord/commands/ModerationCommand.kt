@@ -19,8 +19,8 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.Punishment
@@ -36,17 +36,19 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import org.incendo.cloud.annotation.specifier.Range
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val renderer = instances.get<TimeRenderer>()
 
-    @Command(["punishment", "list"], Rank.MODERATOR)
+    @ImperiumCommand(["punishment", "list"])
+    @ImperiumPermission(Rank.MODERATOR)
     private suspend fun onPunishmentListCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
-        @Min(0) page: Int = 0
+        @Range(min = "0") page: Int = 0
     ) {
         val result = punishments.findAllByUser(player).drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
@@ -56,7 +58,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond(*result.map { it.toEmbed() }.toTypedArray())
     }
 
-    @Command(["punishment", "info"], Rank.MODERATOR)
+    @ImperiumCommand(["punishment", "info"])
+    @ImperiumPermission(Rank.MODERATOR)
     private suspend fun onPunishmentInfoCommand(
         actor: InteractionSender.Slash,
         punishment: String
@@ -87,7 +90,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         }
     }
 
-    @Command(["ban"], Rank.MODERATOR)
+    @ImperiumCommand(["ban"])
+    @ImperiumPermission(Rank.MODERATOR)
     private suspend fun onBanCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
@@ -97,7 +101,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
     }
 
-    @Command(["freeze"], Rank.MODERATOR)
+    @ImperiumCommand(["freeze"])
+    @ImperiumPermission(Rank.MODERATOR)
     private suspend fun onFreezeCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
@@ -107,7 +112,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         onPunishCommand("Frozen", Punishment.Type.FREEZE, actor, player, reason, duration.value)
     }
 
-    @Command(["mute"], Rank.MODERATOR)
+    @ImperiumCommand(["mute"])
+    @ImperiumPermission(Rank.MODERATOR)
     private suspend fun onMuteCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
@@ -133,7 +139,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         actor.respond("$verb user $player.")
     }
 
-    @Command(["pardon"], Rank.MODERATOR)
+    @ImperiumCommand(["pardon"])
+    @ImperiumPermission(Rank.MODERATOR)
     private suspend fun onPardonCommand(
         actor: InteractionSender.Slash,
         punishment: String,

@@ -21,7 +21,7 @@ import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.User
@@ -40,7 +40,7 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
     private val users = instances.get<UserManager>()
     private val playerSettingsInterface = createPlayerSettingsInterface(instances.get())
 
-    @Command(["settings"])
+    @ImperiumCommand(["settings"])
     @ClientSide
     private suspend fun onUserSettingsCommand(sender: CommandSender) {
         val settings = loadUserSettings(sender.player.uuid())

@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.world
 import arc.files.Fi
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
@@ -58,7 +58,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         reloadMaps()
     }
 
-    @Command(["reloadmaps"])
+    @ImperiumCommand(["reloadmaps"])
     @ServerSide
     private fun onMapReloadCommand() {
         reloadMaps()

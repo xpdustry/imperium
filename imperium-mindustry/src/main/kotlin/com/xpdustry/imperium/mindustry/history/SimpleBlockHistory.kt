@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.history
 
 import arc.math.geom.Point2
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList

@@ -17,11 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.BLURPLE
@@ -88,13 +88,13 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
         }
     }
 
-    @Command(["rules"])
+    @ImperiumCommand(["rules"])
     @ClientSide
     private fun onWelcomeCommand(sender: CommandSender) {
         rulesInterface.open(sender.player)
     }
 
-    @Command(["discord"])
+    @ImperiumCommand(["discord"])
     @ClientSide
     private fun onDiscordCommand(sender: CommandSender) {
         Call.openURI(sender.player.con, DISCORD_INVITATION_LINK.toString())

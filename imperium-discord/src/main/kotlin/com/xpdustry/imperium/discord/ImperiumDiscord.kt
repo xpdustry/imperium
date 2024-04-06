@@ -17,11 +17,10 @@
  */
 package com.xpdustry.imperium.discord
 
+import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
-import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.BridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
@@ -35,10 +34,10 @@ import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.commands.WhitelistCommand
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
-import java.util.Scanner
 import kotlin.system.exitProcess
 
 class ImperiumDiscord : SimpleImperiumApplication(DiscordModule()) {
+
     override fun exit(status: ExitStatus) {
         super.exit(status)
         exitProcess(status.ordinal)
@@ -49,6 +48,7 @@ fun main() {
     val application = ImperiumDiscord()
 
     application.instances.createSingletons()
+    application.init()
     sequenceOf(
             BridgeListener::class,
             PingCommand::class,
@@ -65,23 +65,12 @@ fun main() {
             WhitelistCommand::class)
         .forEach(application::register)
 
-    val commands = application.instances.get<CommandRegistry>("slash")
-    val buttons = application.instances.get<CommandRegistry>("button")
+    val commands = application.instances.get<AnnotationScanner>("slash")
+    val buttons = application.instances.get<AnnotationScanner>("button")
     for (listener in application.listeners) {
-        commands.parse(listener)
-        buttons.parse(listener)
+        commands.scan(listener)
+        buttons.scan(listener)
     }
 
-    application.init()
-
-    val scanner = Scanner(System.`in`)
-    while (scanner.hasNextLine()) {
-        val line = scanner.nextLine()
-        if (line == "exit") {
-            break
-        }
-        logger<ImperiumDiscord>().info("Type 'exit' to exit.")
-    }
-
-    application.exit(ExitStatus.EXIT)
+    application.logger.info("Imperium loaded.")
 }

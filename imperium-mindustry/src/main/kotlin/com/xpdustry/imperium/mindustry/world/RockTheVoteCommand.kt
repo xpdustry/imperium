@@ -21,7 +21,8 @@ import arc.Events
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -66,31 +67,33 @@ class RockTheVoteCommand(instances: InstanceManager) :
             )
         }
 
-    @Command(["rtv"])
+    @ImperiumCommand(["rtv"])
     @ClientSide
     private fun onRtvCommand(sender: CommandSender) {
         mapListInterface.open(sender.player)
     }
 
-    @Command(["rtv", "y"])
+    @ImperiumCommand(["rtv", "y"])
     @ClientSide
     private fun onRtvYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
-    @Command(["rtv", "n"])
+    @ImperiumCommand(["rtv", "n"])
     @ClientSide
     private fun onRtvNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["rtv", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["rtv", "cancel|c"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onRtvCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @Command(["rtv", "force|f"], Rank.MODERATOR)
+    @ImperiumCommand(["rtv", "force|f"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)

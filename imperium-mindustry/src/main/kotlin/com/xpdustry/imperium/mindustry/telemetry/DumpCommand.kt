@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.telemetry
 import com.sun.management.HotSpotDiagnosticMXBean
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -35,7 +35,7 @@ class DumpCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         directory.toFile().mkdirs()
     }
 
-    @Command(["dump"])
+    @ImperiumCommand(["dump"])
     @ServerSide
     private fun onMemoryDumpCommand(sender: CommandSender, live: Boolean = true) {
         try {

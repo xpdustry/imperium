@@ -19,7 +19,7 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -36,7 +36,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val renderer = instances.get<TimeRenderer>()
 
-    @Command(["player", "info"])
+    @ImperiumCommand(["player", "info"])
     suspend fun onPlayerInfoCommand(actor: InteractionSender.Slash, player: String) {
         // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
         var user = users.findByUuid(player)
@@ -67,7 +67,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             })
     }
 
-    @Command(["player", "search"])
+    @ImperiumCommand(["player", "search"])
     @NonEphemeral
     suspend fun onPlayerSearch(actor: InteractionSender.Slash, query: String) {
         val users = users.searchUserByName(query).take(21).toCollection(mutableListOf())

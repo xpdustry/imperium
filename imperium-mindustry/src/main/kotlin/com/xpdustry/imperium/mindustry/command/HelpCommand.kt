@@ -22,17 +22,17 @@ import com.xpdustry.distributor.command.CommandFacade
 import com.xpdustry.distributor.command.CommandHelp
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Greedy
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.asList
 import kotlin.math.ceil
 import mindustry.Vars
+import org.incendo.cloud.annotation.specifier.Greedy
 
 class HelpCommand : ImperiumApplication.Listener {
 
-    @Command(["help"])
+    @ImperiumCommand(["help"])
     @ClientSide
     private fun onHelpCommand(sender: CommandSender, @Greedy query: String? = null) {
         val page = if (query == null) 1 else query.toIntOrNull()
@@ -42,17 +42,31 @@ class HelpCommand : ImperiumApplication.Listener {
         }
 
         val path = query!!.split(" ")
-        val candidates = getCommandList(sender).filter { it.name.startsWith(path[0]) }
-        if (candidates.isEmpty()) {
+        val results = getCommandList(sender).filter { it.name.startsWith(path[0]) }
+        if (results.isEmpty()) {
             sender.sendWarning("No command found.")
-            return
-        } else if (candidates.size > 1) {
-            sender.sendWarning("Too many commands found, narrow your search please.")
             return
         }
 
-        val command = candidates[0]
-        when (val help = command.getHelp(sender, path.drop(1).joinToString(" "))) {
+        val command: CommandFacade?
+        if (results.size == 1) {
+            command = results[0]
+        } else {
+            command = results.find { it.name.equals(path[0], ignoreCase = true) }
+            if (command == null) {
+                sender.sendMessage(
+                    buildString {
+                        appendLine(
+                            "[orange]-- Too many root commands found for [lightgray]${path[0]}[] --")
+                        for (candidate in results) {
+                            appendLine("[orange] /${candidate.name}[]")
+                        }
+                    })
+                return
+            }
+        }
+
+        when (val help = command!!.getHelp(sender, path.drop(1).joinToString(" "))) {
             is CommandHelp.Empty -> sender.sendWarning("No help found.")
             is CommandHelp.Suggestion -> {
                 if (help.childSuggestions.isEmpty()) {

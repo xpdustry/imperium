@@ -17,12 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
@@ -44,6 +43,7 @@ import mindustry.gen.Building
 import mindustry.gen.Call
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.storage.CoreBlock
+import org.incendo.cloud.annotation.specifier.Range
 
 class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
@@ -71,7 +71,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         }
     }
 
-    @Command(["core", "list"])
+    @ImperiumCommand(["core", "list"])
     @ClientSide
     private fun onCoreListCommand(sender: CommandSender) {
         val clusters = getManager(sender.player.team()).clusters
@@ -90,9 +90,9 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         )
     }
 
-    @Command(["core", "tp"])
+    @ImperiumCommand(["core", "tp"])
     @ClientSide
-    private fun onCoreTeleportCommand(sender: CommandSender, @Min(1) id: Int) {
+    private fun onCoreTeleportCommand(sender: CommandSender, @Range(min = "1") id: Int) {
         val clusters = getManager(sender.player.team()).clusters
         if (clusters.isEmpty()) {
             sender.sendMessage("No cores found")

@@ -20,9 +20,8 @@ package com.xpdustry.imperium.mindustry.world
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Max
-import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -37,6 +36,7 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import mindustry.Vars
 import mindustry.gen.Call
+import org.incendo.cloud.annotation.specifier.Range
 
 class WaveCommand(instances: InstanceManager) :
     AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds),
@@ -57,14 +57,16 @@ class WaveCommand(instances: InstanceManager) :
             }
         }
 
-    @Command(["wave", "set", "countdown"], Rank.MODERATOR)
+    @ImperiumCommand(["wave", "set", "countdown"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onWaveSetTime(sender: CommandSender, duration: Duration) {
         Vars.state.wavetime = duration.seconds.toFloat() * 60F
         sender.sendMessage("Set wave countdown to $duration")
     }
 
-    @Command(["wave", "set", "counter"], Rank.MODERATOR)
+    @ImperiumCommand(["wave", "set", "counter"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
         Vars.state.wave = wave
@@ -72,32 +74,35 @@ class WaveCommand(instances: InstanceManager) :
         sender.sendMessage("Set wave to counter $wave")
     }
 
-    @Command(["wave", "run"], Rank.MODERATOR)
+    @ImperiumCommand(["wave", "run"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onWaveRun(sender: CommandSender, @Min(1) @Max(20) count: Int = 1) {
+    private fun onWaveRun(sender: CommandSender, @Range(min = "1", max = "20") count: Int = 1) {
         repeat(count) { Vars.logic.runWave() }
         sender.sendMessage("Ran $count wave(s).")
     }
 
-    @Command(["wave", "skip"], Rank.MODERATOR)
+    @ImperiumCommand(["wave", "skip"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onWaveSkip(sender: CommandSender) {
         waveSkipInterface.open(sender.player)
     }
 
-    @Command(["ws", "y"])
+    @ImperiumCommand(["ws", "y"])
     @ClientSide
     private fun onWaveSkipYes(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
-    @Command(["ws", "n"])
+    @ImperiumCommand(["ws", "n"])
     @ClientSide
     private fun onWaveSkipNo(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["ws", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["ws", "cancel|c"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onWaveSkipCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)

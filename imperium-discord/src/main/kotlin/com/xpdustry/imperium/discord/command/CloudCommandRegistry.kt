@@ -18,13 +18,17 @@
 package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.CommandRegistry
-import com.xpdustry.imperium.common.command.name
-import com.xpdustry.imperium.common.command.validate
+import com.xpdustry.imperium.common.command.ImperiumArgumentExtractor
+import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
+import com.xpdustry.imperium.common.command.enumParser
+import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
+import com.xpdustry.imperium.common.command.registerImperiumCommand
+import com.xpdustry.imperium.common.command.registerImperiumPermission
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.command.parser.UserParser
@@ -32,30 +36,23 @@ import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import io.leangen.geantyref.TypeToken
-import kotlin.reflect.KClass
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.memberFunctions
-import kotlin.reflect.jvm.javaMethod
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import org.incendo.cloud.annotations.AnnotationParser
-import org.incendo.cloud.annotations.descriptor.CommandDescriptor
-import org.incendo.cloud.annotations.descriptor.ImmutableCommandDescriptor
-import org.incendo.cloud.context.CommandContext
 import org.incendo.cloud.discord.jda5.JDA5CommandManager
 import org.incendo.cloud.discord.slash.CommandScope
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.key.CloudKey
-import org.incendo.cloud.kotlin.coroutines.annotations.installCoroutineSupport
 import org.incendo.cloud.kotlin.coroutines.asParserDescriptor
 import org.incendo.cloud.meta.CommandMeta
-import org.incendo.cloud.parser.ParserDescriptor
 import org.incendo.cloud.parser.ParserParameter
 import org.incendo.cloud.parser.ParserParameters
-import org.incendo.cloud.parser.standard.EnumParser
 
-class CloudCommandRegistry(private val discord: DiscordService, private val users: UserManager) :
-    CommandRegistry, ImperiumApplication.Listener {
+class CloudCommandRegistry(
+    private val discord: DiscordService,
+    users: UserManager,
+    source: LocalizationSource
+) : AnnotationScanner, ImperiumApplication.Listener {
 
     private val manager =
         JDA5CommandManager(ExecutionCoordinator.simpleCoordinator()) {
@@ -63,13 +60,24 @@ class CloudCommandRegistry(private val discord: DiscordService, private val user
             }
             .apply {
                 parserRegistry()
-                    .registerParser(enumParser<PunishmentDuration>())
-                    .registerParser(enumParser<Rank>())
-                    .registerParser(enumParser<MindustryGamemode>())
+                    .registerParser(enumParser(PunishmentDuration::class))
+                    .registerParser(enumParser(Rank::class))
+                    .registerParser(enumParser(MindustryGamemode::class))
                     .registerParser(
                         UserParser<InteractionSender.Slash>(users)
                             .asParserDescriptor(
                                 ImperiumScope.MAIN, ImperiumScope.MAIN.coroutineContext))
+
+                permissionPredicate { sender, permission ->
+                    if (permission.isEmpty()) true
+                    else if (permission.startsWith("imperium.rank."))
+                        runBlocking {
+                            discord.isAllowed(
+                                sender.member.user,
+                                Rank.valueOf(permission.removePrefix("imperium.rank.").uppercase()))
+                        }
+                    else false
+                }
 
                 registerCommandPostProcessor {
                     runBlocking {
@@ -89,21 +97,18 @@ class CloudCommandRegistry(private val discord: DiscordService, private val user
                     .build()
             }
             .apply {
-                installCoroutineSupport(
-                    scope = ImperiumScope.MAIN,
-                    context = ImperiumScope.MAIN.coroutineContext,
-                    onlyForSuspending = true)
-
-                commandExtractor {
-                    imperiumExtractCommands(it, this, InteractionSender.Slash::class)
-                }
+                installCoroutineSupportImperium()
+                commandExtractor(ImperiumCommandExtractor(this, InteractionSender.Slash::class))
+                argumentExtractor(ImperiumArgumentExtractor(source))
+                registerImperiumCommand(source)
+                registerImperiumPermission()
                 registerAnnotationMapper(NonEphemeral::class.java) {
                     ParserParameters.single(EPHEMERAL_PARSER_KEY, false)
                 }
             }
 
-    override fun parse(container: Any) {
-        parser.parse(container)
+    override fun scan(instance: Any) {
+        parser.parse(instance)
     }
 
     override fun onImperiumInit() {
@@ -124,63 +129,3 @@ private val EPHEMERAL_PARSER_KEY =
     ParserParameter("imperium:ephemeral", TypeToken.get(Boolean::class.javaObjectType))
 private val EPHEMERAL_CLOUD_KEY =
     CloudKey.of("imperium:ephemeral", TypeToken.get(Boolean::class.javaObjectType))
-
-private fun <S : Any> imperiumExtractCommands(
-    instance: Any,
-    parser: AnnotationParser<S>,
-    sender: KClass<S>
-): Collection<CommandDescriptor> {
-    val descriptors = mutableListOf<CommandDescriptor>()
-
-    for (function in instance::class.memberFunctions) {
-        val command = function.findAnnotation<Command>() ?: continue
-        command.validate().getOrThrow()
-
-        if (!function.isSuspend) {
-            throw IllegalArgumentException("$function must be suspend")
-        }
-
-        val syntax = buildString {
-            append(command.path.joinToString(" "))
-
-            for (parameter in function.parameters) {
-                // Skip "this"
-                if (parameter.index == 0) {
-                    continue
-                }
-
-                if (parameter.name!!.lowercase() != parameter.name) {
-                    throw IllegalArgumentException(
-                        "$function parameter names must be lowercase: ${parameter.name}")
-                }
-
-                if (parameter.type.classifier == CommandContext::class ||
-                    parameter.type.classifier == sender) {
-                    continue
-                }
-
-                append(" ")
-                if (parameter.isOptional || parameter.type.isMarkedNullable) {
-                    append("[").append(parameter.name).append("]")
-                } else {
-                    append("<").append(parameter.name).append(">")
-                }
-            }
-        }
-
-        val processed =
-            parser.syntaxParser().parseSyntax(function.javaMethod, parser.processString(syntax))
-        descriptors +=
-            ImmutableCommandDescriptor.builder()
-                .method(function.javaMethod!!)
-                .syntax(processed)
-                .commandToken(parser.processString(command.name))
-                .requiredSender(sender.java)
-                .build()
-    }
-
-    return descriptors
-}
-
-private inline fun <reified E : Enum<E>> enumParser():
-    ParserDescriptor<InteractionSender.Slash, E> = EnumParser.enumParser(E::class.java)

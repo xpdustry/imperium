@@ -29,4 +29,5 @@
     <!-- Spams the console for useless debug info -->
     <logger name="com.zaxxer.hikari.pool.HikariPool" level="INFO"/>
     <logger name="net.dv8tion.jda.api.requests.RestRateLimiter" level="INFO"/>
+    <logger name="net.dv8tion.jda.internal.requests.Requester" level="INFO"/>
 </configuration>

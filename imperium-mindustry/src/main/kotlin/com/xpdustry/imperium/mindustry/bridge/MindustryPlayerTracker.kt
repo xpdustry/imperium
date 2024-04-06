@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.bridge
 
-import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker

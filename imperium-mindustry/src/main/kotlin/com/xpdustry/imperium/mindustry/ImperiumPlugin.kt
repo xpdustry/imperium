@@ -22,12 +22,14 @@ import arc.ApplicationListener
 import arc.Core
 import com.xpdustry.distributor.DistributorProvider
 import com.xpdustry.distributor.annotation.PluginAnnotationScanner
+import com.xpdustry.distributor.annotation.method.MethodAnnotationScanner
 import com.xpdustry.distributor.localization.LocalizationSourceRegistry
+import com.xpdustry.distributor.permission.rank.RankPermissionSource
+import com.xpdustry.distributor.permission.rank.RankProvider
 import com.xpdustry.distributor.plugin.AbstractMindustryPlugin
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ExitStatus
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
-import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
@@ -41,6 +43,7 @@ import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
+import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.GameListener
@@ -49,6 +52,8 @@ import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
+import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
+import com.xpdustry.imperium.mindustry.permission.ImperiumRankProvider
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -67,17 +72,13 @@ import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
-import java.util.Locale
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
-    internal val scanner =
-        PluginAnnotationScanner.create(this)
-            .register(PluginAnnotationScanner.createTaskListener())
-            .register(PluginAnnotationScanner.createEventListener())
+    internal lateinit var scanner: PluginAnnotationScanner<*>
 
     override fun onInit() {
         // https://github.com/Anuken/Arc/pull/158
@@ -93,25 +94,36 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     override fun onLoad() {
-
-        logger.info("Imperium plugin initialized!")
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        val source =
-            LocalizationSourceRegistry.create(application.instances.get<ImperiumConfig>().language)
-        source.registerAll(
-            Locale.ENGLISH,
-            "com/xpdustry/imperium/bundles/bundle",
-            this::class.java.classLoader,
-        )
-        source.registerAll(
-            Locale.FRENCH,
-            "com/xpdustry/imperium/bundles/bundle",
-            this::class.java.classLoader,
-        )
-        DistributorProvider.get().globalLocalizationSource.addLocalizationSource(source)
-
         application.instances.createSingletons()
+
+        val provider = ImperiumRankProvider(application.instances.get())
+        application.register(provider)
+        DistributorProvider.get()
+            .serviceManager
+            .register(this, RankProvider::class.java, Priority.NORMAL, provider)
+
+        val source = ImperiumRankPermissionSource(application.instances.get())
+        DistributorProvider.get()
+            .serviceManager
+            .register(this, RankPermissionSource::class.java, Priority.NORMAL, source)
+
+        DistributorProvider.get()
+            .globalLocalizationSource
+            .addLocalizationSource(
+                LocalizationSourceRegistry.create(
+                        application.instances.get<ImperiumConfig>().language)
+                    .apply {
+                        application.instances.get<ImperiumConfig>().supportedLanguages.forEach {
+                            registerAll(
+                                it,
+                                "com/xpdustry/imperium/bundles/bundle",
+                                this::class.java.classLoader,
+                            )
+                        }
+                    })
+
         sequenceOf(
                 ConventionListener::class,
                 GatekeeperListener::class,
@@ -143,10 +155,21 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 GameListener::class,
                 TipListener::class)
             .forEach(application::register)
+
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         }
         application.init()
+
+        scanner =
+            PluginAnnotationScanner.list(
+                this,
+                MethodAnnotationScanner.create(this)
+                    .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR),
+                CommandAnnotationScanner(
+                    this, application.instances.get(), application.instances.get()))
+
+        application.listeners.forEach(scanner::scan)
 
         runBlocking {
             application.instances
@@ -154,9 +177,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 .send(WebhookMessage(content = "The server has started."))
         }
 
-        val registry = application.instances.get<CommandRegistry>()
-        application.listeners.forEach { registry.parse(it) }
-        logger.info("Parsed Imperium commands!")
+        logger.info("Imperium plugin Loaded!")
     }
 
     override fun onExit() {
@@ -182,11 +203,6 @@ private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
             ExitStatus.INIT_FAILURE -> Core.app.exit()
             ExitStatus.RESTART -> Core.app.restart()
         }
-    }
-
-    override fun onListenerRegistration(listener: ImperiumApplication.Listener) {
-        super.onListenerRegistration(listener)
-        plugin.scanner.scan(listener)
     }
 }
 

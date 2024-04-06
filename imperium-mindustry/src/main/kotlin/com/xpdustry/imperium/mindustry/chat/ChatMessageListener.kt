@@ -26,8 +26,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Greedy
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -65,6 +64,7 @@ import mindustry.gen.SendChatMessageCallPacket
 import mindustry.net.Administration
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
+import org.incendo.cloud.annotation.specifier.Greedy
 
 private val ROOT_LOGGER = logger("ROOT")
 
@@ -208,7 +208,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             is Identity.Discord -> context.subject.id.toString()
         }
 
-    @Command(["t"])
+    @ImperiumCommand(["t"])
     @ClientSide
     private suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
         val filtered1 = runMindustryThread {
@@ -233,7 +233,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
-    @Command(["w"])
+    @ImperiumCommand(["w"])
     @ClientSide
     private suspend fun onWhisperCommand(
         sender: CommandSender,
@@ -260,7 +260,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
-    @Command(["say"])
+    @ImperiumCommand(["say"])
     @ServerSide
     private suspend fun onServerMessageCommand(sender: CommandSender, @Greedy message: String) {
         if (!Vars.state.isGame) {
