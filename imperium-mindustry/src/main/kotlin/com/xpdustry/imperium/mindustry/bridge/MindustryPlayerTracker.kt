@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.bridge
 
+import com.xpdustry.distributor.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
@@ -27,7 +28,6 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.function
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
-import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 

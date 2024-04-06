@@ -17,14 +17,14 @@
  */
 package com.xpdustry.imperium.mindustry.ui
 
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.player.MUUID
+import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.mindustry.ui.state.State
 import com.xpdustry.imperium.mindustry.ui.state.stateOf
 import com.xpdustry.imperium.mindustry.ui.transform.PriorityTransformer
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.MUUID
-import fr.xpdustry.distributor.api.util.Priority
 import java.util.function.Supplier
 import mindustry.game.EventType.PlayerLeave
 import mindustry.gen.Player

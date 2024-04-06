@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -34,8 +36,6 @@ import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Call

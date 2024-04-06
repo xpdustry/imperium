@@ -17,12 +17,12 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.Priority
 import mindustry.core.GameState
 import mindustry.game.EventType.StateChangeEvent
 

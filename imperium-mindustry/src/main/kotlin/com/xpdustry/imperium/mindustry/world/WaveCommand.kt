@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
@@ -32,7 +33,6 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
-import fr.xpdustry.distributor.api.command.sender.CommandSender
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import mindustry.Vars

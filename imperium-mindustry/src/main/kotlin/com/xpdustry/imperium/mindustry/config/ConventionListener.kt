@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.mindustry.config
 
+import com.xpdustry.distributor.annotation.TaskHandler
+import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toHexString
-import fr.xpdustry.distributor.api.scheduler.MindustryTimeUnit
-import fr.xpdustry.distributor.api.scheduler.TaskHandler
 import mindustry.net.Administration
 
 class ConventionListener(instances: InstanceManager) : ImperiumApplication.Listener {

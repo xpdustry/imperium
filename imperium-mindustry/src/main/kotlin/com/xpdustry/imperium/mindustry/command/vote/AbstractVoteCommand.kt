@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.command.vote
 
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.joinTime
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlin.time.Duration
 import kotlinx.coroutines.launch
 import mindustry.gen.Player

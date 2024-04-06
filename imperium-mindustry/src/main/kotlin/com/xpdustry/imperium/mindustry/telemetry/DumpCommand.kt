@@ -18,12 +18,12 @@
 package com.xpdustry.imperium.mindustry.telemetry
 
 import com.sun.management.HotSpotDiagnosticMXBean
+import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import fr.xpdustry.distributor.api.command.sender.CommandSender
 import java.lang.management.ManagementFactory
 import java.nio.file.Path
 

@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.CommandRegistry
@@ -40,7 +41,6 @@ import com.xpdustry.imperium.mindustry.security.FreezeManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleFreezeManager
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import java.nio.file.Path
 import java.util.function.Supplier
 
@@ -70,7 +70,7 @@ fun MindustryModule(plugin: ImperiumPlugin) =
 
         single<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
 
-        single<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().descriptor.version) }
+        single<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().metadata.version) }
 
         single<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
 

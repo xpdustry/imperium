@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.Events
+import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
@@ -33,7 +34,6 @@ import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
-import fr.xpdustry.distributor.api.command.sender.CommandSender
 import kotlin.time.Duration.Companion.minutes
 import mindustry.Vars
 import mindustry.game.EventType

@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -29,8 +31,6 @@ import com.xpdustry.imperium.mindustry.misc.playtime
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.snowflake
 import com.xpdustry.imperium.mindustry.misc.start
-import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.util.Priority
 import java.time.Instant
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes

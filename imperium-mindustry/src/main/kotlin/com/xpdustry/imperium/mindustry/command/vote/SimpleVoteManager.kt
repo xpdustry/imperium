@@ -17,11 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.command.vote
 
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.Priority
 import java.time.Instant
 import java.util.Objects
 import java.util.UUID

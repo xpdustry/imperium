@@ -17,15 +17,16 @@
  */
 package com.xpdustry.imperium.mindustry.command
 
-import cloud.commandframework.ArgumentDescription
-import fr.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.DistributorProvider
 import java.util.Locale
+import org.incendo.cloud.description.Description
 
 class LocalisableArgumentDescription(private val key: String, private val default: Locale) :
-    ArgumentDescription {
-    override fun getDescription(): String =
+    Description {
+
+    override fun textDescription(): String =
         DistributorProvider.get().globalLocalizationSource.format(key, default)
 
-    fun getDescription(locale: Locale): String =
-        DistributorProvider.get().globalLocalizationSource.format(key, locale)
+    fun textDescription(locale: Locale): String =
+        DistributorProvider.get().globalLocalizationSource.format(key, default)
 }

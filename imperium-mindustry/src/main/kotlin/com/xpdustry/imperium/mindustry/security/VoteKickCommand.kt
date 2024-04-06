@@ -17,6 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.player.MUUID
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
@@ -47,9 +50,6 @@ import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.util.MUUID
 import java.net.InetAddress
 import java.util.Collections
 import kotlin.math.roundToInt

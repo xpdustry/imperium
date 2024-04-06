@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.distributor.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.LimitedList
@@ -35,7 +36,6 @@ import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.popup.PopupAlignement
 import com.xpdustry.imperium.mindustry.ui.popup.PopupInterface
-import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.Color
 import kotlin.math.abs
 import kotlin.math.absoluteValue

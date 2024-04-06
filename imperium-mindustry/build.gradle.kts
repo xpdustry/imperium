@@ -23,14 +23,12 @@ dependencies {
     api(projects.imperiumCommon)
 
     mindustryDependencies()
-    compileOnly(libs.distributor.api)
-    compileOnly(libs.distributor.kotlin)
+    implementation(libs.distributor4.command.cloud)
+    implementation(libs.bundles.cloud)
+    compileOnly(libs.distributor4.common)
+    compileOnly(libs.distributor4.permission.rank)
     compileOnly(libs.nohorny)
-
     implementation(libs.jsoup)
-
-    testImplementation(libs.distributor.api)
-    testImplementation(libs.distributor.kotlin)
 }
 
 tasks.shadowJar {
@@ -105,6 +103,30 @@ val downloadDistributorKotlin =
         version.set(libs.versions.distributor.map { "v$it" })
     }
 
+val downloadDistributor4LoggingSimple =
+    tasks.register<GithubArtifactDownload>("downloadDistributor4LoggingSimple") {
+        user.set("xpdustry")
+        repo.set("distributor")
+        name.set("distributor-logging-simple.jar")
+        version.set(libs.versions.distributor4.map { "v$it" })
+    }
+
+val downloadDistributor4Common =
+    tasks.register<GithubArtifactDownload>("downloadDistributor4Common") {
+        user.set("xpdustry")
+        repo.set("distributor")
+        name.set("distributor-common.jar")
+        version.set(libs.versions.distributor4.map { "v$it" })
+    }
+
+val downloadDistributor4PermissionRank =
+    tasks.register<GithubArtifactDownload>("downloadDistributor4PermissionRank") {
+        user.set("xpdustry")
+        repo.set("distributor")
+        name.set("distributor-permission-rank.jar")
+        version.set(libs.versions.distributor4.map { "v$it" })
+    }
+
 val downloadNoHorny =
     tasks.register<GithubArtifactDownload>("downloadNoHorny") {
         user.set("xpdustry")
@@ -127,10 +149,11 @@ tasks.runMindustryServer {
     mods.setFrom(
         downloadKotlinRuntime,
         tasks.shadowJar,
-        downloadDistributorCore,
-        downloadDistributorKotlin,
         downloadNoHorny,
     )
+    project.file("libs").listFiles().forEach {
+        mods.from(it)
+    }
 }
 
 // Second server for testing discovery

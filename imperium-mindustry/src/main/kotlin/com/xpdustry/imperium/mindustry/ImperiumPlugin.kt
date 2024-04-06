@@ -20,6 +20,10 @@ package com.xpdustry.imperium.mindustry
 import arc.Application
 import arc.ApplicationListener
 import arc.Core
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.annotation.PluginAnnotationScanner
+import com.xpdustry.distributor.localization.LocalizationSourceRegistry
+import com.xpdustry.distributor.plugin.AbstractMindustryPlugin
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.application.SimpleImperiumApplication
@@ -63,10 +67,6 @@ import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.localization.LocalizationSourceRegistry
-import fr.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
-import fr.xpdustry.distributor.api.plugin.PluginAnnotationParser
 import java.util.Locale
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
@@ -74,10 +74,26 @@ import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
-    internal val parser: PluginAnnotationParser
-        get() = pluginAnnotationParser
+    internal val scanner =
+        PluginAnnotationScanner.create(this)
+            .register(PluginAnnotationScanner.createTaskListener())
+            .register(PluginAnnotationScanner.createEventListener())
 
     override fun onInit() {
+        // https://github.com/Anuken/Arc/pull/158
+        if (getMindustryVersion().build < 147 ||
+            getMindustryVersion().type == MindustryVersion.Type.BLEEDING_EDGE) {
+            Core.app =
+                object : Application by Core.app {
+                    override fun removeListener(listener: ApplicationListener) {
+                        post { synchronized(listeners) { listeners.remove(listener) } }
+                    }
+                }
+        }
+    }
+
+    override fun onLoad() {
+
         logger.info("Imperium plugin initialized!")
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
@@ -132,25 +148,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         }
         application.init()
 
-        // https://github.com/Anuken/Arc/pull/158
-        if (getMindustryVersion().build < 147 ||
-            getMindustryVersion().type == MindustryVersion.Type.BLEEDING_EDGE) {
-            Core.app =
-                object : Application by Core.app {
-                    override fun removeListener(listener: ApplicationListener) {
-                        post { synchronized(listeners) { listeners.remove(listener) } }
-                    }
-                }
-        }
-
         runBlocking {
             application.instances
                 .get<WebhookMessageSender>()
                 .send(WebhookMessage(content = "The server has started."))
         }
-    }
 
-    override fun onLoad() {
         val registry = application.instances.get<CommandRegistry>()
         application.listeners.forEach { registry.parse(it) }
         logger.info("Parsed Imperium commands!")
@@ -183,7 +186,7 @@ private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
 
     override fun onListenerRegistration(listener: ImperiumApplication.Listener) {
         super.onListenerRegistration(listener)
-        plugin.parser.parse(listener)
+        plugin.scanner.scan(listener)
     }
 }
 

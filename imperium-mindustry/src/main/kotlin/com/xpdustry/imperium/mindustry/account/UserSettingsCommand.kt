@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
+import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.Command
@@ -32,8 +34,6 @@ import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlinx.coroutines.launch
 
 class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.Listener {

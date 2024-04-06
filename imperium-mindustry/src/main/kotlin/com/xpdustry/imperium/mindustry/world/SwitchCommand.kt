@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.Command
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -27,8 +29,6 @@ import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import mindustry.gen.Call
 import mindustry.gen.Player
 

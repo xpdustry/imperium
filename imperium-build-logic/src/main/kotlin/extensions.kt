@@ -6,6 +6,14 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.kotlin.dsl.the
 
+fun RepositoryHandler.xpdustryMindustry() {
+    maven {
+        url = URI.create("https://maven.xpdustry.com/mindustry")
+        name = "xpdustry-mindustry"
+        mavenContent { releasesOnly() }
+    }
+}
+
 fun RepositoryHandler.xpdustryReleases() {
     maven {
         url = URI.create("https://maven.xpdustry.com/releases")
@@ -14,11 +22,11 @@ fun RepositoryHandler.xpdustryReleases() {
     }
 }
 
-fun RepositoryHandler.xpdustryMindustry() {
+fun RepositoryHandler.xpdustrySnapshots() {
     maven {
-        url = URI.create("https://maven.xpdustry.com/mindustry")
-        name = "xpdustry-mindustry"
-        mavenContent { releasesOnly() }
+        url = URI.create("https://maven.xpdustry.com/snapshots")
+        name = "xpdustry-snapshots"
+        mavenContent { snapshotsOnly() }
     }
 }
 

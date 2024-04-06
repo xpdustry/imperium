@@ -19,6 +19,9 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.CommandHandler.ResponseType
 import arc.util.Time
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -49,9 +52,6 @@ import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
 import com.xpdustry.imperium.mindustry.processing.registerCaching
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.util.Priority
 import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay

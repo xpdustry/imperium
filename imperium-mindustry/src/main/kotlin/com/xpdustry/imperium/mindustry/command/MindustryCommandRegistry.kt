@@ -17,14 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.command
 
-import cloud.commandframework.CommandManager
-import cloud.commandframework.arguments.CommandArgument
-import cloud.commandframework.arguments.parser.ParserParameters
-import cloud.commandframework.arguments.parser.StandardParameters
-import cloud.commandframework.context.CommandContext
-import cloud.commandframework.keys.SimpleCloudKey
-import cloud.commandframework.kotlin.coroutines.SuspendingExecutionHandler
-import cloud.commandframework.permission.PredicatePermission
+import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.command.cloud.ArcCommandManager
+import com.xpdustry.distributor.command.cloud.DescriptionMapper
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -43,12 +39,8 @@ import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import fr.xpdustry.distributor.api.command.ArcCommandManager
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import io.leangen.geantyref.GenericTypeReflector
 import io.leangen.geantyref.TypeToken
-import java.util.function.Function
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -59,10 +51,20 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.isAccessible
-import kotlin.reflect.jvm.javaType
+import kotlin.reflect.jvm.jvmErasure
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.server.ServerControl
+import org.incendo.cloud.SenderMapper
+import org.incendo.cloud.component.CommandComponent
+import org.incendo.cloud.context.CommandContext
+import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.key.CloudKey
+import org.incendo.cloud.kotlin.coroutines.SuspendingExecutionHandler
+import org.incendo.cloud.parser.ParserParameters
+import org.incendo.cloud.parser.StandardParameters
+import org.incendo.cloud.permission.PredicatePermission
+import org.incendo.cloud.setting.ManagerSetting
 
 class MindustryCommandRegistry(
     plugin: MindustryPlugin,
@@ -121,8 +123,7 @@ class MindustryCommandRegistry(
             if (argument.type.classifier == CommandSender::class) continue
             builder =
                 builder.argument(
-                    createCommandArgument(manager, argument, TypeToken.get(argument.type.javaType)),
-                    createArgumentDescription(base, argument.name!!),
+                    createCommandComponent(manager, base, argument, argument.type.jvmErasure),
                 )
         }
         builder =
@@ -138,8 +139,8 @@ class MindustryCommandRegistry(
     }
 
     private fun createPermission(rank: Rank, command: String, scope: Set<MindustryGamemode>) =
-        PredicatePermission.of<CommandSender>(SimpleCloudKey.of("imperium:$command")) { sender ->
-            if (sender.isConsole) return@of true
+        PredicatePermission.of<CommandSender>(CloudKey.of("imperium:$command")) { sender ->
+            if (sender.isServer) return@of true
 
             runBlocking {
                 val current = accounts.findByIdentity(sender.player.identity)?.rank ?: Rank.EVERYONE
@@ -148,15 +149,21 @@ class MindustryCommandRegistry(
             }
         }
 
-    private fun <T : Any> createCommandArgument(
+    private fun <T : Any> createCommandComponent(
         manager: ArcCommandManager<CommandSender>,
+        base: List<String>,
         parameter: KParameter,
-        token: TypeToken<T>
-    ): CommandArgument<CommandSender, T> {
-        val parameters = manager.parserRegistry().parseAnnotations(token, parameter.annotations)
-        return CommandArgument.ofType<CommandSender, T>(token, parameter.name!!)
-            .withParser(manager.parserRegistry().createParser(token, parameters).get())
-            .run { if (parameter.isOptional) asOptional() else asRequired() }
+        klass: KClass<T>
+    ): CommandComponent<CommandSender> {
+        val parameters =
+            manager
+                .parserRegistry()
+                .parseAnnotations(TypeToken.get(klass.java), parameter.annotations)
+        return CommandComponent.ofType<CommandSender, T>(klass.java, parameter.name!!)
+            .parser(
+                manager.parserRegistry().createParser(TypeToken.get(klass.java), parameters).get())
+            .run { if (parameter.isOptional) optional() else required() }
+            .description(createArgumentDescription(base, parameter.name!!))
             .build()
     }
 
@@ -185,11 +192,11 @@ class MindustryCommandRegistry(
             }
 
             if (CommandSender::class.isSuperclassOf(parameter.type.classifier!! as KClass<*>)) {
-                arguments[parameter] = context.sender
+                arguments[parameter] = context.sender()
                 continue
             }
 
-            val argument = context.getOptional<Any>(parameter.name!!).getOrNull()
+            val argument = context.optional<Any>(parameter.name!!).getOrNull()
             if (argument != null) {
                 arguments[parameter] = argument
                 continue
@@ -216,28 +223,22 @@ class MindustryCommandRegistry(
 private fun createArcCommandManager(plugin: MindustryPlugin) =
     ArcCommandManager(
             plugin,
-            Function.identity(),
-            Function.identity(),
-            true,
-        )
+            ExecutionCoordinator.asyncCoordinator(),
+            SenderMapper.identity(),
+            DescriptionMapper.simple())
         .apply {
-            setSetting(CommandManager.ManagerSettings.OVERRIDE_EXISTING_COMMANDS, true)
-            setSetting(CommandManager.ManagerSettings.ENFORCE_INTERMEDIARY_PERMISSIONS, false)
+            settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)
 
-            parserRegistry().registerAnnotationMapper<Greedy, String>(Greedy::class.java) { _, _ ->
+            parserRegistry().registerAnnotationMapper(Greedy::class.java) { _, _ ->
                 ParserParameters.single(StandardParameters.GREEDY, true)
             }
-            parserRegistry().registerAnnotationMapper<Min, Number>(Min::class.java) {
-                annotation,
-                token ->
+            parserRegistry().registerAnnotationMapper(Min::class.java) { annotation, token ->
                 val number =
                     getNumber(annotation.value, token)
                         ?: return@registerAnnotationMapper ParserParameters.empty()
                 ParserParameters.single(StandardParameters.RANGE_MIN, number)
             }
-            parserRegistry().registerAnnotationMapper<Max, Number>(Max::class.java) {
-                annotation,
-                token ->
+            parserRegistry().registerAnnotationMapper(Max::class.java) { annotation, token ->
                 val number =
                     getNumber(annotation.value, token)
                         ?: return@registerAnnotationMapper ParserParameters.empty()

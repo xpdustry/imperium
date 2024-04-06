@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.chat
 
+import com.xpdustry.distributor.annotation.EventHandler
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -27,11 +29,10 @@ import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.translator.TranslatorResult
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
-import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.util.Players
-import fr.xpdustry.distributor.api.util.Priority
+import com.xpdustry.imperium.mindustry.misc.javaLocale
 import kotlinx.coroutines.withTimeoutOrNull
 import mindustry.game.EventType.PlayerJoin
+import mindustry.gen.Player
 
 class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
@@ -45,8 +46,8 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
                 return@register message
             }
 
-            val sourceLocale = sender?.let(Players::getLocale) ?: config.language
-            val targetLocale = target?.let(Players::getLocale) ?: config.language
+            val sourceLocale = sender?.let(Player::javaLocale) ?: config.language
+            val targetLocale = target?.let(Player::javaLocale) ?: config.language
             val rawMessage = message.stripMindustryColors()
 
             val result =
@@ -88,7 +89,7 @@ class ChatTranslatorListener(instances: InstanceManager) : ImperiumApplication.L
 
     @EventHandler
     fun onPlayerConnect(event: PlayerJoin) {
-        if (translator.isSupportedLanguage(Players.getLocale(event.player))) {
+        if (translator.isSupportedLanguage(event.player.javaLocale)) {
             event.player.sendMessage(
                 "[green]The chat translator supports your language, you can talk in your native tongue!")
         } else {

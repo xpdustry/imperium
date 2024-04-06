@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.Priority
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.util.Priority
 import mindustry.game.EventType.PlayerLeave
 import mindustry.gen.Player
 

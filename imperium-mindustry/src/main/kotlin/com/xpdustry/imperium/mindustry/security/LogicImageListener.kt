@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -34,7 +35,6 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.nohorny.NoHornyImage
 import com.xpdustry.nohorny.analyzer.ImageAnalyzer
 import com.xpdustry.nohorny.analyzer.ImageAnalyzerEvent
-import fr.xpdustry.distributor.api.event.EventHandler
 import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
