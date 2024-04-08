@@ -1,0 +1,38 @@
+name: Bug Reports
+description: "Suggest a new feature or change an existing one"
+labels: ["bug"]
+
+body:
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Where did the bug happen?
+      multiple: false
+      options:
+      - Discord
+      - Mindustry
+    validations:
+      required: true
+    
+  - type: textarea
+    id: bug
+    attributes:
+      label: "The bug(s)"
+      placeholder: "The bug that happens, if mindustry include which server"
+    validations:
+      required: true
+    
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: "Steps to reproduce it"
+      placeholder: "How to reproduce the bug, make it happen again."
+
+  - type: checkboxes
+    id: agreement
+    attributes:
+      label: "Submission"
+      description: "Check the box to make sure you have read the line(s) below"
+      options:
+      - label: "I have searched the open and closed issues to make sure this problem has not already been reported"
+        required: true
