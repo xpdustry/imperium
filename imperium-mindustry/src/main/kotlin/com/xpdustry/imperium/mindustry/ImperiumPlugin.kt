@@ -119,7 +119,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                             registerAll(
                                 it,
                                 "com/xpdustry/imperium/bundles/bundle",
-                                this::class.java.classLoader,
+                                ImperiumPlugin::class.java.classLoader,
                             )
                         }
                     })
