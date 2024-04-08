@@ -27,7 +27,7 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
 
     override val instances: InstanceManager =
         SimpleInstanceManager(module, ApplicationInjectorListener())
-    private val logger by LoggerDelegate()
+    val logger by LoggerDelegate()
 
     // TODO This should be hidden, but I need to process the instances for the commands for the
     // discord bot
@@ -72,7 +72,7 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
                 listener.onImperiumInit()
                 initialized += listener
             }
-            logger.info("Imperium has successfully init.")
+            logger.info("Imperium has successfully initialized.")
         } catch (e: Exception) {
             logger.error("Imperium failed to init.", e)
             exit(ExitStatus.INIT_FAILURE)

@@ -13,8 +13,9 @@ indra {
 
 repositories {
     mavenCentral()
-    xpdustryReleases()
     xpdustryMindustry()
+    xpdustryReleases()
+    xpdustrySnapshots()
 }
 
 kotlin {

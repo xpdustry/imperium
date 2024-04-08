@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.CommandRegistry
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
@@ -32,11 +32,10 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
-import kotlinx.coroutines.future.await
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 
 class ButtonCommandRegistry(private val discord: DiscordService) :
-    CommandRegistry, ImperiumApplication.Listener {
+    AnnotationScanner, ImperiumApplication.Listener {
     private val handlers = mutableMapOf<String, ButtonHandler>()
     private val containers = mutableListOf<Any>()
 
@@ -71,8 +70,8 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
         }
     }
 
-    override fun parse(container: Any) {
-        containers += container
+    override fun scan(instance: Any) {
+        containers += instance
     }
 
     private fun register0(container: Any) {

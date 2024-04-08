@@ -15,11 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.command.annotation
+package com.xpdustry.imperium.common.localization
 
-import com.xpdustry.imperium.common.content.MindustryGamemode
+import java.util.Locale
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class Scope(vararg val gamemodes: MindustryGamemode)
+interface LocalizationSource {
+
+    fun format(key: String, locale: Locale?, vararg arguments: Any): String
+}

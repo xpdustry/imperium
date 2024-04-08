@@ -17,26 +17,13 @@
  */
 package com.xpdustry.imperium.common.command
 
-import com.xpdustry.imperium.common.account.Rank
-
-// TODO
-//   When cloud 2, move permission to dedicated annotation
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class Command(val path: Array<String>, val rank: Rank = Rank.EVERYONE)
+annotation class ImperiumCommand(val path: Array<String>)
 
-private val PATH_ELEMENT_REGEX = Regex("^[a-zA-Z](-?[a-zA-Z0-9])*$")
-
-val Command.name: String
+val ImperiumCommand.name: String
     get() = path[0]
 
-fun Command.validate(): Result<Unit> =
-    if (path.isEmpty()) {
-        Result.failure(IllegalArgumentException("Command name cannot be empty"))
-    } else if (path.any { !it.matches(PATH_ELEMENT_REGEX) }) {
-        Result.failure(
-            IllegalArgumentException("Command name must be alphanumeric and start with a letter"))
-    } else {
-        Result.success(Unit)
-    }
+val ImperiumCommand.pathWithoutAliases: List<String>
+    get() = path.map { it.split("|")[0] }

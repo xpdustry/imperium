@@ -18,11 +18,13 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.google.common.cache.CacheBuilder
+import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -43,10 +45,6 @@ import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
 import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.MUUID
 import kotlin.coroutines.CoroutineContext
 import kotlin.random.Random
 import kotlin.random.nextInt
@@ -87,7 +85,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             .expireAfterWrite(10.minutes.toJavaDuration())
             .build<Snowflake, Int>()
 
-    @Command(["login"])
+    @ImperiumCommand(["login"])
     @ClientSide
     private suspend fun onLoginCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
@@ -99,19 +97,19 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-    @Command(["register"])
+    @ImperiumCommand(["register"])
     @ClientSide
     private fun onRegisterCommand(sender: CommandSender) {
         registerInterface.open(sender.player)
     }
 
-    @Command(["migrate"])
+    @ImperiumCommand(["migrate"])
     @ClientSide
     private fun onMigrateCommand(sender: CommandSender) {
         migrateInterface.open(sender.player)
     }
 
-    @Command(["logout"])
+    @ImperiumCommand(["logout"])
     @ClientSide
     private suspend fun onLogoutCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
@@ -124,13 +122,13 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-    @Command(["change-password"])
+    @ImperiumCommand(["change-password"])
     @ClientSide
     private fun onChangePasswordCommand(sender: CommandSender) {
         changePasswordInterface.open(sender.player)
     }
 
-    @Command(["verify", "discord"])
+    @ImperiumCommand(["verify", "discord"])
     @ClientSide
     private suspend fun onVerifyCommand(sender: CommandSender) {
         val account = manager.findByIdentity(sender.player.identity)
@@ -176,10 +174,6 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         messenger.consumer<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
-                DistributorProvider.get()
-                    .playerValidator
-                    .validate(MUUID.of(message.uuid, message.usid))
-
                 val player =
                     Entities.getPlayersAsync().find {
                         it.uuid() == message.uuid && it.usid() == message.usid

@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.message.Messenger
@@ -33,8 +35,6 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player

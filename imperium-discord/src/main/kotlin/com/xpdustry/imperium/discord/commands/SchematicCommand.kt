@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -38,7 +38,7 @@ import net.dv8tion.jda.api.utils.FileUpload
 class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val content = instances.get<MindustryContentHandler>()
 
-    @Command(["schematic", "text"])
+    @ImperiumCommand(["schematic", "text"])
     @NonEphemeral
     suspend fun onSchematicCommand(actor: InteractionSender.Slash, schematic: String) {
         val parsed = content.getSchematic(schematic)
@@ -72,7 +72,7 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
         }
     }
 
-    @Command(["schematic", "file"])
+    @ImperiumCommand(["schematic", "file"])
     @NonEphemeral
     suspend fun onSchematicCommand(actor: InteractionSender.Slash, file: Message.Attachment) {
         if (!file.fileName.endsWith(".msch")) {

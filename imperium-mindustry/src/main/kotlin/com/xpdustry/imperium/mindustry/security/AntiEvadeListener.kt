@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -26,8 +28,6 @@ import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
-import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.util.Priority
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch

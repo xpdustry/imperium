@@ -17,20 +17,20 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import fr.xpdustry.distributor.api.command.sender.CommandSender
 import kotlin.time.Duration.Companion.seconds
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -39,35 +39,36 @@ class KillAllCommand(instances: InstanceManager) :
     AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds),
     ImperiumApplication.Listener {
 
-    @Command(["killall|ku"])
+    @ImperiumCommand(["killall|ku"])
     @ClientSide
-    @Scope(MindustryGamemode.SANDBOX)
+    @ImperiumPermission(gamemodes = [MindustryGamemode.SANDBOX])
     private fun onKillUnitsCommand(sender: CommandSender) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
-    @Command(["killall|ku", "y"])
+    @ImperiumCommand(["killall|ku", "y"])
     @ClientSide
-    @Scope(MindustryGamemode.SANDBOX)
+    @ImperiumPermission(gamemodes = [MindustryGamemode.SANDBOX])
     private fun onKillUnitsYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
-    @Command(["killall|ku", "n"])
+    @ImperiumCommand(["killall|ku", "n"])
     @ClientSide
-    @Scope(MindustryGamemode.SANDBOX)
+    @ImperiumPermission(gamemodes = [(MindustryGamemode.SANDBOX)])
     private fun onKillUnitsNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @Command(["killall|ku", "c"], Rank.MODERATOR)
+    @ImperiumCommand(["killall|ku", "c"])
     @ClientSide
-    @Scope(MindustryGamemode.SANDBOX)
+    @ImperiumPermission(Rank.MODERATOR, MindustryGamemode.SANDBOX)
     private fun onKillUnitsCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @Command(["killall|ku", "team|t"], Rank.MODERATOR)
+    @ImperiumCommand(["killall|ku", "team|t"])
+    @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
     private fun onKillUnitsTeamCommand(sender: CommandSender, team: Team) {
         var count = 0

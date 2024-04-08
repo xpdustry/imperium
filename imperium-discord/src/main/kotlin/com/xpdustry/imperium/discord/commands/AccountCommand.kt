@@ -20,7 +20,8 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.discord.command.InteractionSender
@@ -28,7 +29,8 @@ import com.xpdustry.imperium.discord.command.InteractionSender
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
 
-    @Command(["account", "rank", "set"], Rank.OWNER)
+    @ImperiumCommand(["account", "rank", "set"])
+    @ImperiumPermission(Rank.OWNER)
     private suspend fun onAccountRankSet(
         sender: InteractionSender.Slash,
         target: String,

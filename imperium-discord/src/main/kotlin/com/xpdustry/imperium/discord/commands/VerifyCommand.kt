@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -56,7 +56,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @Command(["verify"])
+    @ImperiumCommand(["verify"])
     @NonEphemeral
     private suspend fun onVerifyCommand(actor: InteractionSender.Slash, code: Int) {
         if (!limiter.incrementAndCheck(actor.member.idLong)) {

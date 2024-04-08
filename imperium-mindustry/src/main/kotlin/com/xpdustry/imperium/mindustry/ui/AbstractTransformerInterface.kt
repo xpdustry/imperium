@@ -17,14 +17,14 @@
  */
 package com.xpdustry.imperium.mindustry.ui
 
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.player.MUUID
+import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.mindustry.ui.state.State
 import com.xpdustry.imperium.mindustry.ui.state.stateOf
 import com.xpdustry.imperium.mindustry.ui.transform.PriorityTransformer
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.MUUID
-import fr.xpdustry.distributor.api.util.Priority
 import java.util.function.Supplier
 import mindustry.game.EventType.PlayerLeave
 import mindustry.gen.Player
@@ -43,7 +43,7 @@ protected constructor(
 
     init {
         DistributorProvider.get().eventBus.subscribe(PlayerLeave::class.java, plugin) { event ->
-            views[MUUID.of(event.player)]?.close()
+            views[MUUID.from(event.player)]?.close()
         }
     }
 
@@ -71,9 +71,9 @@ protected constructor(
             private set
 
         override fun open() {
-            val previous = _views[MUUID.of(viewer)]
+            val previous = _views[MUUID.from(viewer)]
             if (previous != this) {
-                _views[MUUID.of(viewer)] = this
+                _views[MUUID.from(viewer)] = this
                 previous?.close()
             }
             pane = paneProvider.get()
@@ -84,13 +84,13 @@ protected constructor(
         }
 
         override fun close() {
-            if (_views.remove(MUUID.of(viewer), this)) {
+            if (_views.remove(MUUID.from(viewer), this)) {
                 onViewClose(this)
             }
         }
 
         override val isOpen: Boolean
-            get() = views.containsKey(MUUID.of(viewer))
+            get() = views.containsKey(MUUID.from(viewer))
 
         override val owner: Interface
             get() = this@AbstractTransformerInterface

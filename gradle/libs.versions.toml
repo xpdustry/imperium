@@ -12,6 +12,7 @@ mindustry = "146"
 
 # libraries
 distributor = "3.3.0"
+distributor4 = "4.0.0-beta.2"
 junit = "5.10.2"
 testcontainers = "1.19.6"
 guava = "32.0.1-jre" # Can't update guava because of gradle metadata skill issue, very anoying
@@ -36,8 +37,10 @@ mariadb = "3.3.3"
 caffeine = "3.1.8"
 prettytime = "5.0.7.Final"
 time4j = "4.38"
-nohorny = "2.1.0"
+nohorny = "2.2.0"
 jda = "5.0.0-beta.20"
+cloud-core = "2.0.0-beta.4"
+cloud-discord = "1.0.0-beta.2"
 
 # gradle plugins
 toxopid = "3.2.0"
@@ -49,6 +52,9 @@ gradle-versions = "0.47.0"
 
 [libraries]
 # libraries
+distributor4-common = { module = "com.xpdustry:distributor-common", version.ref = "distributor4" }
+distributor4-permission-rank = { module = "com.xpdustry:distributor-permission-rank", version.ref = "distributor4" }
+distributor4-command-cloud = { module = "com.xpdustry:distributor-command-cloud", version.ref = "distributor4" }
 distributor-api = { module = "fr.xpdustry:distributor-api", version.ref = "distributor" }
 distributor-kotlin = { module = "fr.xpdustry:distributor-kotlin", version.ref = "distributor" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -90,6 +96,12 @@ prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "pret
 time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
 nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
+cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
+cloud-annotations = { module = "org.incendo:cloud-annotations", version.ref = "cloud-core" }
+cloud-kotlin-coroutines-annotations = { module = "org.incendo:cloud-kotlin-coroutines-annotations", version.ref = "cloud-core" }
+cloud-kotlin-coroutines = { module = "org.incendo:cloud-kotlin-coroutines", version.ref = "cloud-core" }
+cloud-kotlin-extensions = { module = "org.incendo:cloud-kotlin-extensions", version.ref = "cloud-core" }
+cloud-jda5 = { module = "org.incendo:cloud-jda5", version.ref = "cloud-discord" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
@@ -100,3 +112,7 @@ shadow = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 kotlin-plugin-core = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin-core" }
 kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin-core" }
 gradle-versions = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "gradle-versions" }
+
+
+[bundles]
+cloud = ["cloud-core", "cloud-annotations", "cloud-kotlin-coroutines", "cloud-kotlin-coroutines-annotations", "cloud-kotlin-extensions"]

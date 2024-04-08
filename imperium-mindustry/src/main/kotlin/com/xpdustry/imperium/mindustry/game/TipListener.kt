@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import com.xpdustry.distributor.DistributorProvider
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -27,7 +28,6 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.javaLocale
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import fr.xpdustry.distributor.api.DistributorProvider
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive

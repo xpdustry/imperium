@@ -18,18 +18,20 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.CommonModule
-import com.xpdustry.imperium.common.command.CommandRegistry
+import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.module
 import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
-import com.xpdustry.imperium.discord.command.SlashCommandRegistry
+import com.xpdustry.imperium.discord.command.CloudCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
+import com.xpdustry.imperium.discord.localization.BundleLocalizationSource
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
@@ -45,9 +47,9 @@ fun DiscordModule() =
 
         single<Path>("directory") { Path(".") }
 
-        single<CommandRegistry>("slash") { SlashCommandRegistry(get(), get()) }
+        single<AnnotationScanner>("slash") { CloudCommandRegistry(get(), get(), get()) }
 
-        single<CommandRegistry>("button") { ButtonCommandRegistry(get()) }
+        single<AnnotationScanner>("button") { ButtonCommandRegistry(get()) }
 
         single<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
 
@@ -62,4 +64,6 @@ fun DiscordModule() =
             ImperiumVersion.parse(
                 this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
         }
+
+        single<LocalizationSource> { BundleLocalizationSource(get()) }
     }

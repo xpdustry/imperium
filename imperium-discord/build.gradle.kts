@@ -19,6 +19,7 @@ dependencies {
     }
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
+    implementation(libs.cloud.jda5)
 }
 
 tasks.shadowJar {
