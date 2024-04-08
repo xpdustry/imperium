@@ -1,0 +1,20 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "hostRules": [
+    {
+      "hostType": "maven",
+      "matchHost": "https://maven.xpdustry.com/mindustry"
+    },
+    {
+      "hostType": "maven",
+      "matchHost": "https://maven.xpdustry.com/releases"
+    },
+    {
+      "hostType": "maven",
+      "matchHost": "https://maven.xpdustry.com/snapshots"
+    }
+  ]
+}
