@@ -139,7 +139,7 @@ class HelpCommand : ImperiumApplication.Listener {
     }
 
     private fun getCommandList(sender: CommandSender) =
-        Vars.netServer.clientCommands.commandList.asList().map(CommandFacade::wrap).filter {
+        Vars.netServer.clientCommands.commandList.asList().map(CommandFacade::from).filter {
             it.isVisible(sender)
         }
 

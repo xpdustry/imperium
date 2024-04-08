@@ -38,7 +38,7 @@ private class MenuInterfaceImpl(plugin: MindustryPlugin) :
 
     private val id =
         Menus.registerMenu { player: Player, option: Int ->
-            val view = views[MUUID.of(player)]
+            val view = views[MUUID.from(player)]
             if (view == null) {
                 this.plugin.logger.warn(
                     "Received menu response from player {} (uuid: {}) but no view was found",

@@ -33,6 +33,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
+import java.util.Optional
 import kotlin.reflect.full.hasAnnotation
 import mindustry.Vars
 import mindustry.server.ServerControl
@@ -51,7 +52,7 @@ class CommandAnnotationScanner(
     private lateinit var serverCommandManager: AnnotationParser<CommandSender>
     private var initialized = false
 
-    override fun scan(instance: Any) {
+    override fun scan(instance: Any): Optional<Unit> {
         if (!initialized) {
             clientCommandManager =
                 createArcCommandManagerParser<ClientSide>(plugin, Vars.netServer.clientCommands)
@@ -61,9 +62,8 @@ class CommandAnnotationScanner(
         }
         clientCommandManager.parse(instance)
         serverCommandManager.parse(instance)
+        return Optional.empty<Unit>()
     }
-
-    override fun getPlugin() = plugin
 
     private inline fun <reified T : Annotation> createArcCommandManagerParser(
         plugin: MindustryPlugin,
@@ -74,7 +74,7 @@ class CommandAnnotationScanner(
                 plugin, ExecutionCoordinator.asyncCoordinator(), SenderMapper.identity()) {
                     if (it is LocalisableDescription)
                         DescriptionFacade.localized(it.key, config.language)
-                    else DescriptionFacade.of(it.textDescription())
+                    else DescriptionFacade.text(it.textDescription())
                 }
         manager.initialize(handler)
         manager.settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)

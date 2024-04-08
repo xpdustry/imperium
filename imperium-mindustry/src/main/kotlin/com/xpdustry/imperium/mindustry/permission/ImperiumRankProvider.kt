@@ -54,11 +54,12 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
         ImperiumScope.MAIN.launch { Entities.getPlayersAsync().forEach { fetchPlayerRank(it) } }
 
     override fun getRanks(player: Player): Collection<RankNode> {
-        val rank = cache.getIfPresent(MUUID.of(player)) ?: Rank.EVERYONE
+        val rank = cache.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE
         return listOf(EnumRankNode.linear(rank, { "imperium:" + it.name.lowercase() }, true))
     }
 
     private suspend fun fetchPlayerRank(player: Player) {
-        cache.put(MUUID.of(player), accounts.findByIdentity(player.identity)?.rank ?: Rank.EVERYONE)
+        cache.put(
+            MUUID.from(player), accounts.findByIdentity(player.identity)?.rank ?: Rank.EVERYONE)
     }
 }

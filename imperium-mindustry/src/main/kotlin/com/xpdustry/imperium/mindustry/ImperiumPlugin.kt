@@ -163,7 +163,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         scanner =
             PluginAnnotationScanner.list(
-                this,
                 MethodAnnotationScanner.create(this)
                     .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR),
                 CommandAnnotationScanner(

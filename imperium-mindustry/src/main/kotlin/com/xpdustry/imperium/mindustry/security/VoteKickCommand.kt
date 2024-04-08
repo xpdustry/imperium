@@ -81,12 +81,12 @@ class VoteKickCommand(instances: InstanceManager) :
 
     @EventHandler
     internal fun onPlayerBanEvent(event: PlayerBanEvent) {
-        recentBans.add(MUUID.of(event.player))
+        recentBans.add(MUUID.from(event.player))
     }
 
     @EventHandler
     internal fun onPlayerLeave(event: EventType.PlayerLeave) {
-        if (MUUID.of(event.player) in recentBans) return
+        if (MUUID.from(event.player) in recentBans) return
         manager.sessions.values
             .filter { it.objective.target == event.player }
             .forEach(VoteManager.Session<Context>::success)

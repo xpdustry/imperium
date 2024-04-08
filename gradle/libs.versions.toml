@@ -12,7 +12,7 @@ mindustry = "146"
 
 # libraries
 distributor = "3.3.0"
-distributor4 = "4.0.0-beta.2-SNAPSHOT"
+distributor4 = "4.0.0-beta.2"
 junit = "5.10.2"
 testcontainers = "1.19.6"
 guava = "32.0.1-jre" # Can't update guava because of gradle metadata skill issue, very anoying

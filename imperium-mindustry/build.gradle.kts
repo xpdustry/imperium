@@ -87,22 +87,6 @@ val downloadKotlinRuntime =
         )
     }
 
-val downloadDistributorCore =
-    tasks.register<GithubArtifactDownload>("downloadDistributor") {
-        user.set("xpdustry")
-        repo.set("distributor")
-        name.set("distributor-core.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
-    }
-
-val downloadDistributorKotlin =
-    tasks.register<GithubArtifactDownload>("downloadDistributorKotlin") {
-        user.set("xpdustry")
-        repo.set("distributor")
-        name.set("distributor-kotlin.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
-    }
-
 val downloadDistributor4LoggingSimple =
     tasks.register<GithubArtifactDownload>("downloadDistributor4LoggingSimple") {
         user.set("xpdustry")
@@ -150,10 +134,10 @@ tasks.runMindustryServer {
         downloadKotlinRuntime,
         tasks.shadowJar,
         downloadNoHorny,
+        downloadDistributor4LoggingSimple,
+        downloadDistributor4Common,
+        downloadDistributor4PermissionRank,
     )
-    project.file("libs").listFiles().forEach {
-        mods.from(it)
-    }
 }
 
 // Second server for testing discovery
@@ -166,8 +150,9 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     mods.setFrom(
         downloadKotlinRuntime,
         tasks.shadowJar,
-        downloadDistributorCore,
-        downloadDistributorKotlin,
         downloadNoHorny,
+        downloadDistributor4LoggingSimple,
+        downloadDistributor4Common,
+        downloadDistributor4PermissionRank,
     )
 }
