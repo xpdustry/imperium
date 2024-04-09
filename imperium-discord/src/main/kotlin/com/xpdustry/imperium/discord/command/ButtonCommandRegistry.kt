@@ -37,13 +37,8 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
 class ButtonCommandRegistry(private val discord: DiscordService) :
     AnnotationScanner, ImperiumApplication.Listener {
     private val handlers = mutableMapOf<String, ButtonHandler>()
-    private val containers = mutableListOf<Any>()
 
     override fun onImperiumInit() {
-        for (container in containers) {
-            register0(container)
-        }
-
         discord.jda.addSuspendingEventListener<ButtonInteractionEvent> { event ->
             val handler = handlers[event.componentId]
             if (handler == null) {
@@ -71,11 +66,7 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
     }
 
     override fun scan(instance: Any) {
-        containers += instance
-    }
-
-    private fun register0(container: Any) {
-        for (function in container::class.memberFunctions) {
+        for (function in instance::class.memberFunctions) {
             val button = function.findAnnotation<ButtonCommand>() ?: continue
 
             if (!button.name.all { it.isLetterOrDigit() || it == '-' || it == ':' }) {
@@ -96,7 +87,7 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
             function.isAccessible = true
             handlers[button.name] =
                 ButtonHandler(
-                    container,
+                    instance,
                     button.rank,
                     function,
                     !function.hasAnnotation<NonEphemeral>(),

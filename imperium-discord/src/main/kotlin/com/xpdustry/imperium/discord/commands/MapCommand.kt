@@ -43,6 +43,7 @@ import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import java.io.InputStream
+import java.net.URL
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Message
@@ -51,6 +52,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.utils.FileUpload
+import org.incendo.cloud.annotation.specifier.Greedy
 import org.incendo.cloud.annotation.specifier.Range
 
 internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -108,7 +110,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     suspend fun onMapSubmitCommand(
         actor: InteractionSender.Slash,
         map: Message.Attachment,
-        notes: String? = null
+        @Greedy notes: String? = null
     ) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")
@@ -235,9 +237,19 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                     if (snowflake != null) {
                         field("Identifier", "`$snowflake`", false)
                     }
+                    image = "attachment://preview2.png"
                 })
             .setComponents()
-            .setAttachments(actor.message.attachments)
+            .setFiles(
+                FileUpload.fromStreamSupplier(actor.message.attachments.first().fileName) {
+                    actor.message.attachments.first().proxy.download().join()
+                },
+                // Why do I have to fight discord API to simply update an image in an embed ?
+                // I hate it
+                FileUpload.fromStreamSupplier("preview2.png") {
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    URL(actor.message.embeds.first().image!!.url).openStream()
+                })
             .await()
 
         discord

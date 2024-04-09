@@ -1,9 +1,10 @@
 plugins {
     id("imperium.base-conventions")
-    id("imperium.publishing-conventions")
     id("com.github.johnrengelman.shadow")
     id("fr.xpdustry.toxopid")
 }
+
+version = rootProject.version
 
 toxopid {
     compileVersion.set(libs.versions.mindustry.map { "v$it" })
