@@ -23,14 +23,12 @@ dependencies {
     api(projects.imperiumCommon)
 
     mindustryDependencies()
-    compileOnly(libs.distributor.api)
-    compileOnly(libs.distributor.kotlin)
+    implementation(libs.distributor4.command.cloud)
+    implementation(libs.bundles.cloud)
+    compileOnly(libs.distributor4.common)
+    compileOnly(libs.distributor4.permission.rank)
     compileOnly(libs.nohorny)
-
     implementation(libs.jsoup)
-
-    testImplementation(libs.distributor.api)
-    testImplementation(libs.distributor.kotlin)
 }
 
 tasks.shadowJar {
@@ -89,20 +87,28 @@ val downloadKotlinRuntime =
         )
     }
 
-val downloadDistributorCore =
-    tasks.register<GithubArtifactDownload>("downloadDistributor") {
+val downloadDistributor4LoggingSimple =
+    tasks.register<GithubArtifactDownload>("downloadDistributor4LoggingSimple") {
         user.set("xpdustry")
         repo.set("distributor")
-        name.set("distributor-core.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
+        name.set("distributor-logging-simple.jar")
+        version.set(libs.versions.distributor4.map { "v$it" })
     }
 
-val downloadDistributorKotlin =
-    tasks.register<GithubArtifactDownload>("downloadDistributorKotlin") {
+val downloadDistributor4Common =
+    tasks.register<GithubArtifactDownload>("downloadDistributor4Common") {
         user.set("xpdustry")
         repo.set("distributor")
-        name.set("distributor-kotlin.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
+        name.set("distributor-common.jar")
+        version.set(libs.versions.distributor4.map { "v$it" })
+    }
+
+val downloadDistributor4PermissionRank =
+    tasks.register<GithubArtifactDownload>("downloadDistributor4PermissionRank") {
+        user.set("xpdustry")
+        repo.set("distributor")
+        name.set("distributor-permission-rank.jar")
+        version.set(libs.versions.distributor4.map { "v$it" })
     }
 
 val downloadNoHorny =
@@ -127,9 +133,10 @@ tasks.runMindustryServer {
     mods.setFrom(
         downloadKotlinRuntime,
         tasks.shadowJar,
-        downloadDistributorCore,
-        downloadDistributorKotlin,
         downloadNoHorny,
+        downloadDistributor4LoggingSimple,
+        downloadDistributor4Common,
+        downloadDistributor4PermissionRank,
     )
 }
 
@@ -143,8 +150,9 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     mods.setFrom(
         downloadKotlinRuntime,
         tasks.shadowJar,
-        downloadDistributorCore,
-        downloadDistributorKotlin,
         downloadNoHorny,
+        downloadDistributor4LoggingSimple,
+        downloadDistributor4Common,
+        downloadDistributor4PermissionRank,
     )
 }

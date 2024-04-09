@@ -17,11 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
+import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Max
-import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -34,13 +34,12 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import fr.xpdustry.distributor.api.command.sender.CommandSender
-import fr.xpdustry.distributor.api.event.EventHandler
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.net.Administration.PlayerInfo
+import org.incendo.cloud.annotation.specifier.Range
 
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val history = instances.get<BlockHistory>()
@@ -49,13 +48,13 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val config = instances.get<ServerConfig.Mindustry>()
     private val renderer = instances.get<TimeRenderer>()
 
-    @Command(["history", "player"])
+    @ImperiumCommand(["history", "player"])
     @ClientSide
     @ServerSide
     private suspend fun onPlayerHistoryCommand(
         sender: CommandSender,
         player: PlayerInfo,
-        @Min(1) @Max(50) limit: Int = 10
+        @Range(min = "1", max = "50") limit: Int = 10
     ) {
         val entries = runMindustryThread { normalize(history.getHistory(player.id), limit) }
         if (entries.none()) {
@@ -78,7 +77,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
 
         sender.sendMessage(
-            if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
+            if (sender.isServer) builder.toString().stripMindustryColors() else builder.toString())
     }
 
     @EventHandler
@@ -98,14 +97,14 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
-    @Command(["history", "tile"])
+    @ImperiumCommand(["history", "tile"])
     @ClientSide
     @ServerSide
     private suspend fun onTileHistoryCommand(
         sender: CommandSender,
-        @Min(1) x: Short,
-        @Min(1) y: Short,
-        @Min(1) @Max(50) limit: Int = 10,
+        @Range(min = "1") x: Short,
+        @Range(min = "1") y: Short,
+        @Range(min = "1", max = "50") limit: Int = 10,
     ) {
         val entries = runMindustryThread {
             normalize(history.getHistory(x.toInt(), y.toInt()), limit)
@@ -128,7 +127,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
 
         sender.sendMessage(
-            if (sender.isConsole) builder.toString().stripMindustryColors() else builder.toString())
+            if (sender.isServer) builder.toString().stripMindustryColors() else builder.toString())
     }
 
     private suspend fun renderEntry(

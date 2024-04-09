@@ -6,10 +6,5 @@
   "java": true,
   "main": "com.xpdustry.imperium.mindustry.ImperiumPlugin",
   "repo": "Xpdustry/Imperium",
-  "dependencies": [
-    "distributor-core",
-    "distributor-kotlin",
-    "kotlin-runtime",
-    "nohorny"
-  ]
+  "dependencies": ["distributor-common", "kotlin-runtime", "nohorny"]
 }

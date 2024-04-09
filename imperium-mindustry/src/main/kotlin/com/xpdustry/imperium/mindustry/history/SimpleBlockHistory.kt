@@ -18,6 +18,8 @@
 package com.xpdustry.imperium.mindustry.history
 
 import arc.math.geom.Point2
+import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -32,8 +34,6 @@ import com.xpdustry.imperium.mindustry.history.factory.MESSAGE_BLOCK_CONFIGURATI
 import com.xpdustry.imperium.mindustry.history.factory.PAYLOAD_DRIVER_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.factory.POWER_NODE_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.factory.UNIT_FACTORY_CONFIGURATION_FACTORY
-import fr.xpdustry.distributor.api.event.EventHandler
-import fr.xpdustry.distributor.api.util.Priority
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.superclasses

@@ -19,10 +19,10 @@ package com.xpdustry.imperium.mindustry.ui.popup
 
 import arc.util.Interval
 import arc.util.Time
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.imperium.mindustry.ui.TransformerInterface
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import kotlin.math.min
 import mindustry.game.EventType
 import mindustry.gen.Call

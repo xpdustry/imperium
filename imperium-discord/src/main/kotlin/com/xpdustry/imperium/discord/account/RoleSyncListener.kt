@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -48,7 +48,7 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
         }
     }
 
-    @Command(["sync-roles"])
+    @ImperiumCommand(["sync-roles"])
     private suspend fun onSyncRolesCommand(sender: InteractionSender.Slash) {
         val account = accounts.findByDiscord(sender.member.idLong)
         if (account == null) {

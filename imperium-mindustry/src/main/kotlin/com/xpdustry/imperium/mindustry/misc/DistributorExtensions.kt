@@ -20,10 +20,10 @@ package com.xpdustry.imperium.mindustry.misc
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
+import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.collection.ArcCollections
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
-import fr.xpdustry.distributor.api.DistributorProvider
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.ArcCollections
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.time.Duration
@@ -48,7 +48,8 @@ suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T)
         suspendCancellableCoroutine { continuation ->
             DistributorProvider.get()
                 .pluginScheduler
-                .scheduleSync(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
+                .schedule(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
+                .async(false)
                 .execute { _ ->
                     runCatching(task).fold(continuation::resume, continuation::resumeWithException)
                 }

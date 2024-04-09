@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.ui
 
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
-import fr.xpdustry.distributor.api.util.Priority
 
 interface TransformerInterface<P : Pane> : Interface {
     val transformers: List<Transformer<P>>

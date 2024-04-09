@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.ui.transform
 
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.mindustry.ui.Pane
 import com.xpdustry.imperium.mindustry.ui.View
-import fr.xpdustry.distributor.api.util.Priority
 
 class PriorityTransformer<P : Pane>(
     private val transformer: Transformer<P>,

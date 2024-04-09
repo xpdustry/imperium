@@ -28,6 +28,7 @@ import java.net.URL
 import java.util.Locale
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 data class ImperiumConfig(
@@ -115,6 +116,8 @@ sealed interface ServerConfig {
         val world: World = World(),
         val security: Security = Security(),
         val templates: Templates = Templates(),
+        val tipsDelay: Duration = 5.minutes,
+        val tips: List<String> = listOf("discord", "rules")
     ) : ServerConfig {
         init {
             require(name != "discord") { "Mindustry Server name cannot be discord" }

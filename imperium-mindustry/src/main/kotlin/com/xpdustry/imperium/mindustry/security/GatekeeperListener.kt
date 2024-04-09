@@ -21,6 +21,7 @@ import arc.Events
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
+import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -37,7 +38,6 @@ import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import fr.xpdustry.distributor.api.util.Priority
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import kotlin.time.Duration

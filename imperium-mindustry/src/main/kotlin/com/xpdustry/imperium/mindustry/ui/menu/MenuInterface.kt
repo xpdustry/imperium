@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.ui.menu
 
+import com.xpdustry.distributor.player.MUUID
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.imperium.mindustry.ui.TransformerInterface
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.MUUID
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.ui.Menus
@@ -38,7 +38,7 @@ private class MenuInterfaceImpl(plugin: MindustryPlugin) :
 
     private val id =
         Menus.registerMenu { player: Player, option: Int ->
-            val view = views[MUUID.of(player)]
+            val view = views[MUUID.from(player)]
             if (view == null) {
                 this.plugin.logger.warn(
                     "Received menu response from player {} (uuid: {}) but no view was found",

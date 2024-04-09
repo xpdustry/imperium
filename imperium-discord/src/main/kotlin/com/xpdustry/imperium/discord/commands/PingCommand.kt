@@ -18,14 +18,13 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.misc.await
-import kotlinx.coroutines.future.await
 
 class PingCommand : ImperiumApplication.Listener {
-    @Command(["ping"])
+    @ImperiumCommand(["ping"])
     @NonEphemeral
     suspend fun onPingCommand(actor: InteractionSender.Slash) =
         actor.respond("pong with **${actor.jda.restPing.await()}** milliseconds of latency!")

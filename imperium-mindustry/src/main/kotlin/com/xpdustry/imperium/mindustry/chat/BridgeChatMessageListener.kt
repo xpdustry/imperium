@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.Strings
+import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
@@ -37,7 +38,6 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderContext
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
-import fr.xpdustry.distributor.api.event.EventHandler
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType

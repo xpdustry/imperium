@@ -17,6 +17,13 @@
  */
 package com.xpdustry.imperium.common.command
 
-interface CommandRegistry {
-    fun parse(container: Any)
-}
+import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.content.MindustryGamemode
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class ImperiumPermission(
+    val rank: Rank = Rank.EVERYONE,
+    vararg val gamemodes: MindustryGamemode = []
+)

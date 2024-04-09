@@ -19,8 +19,8 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.command.Command
-import com.xpdustry.imperium.common.command.annotation.Min
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -51,8 +51,9 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.utils.FileUpload
+import org.incendo.cloud.annotation.specifier.Range
 
-class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
     private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
@@ -60,7 +61,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val renderer = instances.get<TimeRenderer>()
 
     @Suppress("DuplicatedCode")
-    @Command(["map", "preview"])
+    @ImperiumCommand(["map", "preview"])
     @NonEphemeral
     suspend fun onMapPreviewCommand(actor: InteractionSender.Slash, map: Message.Attachment) {
         if (!map.fileName.endsWith(".msav")) {
@@ -102,7 +103,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @Suppress("DuplicatedCode")
-    @Command(["map", "submit"])
+    @ImperiumCommand(["map", "submit"])
     @NonEphemeral
     suspend fun onMapSubmitCommand(
         actor: InteractionSender.Slash,
@@ -257,11 +258,11 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 })
     }
 
-    @Command(["map", "list"])
+    @ImperiumCommand(["map", "list"])
     @NonEphemeral
-    private suspend fun onMapList(
+    suspend fun onMapList(
         actor: InteractionSender.Slash,
-        @Min(1) page: Int = 1,
+        @Range(min = "1") page: Int = 1,
         query: String? = null,
         gamemode: MindustryGamemode? = null
     ) {
@@ -294,9 +295,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             })
     }
 
-    @Command(["map", "info"])
+    @ImperiumCommand(["map", "info"])
     @NonEphemeral
-    private suspend fun onMapInfo(actor: InteractionSender.Slash, id: Snowflake) {
+    suspend fun onMapInfo(actor: InteractionSender.Slash, id: Snowflake) {
         val map = maps.findMapBySnowflake(id)
         if (map == null) {
             actor.respond("Unknown map id")
@@ -344,9 +345,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     // TODO Add a way to navigate the games
-    @Command(["map", "game", "info"])
+    @ImperiumCommand(["map", "game", "info"])
     @NonEphemeral
-    private suspend fun onMapGameInfo(actor: InteractionSender.Slash, id: Snowflake) {
+    suspend fun onMapGameInfo(actor: InteractionSender.Slash, id: Snowflake) {
         val game = maps.findMapGameBySnowflake(id)
         if (game == null) {
             actor.respond("Unknown game id")
@@ -381,7 +382,7 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     @ButtonCommand(MAP_DOWNLOAD_BUTTON)
-    private suspend fun onMapDownload(actor: InteractionSender.Button) {
+    suspend fun onMapDownload(actor: InteractionSender.Button) {
         val snowflake = actor.message.embeds.first().getFieldValue("Identifier")?.toLong()
         val stream = snowflake?.let { maps.getMapInputStream(it) }
         if (stream === null) {
@@ -394,8 +395,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @Command(["map", "gamemode", "add"], Rank.MODERATOR)
-    private suspend fun onMapGamemodeAdd(
+    @ImperiumCommand(["map", "gamemode", "add"])
+    @ImperiumPermission(Rank.MODERATOR)
+    suspend fun onMapGamemodeAdd(
         actor: InteractionSender.Slash,
         id: Snowflake,
         gamemode: MindustryGamemode
@@ -414,8 +416,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "gamemode", "remove"], Rank.MODERATOR)
-    private suspend fun onMapGamemodeRemove(
+    @ImperiumCommand(["map", "gamemode", "remove"])
+    @ImperiumPermission(Rank.MODERATOR)
+    suspend fun onMapGamemodeRemove(
         actor: InteractionSender.Slash,
         id: Snowflake,
         gamemode: MindustryGamemode
@@ -433,8 +436,9 @@ class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond("This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @Command(["map", "delete"], Rank.ADMIN)
-    private suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
+    @ImperiumCommand(["map", "delete"])
+    @ImperiumPermission(Rank.ADMIN)
+    suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
         if (maps.deleteMapBySnowflake(id)) {
             actor.respond("Map deleted!")
         } else {

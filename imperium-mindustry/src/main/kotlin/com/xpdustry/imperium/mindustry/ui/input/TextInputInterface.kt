@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.ui.input
 
+import com.xpdustry.distributor.player.MUUID
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.imperium.mindustry.ui.TransformerInterface
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
-import fr.xpdustry.distributor.api.util.MUUID
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.ui.Menus
@@ -40,7 +40,7 @@ private class SimpleTextInputInterface(
 
     private val id: Int =
         Menus.registerTextInput { player: Player, text: String? ->
-            val view = views[MUUID.of(player)]
+            val view = views[MUUID.from(player)]
             if (view == null) {
                 this.plugin.logger.warn(
                     "Received text input from player {} (uuid: {}) but no view was found",
@@ -51,7 +51,7 @@ private class SimpleTextInputInterface(
             }
 
             // Simple trick to not reopen an interface when an action already does it.
-            visible.remove(MUUID.of(player))
+            visible.remove(MUUID.from(player))
             if (text == null) {
                 view.pane.exitAction.accept(view)
             } else if (text.length > view.pane.length) {
@@ -68,13 +68,13 @@ private class SimpleTextInputInterface(
             }
             // The text input closes automatically when the player presses enter,
             // so reopen if it was not explicitly closed by the server.
-            if (view.isOpen && !visible.contains(MUUID.of(player))) {
+            if (view.isOpen && !visible.contains(MUUID.from(player))) {
                 view.open()
             }
         }
 
     override fun onViewOpen(view: SimpleView) {
-        if (visible.add(MUUID.of(view.viewer))) {
+        if (visible.add(MUUID.from(view.viewer))) {
             Call.textInput(
                 view.viewer.con(),
                 id,

@@ -15,17 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.command
+package com.xpdustry.imperium.common.command
 
-import cloud.commandframework.ArgumentDescription
-import fr.xpdustry.distributor.api.DistributorProvider
-import java.util.Locale
+import com.xpdustry.imperium.common.localization.LocalizationSource
+import org.incendo.cloud.description.Description
 
-class LocalisableArgumentDescription(private val key: String, private val default: Locale) :
-    ArgumentDescription {
-    override fun getDescription(): String =
-        DistributorProvider.get().globalLocalizationSource.format(key, default)
-
-    fun getDescription(locale: Locale): String =
-        DistributorProvider.get().globalLocalizationSource.format(key, locale)
+class LocalisableDescription(val key: String, private val source: LocalizationSource) :
+    Description {
+    override fun textDescription() = source.format(key, null)
 }

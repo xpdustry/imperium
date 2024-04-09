@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
+import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -39,7 +40,6 @@ import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
-import fr.xpdustry.distributor.api.plugin.MindustryPlugin
 import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
