@@ -3,18 +3,16 @@
   "extends": [
     "config:recommended"
   ],
-  "hostRules": [
+  "packageRules": [
     {
-      "hostType": "maven",
-      "matchHost": "https://maven.xpdustry.com/mindustry"
+      "matchDatasources": ["maven"],
+      "registryUrls": ["https://maven.xpdustry.com/releases", "https://maven.xpdustry.com/snapshots"],
+      "matchPackagePrefixes": ["com.xpdustry", "fr.xpdustry"]
     },
     {
-      "hostType": "maven",
-      "matchHost": "https://maven.xpdustry.com/releases"
-    },
-    {
-      "hostType": "maven",
-      "matchHost": "https://maven.xpdustry.com/snapshots"
+      "matchDatasources": ["maven"],
+      "registryUrls": ["https://maven.xpdustry.com/mindustry"],
+      "matchPackagePrefixes": ["com.github.Anuken"]
     }
   ]
 }
