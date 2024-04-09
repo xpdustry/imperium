@@ -15,7 +15,7 @@ distributor = "3.3.0"
 distributor4 = "4.0.0-beta.2"
 junit = "5.10.2"
 testcontainers = "1.19.7"
-guava = "32.0.1-jre" # Can't update guava because of gradle metadata skill issue, very anoying
+guava = "32.1.3-jre"
 gson = "2.10.1"
 hoplite = "2.7.5"
 deepl = "1.4.0"
@@ -48,7 +48,6 @@ indra = "3.1.3"
 spotless = "6.25.0"
 shadow = "8.1.1"
 ktlint = "0.49.1"
-gradle-versions = "0.47.0"
 
 [libraries]
 # libraries
@@ -111,7 +110,6 @@ spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.re
 shadow = { module = "com.github.johnrengelman:shadow", version.ref = "shadow" }
 kotlin-plugin-core = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin-core" }
 kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin-core" }
-gradle-versions = { module = "com.github.ben-manes:gradle-versions-plugin", version.ref = "gradle-versions" }
 
 
 [bundles]
