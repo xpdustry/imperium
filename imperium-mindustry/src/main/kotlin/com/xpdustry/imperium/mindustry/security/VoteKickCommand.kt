@@ -29,7 +29,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
-import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Punishment
@@ -165,6 +164,8 @@ class VoteKickCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionFailure(session: VoteManager.Session<Context>) {
         runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
+        session.objective.target.sendMessage(
+            "[sky]You are no longer involved in a vote kick, you have been unfrozen.")
     }
 
     override fun canParticipantStart(player: Player, objective: Context): Boolean {
@@ -183,7 +184,9 @@ class VoteKickCommand(instances: InstanceManager) :
             return false
         }
         freezes.setTemporaryFreeze(
-            objective.target, FreezeManager.Freeze("You are currently being votekicked."))
+            objective.target,
+            FreezeManager.Freeze(
+                "[sky]You are involved in a vote kick so you will be temporarily frozen. Being frozen prevents you from building or interacting. You will be un-frozen once the vote kick ends."))
         return true
     }
 
@@ -207,8 +210,10 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getRequiredVotes(players: Int): Int =
-        if (players < 5) {
+        if (players < 4) {
             2
+        } else if (players < 5) {
+            3
         } else if (players < 21) {
             (players / 2F).roundToInt()
         } else {
@@ -216,7 +221,7 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
-        "Type [accent]/vote y[] to kick [accent]${session.objective.target.name.stripMindustryColors()}[] from the game for [accent]${session.objective.reason}[]."
+        "[red]VK[]: Vote started to kick ${session.objective.target.name}[] out of the server. /vote y/n in order to vote. \nReason: ${session.objective.reason}."
 
     private fun getSession(team: Team): VoteManager.Session<Context>? =
         manager.sessions.values.firstOrNull { it.objective.team == team }
