@@ -139,8 +139,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     is Identity.Mindustry -> accounts.findByIdentity(subject)?.playtime
                     is Identity.Discord -> accounts.findByDiscord(subject.id)?.playtime
                     else -> null
-                }
-                    ?: return@registerCaching ""
+                } ?: return@registerCaching ""
             when (query) {
                 "hours" -> playtime.inWholeHours.toString()
                 "chaotic" -> chaoticHourFormat.format(playtime.inWholeHours)
@@ -171,8 +170,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         .find { it.uuid() == subject.uuid }
                         ?.color
                         ?.toString()
-                        ?.let { "#$it" }
-                        ?: MINDUSTRY_ORANGE_COLOR.toHexString()
+                        ?.let { "#$it" } ?: MINDUSTRY_ORANGE_COLOR.toHexString()
                 is Identity.Discord -> BLURPLE.toHexString()
                 else -> config.color.toHexString()
             }

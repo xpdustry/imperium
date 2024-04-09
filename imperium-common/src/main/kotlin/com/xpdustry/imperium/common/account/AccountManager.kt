@@ -265,8 +265,7 @@ class SimpleAccountManager(
             val oldAccount =
                 LegacyAccountTable.selectAll()
                     .where { LegacyAccountTable.usernameHash eq oldUsernameHash }
-                    .firstOrNull()
-                    ?: return@newSuspendTransaction AccountResult.NotFound
+                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (!GenericSaltyHashFunction.equals(
                 password,
@@ -327,8 +326,7 @@ class SimpleAccountManager(
                 (AccountTable leftJoin AccountSessionTable)
                     .select(AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
                     .where { AccountSessionTable.hash eq sessionHash }
-                    .firstOrNull()
-                    ?: return@newSuspendTransaction AccountResult.NotFound
+                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (!GenericSaltyHashFunction.equals(
                 oldPassword,
@@ -363,8 +361,7 @@ class SimpleAccountManager(
                 AccountTable.select(
                         AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
                     .where { AccountTable.username eq username }
-                    .firstOrNull()
-                    ?: return@newSuspendTransaction AccountResult.NotFound
+                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (!GenericSaltyHashFunction.equals(
                 password,
@@ -415,8 +412,7 @@ class SimpleAccountManager(
             val session =
                 AccountSessionTable.select(AccountSessionTable.account)
                     .where { AccountSessionTable.hash eq sessionHash }
-                    .firstOrNull()
-                    ?: return@newSuspendTransaction AccountResult.NotFound
+                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (all) {
                 AccountSessionTable.deleteWhere { account eq session[account] }
@@ -445,8 +441,7 @@ class SimpleAccountManager(
                                 (AccountAchievementTable.achievement eq achievement)
                         }
                         .firstOrNull()
-                        ?.toAchievementProgression()
-                        ?: Account.Achievement.Progression.ZERO
+                        ?.toAchievementProgression() ?: Account.Achievement.Progression.ZERO
 
                 if (progression.completed) {
                     return@newSuspendTransaction AccountResult.Success to false

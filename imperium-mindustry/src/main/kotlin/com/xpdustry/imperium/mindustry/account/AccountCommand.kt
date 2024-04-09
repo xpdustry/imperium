@@ -177,8 +177,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 val player =
                     Entities.getPlayersAsync().find {
                         it.uuid() == message.uuid && it.usid() == message.usid
-                    }
-                        ?: return@consumer
+                    } ?: return@consumer
                 player.showInfoMessage("You have been verified!")
                 player.tryGrantAdmin(manager)
             }

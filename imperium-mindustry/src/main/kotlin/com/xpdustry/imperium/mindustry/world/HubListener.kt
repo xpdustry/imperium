@@ -264,8 +264,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val portal =
             portals.values.firstOrNull {
                 it.polygon.contains(event.tile.x.toInt(), event.tile.y.toInt())
-            }
-                ?: return
+            } ?: return
         val data = discovery.servers[portal.name]?.data ?: return
         if (data !is Discovery.Data.Mindustry) return
         Call.connect(event.player.con, data.host.hostAddress, data.port)
@@ -377,7 +376,8 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private fun getCurrentMapName() =
         Vars.state.map.tags.get("imperium-map-id")
-            ?: Vars.state.map.tags.get("name") ?: error("The current map has no name.")
+            ?: Vars.state.map.tags.get("name")
+            ?: error("The current map has no name.")
 
     data class Portal(
         val name: String,

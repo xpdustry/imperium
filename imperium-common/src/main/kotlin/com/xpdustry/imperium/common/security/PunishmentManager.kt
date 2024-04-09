@@ -162,8 +162,7 @@ class SimplePunishmentManager(
                 val data =
                     PunishmentTable.select(PunishmentTable.pardonTimestamp)
                         .where { PunishmentTable.id eq punishment }
-                        .firstOrNull()
-                        ?: return@newSuspendTransaction PardonResult.NOT_FOUND
+                        .firstOrNull() ?: return@newSuspendTransaction PardonResult.NOT_FOUND
 
                 if (data[PunishmentTable.pardonTimestamp] != null) {
                     return@newSuspendTransaction PardonResult.ALREADY_PARDONED

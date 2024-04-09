@@ -258,8 +258,7 @@ class SimpleMindustryMapManager(
                     .where { MindustryMapRatingTable.map eq map }
                     .firstOrNull()
                     ?.get(MindustryMapRatingTable.score.avg())
-                    ?.toDouble()
-                    ?: 2.5
+                    ?.toDouble() ?: 2.5
             val difficulty =
                 MindustryMapRatingTable.select(
                         MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
@@ -283,8 +282,7 @@ class SimpleMindustryMapManager(
                     .where { MindustryMapGameTable.map eq map }
                     .firstOrNull()
                     ?.get(MindustryMapGameTable.playtime.sum())
-                    ?.toKotlinDuration()
-                    ?: Duration.ZERO
+                    ?.toKotlinDuration() ?: Duration.ZERO
             val record =
                 MindustryMapGameTable.select(MindustryMapGameTable.id)
                     .where { MindustryMapGameTable.map eq map }
