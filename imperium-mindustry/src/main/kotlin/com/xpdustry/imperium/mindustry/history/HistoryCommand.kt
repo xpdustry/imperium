@@ -121,9 +121,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 .append("] [lightgrey](Top = Newest)")
                 .append("\n[accent]============================")
         for (entry in entries) {
-            builder
-                .append("\n' ")
-                .append(renderEntry(entry, name = true, position = false, 3))
+            builder.append("\n' ").append(renderEntry(entry, name = true, position = false, 3))
         }
 
         sender.sendMessage(
@@ -169,7 +167,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     indent,
                 )
         }
-         // TODO make these more like the ones above
+        // TODO make these more like the ones above
         if (entry.type !== HistoryEntry.Type.CONFIGURE && entry.configuration != null) {
             renderConfiguration(
                 builder.append(" ".repeat(indent)).append("\n[accent] > [white]"),
@@ -248,7 +246,8 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     .append("[white] to [accent]")
                     .append(config.value.name)
             }
-            // Player can't even manually disable or enable anything, only logic can and is not logged, dispose?
+            // Player can't even manually disable or enable anything, only logic can and is not
+            // logged, dispose?
             is HistoryConfig.Enable -> {
                 builder
                     .append(if (config.value) "Enabled" else "Disabled")
