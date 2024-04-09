@@ -91,8 +91,7 @@ internal class SimpleFreezeManager(
             punishments
                 .findAllByIdentity(player.identity)
                 .filter { it.type == Punishment.Type.FREEZE && !it.expired }
-                .maxByOrNull { it.duration }
-                ?: return
+                .maxByOrNull { it.duration } ?: return
         runMindustryThread {
             if (player.con.isConnected && !player.con.kicked) {
                 cache.put(player.uuid(), freeze)
