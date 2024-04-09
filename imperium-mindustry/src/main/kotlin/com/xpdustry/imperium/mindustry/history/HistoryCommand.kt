@@ -114,15 +114,15 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             return
         }
         val builder =
-            StringBuilder("[accent]History of tile [white]")
-                .append("(")
+            StringBuilder("[orange]Tile Logs for[white][")
                 .append(x)
-                .append(", ")
+                .append("][ ")
                 .append(y)
-                .append(")[]:")
+                .append("] [lightgrey](Top = Newest)")
+                .append("\n[accent]============================")
         for (entry in entries) {
             builder
-                .append("\n[accent] > ")
+                .append("\n' ")
                 .append(renderEntry(entry, name = true, position = false, 3))
         }
 
@@ -148,18 +148,18 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
         when (entry.type) {
             HistoryEntry.Type.PLACING ->
-                builder.append("Constructing [accent]").append(entry.block.name)
+                builder.append("[accent] constructing[white]").append(entry.block.name)
             HistoryEntry.Type.PLACE ->
-                builder.append("Constructed [accent]").append(entry.block.name)
+                builder.append("[accent] constructed[white]").append(entry.block.name)
             HistoryEntry.Type.BREAKING ->
-                builder.append("Deconstructing [accent]").append(entry.block.name)
+                builder.append("[accent] deconstructing[white]").append(entry.block.name)
             HistoryEntry.Type.BREAK ->
-                builder.append("Deconstructed [accent]").append(entry.block.name)
+                builder.append("[accent] deconstructed[white]").append(entry.block.name)
             HistoryEntry.Type.ROTATE ->
                 builder
-                    .append("Rotated [accent]")
+                    .append("[accent] rotated[white]")
                     .append(entry.block.name)
-                    .append(" [white]to [accent]")
+                    .append(" to [accent]")
                     .append(getOrientation(entry.rotation))
             HistoryEntry.Type.CONFIGURE ->
                 renderConfiguration(
