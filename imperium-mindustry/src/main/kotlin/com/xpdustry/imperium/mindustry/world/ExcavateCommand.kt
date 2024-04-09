@@ -34,6 +34,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
@@ -55,6 +56,7 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.gen.Iconc
+import mindustry.gen.Player
 import mindustry.gen.Sounds
 import mindustry.type.Item
 
@@ -78,6 +80,16 @@ class ExcavateCommand(instances: InstanceManager) :
                 }
             }
         }
+    }
+
+    @EventHandler
+    internal fun onGameOverEvent(event: EventType.GameOverEvent) {
+        manager.session?.failure()
+    }
+
+    @EventHandler
+    internal fun onMenuToPlayEvent(event: MenuToPlayEvent) {
+        areas.clear()
     }
 
     @EventHandler
@@ -215,6 +227,14 @@ class ExcavateCommand(instances: InstanceManager) :
     @ClientSide
     private fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)
+    }
+
+    override fun canParticipantStart(player: Player, objective: ExcavateData): Boolean {
+        if (Vars.state.gameOver) {
+            player.sendMessage("You can start an excavate vote when the game is over.")
+            return false
+        }
+        return super.canParticipantStart(player, objective)
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {

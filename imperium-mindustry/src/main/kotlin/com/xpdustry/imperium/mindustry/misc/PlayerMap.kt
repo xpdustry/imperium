@@ -46,6 +46,10 @@ class PlayerMap<V>(plugin: MindustryPlugin) {
         players[player.id()] = value
     }
 
+    fun clear() {
+        players.clear()
+    }
+
     fun remove(player: Player) {
         players.remove(player.id())
     }
