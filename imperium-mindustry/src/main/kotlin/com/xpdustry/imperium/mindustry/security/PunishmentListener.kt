@@ -93,7 +93,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             if (freezeMessageCooldowns.incrementAndCheck(action.player.uuid())) {
                 action.player.sendMessage(
                     buildString {
-                        appendLine("You are [cyan]Frozen[white]! You can't interact with anything until a moderator unfreezes you.")
+                        appendLine(
+                            "You are [cyan]Frozen[white]! You can't interact with anything until a moderator unfreezes you.")
                         appendLine("Reason: \"${freeze.reason}\"")
                         if (freeze.punishment != null) {
                             appendLine("[lightgray]ID: ${freeze.punishment}")
