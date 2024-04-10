@@ -46,14 +46,10 @@ jobs:
           echo "MINDUSTRY_ARTIFACT_PATH=$(./gradlew :imperium-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
           echo "DISCORD_ARTIFACT_PATH=$(./gradlew :imperium-discord:getArtifactPath -q)" >> $GITHUB_ENV
 
-      - name: Upload Mindustry Artifact to Actions
+      - name: Upload Artifacts to Actions
         uses: actions/upload-artifact@v4
         with:
           name: "${{ github.event.repository.name }}"
-          path: "${{ env.MINDUSTRY_ARTIFACT_PATH }}"
-
-      - name: Upload Discord Artifact to Actions
-        uses: actions/upload-artifact@v4
-        with:
-          name: "${{ github.event.repository.name }}"
-          path: "${{ env.DISCORD_ARTIFACT_PATH }}"
+          path: |
+            "${{ env.MINDUSTRY_ARTIFACT_PATH }}"
+            "${{ env.DISCORD_ARTIFACT_PATH }}"

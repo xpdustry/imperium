@@ -24,7 +24,7 @@ jobs:
       - name: Build Artifacts
         run: ./gradlew spotlessApply
 
-      - name: Commit Incremented Version
+      - name: Commit Formatted Code
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: Format code"
