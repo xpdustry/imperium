@@ -265,7 +265,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {
         val area = session.objective.area
-        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2})."
+        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use ${price} ${item.name} and you have ${item.get(item)} ${item.name}"
     }
 
     override fun getRequiredVotes(players: Int): Int =
