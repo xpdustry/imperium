@@ -125,7 +125,8 @@ class ExcavateCommand(instances: InstanceManager) :
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
 
         if (point.x && point.y != UNSET_POINT) {
-            return event.player.sendMessage("You have already selected both points, type '/e go' to start the vote")
+            return event.player.sendMessage(
+                "You have already selected both points, type '/e go' to start the vote")
         }
     }
 
@@ -137,7 +138,8 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     private fun onOldExcavateStartCommand(sender: CommandSender) {
-        event.player.sendMessage("This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead.")
+        event.player.sendMessage(
+            "This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead.")
     }
 
     @ImperiumCommand(["excavate|e"])
@@ -167,12 +169,12 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
     private fun onExcavateYesCommand(sender: CommandSender) {
-            onPlayerVote(sender.player, manager.session, Vote.YES)
-            return
-        }
-        
-        @ImperiumCommand(["excavate|e", "go"])
-        @ImperiumPermission(
+        onPlayerVote(sender.player, manager.session, Vote.YES)
+        return
+    }
+
+    @ImperiumCommand(["excavate|e", "go"])
+    @ImperiumPermission(
         gamemodes =
             [
                 MindustryGamemode.SURVIVAL,
