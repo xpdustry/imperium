@@ -181,11 +181,11 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
-    private fun onExcavateStartCommand(sender: CommandSender): Int {
+    private fun onExcavateStartCommand(sender: CommandSender) {
         val area = areas[sender.player]
         if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
             sender.sendMessage("You have not selected both points yet!")
-            return 0
+            return
         }
 
         var price = 0
@@ -199,7 +199,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
         if (price == 0) {
             sender.sendWarning("[scarlet]The area you selected does no contain any walls.")
-            return 0
+            return
         }
 
         val items = Vars.state.rules.defaultTeam.items()
@@ -212,13 +212,12 @@ class ExcavateCommand(instances: InstanceManager) :
                 You currently have [orange]${items.get(item)}[] ${item.name} but [orange]${price - items.get(item)}[] more is needed.
                 """
                     .trimIndent())
-            return 0
+            return
         }
 
         onVoteSessionStart(sender.player, manager.session, ExcavateData(price, area))
         areas.remove(sender.player)
 
-        return price
     }
 
     @ImperiumCommand(["excavate|e", "n"])
@@ -267,7 +266,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {
         val area = session.objective.area
-        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use ${price} ${item.name} and you have ${item.get(item)} ${item.name}"
+        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use <price> ${item.name} and you have ${item.get(item)} ${item.name}" // Get the price somehow
     }
 
     override fun getRequiredVotes(players: Int): Int =
