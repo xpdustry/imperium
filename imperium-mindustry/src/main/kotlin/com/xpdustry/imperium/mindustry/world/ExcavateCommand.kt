@@ -108,7 +108,7 @@ class ExcavateCommand(instances: InstanceManager) :
             if (dx >= config.world.maxExcavateSize || dy >= config.world.maxExcavateSize) {
                 areas[event.player] = ExcavateArea()
                 event.player.sendMessage(
-                    "The chosen excavate point is too far from the other point, try again!")
+                    "The chosen excavation point is too far from the other point, try again!")
                 return
             }
         }
@@ -123,9 +123,24 @@ class ExcavateCommand(instances: InstanceManager) :
         }
 
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
+
+        if (point.x && point.y != UNSET_POINT) {
+            return event.player.sendMessage("You have already selected both points, type '/e go' to start the vote")
+        }
     }
 
-    @ImperiumCommand(["excavate|e", "select|s"])
+    @ImperiumCommand(["excavate|e select|s"])
+    @ImperiumPermission(
+        gamemodes =
+            [
+                MindustryGamemode.SURVIVAL,
+                MindustryGamemode.ATTACK,
+                MindustryGamemode.SURVIVAL_EXPERT])
+    private fun onOldExcavateStartCommand(sender: CommandSender) {
+        event.player.sendMessage("This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead.")
+    }
+
+    @ImperiumCommand(["excavate|e"])
     @ImperiumPermission(
         gamemodes =
             [
@@ -139,7 +154,7 @@ class ExcavateCommand(instances: InstanceManager) :
             sender.sendMessage("You have cancelled selecting excavation points!")
         } else {
             areas[sender.player] = ExcavateArea()
-            sender.sendMessage("You have started selecting excavation points!.")
+            sender.sendMessage("You have started selecting excavation points!")
         }
     }
 
@@ -152,11 +167,20 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
     private fun onExcavateYesCommand(sender: CommandSender) {
-        val area = areas[sender.player]
-        if (area == null) {
             onPlayerVote(sender.player, manager.session, Vote.YES)
             return
         }
+        
+        @ImperiumCommand(["excavate|e", "go"])
+        @ImperiumPermission(
+        gamemodes =
+            [
+                MindustryGamemode.SURVIVAL,
+                MindustryGamemode.ATTACK,
+                MindustryGamemode.SURVIVAL_EXPERT])
+    @ClientSide
+    private fun onExcavateStartCommand(sender: CommandSender) {
+        val area = areas[sender.player]
         if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
             sender.sendMessage("You have not selected both points yet!")
             return
