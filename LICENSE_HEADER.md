@@ -1,5 +1,5 @@
 Imperium, the software collection powering the Xpdustry network.
-Copyright (C) 2023  Xpdustry
+Copyright (C) 2024  Xpdustry
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
