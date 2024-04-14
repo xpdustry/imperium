@@ -22,10 +22,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@v2
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: "temurin"
@@ -46,14 +46,16 @@ jobs:
           echo "MINDUSTRY_ARTIFACT_PATH=$(./gradlew :imperium-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
           echo "DISCORD_ARTIFACT_PATH=$(./gradlew :imperium-discord:getArtifactPath -q)" >> $GITHUB_ENV
 
-      - name: Upload Mindustry Artifact to Actions
-        uses: actions/upload-artifact@v3
+      - name: Upload Mindustry artifact to Actions
+        uses: actions/upload-artifact@v4
         with:
-          name: "${{ github.event.repository.name }}"
+          name: imperium-mindustry.jar
           path: "${{ env.MINDUSTRY_ARTIFACT_PATH }}"
+          if-no-files-found: error
 
-      - name: Upload Discord Artifact to Actions
-        uses: actions/upload-artifact@v3
+      - name: Upload Discord artifacts to Actions
+        uses: actions/upload-artifact@v4
         with:
-          name: "${{ github.event.repository.name }}"
+          name: imperium-discord.jar
           path: "${{ env.DISCORD_ARTIFACT_PATH }}"
+          if-no-files-found: error

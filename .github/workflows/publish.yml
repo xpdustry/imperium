@@ -14,10 +14,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@v2
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: "temurin"
@@ -41,7 +41,7 @@ jobs:
           echo "version=$(./gradlew printVersion -q)" >> $GITHUB_OUTPUT
 
       - name: Upload Artifacts to Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           name: "Build v${{ steps.setup.outputs.version }}"
           tag_name: "v${{ steps.setup.outputs.version }}"
@@ -53,7 +53,7 @@ jobs:
         run: ./gradlew incrementVersionFile
 
       - name: Commit Incremented Version
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
           branch: "${{ github.event.release.target_commitish }}"
           commit_message: "chore: Increment version"
@@ -70,10 +70,10 @@ jobs:
           ref: "refs/tags/v${{ needs.github.outputs.version }}"
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@v2
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: 17
           distribution: "temurin"
