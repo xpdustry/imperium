@@ -181,11 +181,11 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
-    private fun onExcavateStartCommand(sender: CommandSender) {
+    private fun onExcavateStartCommand(sender: CommandSender): Int {
         val area = areas[sender.player]
         if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
             sender.sendMessage("You have not selected both points yet!")
-            return
+            return 0
         }
 
         var price = 0
@@ -199,7 +199,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
         if (price == 0) {
             sender.sendWarning("[scarlet]The area you selected does no contain any walls.")
-            return
+            return 0
         }
 
         val items = Vars.state.rules.defaultTeam.items()
@@ -212,7 +212,7 @@ class ExcavateCommand(instances: InstanceManager) :
                 You currently have [orange]${items.get(item)}[] ${item.name} but [orange]${price - items.get(item)}[] more is needed.
                 """
                     .trimIndent())
-            return
+            return 0
         }
 
         onVoteSessionStart(sender.player, manager.session, ExcavateData(price, area))
@@ -259,7 +259,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
     override fun canParticipantStart(player: Player, objective: ExcavateData): Boolean {
         if (Vars.state.gameOver) {
-            player.sendMessage("You can start an excavate vote when the game is over.")
+            player.sendMessage("You can't start an excavate vote when the game is over.")
             return false
         }
         return super.canParticipantStart(player, objective)
