@@ -217,7 +217,6 @@ class ExcavateCommand(instances: InstanceManager) :
 
         onVoteSessionStart(sender.player, manager.session, ExcavateData(price, area))
         areas.remove(sender.player)
-
     }
 
     @ImperiumCommand(["excavate|e", "n"])
