@@ -80,4 +80,13 @@ register("spawn <type> [team] [x] [y] [count]", Core.bundle.get("client.command.
             type.spawn(team, x, y)
         }
     }
+
+    @ImperiumCommand(["wave", "set", "counter"])
+    @ImperiumPermission(Rank.MODERATOR)
+    @ClientSide
+    private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
+        Vars.state.wave = wave
+        Vars.state.wavetime = Vars.state.rules.waveSpacing
+        sender.sendMessage("Set wave to counter $wave")
+    }
 /*
