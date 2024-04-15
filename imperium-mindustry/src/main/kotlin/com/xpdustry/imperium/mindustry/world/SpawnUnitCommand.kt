@@ -35,18 +35,49 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.Team
+import mindustry.UnitTypes
 import mindustry.gen.Call
 import mindustry.gen.Player
 
 class SpawnUnitCommand(instances: InstanceManager) :
-    ImperiumApplication.Listener {
-
+ImperiumApplication.Listener {
     
-      
+    @ImperiumCommand(["spawn-unit", "unit", "team", "amount", "x", "y"])
+    @ImperiumPermission(Rank.ADMIN)
+    @ClientSide
+    private fun onSpawnUnitCommand(sender: CommandSender, type: unit , team: Team, amount: Int, x: Int, y: Int) {
+        unit = UnitTypes.type
+        if (x == null) { 
+            x = sender.unit().x
+        }
+        if (y == null) { 
+            y = sender.unit().y
+        }
+        if (unit == null) {
+            return sender.sendMessage("${unit} is not a unit in mindustry")
+        }
+        
+        for (i = 0, i > amount) { unit.spawn(team, x, y)}
+        sender.sendMessage("Spawned ${amount} ${unit}s at ${x}, ${y}")
     }
+}
+   
+// nonsense, ignore
+
+/*
+register("spawn <type> [team] [x] [y] [count]", Core.bundle.get("client.command.spawn.description")) { args, player ->
+        val type = findUnit(args[0])
+        val team = if (args.size < 2) player.team() else findTeam(args[1])
+        val x = if (args.size < 3 || !Strings.canParsePositiveFloat(args[2])) player.x else args[2].toFloat() * tilesizeF
+        val y = if (args.size < 4 || !Strings.canParsePositiveFloat(args[3])) player.y else args[3].toFloat() * tilesizeF
+        val count = if (args.size < 5 || !Strings.canParsePositiveInt(args[4])) 1 else args[4].toInt()
+
+        if (net.client()) Call.sendChatMessage("/js for(let i = 0; i < $count; i++) UnitTypes.$type.spawn(Team.all[${team.id}], $x, $y)")
+        else repeat(count) {
+            type.spawn(team, x, y)
+        }
+    }
+/*
