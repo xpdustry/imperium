@@ -17,17 +17,12 @@
  */
 package com.xpdustry.imperium.common.message
 
-import com.xpdustry.imperium.common.CommonModule
-import com.xpdustry.imperium.common.application.ExitStatus
-import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.inject.factory
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.module
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.time.Duration.Companion.seconds
@@ -48,21 +43,21 @@ import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
 class RabbitmqMessengerTest {
-    private lateinit var application: SimpleImperiumApplication
     private lateinit var messenger1: RabbitmqMessenger
     private lateinit var messenger2: RabbitmqMessenger
 
     @BeforeEach
     fun init() {
-        application = SimpleImperiumApplication(MODULE)
-        messenger1 = application.instances.get<Messenger>() as RabbitmqMessenger
-        messenger2 = application.instances.get<Messenger>() as RabbitmqMessenger
-        application.init()
+        messenger1 = createClient()
+        messenger2 = createClient()
+        messenger1.onImperiumInit()
+        messenger2.onImperiumInit()
     }
 
     @AfterEach
     fun exit() {
-        application.exit(ExitStatus.EXIT)
+        messenger1.onImperiumExit()
+        messenger2.onImperiumExit()
     }
 
     @Test
@@ -226,22 +221,16 @@ class RabbitmqMessengerTest {
         @Serializable data class Text(val text: String) : TestSealedMessage
     }
 
+    private fun createClient() =
+        RabbitmqMessenger(
+            ImperiumConfig(
+                server =
+                    ServerConfig.Mindustry("test-${UUID.randomUUID()}", MindustryGamemode.SURVIVAL),
+                messenger = MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort)),
+        )
+
     companion object {
         @Container
         private val RABBITMQ_CONTAINER = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
-        private val MODULE =
-            module("rabbitmq-messenger-test") {
-                include(CommonModule())
-                factory<Messenger> {
-                    RabbitmqMessenger(
-                        ImperiumConfig(
-                            server =
-                                ServerConfig.Mindustry(
-                                    "test-${UUID.randomUUID()}", MindustryGamemode.SURVIVAL),
-                            messenger =
-                                MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort)),
-                    )
-                }
-            }
     }
 }

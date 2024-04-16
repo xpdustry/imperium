@@ -17,6 +17,6 @@
  */
 package com.xpdustry.imperium.common.inject
 
-fun interface InstanceFactory<T> {
+fun interface InstanceProvider<T> {
     fun create(instances: InstanceManager): T?
 }

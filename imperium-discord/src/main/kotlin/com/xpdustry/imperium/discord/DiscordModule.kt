@@ -17,13 +17,12 @@
  */
 package com.xpdustry.imperium.discord
 
-import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.module
-import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
@@ -38,32 +37,28 @@ import java.nio.file.Path
 import java.util.function.Supplier
 import kotlin.io.path.Path
 
-@Suppress("FunctionName")
-fun DiscordModule() =
-    module("discord") {
-        include(CommonModule())
+fun MutableInstanceManager.registerDiscordModule() {
+    provider<DiscordService> { SimpleDiscordService(get(), get(), get()) }
 
-        single<DiscordService> { SimpleDiscordService(get(), get(), get()) }
+    provider<Path>("directory") { Path(".") }
 
-        single<Path>("directory") { Path(".") }
+    provider<AnnotationScanner>("slash") { CloudCommandRegistry(get(), get(), get()) }
 
-        single<AnnotationScanner>("slash") { CloudCommandRegistry(get(), get(), get()) }
+    provider<AnnotationScanner>("button") { ButtonCommandRegistry(get()) }
 
-        single<AnnotationScanner>("button") { ButtonCommandRegistry(get()) }
+    provider<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
 
-        single<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
-
-        single<ServerConfig.Discord> {
-            get<ImperiumConfig>().server as? ServerConfig.Discord
-                ?: error("The current server configuration is not Discord")
-        }
-
-        single<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
-
-        single<ImperiumVersion> {
-            ImperiumVersion.parse(
-                this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
-        }
-
-        single<LocalizationSource> { BundleLocalizationSource(get()) }
+    provider<ServerConfig.Discord> {
+        get<ImperiumConfig>().server as? ServerConfig.Discord
+            ?: error("The current server configuration is not Discord")
     }
+
+    provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
+
+    provider<ImperiumVersion> {
+        ImperiumVersion.parse(
+            this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
+    }
+
+    provider<LocalizationSource> { BundleLocalizationSource(get()) }
+}
