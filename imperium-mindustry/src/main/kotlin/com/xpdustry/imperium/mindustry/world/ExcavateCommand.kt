@@ -123,11 +123,6 @@ class ExcavateCommand(instances: InstanceManager) :
         }
 
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
-
-        if (point.x && point.y != UNSET_POINT) {
-            return event.player.sendMessage(
-                "You have already selected both points, type '/e go' to start the vote")
-        }
     }
 
     @ImperiumCommand(["excavate|e select|s"])
@@ -138,7 +133,7 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     private fun onOldExcavateStartCommand(sender: CommandSender) {
-        event.player.sendMessage(
+        sender.player.sendMessage(
             "This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead.")
     }
 
@@ -183,7 +178,8 @@ class ExcavateCommand(instances: InstanceManager) :
     @ClientSide
     private fun onExcavateStartCommand(sender: CommandSender) {
         val area = areas[sender.player]
-        if (area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
+
+        if (area == null || area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
             sender.sendMessage("You have not selected both points yet!")
             return
         }
@@ -265,7 +261,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
     override fun getVoteSessionDetails(session: VoteManager.Session<ExcavateData>): String {
         val area = session.objective.area
-        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use <price> ${item.name} and you have ${item.get(item)} ${item.name}" // Get the price somehow
+        return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use ${session.objective.price} ${item.name} and you have ${Vars.state.rules.defaultTeam.items().get(item)} ${item.name}"
     }
 
     override fun getRequiredVotes(players: Int): Int =
