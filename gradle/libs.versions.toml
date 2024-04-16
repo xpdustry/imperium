@@ -5,7 +5,7 @@ version = "1.0"
 # platforms
 kotlin-core = "1.9.23"
 kotlin-coroutine = "1.8.0"
-kotlin-runtime = "3.1.1"
+kotlin-runtime = "3.2.0"
 kotlinx-serialization = "1.6.3"
 java = "17"
 mindustry = "146"
