@@ -35,7 +35,6 @@ import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.commands.WhitelistCommand
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
-import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 import org.slf4j.LoggerFactory
 
@@ -81,10 +80,4 @@ fun main() {
     }
 
     LOGGER.info("Imperium loaded.")
-
-    Runtime.getRuntime()
-        .addShutdownHook(
-            thread(start = false, name = "ImperiumShutdownHook") {
-                application.exit(ExitStatus.EXIT)
-            })
 }

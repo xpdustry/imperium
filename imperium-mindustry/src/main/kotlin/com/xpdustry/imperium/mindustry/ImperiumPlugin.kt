@@ -97,6 +97,10 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
+        application.instances.registerCommonModule()
+        application.instances.registerMindustryModule(this)
+        application.instances.createAll()
+
         val provider = ImperiumRankProvider(application.instances.get())
         application.register(provider)
         DistributorProvider.get()
@@ -122,10 +126,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                             )
                         }
                     })
-
-        application.instances.registerCommonModule()
-        application.instances.registerMindustryModule(this)
-        application.instances.createAll()
 
         sequenceOf(
                 ConventionListener::class,
@@ -168,7 +168,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         scanner =
             PluginAnnotationScanner.list(
                 MethodAnnotationScanner.create(this)
-                    .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR),
+                    .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR)
+                    .register(MethodAnnotationScanner.TASK_HANDLER_PAIR),
                 CommandAnnotationScanner(
                     this, application.instances.get(), application.instances.get()))
 
