@@ -7,4 +7,4 @@ body:
     id: Question
     attributes:
       label: "Question"
-      placeholder: "What do you want to know?
+      placeholder: "What do you want to know?"
