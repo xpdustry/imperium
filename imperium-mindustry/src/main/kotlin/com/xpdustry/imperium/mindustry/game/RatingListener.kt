@@ -17,10 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.annotation.method.TaskHandler
 import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -30,8 +27,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.misc.PlayerMap
-import com.xpdustry.imperium.mindustry.misc.asList
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.snowflake
@@ -39,25 +34,18 @@ import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
-import java.time.Duration
-import java.time.Instant
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 import mindustry.Vars
-import mindustry.game.EventType
 import mindustry.gen.Call
-import mindustry.gen.Groups
-import mindustry.gen.Player
 
 class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
     private val maps = instances.get<MindustryMapManager>()
-    private val checks = PlayerMap<Instant>(instances.get())
     private val ratingInterface =
         MenuInterface.create(instances.get()).apply {
             addTransformer { view, pane ->
                 pane.title = "Rate the map"
+
                 pane.options.addRow(MenuOption("How would you score this map ?"))
                 pane.options.addRow(
                     (1..5).map { score ->
@@ -65,7 +53,8 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                             if (view.state[SCORE] == score) "> $score <" else score.toString()
                         MenuOption(display, Action.open { it[SCORE] = score })
                     })
-                pane.options.addRow(MenuOption("What is the difficulty of the map ?"))
+
+                pane.options.addRow(MenuOption("How difficult is the map ?"))
                 MindustryMap.Difficulty.entries.forEach { difficulty ->
                     var display = difficulty.name.lowercase()
                     if (view.state[DIFFICULTY] == difficulty) {
@@ -75,14 +64,10 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                     pane.options.addRow(
                         MenuOption(display, Action.open { it[DIFFICULTY] = difficulty }))
                 }
-                val valid = view.state.contains(SCORE) && view.state.contains(DIFFICULTY)
+
                 pane.options.addRow(
                     MenuOption("Cancel", Action.close()),
-                    MenuOption(if (valid) "Submit" else "[gray]Submit") { v ->
-                        if (!valid) {
-                            v.viewer.sendMessage("You need to select all criteria")
-                            return@MenuOption
-                        }
+                    MenuOption("Submit") { v ->
                         ImperiumScope.MAIN.launch {
                             val user = users.getByIdentity(view.viewer.identity).snowflake
                             maps.saveRating(
@@ -92,7 +77,7 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                                 v.state[DIFFICULTY]!!)
                             runMindustryThread {
                                 v.back()
-                                Call.sendMessage(
+                                Call.infoMessage(
                                     "Your rating has been submitted, thanks for your feedback.")
                             }
                         }
@@ -102,49 +87,20 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
     @ImperiumCommand(["rate"])
     @ClientSide
-    fun onRateCommand(sender: CommandSender) {
-        openRatingMenu(sender.player)
-    }
-
-    @TaskHandler(interval = 1L, unit = MindustryTimeUnit.MINUTES)
-    fun onPeriodicRatingCheck() {
-        for (player in Groups.player.asList()) {
-            val join = checks[player]
-            if (join != null &&
-                Duration.between(join, Instant.now()) > 15.minutes.toJavaDuration()) {
-                openRatingMenu(player)
-            }
-        }
-    }
-
-    @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) {
-        ImperiumScope.MAIN.launch {
-            val rating = getCurrentMapRating(event.player)
-            // TODO Add lastUpdate field to rating to allow rating updates when map updates
-            if (rating == null) {
-                runMindustryThread { checks[event.player] = Instant.now() }
-            }
-        }
-    }
-
-    private fun openRatingMenu(player: Player) {
-        checks.remove(player)
-        ImperiumScope.MAIN.launch {
-            val rating = getCurrentMapRating(player)
+    suspend fun onRateCommand(sender: CommandSender) {
+        val user = users.getByIdentity(sender.player.identity).snowflake
+        val map = Vars.state.map.snowflake
+        if (map == null || maps.findMapBySnowflake(map) == null) {
+            runMindustryThread { sender.sendWarning("This map can't be rated.") }
+        } else {
+            val rating = maps.findRatingByMapAndUser(map, user)
             runMindustryThread {
-                ratingInterface.open(player) {
+                ratingInterface.open(sender.player) {
                     it[SCORE] = rating?.score ?: 3
                     it[DIFFICULTY] = rating?.difficulty ?: MindustryMap.Difficulty.NORMAL
                 }
             }
         }
-    }
-
-    private suspend fun getCurrentMapRating(player: Player): MindustryMap.Rating? {
-        val user = users.getByIdentity(player.identity).snowflake
-        val map = Vars.state.map.snowflake ?: return null
-        return maps.findRatingByMapAndUser(map, user)
     }
 
     private val MindustryMap.Difficulty.color: String
