@@ -114,9 +114,9 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             return
         }
         val builder =
-            StringBuilder("[orange]Tile Logs for[white][")
+            StringBuilder("[orange]Tile Logs for[white][[")
                 .append(x)
-                .append("][ ")
+                .append("][[")
                 .append(y)
                 .append("] [lightgrey](Top = Newest)")
                 .append("\n[accent]============================")
@@ -246,8 +246,9 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     .append("[white] to [accent]")
                     .append(config.value.name)
             }
-            // Player can't even manually disable or enable anything, only logic can and is not
-            // logged, dispose?
+            // TODO
+            //  Player can't even manually disable or enable anything,
+            //  only logic can and is not logged, dispose?
             is HistoryConfig.Enable -> {
                 builder
                     .append(if (config.value) "Enabled" else "Disabled")
