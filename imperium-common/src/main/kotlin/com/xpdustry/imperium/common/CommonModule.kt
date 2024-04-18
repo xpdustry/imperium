@@ -117,7 +117,7 @@ fun MutableInstanceManager.registerCommonModule() {
                         Runtime.getRuntime().availableProcessors(),
                         ThreadFactoryBuilder()
                             .setDaemon(true)
-                            .setNameFormat("OkHttpClient-Dispatcher-Thread-%d")
+                            .setNameFormat("imperium-okhttp-%d")
                             .build())))
             .build()
     }
