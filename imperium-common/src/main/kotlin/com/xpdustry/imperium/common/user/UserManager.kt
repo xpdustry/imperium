@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildAsyncCache
 import com.xpdustry.imperium.common.misc.getSuspending
+import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toLongMuuid
@@ -137,13 +138,15 @@ class SimpleUserManager(
             UserTable.selectAll().where { UserTable.id eq snowflake }.firstOrNull()?.toUser()
         }
 
-    override suspend fun findByUuid(uuid: MindustryUUID): User? =
-        provider.newSuspendTransaction {
+    override suspend fun findByUuid(uuid: MindustryUUID): User? {
+        if (!uuid.isCRC32Muuid()) return null
+        return provider.newSuspendTransaction {
             UserTable.selectAll()
                 .where { UserTable.uuid eq uuid.toLongMuuid() }
                 .firstOrNull()
                 ?.toUser()
         }
+    }
 
     override suspend fun findByLastAddress(address: InetAddress): List<User> =
         provider.newSuspendTransaction {
