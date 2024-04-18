@@ -300,7 +300,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                         buildString {
                             append(result.joinToString("\n") { "- ${it.name} / ${it.snowflake}" })
                             if (hasMore) {
-                                append("\n\n...and more")
+                                footer("...and more")
                             }
                         }
                     }
