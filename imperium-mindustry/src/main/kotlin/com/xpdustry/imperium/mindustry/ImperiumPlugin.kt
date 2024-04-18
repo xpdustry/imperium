@@ -161,6 +161,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
+        } else {
+            Core.settings.remove("totalPlayers")
         }
 
         application.init()

@@ -25,10 +25,11 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.annotation.method.TaskHandler
 import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -40,20 +41,16 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.snowflake
 import java.awt.Polygon
 import java.nio.file.Path
 import kotlin.experimental.or
 import kotlin.io.path.notExists
 import kotlin.io.path.writeText
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.WorldLabel
@@ -74,23 +71,26 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         directory.toFile().mkdirs()
-
         if (config.preventPlayerActions) {
             Vars.netServer.admins.addActionFilter { false }
         }
-
-        ImperiumScope.MAIN.launch {
-            while (isActive) {
-                delay(1.seconds)
-                runMindustryThread {
-                    updatePortals()
-                    if (!Vars.state.isPlaying) return@runMindustryThread
-                    drawPortalBuilders()
-                    drawPortalDebug()
-                }
-            }
-        }
     }
+
+    @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
+    fun onHubUpdate() {
+        updatePortals()
+        if (!Vars.state.isPlaying) return
+        drawPortalBuilders()
+        drawPortalDebug()
+        Core.settings.put("totalPlayers", getTotalPlayerCount())
+    }
+
+    private fun getTotalPlayerCount() =
+        Groups.player.size() +
+            discovery.servers.values
+                .map(Discovery.Server::data)
+                .filterIsInstance<Discovery.Data.Mindustry>()
+                .sumOf(Discovery.Data.Mindustry::playerCount)
 
     private fun drawPortalBuilders() {
         building.entries.forEach { (player, builder) ->
