@@ -41,6 +41,7 @@ import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.snowflake
 import java.awt.Polygon
 import java.nio.file.Path
 import kotlin.experimental.or
@@ -155,11 +156,16 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
     private fun onHubPortalListCommand(sender: CommandSender, name: String) {
-        if (!portals.containsKey(name)) {
+        val portal = portals.remove(name)
+        if (portal == null) {
             sender.sendMessage("A portal with that name does not exist.")
             return
         }
-        portals.remove(name)
+        val labels = portal.labels
+        if (labels != null) {
+            labels.error.hide()
+            labels.overlays.forEach { (label, _) -> label.hide() }
+        }
         savePortals()
         sender.sendMessage("Deleted portal $name.")
     }
@@ -204,11 +210,12 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
     private fun onHubPortalCancelCommand(sender: CommandSender) {
-        if (building[sender.player] == null) {
+        val builder = building.remove(sender.player)
+        if (builder == null) {
             sender.sendMessage("You are not building a portal.")
             return
         }
-        building.remove(sender.player)
+        sender.sendMessage("Cancelled portal ${builder.name}")
     }
 
     @ImperiumCommand(["portal", "list"])
@@ -274,8 +281,8 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private fun createPortal(player: Player, builder: PortalBuilder) {
         val polygon =
             Polygon(
-                builder.points.map { it.x }.toIntArray(),
-                builder.points.map { it.y }.toIntArray(),
+                builder.points.map(ImmutablePoint::x).toIntArray(),
+                builder.points.map(ImmutablePoint::y).toIntArray(),
                 builder.points.size,
             )
         val portal = Portal(builder.name, polygon)
@@ -375,9 +382,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     private fun getCurrentMapName() =
-        Vars.state.map.tags.get("imperium-map-id")
-            ?: Vars.state.map.tags.get("name")
-            ?: error("The current map has no name.")
+        Vars.state.map.snowflake ?: Vars.state.map.name() ?: error("The current map has no name.")
 
     data class Portal(
         val name: String,
