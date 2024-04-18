@@ -40,6 +40,7 @@ time4j = "4.38"
 nohorny = "2.2.0"
 jda = "5.0.0-beta.22"
 cloud-core = "2.0.0-beta.4"
+cloud-translations = "1.0.0-beta.2"
 cloud-discord = "1.0.0-beta.2"
 
 # gradle plugins
@@ -101,6 +102,7 @@ cloud-kotlin-coroutines-annotations = { module = "org.incendo:cloud-kotlin-corou
 cloud-kotlin-coroutines = { module = "org.incendo:cloud-kotlin-coroutines", version.ref = "cloud-core" }
 cloud-kotlin-extensions = { module = "org.incendo:cloud-kotlin-extensions", version.ref = "cloud-core" }
 cloud-jda5 = { module = "org.incendo:cloud-jda5", version.ref = "cloud-discord" }
+cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
 
 # gradle plugins
 toxopid = { module = "fr.xpdustry:toxopid", version.ref = "toxopid" }
@@ -113,4 +115,4 @@ kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serializat
 
 
 [bundles]
-cloud = ["cloud-core", "cloud-annotations", "cloud-kotlin-coroutines", "cloud-kotlin-coroutines-annotations", "cloud-kotlin-extensions"]
+cloud = ["cloud-core", "cloud-annotations", "cloud-kotlin-coroutines", "cloud-kotlin-coroutines-annotations", "cloud-kotlin-extensions", "cloud-translations-core"]

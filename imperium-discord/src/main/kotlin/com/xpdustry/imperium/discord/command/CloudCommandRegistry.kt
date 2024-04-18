@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumArgumentExtractor
 import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
 import com.xpdustry.imperium.common.command.enumParser
+import com.xpdustry.imperium.common.command.installCoreTranslations
 import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
 import com.xpdustry.imperium.common.command.registerImperiumCommand
 import com.xpdustry.imperium.common.command.registerImperiumPermission
@@ -59,6 +60,8 @@ class CloudCommandRegistry(
                 InteractionSender.Slash(it.interactionEvent() as SlashCommandInteractionEvent)
             }
             .apply {
+                installCoreTranslations { it.interaction.userLocale.toLocale() }
+
                 parserRegistry()
                     .registerParser(enumParser(PunishmentDuration::class))
                     .registerParser(enumParser(Rank::class))
