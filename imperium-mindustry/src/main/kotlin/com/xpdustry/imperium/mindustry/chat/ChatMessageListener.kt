@@ -20,7 +20,9 @@ package com.xpdustry.imperium.mindustry.chat
 import arc.util.CommandHandler.ResponseType
 import arc.util.Time
 import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.annotation.method.TaskHandler
 import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -53,8 +55,6 @@ import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
 import com.xpdustry.imperium.mindustry.processing.registerCaching
 import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.PlayerChatEvent
@@ -175,29 +175,27 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 else -> config.color.toHexString()
             }
         }
+    }
 
-        // TODO
-        //   - Move to dedicated class
-        //   - Better processing perhaps
+    // TODO
+    //   - Move to dedicated class
+    //   - Better processing perhaps
+    @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
+    fun onPlayerNameUpdate() =
         ImperiumScope.MAIN.launch {
-            while (isActive) {
-                delay(1.seconds)
-                val result =
-                    Entities.getPlayersAsync().map { player ->
-                        player to
-                            try {
-                                placeholderPipeline.pump(
-                                    PlaceholderContext(
-                                        player.identity, config.templates.playerName))
-                            } catch (e: Exception) {
-                                LOGGER.error("Failed to format name of player {}", player.uuid(), e)
-                                "[#${player.color}]${player.info.lastName}"
-                            }
+            for (player in Entities.getPlayersAsync()) {
+                val name =
+                    try {
+                        placeholderPipeline.pump(
+                            PlaceholderContext(player.identity, config.templates.playerName))
+                    } catch (e: Throwable) {
+                        LOGGER.error("Failed to format name of player {}", player.uuid(), e)
+                        "[#${player.color}]${player.info.lastName}"
+                        continue
                     }
-                runMindustryThread { result.forEach { (player, name) -> player.name(name) } }
+                runMindustryThread { player.name(name) }
             }
         }
-    }
 
     private fun getContextKey(context: PlaceholderContext): String =
         when (context.subject) {
