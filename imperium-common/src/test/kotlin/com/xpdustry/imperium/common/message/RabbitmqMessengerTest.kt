@@ -43,6 +43,7 @@ import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
 class RabbitmqMessengerTest {
+    @Container private var rabbitmq = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
     private lateinit var messenger1: RabbitmqMessenger
     private lateinit var messenger2: RabbitmqMessenger
 
@@ -226,11 +227,6 @@ class RabbitmqMessengerTest {
             ImperiumConfig(
                 server =
                     ServerConfig.Mindustry("test-${UUID.randomUUID()}", MindustryGamemode.SURVIVAL),
-                messenger = MessengerConfig.RabbitMQ(port = RABBITMQ_CONTAINER.amqpPort)),
+                messenger = MessengerConfig.RabbitMQ(port = rabbitmq.amqpPort)),
         )
-
-    companion object {
-        @Container
-        private val RABBITMQ_CONTAINER = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
-    }
 }
