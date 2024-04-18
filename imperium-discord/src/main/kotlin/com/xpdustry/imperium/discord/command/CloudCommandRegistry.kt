@@ -28,6 +28,7 @@ import com.xpdustry.imperium.common.command.installCoreTranslations
 import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
 import com.xpdustry.imperium.common.command.registerImperiumCommand
 import com.xpdustry.imperium.common.command.registerImperiumPermission
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.user.UserManager
@@ -51,6 +52,7 @@ import org.incendo.cloud.parser.ParserParameters
 
 class CloudCommandRegistry(
     private val discord: DiscordService,
+    private val config: ServerConfig.Discord,
     users: UserManager,
     source: LocalizationSource
 ) : AnnotationScanner, ImperiumApplication.Listener {
@@ -114,7 +116,9 @@ class CloudCommandRegistry(
                 .addCommands(
                     manager
                         .commandFactory()
-                        .createCommands(CommandScope.guilds(discord.getMainServer().idLong)))
+                        .createCommands(
+                            if (config.globalCommands) CommandScope.global()
+                            else CommandScope.guilds(discord.getMainServer().idLong)))
                 .await()
         }
         discord.jda.addEventListener(manager.createListener())
