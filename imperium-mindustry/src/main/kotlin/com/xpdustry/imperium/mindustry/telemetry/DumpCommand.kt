@@ -37,7 +37,7 @@ class DumpCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["dump"])
     @ServerSide
-    private fun onMemoryDumpCommand(sender: CommandSender, live: Boolean = true) {
+    fun onMemoryDumpCommand(sender: CommandSender, live: Boolean = true) {
         try {
             val server = ManagementFactory.getPlatformMBeanServer()
             val mxBean =

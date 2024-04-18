@@ -206,7 +206,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
     @ImperiumCommand(["t"])
     @ClientSide
-    private suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
+    suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
         val filtered1 = runMindustryThread {
             Vars.netServer.admins.filterMessage(sender.player, message)
         }
@@ -231,11 +231,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
     @ImperiumCommand(["w"])
     @ClientSide
-    private suspend fun onWhisperCommand(
-        sender: CommandSender,
-        target: Player,
-        @Greedy message: String
-    ) {
+    suspend fun onWhisperCommand(sender: CommandSender, target: Player, @Greedy message: String) {
         if (sender.player == target) {
             sender.sendWarning("You can't whisper to yourself.")
             return
@@ -258,7 +254,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
 
     @ImperiumCommand(["say"])
     @ServerSide
-    private suspend fun onServerMessageCommand(sender: CommandSender, @Greedy message: String) {
+    suspend fun onServerMessageCommand(sender: CommandSender, @Greedy message: String) {
         if (!Vars.state.isGame) {
             sender.sendWarning("Not hosting. Host a game first.")
             return

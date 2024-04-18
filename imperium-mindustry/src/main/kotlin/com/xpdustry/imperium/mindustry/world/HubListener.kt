@@ -155,7 +155,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "delete"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalListCommand(sender: CommandSender, name: String) {
+    fun onHubPortalListCommand(sender: CommandSender, name: String) {
         val portal = portals.remove(name)
         if (portal == null) {
             sender.sendMessage("A portal with that name does not exist.")
@@ -173,7 +173,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "create"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalBuildCommand(
+    fun onHubPortalBuildCommand(
         sender: CommandSender,
         name: String,
     ) {
@@ -192,7 +192,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "undo"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalUndoCommand(sender: CommandSender) {
+    fun onHubPortalUndoCommand(sender: CommandSender) {
         val builder = building[sender.player]
         if (builder == null) {
             sender.sendMessage("You are not building a portal.")
@@ -209,7 +209,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "cancel"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalCancelCommand(sender: CommandSender) {
+    fun onHubPortalCancelCommand(sender: CommandSender) {
         val builder = building.remove(sender.player)
         if (builder == null) {
             sender.sendMessage("You are not building a portal.")
@@ -221,7 +221,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "list"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalListCommand(sender: CommandSender) {
+    fun onHubPortalListCommand(sender: CommandSender) {
         if (portals.isEmpty()) {
             sender.sendMessage("There are no portals.")
             return
@@ -239,7 +239,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "debug"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalDebugCommand(sender: CommandSender) {
+    fun onHubPortalDebugCommand(sender: CommandSender) {
         val debug = debug[sender.player] ?: false
         this.debug[sender.player] = !debug
         sender.sendMessage("Debug mode is now ${if (!debug) "enabled" else "disabled"}.")

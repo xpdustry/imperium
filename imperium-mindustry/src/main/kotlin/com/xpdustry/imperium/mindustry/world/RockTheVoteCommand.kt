@@ -69,33 +69,33 @@ class RockTheVoteCommand(instances: InstanceManager) :
 
     @ImperiumCommand(["rtv"])
     @ClientSide
-    private fun onRtvCommand(sender: CommandSender) {
+    fun onRtvCommand(sender: CommandSender) {
         mapListInterface.open(sender.player)
     }
 
     @ImperiumCommand(["rtv", "y"])
     @ClientSide
-    private fun onRtvYesCommand(sender: CommandSender) {
+    fun onRtvYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @ImperiumCommand(["rtv", "n"])
     @ClientSide
-    private fun onRtvNoCommand(sender: CommandSender) {
+    fun onRtvNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
     @ImperiumCommand(["rtv", "cancel|c"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onRtvCancelCommand(sender: CommandSender) {
+    fun onRtvCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
     @ImperiumCommand(["rtv", "force|f"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onRtvForceCommand(sender: CommandSender) {
+    fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)
     }
 

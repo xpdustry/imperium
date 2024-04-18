@@ -34,7 +34,7 @@ class HelpCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["help"])
     @ClientSide
-    private fun onHelpCommand(sender: CommandSender, @Greedy query: String? = null) {
+    fun onHelpCommand(sender: CommandSender, @Greedy query: String? = null) {
         val page = if (query == null) 1 else query.toIntOrNull()
         if (page != null) {
             onHelpPageCommand(sender, page)
