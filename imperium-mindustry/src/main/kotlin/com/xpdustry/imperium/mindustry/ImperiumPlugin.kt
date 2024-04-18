@@ -35,7 +35,6 @@ import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerCommonModule
-import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
@@ -49,6 +48,7 @@ import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
+import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
@@ -83,8 +83,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
     override fun onInit() {
         // https://github.com/Anuken/Arc/pull/158
-        if (getMindustryVersion().build < 147 ||
-            getMindustryVersion().type == MindustryVersion.Type.BLEEDING_EDGE) {
+        if (getMindustryVersion().build < 147) {
             Core.app =
                 object : Application by Core.app {
                     override fun removeListener(listener: ApplicationListener) {
@@ -156,7 +155,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ImperiumLogicListener::class,
                 AntiEvadeListener::class,
                 GameListener::class,
-                TipListener::class)
+                TipListener::class,
+                RatingListener::class)
             .forEach(application::register)
 
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {

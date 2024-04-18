@@ -54,6 +54,7 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
         hikari.minimumIdle = config.poolMin
         hikari.maximumPoolSize = config.poolMax
         hikari.driverClassName = config.type.driver
+        hikari.addDataSourceProperty("createDatabaseIfNotExist", "true")
 
         when (config.type) {
             DatabaseConfig.SQL.Type.H2 -> {
