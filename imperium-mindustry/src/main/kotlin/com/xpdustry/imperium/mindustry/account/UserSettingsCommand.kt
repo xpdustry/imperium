@@ -42,7 +42,7 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
 
     @ImperiumCommand(["settings"])
     @ClientSide
-    private suspend fun onUserSettingsCommand(sender: CommandSender) {
+    suspend fun onUserSettingsCommand(sender: CommandSender) {
         val settings = loadUserSettings(sender.player.uuid())
         runMindustryThread {
             playerSettingsInterface.open(sender.player) { it[SETTINGS] = settings }

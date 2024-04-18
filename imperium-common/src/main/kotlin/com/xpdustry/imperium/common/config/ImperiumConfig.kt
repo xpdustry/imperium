@@ -181,6 +181,7 @@ sealed interface ServerConfig {
         val ranks2roles: Map<Rank, Long> = emptyMap(),
         val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
         val mindustryVersion: String = "145",
+        val globalCommands: Boolean = false
     ) : ServerConfig {
         override val name: String = "discord"
 

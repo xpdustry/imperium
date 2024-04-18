@@ -51,7 +51,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["history", "player"])
     @ClientSide
     @ServerSide
-    private suspend fun onPlayerHistoryCommand(
+    suspend fun onPlayerHistoryCommand(
         sender: CommandSender,
         player: PlayerInfo,
         @Range(min = "1", max = "50") limit: Int = 10
@@ -100,7 +100,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["history", "tile"])
     @ClientSide
     @ServerSide
-    private suspend fun onTileHistoryCommand(
+    suspend fun onTileHistoryCommand(
         sender: CommandSender,
         @Range(min = "1") x: Short,
         @Range(min = "1") y: Short,

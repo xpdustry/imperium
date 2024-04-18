@@ -60,7 +60,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["reloadmaps"])
     @ServerSide
-    private fun onMapReloadCommand() {
+    fun onMapReloadCommand() {
         reloadMaps()
     }
 

@@ -24,13 +24,10 @@ class InstanceManagerTest {
 
     @Test
     fun `test simple`() {
-        val module =
-            module("test") {
-                factory { "hello" }
-                factory { 42 }
-                factory { TestClass(get(), get()) }
-            }
-        val manager = SimpleInstanceManager(module, EMPTY_LISTENER)
+        val manager = SimpleMutableInstanceManager {}
+        manager.provider { "hello" }
+        manager.provider { 42 }
+        manager.provider { TestClass(get(), get()) }
         Assertions.assertEquals("hello", manager.get<String>())
         Assertions.assertEquals(42, manager.get<Int>())
         Assertions.assertEquals(TestClass("hello", 42), manager.get<TestClass>())
@@ -38,12 +35,9 @@ class InstanceManagerTest {
 
     @Test
     fun `test named`() {
-        val module =
-            module("test") {
-                factory("hello") { "hello" }
-                factory("world") { "world" }
-            }
-        val manager = SimpleInstanceManager(module, EMPTY_LISTENER)
+        val manager = SimpleMutableInstanceManager {}
+        manager.provider("hello") { "hello" }
+        manager.provider("world") { "world" }
         Assertions.assertEquals("hello", manager.get<String>("hello"))
         Assertions.assertEquals("world", manager.get<String>("world"))
         Assertions.assertNull(manager.getOrNull<String>())
@@ -51,53 +45,21 @@ class InstanceManagerTest {
 
     @Test
     fun `test singleton`() {
-        val module = module("test") { single { TestClass("", 0) } }
-        val manager = SimpleInstanceManager(module, EMPTY_LISTENER)
+        val manager = SimpleMutableInstanceManager {}
+        manager.provider { TestClass("", 0) }
         val instance = manager.get<TestClass>()
         Assertions.assertSame(instance, manager.get<TestClass>())
     }
 
     @Test
-    fun `test error on duplicate factory`() {
-        Assertions.assertThrows(IllegalArgumentException::class.java) {
-            module("test") {
-                factory { "hello" }
-                factory { "world" }
-            }
-        }
-    }
-
-    @Test
-    fun `test error on duplicate module`() {
-        val moduleA = module("a") {}
-        Assertions.assertThrows(IllegalArgumentException::class.java) {
-            module("test") {
-                include(moduleA)
-                include(moduleA)
-            }
-        }
-    }
-
-    @Test
-    fun `test module overwrite`() {
-        val moduleA =
-            module("a") {
-                factory { "hello" }
-                factory { 42 }
-            }
-        val moduleB =
-            module("b") {
-                include(moduleA)
-                factory { "world" }
-            }
-        val manager = SimpleInstanceManager(moduleB, EMPTY_LISTENER)
+    fun `test overwrite`() {
+        val manager = SimpleMutableInstanceManager {}
+        manager.provider { "hello" }
+        manager.provider { 42 }
+        manager.provider { "world" }
         Assertions.assertEquals("world", manager.get<String>())
         Assertions.assertEquals(42, manager.get<Int>())
     }
 
     data class TestClass(val text: String, val number: Int)
-
-    companion object {
-        private val EMPTY_LISTENER = InstanceManager.Listener {}
-    }
 }

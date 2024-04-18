@@ -28,13 +28,13 @@ import com.xpdustry.distributor.permission.rank.RankPermissionSource
 import com.xpdustry.distributor.permission.rank.RankProvider
 import com.xpdustry.distributor.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.util.Priority
+import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
-import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.version.MindustryVersion
+import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
@@ -48,6 +48,7 @@ import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
+import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
@@ -77,13 +78,12 @@ import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
-    private val application = MindustryImperiumApplication(this)
-    internal lateinit var scanner: PluginAnnotationScanner<*>
+    private val application = MindustryImperiumApplication()
+    private lateinit var scanner: PluginAnnotationScanner<*>
 
     override fun onInit() {
         // https://github.com/Anuken/Arc/pull/158
-        if (getMindustryVersion().build < 147 ||
-            getMindustryVersion().type == MindustryVersion.Type.BLEEDING_EDGE) {
+        if (getMindustryVersion().build < 147) {
             Core.app =
                 object : Application by Core.app {
                     override fun removeListener(listener: ApplicationListener) {
@@ -96,7 +96,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        application.instances.createSingletons()
+        application.instances.registerCommonModule()
+        application.instances.registerMindustryModule(this)
+        application.instances.createAll()
 
         val provider = ImperiumRankProvider(application.instances.get())
         application.register(provider)
@@ -153,18 +155,23 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ImperiumLogicListener::class,
                 AntiEvadeListener::class,
                 GameListener::class,
-                TipListener::class)
+                TipListener::class,
+                RatingListener::class)
             .forEach(application::register)
 
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
+        } else {
+            Core.settings.remove("totalPlayers")
         }
+
         application.init()
 
         scanner =
             PluginAnnotationScanner.list(
                 MethodAnnotationScanner.create(this)
-                    .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR),
+                    .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR)
+                    .register(MethodAnnotationScanner.TASK_HANDLER_PAIR),
                 CommandAnnotationScanner(
                     this, application.instances.get(), application.instances.get()))
 
@@ -182,25 +189,24 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onExit() {
         application.exit(ExitStatus.EXIT)
     }
-}
 
-private class MindustryImperiumApplication(private val plugin: ImperiumPlugin) :
-    SimpleImperiumApplication(MindustryModule(plugin)) {
-    private var exited = false
+    private inner class MindustryImperiumApplication : BaseImperiumApplication(logger) {
+        private var exited = false
 
-    override fun exit(status: ExitStatus) {
-        if (exited) return
-        exited = true
-        super.exit(status)
-        runBlocking {
-            instances
-                .get<WebhookMessageSender>()
-                .send(WebhookMessage(content = "The server has exit with $status code."))
-        }
-        when (status) {
-            ExitStatus.EXIT,
-            ExitStatus.INIT_FAILURE -> Core.app.exit()
-            ExitStatus.RESTART -> Core.app.restart()
+        override fun exit(status: ExitStatus) {
+            if (exited) return
+            exited = true
+            super.exit(status)
+            runBlocking {
+                instances
+                    .get<WebhookMessageSender>()
+                    .send(WebhookMessage(content = "The server has exit with $status code."))
+            }
+            when (status) {
+                ExitStatus.EXIT,
+                ExitStatus.INIT_FAILURE -> Core.app.exit()
+                ExitStatus.RESTART -> Core.app.restart()
+            }
         }
     }
 }

@@ -17,21 +17,21 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.CommonModule
+import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
-import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
+import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.module
-import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.TestMessenger
 import com.xpdustry.imperium.common.misc.exists
+import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.common.security.Identity
 import java.net.InetAddress
 import java.nio.file.Path
@@ -50,15 +50,18 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.slf4j.LoggerFactory
 
 class SimpleAccountManagerTest {
     @TempDir private lateinit var tempDir: Path
-    private lateinit var application: SimpleImperiumApplication
+    private lateinit var application: BaseImperiumApplication
     private lateinit var manager: SimpleAccountManager
 
     @BeforeEach
     fun init() {
-        application = SimpleImperiumApplication(createModule())
+        application = BaseImperiumApplication(LoggerFactory.getLogger(this::class.java))
+        application.instances.registerCommonModule()
+        application.instances.registerAccountTestModule()
         manager = application.instances.get<AccountManager>() as SimpleAccountManager
         application.init()
     }
@@ -253,17 +256,15 @@ class SimpleAccountManagerTest {
         return String(chars)
     }
 
-    private fun createModule() =
-        module("account-test") {
-            include(CommonModule())
-            single<ImperiumConfig> {
-                ImperiumConfig(
-                    database =
-                        DatabaseConfig.SQL(host = "mem:regular", type = DatabaseConfig.SQL.Type.H2))
-            }
-            single<Messenger> { TestMessenger() }
-            single<Path>("directory") { tempDir }
+    private fun MutableInstanceManager.registerAccountTestModule() {
+        provider<ImperiumConfig> {
+            ImperiumConfig(
+                database =
+                    DatabaseConfig.SQL(host = "mem:regular", type = DatabaseConfig.SQL.Type.H2))
         }
+        provider<Messenger> { TestMessenger() }
+        provider<Path>("directory") { tempDir }
+    }
 
     companion object {
         private val TEST_PASSWORD_1 = "ABc123!#".toCharArray()

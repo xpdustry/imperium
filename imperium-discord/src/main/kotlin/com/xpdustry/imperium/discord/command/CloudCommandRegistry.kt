@@ -24,9 +24,11 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumArgumentExtractor
 import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
 import com.xpdustry.imperium.common.command.enumParser
+import com.xpdustry.imperium.common.command.installCoreTranslations
 import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
 import com.xpdustry.imperium.common.command.registerImperiumCommand
 import com.xpdustry.imperium.common.command.registerImperiumPermission
+import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.user.UserManager
@@ -40,9 +42,9 @@ import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import org.incendo.cloud.annotations.AnnotationParser
 import org.incendo.cloud.discord.jda5.JDA5CommandManager
+import org.incendo.cloud.discord.jda5.ReplySetting
 import org.incendo.cloud.discord.slash.CommandScope
 import org.incendo.cloud.execution.ExecutionCoordinator
-import org.incendo.cloud.key.CloudKey
 import org.incendo.cloud.kotlin.coroutines.asParserDescriptor
 import org.incendo.cloud.meta.CommandMeta
 import org.incendo.cloud.parser.ParserParameter
@@ -50,6 +52,7 @@ import org.incendo.cloud.parser.ParserParameters
 
 class CloudCommandRegistry(
     private val discord: DiscordService,
+    private val config: ServerConfig.Discord,
     users: UserManager,
     source: LocalizationSource
 ) : AnnotationScanner, ImperiumApplication.Listener {
@@ -59,6 +62,8 @@ class CloudCommandRegistry(
                 InteractionSender.Slash(it.interactionEvent() as SlashCommandInteractionEvent)
             }
             .apply {
+                installCoreTranslations { it.interaction.userLocale.toLocale() }
+
                 parserRegistry()
                     .registerParser(enumParser(PunishmentDuration::class))
                     .registerParser(enumParser(Rank::class))
@@ -78,22 +83,15 @@ class CloudCommandRegistry(
                         }
                     else false
                 }
-
-                registerCommandPostProcessor {
-                    runBlocking {
-                        it.commandContext()
-                            .sender()
-                            .interaction
-                            .deferReply(it.command().commandMeta()[EPHEMERAL_CLOUD_KEY]!!)
-                            .await()
-                    }
-                }
             }
 
     private val parser =
         AnnotationParser(manager, InteractionSender.Slash::class.java) {
                 CommandMeta.builder()
-                    .with(EPHEMERAL_CLOUD_KEY, it.get(EPHEMERAL_PARSER_KEY, true))
+                    .with(
+                        JDA5CommandManager.META_REPLY_SETTING,
+                        ReplySetting.defer<InteractionSender.Slash>(
+                            it.get(EPHEMERAL_PARSER_KEY, true)))
                     .build()
             }
             .apply {
@@ -118,7 +116,9 @@ class CloudCommandRegistry(
                 .addCommands(
                     manager
                         .commandFactory()
-                        .createCommands(CommandScope.guilds(discord.getMainServer().idLong)))
+                        .createCommands(
+                            if (config.globalCommands) CommandScope.global()
+                            else CommandScope.guilds(discord.getMainServer().idLong)))
                 .await()
         }
         discord.jda.addEventListener(manager.createListener())
@@ -127,5 +127,3 @@ class CloudCommandRegistry(
 
 private val EPHEMERAL_PARSER_KEY =
     ParserParameter("imperium:ephemeral", TypeToken.get(Boolean::class.javaObjectType))
-private val EPHEMERAL_CLOUD_KEY =
-    CloudKey.of("imperium:ephemeral", TypeToken.get(Boolean::class.javaObjectType))

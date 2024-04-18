@@ -1,0 +1,10 @@
+name: Questions
+description: "Questions you have about imperium"
+labels: ["question"]
+
+body:   
+  - type: textarea
+    id: Question
+    attributes:
+      label: "Question"
+      placeholder: "What do you want to know?"

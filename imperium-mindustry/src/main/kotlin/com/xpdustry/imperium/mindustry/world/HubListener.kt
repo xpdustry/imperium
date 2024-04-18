@@ -25,10 +25,11 @@ import com.google.gson.reflect.TypeToken
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.annotation.method.TaskHandler
 import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -40,19 +41,16 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.snowflake
 import java.awt.Polygon
 import java.nio.file.Path
 import kotlin.experimental.or
 import kotlin.io.path.notExists
 import kotlin.io.path.writeText
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Call
+import mindustry.gen.Groups
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.WorldLabel
@@ -73,23 +71,26 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         directory.toFile().mkdirs()
-
         if (config.preventPlayerActions) {
             Vars.netServer.admins.addActionFilter { false }
         }
-
-        ImperiumScope.MAIN.launch {
-            while (isActive) {
-                delay(1.seconds)
-                runMindustryThread {
-                    updatePortals()
-                    if (!Vars.state.isPlaying) return@runMindustryThread
-                    drawPortalBuilders()
-                    drawPortalDebug()
-                }
-            }
-        }
     }
+
+    @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
+    fun onHubUpdate() {
+        updatePortals()
+        if (!Vars.state.isPlaying) return
+        drawPortalBuilders()
+        drawPortalDebug()
+        Core.settings.put("totalPlayers", getTotalPlayerCount())
+    }
+
+    private fun getTotalPlayerCount() =
+        Groups.player.size() +
+            discovery.servers.values
+                .map(Discovery.Server::data)
+                .filterIsInstance<Discovery.Data.Mindustry>()
+                .sumOf(Discovery.Data.Mindustry::playerCount)
 
     private fun drawPortalBuilders() {
         building.entries.forEach { (player, builder) ->
@@ -154,12 +155,17 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "delete"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalListCommand(sender: CommandSender, name: String) {
-        if (!portals.containsKey(name)) {
+    fun onHubPortalListCommand(sender: CommandSender, name: String) {
+        val portal = portals.remove(name)
+        if (portal == null) {
             sender.sendMessage("A portal with that name does not exist.")
             return
         }
-        portals.remove(name)
+        val labels = portal.labels
+        if (labels != null) {
+            labels.error.hide()
+            labels.overlays.forEach { (label, _) -> label.hide() }
+        }
         savePortals()
         sender.sendMessage("Deleted portal $name.")
     }
@@ -167,7 +173,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "create"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalBuildCommand(
+    fun onHubPortalBuildCommand(
         sender: CommandSender,
         name: String,
     ) {
@@ -186,7 +192,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "undo"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalUndoCommand(sender: CommandSender) {
+    fun onHubPortalUndoCommand(sender: CommandSender) {
         val builder = building[sender.player]
         if (builder == null) {
             sender.sendMessage("You are not building a portal.")
@@ -203,18 +209,19 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "cancel"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalCancelCommand(sender: CommandSender) {
-        if (building[sender.player] == null) {
+    fun onHubPortalCancelCommand(sender: CommandSender) {
+        val builder = building.remove(sender.player)
+        if (builder == null) {
             sender.sendMessage("You are not building a portal.")
             return
         }
-        building.remove(sender.player)
+        sender.sendMessage("Cancelled portal ${builder.name}")
     }
 
     @ImperiumCommand(["portal", "list"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalListCommand(sender: CommandSender) {
+    fun onHubPortalListCommand(sender: CommandSender) {
         if (portals.isEmpty()) {
             sender.sendMessage("There are no portals.")
             return
@@ -232,7 +239,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["portal", "debug"])
     @ImperiumPermission(Rank.OWNER)
     @ClientSide
-    private fun onHubPortalDebugCommand(sender: CommandSender) {
+    fun onHubPortalDebugCommand(sender: CommandSender) {
         val debug = debug[sender.player] ?: false
         this.debug[sender.player] = !debug
         sender.sendMessage("Debug mode is now ${if (!debug) "enabled" else "disabled"}.")
@@ -274,8 +281,8 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private fun createPortal(player: Player, builder: PortalBuilder) {
         val polygon =
             Polygon(
-                builder.points.map { it.x }.toIntArray(),
-                builder.points.map { it.y }.toIntArray(),
+                builder.points.map(ImmutablePoint::x).toIntArray(),
+                builder.points.map(ImmutablePoint::y).toIntArray(),
                 builder.points.size,
             )
         val portal = Portal(builder.name, polygon)
@@ -375,9 +382,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     private fun getCurrentMapName() =
-        Vars.state.map.tags.get("imperium-map-id")
-            ?: Vars.state.map.tags.get("name")
-            ?: error("The current map has no name.")
+        Vars.state.map.snowflake ?: Vars.state.map.name() ?: error("The current map has no name.")
 
     data class Portal(
         val name: String,

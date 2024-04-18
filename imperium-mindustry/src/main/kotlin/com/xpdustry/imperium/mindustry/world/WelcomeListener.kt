@@ -90,13 +90,13 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
 
     @ImperiumCommand(["rules"])
     @ClientSide
-    private fun onWelcomeCommand(sender: CommandSender) {
+    fun onWelcomeCommand(sender: CommandSender) {
         rulesInterface.open(sender.player)
     }
 
     @ImperiumCommand(["discord"])
     @ClientSide
-    private fun onDiscordCommand(sender: CommandSender) {
+    fun onDiscordCommand(sender: CommandSender) {
         Call.openURI(sender.player.con, DISCORD_INVITATION_LINK.toString())
     }
 

@@ -87,7 +87,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
     @ImperiumCommand(["login"])
     @ClientSide
-    private suspend fun onLoginCommand(sender: CommandSender) =
+    suspend fun onLoginCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
             val account = manager.findByIdentity(sender.player.identity)
             if (account == null) {
@@ -99,19 +99,19 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
     @ImperiumCommand(["register"])
     @ClientSide
-    private fun onRegisterCommand(sender: CommandSender) {
+    fun onRegisterCommand(sender: CommandSender) {
         registerInterface.open(sender.player)
     }
 
     @ImperiumCommand(["migrate"])
     @ClientSide
-    private fun onMigrateCommand(sender: CommandSender) {
+    fun onMigrateCommand(sender: CommandSender) {
         migrateInterface.open(sender.player)
     }
 
     @ImperiumCommand(["logout"])
     @ClientSide
-    private suspend fun onLogoutCommand(sender: CommandSender) =
+    suspend fun onLogoutCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
             if (manager.findByIdentity(sender.player.identity) == null) {
                 sender.player.sendMessage("You are not logged in!")
@@ -124,13 +124,13 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
     @ImperiumCommand(["change-password"])
     @ClientSide
-    private fun onChangePasswordCommand(sender: CommandSender) {
+    fun onChangePasswordCommand(sender: CommandSender) {
         changePasswordInterface.open(sender.player)
     }
 
     @ImperiumCommand(["verify", "discord"])
     @ClientSide
-    private suspend fun onVerifyCommand(sender: CommandSender) {
+    suspend fun onVerifyCommand(sender: CommandSender) {
         val account = manager.findByIdentity(sender.player.identity)
         if (account == null) {
             sender.sendWarning("You are not logged in!")

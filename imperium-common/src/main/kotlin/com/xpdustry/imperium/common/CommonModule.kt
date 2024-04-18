@@ -24,7 +24,7 @@ import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ImperiumConfigFactory
+import com.xpdustry.imperium.common.config.ImperiumConfigProvider
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
@@ -33,9 +33,9 @@ import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
+import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.module
-import com.xpdustry.imperium.common.inject.single
+import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
 import com.xpdustry.imperium.common.network.Discovery
@@ -64,83 +64,81 @@ import kotlin.time.toJavaDuration
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
-@Suppress("FunctionName")
-fun CommonModule() =
-    module("common") {
-        single(ImperiumConfigFactory())
+fun MutableInstanceManager.registerCommonModule() {
+    provider(ImperiumConfigProvider())
 
-        single<Translator> {
-            val config = get<ImperiumConfig>().translator
-            when (config) {
-                is TranslatorConfig.None -> Translator.Noop
-                is TranslatorConfig.DeepL -> DeeplTranslator(get(), get())
-            }
+    provider<Translator> {
+        val config = get<ImperiumConfig>().translator
+        when (config) {
+            is TranslatorConfig.None -> Translator.Noop
+            is TranslatorConfig.DeepL -> DeeplTranslator(get(), get())
         }
-
-        single<Discovery> { SimpleDiscovery(get(), get("discovery"), get()) }
-
-        single<VpnDetection> {
-            when (val config = get<ImperiumConfig>().network.vpnDetection) {
-                is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
-                is NetworkConfig.VpnDetectionConfig.VpnApiIo -> VpnApiIoDetection(config, get())
-            }
-        }
-
-        single<Messenger> {
-            when (get<ImperiumConfig>().messenger) {
-                is MessengerConfig.RabbitMQ -> RabbitmqMessenger(get())
-            }
-        }
-
-        single<SQLProvider> {
-            when (val config = get<ImperiumConfig>().database) {
-                is DatabaseConfig.SQL -> SimpleSQLProvider(config, get("directory"))
-            }
-        }
-
-        single<AccountManager> { SimpleAccountManager(get(), get(), get()) }
-
-        single<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get()) }
-
-        single<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
-
-        single<UserManager> { SimpleUserManager(get(), get(), get()) }
-
-        single<OkHttpClient> {
-            OkHttpClient.Builder()
-                .connectTimeout(20.seconds.toJavaDuration())
-                .connectTimeout(20.seconds.toJavaDuration())
-                .readTimeout(20.seconds.toJavaDuration())
-                .writeTimeout(20.seconds.toJavaDuration())
-                .dispatcher(
-                    Dispatcher(
-                        // The default executor blocks the exit in Mindustry
-                        Executors.newFixedThreadPool(
-                            Runtime.getRuntime().availableProcessors(),
-                            ThreadFactoryBuilder()
-                                .setDaemon(true)
-                                .setNameFormat("OkHttpClient-Dispatcher-Thread-%d")
-                                .build())))
-                .build()
-        }
-
-        single<SnowflakeGenerator> { SimpleSnowflakeGenerator(get()) }
-
-        single<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Unknown } }
-
-        single<ImperiumVersion> { ImperiumVersion(1, 1, 1) }
-
-        single<PlayerTracker> { RequestingPlayerTracker(get()) }
-
-        single<TimeRenderer> { SimpleTimeRenderer(get()) }
-
-        single<WebhookMessageSender> {
-            when (val webhookConfig = get<ImperiumConfig>().webhook) {
-                is WebhookConfig.None -> WebhookMessageSender.None
-                is WebhookConfig.Discord ->
-                    DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
-            }
-        }
-
-        single<AddressWhitelist> { SimpleAddressWhitelist(get()) }
     }
+
+    provider<Discovery> { SimpleDiscovery(get(), get("discovery"), get()) }
+
+    provider<VpnDetection> {
+        when (val config = get<ImperiumConfig>().network.vpnDetection) {
+            is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
+            is NetworkConfig.VpnDetectionConfig.VpnApiIo -> VpnApiIoDetection(config, get())
+        }
+    }
+
+    provider<Messenger> {
+        when (get<ImperiumConfig>().messenger) {
+            is MessengerConfig.RabbitMQ -> RabbitmqMessenger(get())
+        }
+    }
+
+    provider<SQLProvider> {
+        when (val config = get<ImperiumConfig>().database) {
+            is DatabaseConfig.SQL -> SimpleSQLProvider(config, get("directory"))
+        }
+    }
+
+    provider<AccountManager> { SimpleAccountManager(get(), get(), get()) }
+
+    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get()) }
+
+    provider<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
+
+    provider<UserManager> { SimpleUserManager(get(), get(), get()) }
+
+    provider<OkHttpClient> {
+        OkHttpClient.Builder()
+            .connectTimeout(20.seconds.toJavaDuration())
+            .connectTimeout(20.seconds.toJavaDuration())
+            .readTimeout(20.seconds.toJavaDuration())
+            .writeTimeout(20.seconds.toJavaDuration())
+            .dispatcher(
+                Dispatcher(
+                    // The default executor blocks the exit in Mindustry
+                    Executors.newFixedThreadPool(
+                        Runtime.getRuntime().availableProcessors(),
+                        ThreadFactoryBuilder()
+                            .setDaemon(true)
+                            .setNameFormat("imperium-okhttp-%d")
+                            .build())))
+            .build()
+    }
+
+    provider<SnowflakeGenerator> { SimpleSnowflakeGenerator(get()) }
+
+    provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Unknown } }
+
+    provider<ImperiumVersion> { ImperiumVersion(1, 1, 1) }
+
+    provider<PlayerTracker> { RequestingPlayerTracker(get()) }
+
+    provider<TimeRenderer> { SimpleTimeRenderer(get()) }
+
+    provider<WebhookMessageSender> {
+        when (val webhookConfig = get<ImperiumConfig>().webhook) {
+            is WebhookConfig.None -> WebhookMessageSender.None
+            is WebhookConfig.Discord ->
+                DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
+        }
+    }
+
+    provider<AddressWhitelist> { SimpleAddressWhitelist(get()) }
+}

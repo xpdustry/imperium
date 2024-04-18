@@ -45,7 +45,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["punishment", "list"])
     @ImperiumPermission(Rank.MODERATOR)
-    private suspend fun onPunishmentListCommand(
+    suspend fun onPunishmentListCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
         @Range(min = "0") page: Int = 0
@@ -60,10 +60,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["punishment", "info"])
     @ImperiumPermission(Rank.MODERATOR)
-    private suspend fun onPunishmentInfoCommand(
-        actor: InteractionSender.Slash,
-        punishment: String
-    ) {
+    suspend fun onPunishmentInfoCommand(actor: InteractionSender.Slash, punishment: String) {
         val id = punishment.toLongOrNull()
         if (id == null) {
             actor.respond("Invalid id.")
@@ -92,7 +89,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["ban"])
     @ImperiumPermission(Rank.MODERATOR)
-    private suspend fun onBanCommand(
+    suspend fun onBanCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
@@ -103,7 +100,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["freeze"])
     @ImperiumPermission(Rank.MODERATOR)
-    private suspend fun onFreezeCommand(
+    suspend fun onFreezeCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
@@ -114,7 +111,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["mute"])
     @ImperiumPermission(Rank.MODERATOR)
-    private suspend fun onMuteCommand(
+    suspend fun onMuteCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
         reason: String,
@@ -141,7 +138,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["pardon"])
     @ImperiumPermission(Rank.MODERATOR)
-    private suspend fun onPardonCommand(
+    suspend fun onPardonCommand(
         actor: InteractionSender.Slash,
         punishment: String,
         reason: String

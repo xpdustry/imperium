@@ -93,26 +93,26 @@ class VoteKickCommand(instances: InstanceManager) :
 
     @ImperiumCommand(["vote", "y"])
     @ClientSide
-    private fun onVoteYesCommand(sender: CommandSender) {
+    fun onVoteYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.YES)
     }
 
     @ImperiumCommand(["vote", "n"])
     @ClientSide
-    private fun onVoteNoCommand(sender: CommandSender) {
+    fun onVoteNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
     @ImperiumCommand(["vote", "c"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
+    fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))
     }
 
     @ImperiumCommand(["votekick"])
     @ClientSide
-    private fun onVotekickCommand(
+    fun onVotekickCommand(
         sender: CommandSender,
         target: Player? = null,
         @Greedy reason: String? = null

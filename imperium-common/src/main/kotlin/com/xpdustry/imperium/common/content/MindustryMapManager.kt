@@ -46,6 +46,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.sql.upsert
 
 interface MindustryMapManager {
 
@@ -56,6 +57,13 @@ interface MindustryMapManager {
     suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap>
 
     suspend fun findRatingByMapAndUser(map: Snowflake, user: Snowflake): MindustryMap.Rating?
+
+    suspend fun saveRating(
+        map: Snowflake,
+        user: Snowflake,
+        score: Int,
+        difficulty: MindustryMap.Difficulty
+    )
 
     suspend fun findAllMaps(): List<MindustryMap>
 
@@ -157,6 +165,22 @@ class SimpleMindustryMapManager(
                 .firstOrNull()
                 ?.toMindustryMapRating()
         }
+
+    override suspend fun saveRating(
+        map: Snowflake,
+        user: Snowflake,
+        score: Int,
+        difficulty: MindustryMap.Difficulty
+    ) {
+        provider.newSuspendTransaction {
+            MindustryMapRatingTable.upsert {
+                it[MindustryMapRatingTable.map] = map
+                it[MindustryMapRatingTable.user] = user
+                it[MindustryMapRatingTable.score] = score
+                it[MindustryMapRatingTable.difficulty] = difficulty
+            }
+        }
+    }
 
     override suspend fun findAllMaps(): List<MindustryMap> =
         provider.newSuspendTransaction {
