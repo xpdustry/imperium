@@ -41,9 +41,9 @@ import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import org.incendo.cloud.annotations.AnnotationParser
 import org.incendo.cloud.discord.jda5.JDA5CommandManager
+import org.incendo.cloud.discord.jda5.ReplySetting
 import org.incendo.cloud.discord.slash.CommandScope
 import org.incendo.cloud.execution.ExecutionCoordinator
-import org.incendo.cloud.key.CloudKey
 import org.incendo.cloud.kotlin.coroutines.asParserDescriptor
 import org.incendo.cloud.meta.CommandMeta
 import org.incendo.cloud.parser.ParserParameter
@@ -81,22 +81,15 @@ class CloudCommandRegistry(
                         }
                     else false
                 }
-
-                registerCommandPostProcessor {
-                    runBlocking {
-                        it.commandContext()
-                            .sender()
-                            .interaction
-                            .deferReply(it.command().commandMeta()[EPHEMERAL_CLOUD_KEY]!!)
-                            .await()
-                    }
-                }
             }
 
     private val parser =
         AnnotationParser(manager, InteractionSender.Slash::class.java) {
                 CommandMeta.builder()
-                    .with(EPHEMERAL_CLOUD_KEY, it.get(EPHEMERAL_PARSER_KEY, true))
+                    .with(
+                        JDA5CommandManager.META_REPLY_SETTING,
+                        ReplySetting.defer<InteractionSender.Slash>(
+                            it.get(EPHEMERAL_PARSER_KEY, true)))
                     .build()
             }
             .apply {
@@ -130,5 +123,3 @@ class CloudCommandRegistry(
 
 private val EPHEMERAL_PARSER_KEY =
     ParserParameter("imperium:ephemeral", TypeToken.get(Boolean::class.javaObjectType))
-private val EPHEMERAL_CLOUD_KEY =
-    CloudKey.of("imperium:ephemeral", TypeToken.get(Boolean::class.javaObjectType))
