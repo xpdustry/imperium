@@ -2,12 +2,6 @@
 
 The core of the Chaotic server network, maintained by Xpdustry.
 
-## Contributing
-
-We welcome contributions from developers of all levels of experience, including beginners who are eager to learn.
-If you're interested in contributing to Imperium, feel free to explore our codebase,
-check the issue tracker for tasks or bugs, and don't hesitate to ask questions on our Discord server.
-
 ## Building
 
 You will need:
@@ -27,7 +21,7 @@ Imperium needs a mariadb database and a rabbitmq server in order to function.
 Fortunately for you, a docker-compose file is provided with everything.
 You will simply have to run `docker-compose up -d` once.
 
-> RabbitMQ has a web front-end at http://localhost:15672, you can login with guest:guest.
+> RabbitMQ has a web front-end at http://localhost:15672, you can log in with guest:guest.
 
 ### Mindustry
 
@@ -36,6 +30,7 @@ with the following content:
 ```yaml
 server:
   name: "name of the server (must be alphanumeric)"
+  gamemode: SURVIVAL
 ```
 
 Then for starting a local mindustry server, run `./gradlew imperium-mindustry:runMindustryServer`.
@@ -69,6 +64,10 @@ Then you can start the discord bot by running `./gradlew imperium-discord:runImp
 > If it's the first time you run it, it will automatically download mindustry assets from GitHub,
 > this might take less than a minute. (Or more if you have potato internet `;-;`)
 
-## Limitations
+## Support
 
-- This plugin is not designed to run as a steam server. It will crash if you try.
+This plugin is open source for transparency and also easing contributions from CN players.
+You are free to ask any question about the internals of this project in the issues tab or on discord.
+
+**BUT**, do not expect any support if you are trying to use this project as it is in your own infrastructure.
+This project is written with the xpdustry infrastructure and features in mind after all.
