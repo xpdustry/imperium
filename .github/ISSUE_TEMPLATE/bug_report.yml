@@ -11,6 +11,7 @@ body:
       options:
       - Discord
       - Mindustry
+      - Compiling
     validations:
       required: true
     
