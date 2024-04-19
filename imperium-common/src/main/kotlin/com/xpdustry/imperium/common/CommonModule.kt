@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common
 
+import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.SimpleAccountManager
@@ -57,6 +58,7 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.common.webhook.DiscordWebhookMessageSender
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
+import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.function.Supplier
 import kotlin.time.Duration.Companion.seconds
@@ -141,4 +143,6 @@ fun MutableInstanceManager.registerCommonModule() {
     }
 
     provider<AddressWhitelist> { SimpleAddressWhitelist(get()) }
+
+    provider<Executor>("main") { MoreExecutors.directExecutor() }
 }

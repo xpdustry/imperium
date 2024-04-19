@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import arc.Core
 import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -41,6 +42,7 @@ import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleFreezeManager
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import java.nio.file.Path
+import java.util.concurrent.Executor
 import java.util.function.Supplier
 
 internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlugin) {
@@ -70,4 +72,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
 
     provider<FreezeManager> { SimpleFreezeManager(get(), get(), get(), get()) }
+
+    provider<Executor>("main") { Executor(Core.app::post) }
 }
