@@ -58,7 +58,7 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["report"])
     @ClientSide
-    private fun onPlayerReport(sender: CommandSender) {
+    fun onPlayerReport(sender: CommandSender) {
         if (!limiter.incrementAndCheck(sender.player.ip().toInetAddress())) {
             sender.player.showInfoMessage(
                 "[red]You are limited to one report per minute. Please try again later.")

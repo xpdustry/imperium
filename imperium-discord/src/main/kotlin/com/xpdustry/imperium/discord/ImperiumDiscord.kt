@@ -18,9 +18,10 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
+import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
-import com.xpdustry.imperium.common.application.SimpleImperiumApplication
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.BridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
@@ -35,8 +36,11 @@ import com.xpdustry.imperium.discord.commands.WhitelistCommand
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
 import kotlin.system.exitProcess
+import org.slf4j.LoggerFactory
 
-class ImperiumDiscord : SimpleImperiumApplication(DiscordModule()) {
+private val LOGGER = LoggerFactory.getLogger(ImperiumDiscord::class.java)
+
+class ImperiumDiscord : BaseImperiumApplication(LOGGER) {
 
     override fun exit(status: ExitStatus) {
         super.exit(status)
@@ -47,8 +51,10 @@ class ImperiumDiscord : SimpleImperiumApplication(DiscordModule()) {
 fun main() {
     val application = ImperiumDiscord()
 
-    application.instances.createSingletons()
-    application.init()
+    application.instances.registerCommonModule()
+    application.instances.registerDiscordModule()
+    application.instances.createAll()
+
     sequenceOf(
             BridgeListener::class,
             PingCommand::class,
@@ -64,6 +70,7 @@ fun main() {
             AccountCommand::class,
             WhitelistCommand::class)
         .forEach(application::register)
+    application.init()
 
     val commands = application.instances.get<AnnotationScanner>("slash")
     val buttons = application.instances.get<AnnotationScanner>("button")
@@ -72,5 +79,5 @@ fun main() {
         buttons.scan(listener)
     }
 
-    application.logger.info("Imperium loaded.")
+    LOGGER.info("Imperium loaded.")
 }

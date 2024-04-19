@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import kotlin.reflect.KClass
+import org.incendo.cloud.CommandManager
 import org.incendo.cloud.annotations.AnnotationParser
 import org.incendo.cloud.kotlin.coroutines.annotations.installCoroutineSupport
 import org.incendo.cloud.parser.ParserDescriptor
@@ -28,6 +29,8 @@ import org.incendo.cloud.parser.standard.EnumParser
 import org.incendo.cloud.permission.Permission.allOf
 import org.incendo.cloud.permission.Permission.anyOf
 import org.incendo.cloud.permission.Permission.permission
+import org.incendo.cloud.translations.LocaleExtractor
+import org.incendo.cloud.translations.TranslationBundle
 
 fun <S : Any, E : Enum<E>> enumParser(klass: KClass<E>): ParserDescriptor<S, E> =
     EnumParser.enumParser(klass.java)
@@ -58,3 +61,7 @@ fun <T> AnnotationParser<T>.registerImperiumPermission() =
         permission = anyOf(permission, permission("imperium.rank.${Rank.ADMIN.name.lowercase()}"))
         builder.permission(permission)
     }
+
+fun <C> CommandManager<C>.installCoreTranslations(extractor: LocaleExtractor<C>) {
+    captionRegistry().registerProvider(TranslationBundle.core(extractor))
+}

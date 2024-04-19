@@ -18,29 +18,27 @@
 package com.xpdustry.imperium.common.application
 
 import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.Module
-import com.xpdustry.imperium.common.inject.SimpleInstanceManager
-import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.inject.MutableInstanceManager
+import com.xpdustry.imperium.common.inject.SimpleMutableInstanceManager
 import kotlin.reflect.KClass
+import org.slf4j.Logger
 
-open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
+open class BaseImperiumApplication(private val logger: Logger) : ImperiumApplication {
 
-    override val instances: InstanceManager =
-        SimpleInstanceManager(module, ApplicationInjectorListener())
-    val logger by LoggerDelegate()
-
-    // TODO This should be hidden, but I need to process the instances for the commands for the
-    // discord bot
-    val listeners = arrayListOf<ImperiumApplication.Listener>()
+    private val _listeners = arrayListOf<ImperiumApplication.Listener>()
     private val initialized = arrayListOf<ImperiumApplication.Listener>()
+    val listeners: List<ImperiumApplication.Listener> = _listeners
+    override val instances: MutableInstanceManager = SimpleMutableInstanceManager {
+        if (it is ImperiumApplication.Listener) register(it)
+    }
 
-    fun register(listener: ImperiumApplication.Listener) =
-        synchronized(listeners) {
-            if (listeners.contains(listener)) {
-                return
-            }
-            onListenerRegistration(listener)
+    fun register(listener: ImperiumApplication.Listener) {
+        if (listeners.contains(listener)) {
+            return
         }
+        logger.debug("Registered listener: {}", listener::class.simpleName)
+        _listeners.add(listener)
+    }
 
     fun register(listener: KClass<out ImperiumApplication.Listener>) {
         var constructor = listener.constructors.find { it.parameters.isEmpty() }
@@ -59,11 +57,6 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
         }
         throw IllegalArgumentException(
             "Cannot find a valid constructor for listener: ${listener.simpleName}")
-    }
-
-    protected open fun onListenerRegistration(listener: ImperiumApplication.Listener) {
-        logger.debug("Registered listener: {}", listener::class.simpleName)
-        listeners.add(listener)
     }
 
     override fun init() {
@@ -88,13 +81,5 @@ open class SimpleImperiumApplication(module: Module) : ImperiumApplication {
             }
         }
         logger.info("Imperium has exit with status: {}", status)
-    }
-
-    private inner class ApplicationInjectorListener : InstanceManager.Listener {
-        override fun onInstanceProvision(instance: Any) {
-            if (instance is ImperiumApplication.Listener) {
-                this@SimpleImperiumApplication.register(instance)
-            }
-        }
     }
 }

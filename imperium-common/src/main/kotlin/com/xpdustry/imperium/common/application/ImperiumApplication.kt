@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.application
 import com.xpdustry.imperium.common.inject.InstanceManager
 
 interface ImperiumApplication {
+
     val instances: InstanceManager
 
     fun init()

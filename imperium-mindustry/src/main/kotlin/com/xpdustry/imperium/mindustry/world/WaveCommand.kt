@@ -60,7 +60,7 @@ class WaveCommand(instances: InstanceManager) :
     @ImperiumCommand(["wave", "set", "countdown"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onWaveSetTime(sender: CommandSender, duration: Duration) {
+    fun onWaveSetTime(sender: CommandSender, duration: Duration) {
         Vars.state.wavetime = duration.seconds.toFloat() * 60F
         sender.sendMessage("Set wave countdown to $duration")
     }
@@ -68,7 +68,7 @@ class WaveCommand(instances: InstanceManager) :
     @ImperiumCommand(["wave", "set", "counter"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onWaveSetCounter(sender: CommandSender, wave: Int) {
+    fun onWaveSetCounter(sender: CommandSender, wave: Int) {
         Vars.state.wave = wave
         Vars.state.wavetime = Vars.state.rules.waveSpacing
         sender.sendMessage("Set wave to counter $wave")
@@ -77,7 +77,7 @@ class WaveCommand(instances: InstanceManager) :
     @ImperiumCommand(["wave", "run"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onWaveRun(sender: CommandSender, @Range(min = "1", max = "20") count: Int = 1) {
+    fun onWaveRun(sender: CommandSender, @Range(min = "1", max = "20") count: Int = 1) {
         repeat(count) { Vars.logic.runWave() }
         sender.sendMessage("Ran $count wave(s).")
     }
@@ -85,26 +85,26 @@ class WaveCommand(instances: InstanceManager) :
     @ImperiumCommand(["wave", "skip"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onWaveSkip(sender: CommandSender) {
+    fun onWaveSkip(sender: CommandSender) {
         waveSkipInterface.open(sender.player)
     }
 
     @ImperiumCommand(["ws", "y"])
     @ClientSide
-    private fun onWaveSkipYes(sender: CommandSender) {
+    fun onWaveSkipYes(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @ImperiumCommand(["ws", "n"])
     @ClientSide
-    private fun onWaveSkipNo(sender: CommandSender) {
+    fun onWaveSkipNo(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
     @ImperiumCommand(["ws", "cancel|c"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onWaveSkipCancelCommand(sender: CommandSender) {
+    fun onWaveSkipCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 

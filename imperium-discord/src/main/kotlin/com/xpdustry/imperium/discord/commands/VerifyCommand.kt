@@ -58,7 +58,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["verify"])
     @NonEphemeral
-    private suspend fun onVerifyCommand(actor: InteractionSender.Slash, code: Int) {
+    suspend fun onVerifyCommand(actor: InteractionSender.Slash, code: Int) {
         if (!limiter.incrementAndCheck(actor.member.idLong)) {
             actor.respond("You made too many attempts! Wait 10 minutes and try again.")
             return

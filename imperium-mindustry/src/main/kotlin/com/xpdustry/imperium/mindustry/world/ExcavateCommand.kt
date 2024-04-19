@@ -133,7 +133,7 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
-    private fun onExcavateSelectCommand(sender: CommandSender) {
+    fun onExcavateSelectCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
             areas.remove(sender.player)
             sender.sendMessage("You have cancelled selecting excavation points!")
@@ -151,7 +151,7 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
-    private fun onExcavateYesCommand(sender: CommandSender) {
+    fun onExcavateYesCommand(sender: CommandSender) {
         val area = areas[sender.player]
         if (area == null) {
             onPlayerVote(sender.player, manager.session, Vote.YES)
@@ -201,7 +201,7 @@ class ExcavateCommand(instances: InstanceManager) :
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
     @ClientSide
-    private fun onExcavateNoCommand(sender: CommandSender) {
+    fun onExcavateNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
@@ -212,20 +212,18 @@ class ExcavateCommand(instances: InstanceManager) :
         MindustryGamemode.ATTACK,
         MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
-    private fun onExcavateCancelCommand(sender: CommandSender) {
+    fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(
-        ["excavate|e", "force|f"],
-    )
+    @ImperiumCommand(["excavate|e", "force|f"])
     @ImperiumPermission(
         Rank.MODERATOR,
         MindustryGamemode.SURVIVAL,
         MindustryGamemode.ATTACK,
         MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
-    private fun onRtvForceCommand(sender: CommandSender) {
+    fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)
     }
 

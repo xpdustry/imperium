@@ -31,11 +31,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
     @ImperiumCommand(["account", "rank", "set"])
     @ImperiumPermission(Rank.OWNER)
-    private suspend fun onAccountRankSet(
-        sender: InteractionSender.Slash,
-        target: String,
-        rank: Rank
-    ) {
+    suspend fun onAccountRankSet(sender: InteractionSender.Slash, target: String, rank: Rank) {
         if (rank == Rank.OWNER) {
             sender.respond("Nuh huh")
             return

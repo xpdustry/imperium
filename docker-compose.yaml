@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Docker compose file for local testing
 services:
   # The RabbitMQ instance for inter-server communication

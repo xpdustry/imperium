@@ -26,6 +26,7 @@ import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.command.ImperiumArgumentExtractor
 import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
 import com.xpdustry.imperium.common.command.LocalisableDescription
+import com.xpdustry.imperium.common.command.installCoreTranslations
 import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
 import com.xpdustry.imperium.common.command.registerImperiumCommand
 import com.xpdustry.imperium.common.command.registerImperiumPermission
@@ -39,8 +40,10 @@ import mindustry.Vars
 import mindustry.server.ServerControl
 import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.annotations.AnnotationParser
+import org.incendo.cloud.caption.CaptionFormatter
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.setting.ManagerSetting
+import org.incendo.cloud.translations.TranslationBundle
 
 class CommandAnnotationScanner(
     private val plugin: MindustryPlugin,
@@ -76,8 +79,18 @@ class CommandAnnotationScanner(
                         DescriptionFacade.localized(it.key, config.language)
                     else DescriptionFacade.text(it.textDescription())
                 }
+
         manager.initialize(handler)
         manager.settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)
+
+        manager.installCoreTranslations(CommandSender::getLocale)
+        manager.captionFormatter(CaptionFormatter.placeholderReplacing())
+        manager
+            .captionRegistry()
+            .registerProvider(
+                TranslationBundle.resourceBundle(
+                    "com/xpdustry/imperium/mindustry/cloud_bundle", CommandSender::getLocale))
+
         return AnnotationParser(manager, CommandSender::class.java).apply {
             installCoroutineSupportImperium()
             commandExtractor(

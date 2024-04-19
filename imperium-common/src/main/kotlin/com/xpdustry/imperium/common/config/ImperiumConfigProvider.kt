@@ -19,15 +19,15 @@ package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.addPathSource
-import com.xpdustry.imperium.common.inject.InstanceFactory
 import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.InstanceProvider
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.notExists
 
-class ImperiumConfigFactory : InstanceFactory<ImperiumConfig> {
+class ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
     override fun create(instances: InstanceManager): ImperiumConfig {
         val file = instances.get<Path>("directory").resolve("config.yaml")
         if (file.notExists()) {
@@ -35,7 +35,7 @@ class ImperiumConfigFactory : InstanceFactory<ImperiumConfig> {
             return ImperiumConfig()
         }
         return ConfigLoaderBuilder.empty()
-            .withClassLoader(ImperiumConfigFactory::class.java.classLoader)
+            .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
             .addDefaultDecoders()
             .addDefaultPreprocessors()
             .addDefaultParamMappers()

@@ -42,35 +42,35 @@ class KillAllCommand(instances: InstanceManager) :
     @ImperiumCommand(["killall|ku"])
     @ClientSide
     @ImperiumPermission(gamemodes = [MindustryGamemode.SANDBOX])
-    private fun onKillUnitsCommand(sender: CommandSender) {
+    fun onKillUnitsCommand(sender: CommandSender) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
     @ImperiumCommand(["killall|ku", "y"])
     @ClientSide
     @ImperiumPermission(gamemodes = [MindustryGamemode.SANDBOX])
-    private fun onKillUnitsYesCommand(sender: CommandSender) {
+    fun onKillUnitsYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @ImperiumCommand(["killall|ku", "n"])
     @ClientSide
     @ImperiumPermission(gamemodes = [(MindustryGamemode.SANDBOX)])
-    private fun onKillUnitsNoCommand(sender: CommandSender) {
+    fun onKillUnitsNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
     @ImperiumCommand(["killall|ku", "c"])
     @ClientSide
     @ImperiumPermission(Rank.MODERATOR, MindustryGamemode.SANDBOX)
-    private fun onKillUnitsCancelCommand(sender: CommandSender) {
+    fun onKillUnitsCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
     @ImperiumCommand(["killall|ku", "team|t"])
     @ImperiumPermission(Rank.MODERATOR)
     @ClientSide
-    private fun onKillUnitsTeamCommand(sender: CommandSender, team: Team) {
+    fun onKillUnitsTeamCommand(sender: CommandSender, team: Team) {
         var count = 0
         for (unit in Entities.getUnits().toList()) {
             if (!unit.isPlayer && team == unit.team()) {

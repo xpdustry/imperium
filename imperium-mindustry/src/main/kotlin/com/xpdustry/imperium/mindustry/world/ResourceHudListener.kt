@@ -103,7 +103,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                 runMindustryThread { updateResourceTrackers() }
                 for (player in Entities.getPlayersAsync()) {
                     val enabled = users.getSetting(player.uuid(), User.Setting.RESOURCE_HUD)
-                    runMindustryThread {
+                    runMindustryThread<Unit> {
                         if (enabled) {
                             if (views[player] == null) {
                                 views[player] = resourceHudInterface.open(player)

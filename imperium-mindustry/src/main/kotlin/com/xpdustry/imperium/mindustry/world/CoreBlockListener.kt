@@ -73,7 +73,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["core", "list"])
     @ClientSide
-    private fun onCoreListCommand(sender: CommandSender) {
+    fun onCoreListCommand(sender: CommandSender) {
         val clusters = getManager(sender.player.team()).clusters
         if (clusters.isEmpty()) {
             sender.sendMessage("No cores found")
@@ -92,7 +92,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["core", "tp"])
     @ClientSide
-    private fun onCoreTeleportCommand(sender: CommandSender, @Range(min = "1") id: Int) {
+    fun onCoreTeleportCommand(sender: CommandSender, @Range(min = "1") id: Int) {
         val clusters = getManager(sender.player.team()).clusters
         if (clusters.isEmpty()) {
             sender.sendMessage("No cores found")
