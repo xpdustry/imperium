@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.command.ImperiumArgumentExtractor
 import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
 import com.xpdustry.imperium.common.command.LocalisableDescription
 import com.xpdustry.imperium.common.command.installCoreTranslations
-import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
+import com.xpdustry.imperium.common.command.installKotlinSupport
 import com.xpdustry.imperium.common.command.registerImperiumCommand
 import com.xpdustry.imperium.common.command.registerImperiumPermission
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -35,6 +35,7 @@ import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import java.util.Optional
+import java.util.concurrent.Executor
 import kotlin.reflect.full.hasAnnotation
 import mindustry.Vars
 import mindustry.server.ServerControl
@@ -48,7 +49,8 @@ import org.incendo.cloud.translations.TranslationBundle
 class CommandAnnotationScanner(
     private val plugin: MindustryPlugin,
     private val config: ImperiumConfig,
-    private val source: LocalizationSource
+    private val source: LocalizationSource,
+    private val main: Executor
 ) : PluginAnnotationScanner<Unit> {
 
     private lateinit var clientCommandManager: AnnotationParser<CommandSender>
@@ -92,7 +94,7 @@ class CommandAnnotationScanner(
                     "com/xpdustry/imperium/mindustry/cloud_bundle", CommandSender::getLocale))
 
         return AnnotationParser(manager, CommandSender::class.java).apply {
-            installCoroutineSupportImperium()
+            installKotlinSupport(main)
             commandExtractor(
                 ImperiumCommandExtractor(this, CommandSender::class) { it.hasAnnotation<T>() })
             argumentExtractor(ImperiumArgumentExtractor(source))

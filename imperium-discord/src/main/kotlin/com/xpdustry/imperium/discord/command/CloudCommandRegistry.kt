@@ -25,7 +25,7 @@ import com.xpdustry.imperium.common.command.ImperiumArgumentExtractor
 import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
 import com.xpdustry.imperium.common.command.enumParser
 import com.xpdustry.imperium.common.command.installCoreTranslations
-import com.xpdustry.imperium.common.command.installCoroutineSupportImperium
+import com.xpdustry.imperium.common.command.installKotlinSupport
 import com.xpdustry.imperium.common.command.registerImperiumCommand
 import com.xpdustry.imperium.common.command.registerImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -38,6 +38,7 @@ import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import io.leangen.geantyref.TypeToken
+import java.util.concurrent.Executor
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import org.incendo.cloud.annotations.AnnotationParser
@@ -54,7 +55,8 @@ class CloudCommandRegistry(
     private val discord: DiscordService,
     private val config: ServerConfig.Discord,
     users: UserManager,
-    source: LocalizationSource
+    source: LocalizationSource,
+    private val main: Executor,
 ) : AnnotationScanner, ImperiumApplication.Listener {
 
     private val manager =
@@ -95,7 +97,7 @@ class CloudCommandRegistry(
                     .build()
             }
             .apply {
-                installCoroutineSupportImperium()
+                installKotlinSupport(main)
                 commandExtractor(ImperiumCommandExtractor(this, InteractionSender.Slash::class))
                 argumentExtractor(ImperiumArgumentExtractor(source))
                 registerImperiumCommand(source)

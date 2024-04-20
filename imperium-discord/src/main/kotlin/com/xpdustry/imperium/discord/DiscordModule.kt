@@ -42,7 +42,9 @@ fun MutableInstanceManager.registerDiscordModule() {
 
     provider<Path>("directory") { Path(".") }
 
-    provider<AnnotationScanner>("slash") { CloudCommandRegistry(get(), get(), get(), get()) }
+    provider<AnnotationScanner>("slash") {
+        CloudCommandRegistry(get(), get(), get(), get(), get("main"))
+    }
 
     provider<AnnotationScanner>("button") { ButtonCommandRegistry(get()) }
 
