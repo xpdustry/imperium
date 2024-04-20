@@ -31,9 +31,10 @@ class SpawnCommand : ImperiumApplication.Listener {
             val position = Vec2(worldX.toFloat(), worldY.toFloat())
             unit.spawn(position, team)
         }
-    if (silent == false) {
-        Call.sendMessage("${sender.name} spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
-    } else {
-    sender.sendMessage("[lightgray]Silent:[] You spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
+        if (silent == false) {
+             Call.sendMessage("${sender.name} spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
+        } else {
+        sender.sendMessage("[lightgray]Silent:[] You spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
+        }
     }
 }
