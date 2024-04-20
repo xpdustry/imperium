@@ -14,7 +14,7 @@ import org.incendo.cloud.annotation.specifier.Range
 class SpawnCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["spawn"])
-    @ImperiumPermission(Rank.MODERATOR)
+    @ImperiumPermission(Rank.ADMIN)
     @ClientSide
     fun onUnitSpawnCommand(
         sender: CommandSender,
