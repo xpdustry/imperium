@@ -19,23 +19,29 @@ package com.xpdustry.imperium.common.command
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.localization.LocalizationSource
+import io.leangen.geantyref.TypeToken
 import java.util.concurrent.Executor
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.kotlinFunction
+import kotlin.reflect.typeOf
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import org.incendo.cloud.CommandManager
 import org.incendo.cloud.annotations.AnnotationParser
 import org.incendo.cloud.annotations.MethodCommandExecutionHandler
+import org.incendo.cloud.key.CloudKey
+import org.incendo.cloud.meta.CommandMetaBuilder
 import org.incendo.cloud.parser.ParserDescriptor
+import org.incendo.cloud.parser.ParserParameter
+import org.incendo.cloud.parser.ParserParameters
 import org.incendo.cloud.parser.standard.EnumParser
-import org.incendo.cloud.permission.Permission.allOf
-import org.incendo.cloud.permission.Permission.anyOf
-import org.incendo.cloud.permission.Permission.permission
+import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.translations.LocaleExtractor
 import org.incendo.cloud.translations.TranslationBundle
 
@@ -74,22 +80,52 @@ fun <T> AnnotationParser<T>.registerImperiumCommand(source: LocalizationSource) 
                 source))
     }
 
-fun <T> AnnotationParser<T>.registerImperiumPermission() =
-    registerBuilderModifier(ImperiumPermission::class.java) { annotation, builder ->
-        var permission = permission("imperium.rank.${annotation.rank.name.lowercase()}")
-        if (annotation.gamemodes.isNotEmpty()) {
-            permission =
-                allOf(
-                    permission,
-                    anyOf(
-                        annotation.gamemodes.map {
-                            permission("imperium.gamemode.${it.name.lowercase()}")
-                        }))
-        }
-        permission = anyOf(permission, permission("imperium.rank.${Rank.ADMIN.name.lowercase()}"))
-        builder.permission(permission)
-    }
-
 fun <C> CommandManager<C>.installCoreTranslations(extractor: LocaleExtractor<C>) {
     captionRegistry().registerProvider(TranslationBundle.core(extractor))
+}
+
+private val RANK_PARAMETER = ParserParameter("imperium:rank", TypeToken.get(Rank::class.java))
+
+@Suppress("UNCHECKED_CAST")
+private val SCOPE_PARAMETER =
+    ParserParameter("imperium:scope", TypeToken.get(typeOf<List<MindustryGamemode>>().javaType))
+        as ParserParameter<List<MindustryGamemode>>
+
+private val IMPERIUM_PERMISSION = CloudKey.of("imperium:permission", Permission::class.java)
+
+fun CommandMetaBuilder.withImperiumAnnotations(parameters: ParserParameters): CommandMetaBuilder {
+    val rank = parameters.get(RANK_PARAMETER, Rank.EVERYONE)
+    val scope = parameters.get(SCOPE_PARAMETER, emptyList())
+    var permission = Permission.permission("imperium.rank.${rank.name.lowercase()}")
+    if (scope.isNotEmpty()) {
+        permission =
+            Permission.allOf(
+                permission,
+                Permission.anyOf(
+                    buildList {
+                        add(Permission.permission("imperium.rank.${Rank.ADMIN.name.lowercase()}"))
+                        scope.forEach {
+                            add(Permission.permission("imperium.gamemode.${it.name.lowercase()}"))
+                        }
+                    }))
+    }
+    return with(IMPERIUM_PERMISSION, permission)
+}
+
+fun <T> AnnotationParser<T>.registerImperiumAnnotations() {
+    manager().parserRegistry().registerAnnotationMapper(RequireRank::class.java) { annotation, _ ->
+        ParserParameters.single(RANK_PARAMETER, annotation.rank)
+    }
+    manager().parserRegistry().registerAnnotationMapper(RequireScope::class.java) { annotation, _ ->
+        ParserParameters.single(SCOPE_PARAMETER, annotation.gamemodes.toList())
+    }
+    manager().parserRegistry().registerAnnotationMapper(ImperiumPermission::class.java) {
+        annotation,
+        _ ->
+        ParserParameters.empty().apply {
+            store(RANK_PARAMETER, annotation.rank)
+            store(SCOPE_PARAMETER, annotation.gamemodes.toList())
+        }
+    }
+    registerBuilderDecorator { it.permission(it.meta().get(IMPERIUM_PERMISSION)) }
 }
