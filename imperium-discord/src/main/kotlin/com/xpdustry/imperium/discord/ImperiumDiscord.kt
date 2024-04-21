@@ -79,5 +79,8 @@ fun main() {
         buttons.scan(listener)
     }
 
+    commands.process()
+    buttons.process()
+
     LOGGER.info("Imperium loaded.")
 }

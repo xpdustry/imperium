@@ -15,10 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.annotation
+package com.xpdustry.imperium.common.command
 
-interface AnnotationScanner {
-    fun scan(instance: Any)
+import com.xpdustry.imperium.common.content.MindustryGamemode
 
-    fun process() = Unit
-}
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+@MustBeDocumented
+annotation class RequireScope(vararg val gamemodes: MindustryGamemode)
