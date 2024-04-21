@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
-import com.xpdustry.imperium.discord.command.CloudCommandRegistry
+import com.xpdustry.imperium.discord.command.SlashCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.localization.BundleLocalizationSource
@@ -42,9 +42,7 @@ fun MutableInstanceManager.registerDiscordModule() {
 
     provider<Path>("directory") { Path(".") }
 
-    provider<AnnotationScanner>("slash") {
-        CloudCommandRegistry(get(), get(), get(), get(), get("main"))
-    }
+    provider<AnnotationScanner>("slash") { SlashCommandRegistry(get(), get(), get()) }
 
     provider<AnnotationScanner>("button") { ButtonCommandRegistry(get()) }
 
