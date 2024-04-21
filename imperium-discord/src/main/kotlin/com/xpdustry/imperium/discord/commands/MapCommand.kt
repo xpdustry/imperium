@@ -235,7 +235,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                     this@Embed.color = color.rgb
                     field("Reviewer", actor.member.asMention, false)
                     if (snowflake != null) {
-                        field("Identifier", "`$snowflake`", false)
+                        field("Identifier", "$snowflake", false)
                     }
                     image = "attachment://preview2.png"
                 })
@@ -298,9 +298,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                         "No maps found"
                     } else {
                         buildString {
-                            append(result.joinToString("\n") { "- ${it.name} / `${it.snowflake}`" })
+                            append(result.joinToString("\n") { "- ${it.name} / ${it.snowflake}" })
                             if (hasMore) {
-                                append("\n\n...and more")
+                                footer("...and more")
                             }
                         }
                     }

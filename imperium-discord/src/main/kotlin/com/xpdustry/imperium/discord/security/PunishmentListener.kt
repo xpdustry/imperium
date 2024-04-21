@@ -90,7 +90,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                                                 .findByUuid(metadata.starter.toCRC32Muuid())
                                                 .toLastNameWithSnowflake())
                                         field("Yes votes", renderPlayerList(metadata.yes))
-                                        field("Nay votes", renderPlayerList(metadata.nay))
                                     }
                                 }
                             }
@@ -103,7 +102,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             }
                         }
 
-                        footer("ID: ${punishment.snowflake}")
+                        footer("${punishment.snowflake}")
                     })
                 .await()
         }
