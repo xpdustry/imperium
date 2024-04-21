@@ -28,8 +28,9 @@ import com.xpdustry.imperium.common.command.ImperiumCommandExtractor
 import com.xpdustry.imperium.common.command.LocalisableDescription
 import com.xpdustry.imperium.common.command.installCoreTranslations
 import com.xpdustry.imperium.common.command.installKotlinSupport
+import com.xpdustry.imperium.common.command.registerImperiumAnnotations
 import com.xpdustry.imperium.common.command.registerImperiumCommand
-import com.xpdustry.imperium.common.command.registerImperiumPermission
+import com.xpdustry.imperium.common.command.withImperiumAnnotations
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -43,6 +44,7 @@ import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.annotations.AnnotationParser
 import org.incendo.cloud.caption.CaptionFormatter
 import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.meta.CommandMeta
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
 
@@ -93,13 +95,16 @@ class CommandAnnotationScanner(
                 TranslationBundle.resourceBundle(
                     "com/xpdustry/imperium/mindustry/cloud_bundle", CommandSender::getLocale))
 
-        return AnnotationParser(manager, CommandSender::class.java).apply {
-            installKotlinSupport(main)
-            commandExtractor(
-                ImperiumCommandExtractor(this, CommandSender::class) { it.hasAnnotation<T>() })
-            argumentExtractor(ImperiumArgumentExtractor(source))
-            registerImperiumCommand(source)
-            registerImperiumPermission()
-        }
+        return AnnotationParser(manager, CommandSender::class.java) { parameters ->
+                CommandMeta.builder().withImperiumAnnotations(parameters).build()
+            }
+            .apply {
+                installKotlinSupport(main)
+                commandExtractor(
+                    ImperiumCommandExtractor(this, CommandSender::class) { it.hasAnnotation<T>() })
+                argumentExtractor(ImperiumArgumentExtractor(source))
+                registerImperiumCommand(source)
+                registerImperiumAnnotations()
+            }
     }
 }

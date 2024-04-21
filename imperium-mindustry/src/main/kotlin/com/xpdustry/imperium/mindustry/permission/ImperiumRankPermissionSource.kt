@@ -31,7 +31,9 @@ class ImperiumRankPermissionSource(private val config: ServerConfig.Mindustry) :
         val tree = PermissionTree.create()
         tree.setPermission("imperium.gamemode.${config.gamemode.name.lowercase()}", TriState.TRUE)
         if (node is EnumRankNode<*> && node.value is Rank) {
-            tree.setPermission("imperium.rank.${node.value.name.lowercase()}", TriState.TRUE)
+            for (rank in (node.value as Rank).getRanksBelow()) {
+                tree.setPermission("imperium.rank.${rank.name.lowercase()}", TriState.TRUE)
+            }
         }
         return tree
     }
