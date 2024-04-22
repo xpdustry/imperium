@@ -51,7 +51,7 @@ class SpawnCommand : ImperiumApplication.Listener {
         }
         if (silent == false) {
             Call.sendMessage(
-                "${sender.name} spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
+                "${sender.name()} spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
         } else {
             sender.sendMessage(
                 "[lightgray]Silent:[] You spawned $count ${unit.name} for team ${team.coloredName()} at ($x, $y).")
