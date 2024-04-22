@@ -20,8 +20,6 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
-import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -36,6 +34,7 @@ import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.discord.command.ButtonCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
@@ -406,8 +405,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
-    @ImperiumCommand(["map", "gamemode", "add"])
-    @ImperiumPermission(Rank.MODERATOR)
+    @ImperiumCommand(["map", "gamemode", "add"], Rank.MODERATOR)
     suspend fun onMapGamemodeAdd(
         actor: InteractionSender.Slash,
         id: Snowflake,
@@ -427,8 +425,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         actor.respond("This map is now in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @ImperiumCommand(["map", "gamemode", "remove"])
-    @ImperiumPermission(Rank.MODERATOR)
+    @ImperiumCommand(["map", "gamemode", "remove"], Rank.MODERATOR)
     suspend fun onMapGamemodeRemove(
         actor: InteractionSender.Slash,
         id: Snowflake,
@@ -447,8 +444,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         actor.respond("This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
     }
 
-    @ImperiumCommand(["map", "delete"])
-    @ImperiumPermission(Rank.ADMIN)
+    @ImperiumCommand(["map", "delete"], Rank.ADMIN)
     suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
         if (maps.deleteMapBySnowflake(id)) {
             actor.respond("Map deleted!")

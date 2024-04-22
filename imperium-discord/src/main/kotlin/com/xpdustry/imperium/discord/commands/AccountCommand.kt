@@ -21,7 +21,6 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.discord.command.InteractionSender
@@ -29,8 +28,7 @@ import com.xpdustry.imperium.discord.command.InteractionSender
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
 
-    @ImperiumCommand(["account", "rank", "set"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["account", "rank", "set"], Rank.OWNER)
     suspend fun onAccountRankSet(sender: InteractionSender.Slash, target: String, rank: Rank) {
         if (rank == Rank.OWNER) {
             sender.respond("Nuh huh")

@@ -25,12 +25,12 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -126,12 +126,7 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["excavate|e", "select|s"])
-    @ImperiumPermission(
-        gamemodes =
-            [
-                MindustryGamemode.SURVIVAL,
-                MindustryGamemode.ATTACK,
-                MindustryGamemode.SURVIVAL_EXPERT])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     private fun onOldExcavateStartCommand(sender: CommandSender) {
         sender.player.sendMessage(
@@ -139,12 +134,7 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["excavate|e"])
-    @ImperiumPermission(
-        gamemodes =
-            [
-                MindustryGamemode.SURVIVAL,
-                MindustryGamemode.ATTACK,
-                MindustryGamemode.SURVIVAL_EXPERT])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateSelectCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
@@ -157,24 +147,14 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["excavate|e", "y"])
-    @ImperiumPermission(
-        gamemodes =
-            [
-                MindustryGamemode.SURVIVAL,
-                MindustryGamemode.ATTACK,
-                MindustryGamemode.SURVIVAL_EXPERT])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @ImperiumCommand(["excavate|e", "go"])
-    @ImperiumPermission(
-        gamemodes =
-            [
-                MindustryGamemode.SURVIVAL,
-                MindustryGamemode.ATTACK,
-                MindustryGamemode.SURVIVAL_EXPERT])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateStartCommand(sender: CommandSender) {
         val area = areas[sender.player]
@@ -216,34 +196,21 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["excavate|e", "n"])
-    @ImperiumPermission(
-        gamemodes =
-            [
-                MindustryGamemode.SURVIVAL,
-                MindustryGamemode.ATTACK,
-                MindustryGamemode.SURVIVAL_EXPERT])
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["excavate|e", "cancel|c"])
-    @ImperiumPermission(
-        Rank.MODERATOR,
-        MindustryGamemode.SURVIVAL,
-        MindustryGamemode.ATTACK,
-        MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(["excavate|e", "cancel|c"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(["excavate|e", "force|f"])
-    @ImperiumPermission(
-        Rank.MODERATOR,
-        MindustryGamemode.SURVIVAL,
-        MindustryGamemode.ATTACK,
-        MindustryGamemode.SURVIVAL_EXPERT)
+    @ImperiumCommand(["excavate|e", "force|f"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)

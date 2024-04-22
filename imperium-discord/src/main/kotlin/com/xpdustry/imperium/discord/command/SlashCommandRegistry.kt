@@ -21,14 +21,12 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
-import com.xpdustry.imperium.common.command.RequireRank
-import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
@@ -169,10 +167,6 @@ class SlashCommandRegistry(
         for (function in container::class.memberFunctions) {
             val command = function.findAnnotation<ImperiumCommand>() ?: continue
             command.validate()
-            val rank =
-                function.findAnnotation<ImperiumPermission>()?.rank
-                    ?: function.findAnnotation<RequireRank>()?.rank
-                    ?: Rank.EVERYONE
 
             if (!function.isSuspend) {
                 throw IllegalArgumentException("$function must be suspend")
@@ -222,7 +216,7 @@ class SlashCommandRegistry(
                     CommandEdge(
                         container,
                         function,
-                        rank,
+                        command.rank,
                         arguments,
                         !function.hasAnnotation<NonEphemeral>(),
                     ),

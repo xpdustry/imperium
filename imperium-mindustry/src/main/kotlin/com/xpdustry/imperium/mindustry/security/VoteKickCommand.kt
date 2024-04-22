@@ -23,7 +23,6 @@ import com.xpdustry.distributor.player.MUUID
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -103,8 +102,7 @@ class VoteKickCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
-    @ImperiumCommand(["vote", "c"])
-    @ImperiumPermission(Rank.MODERATOR)
+    @ImperiumCommand(["vote", "c"], Rank.MODERATOR)
     @ClientSide
     fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))

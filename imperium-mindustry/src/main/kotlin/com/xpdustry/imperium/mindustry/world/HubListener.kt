@@ -31,7 +31,6 @@ import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -152,8 +151,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         return gson.fromJson(file.toFile().reader(), PORTAL_LIST_TYPE_TOKEN.type)
     }
 
-    @ImperiumCommand(["portal", "delete"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["portal", "delete"], Rank.OWNER)
     @ClientSide
     fun onHubPortalListCommand(sender: CommandSender, name: String) {
         val portal = portals.remove(name)
@@ -170,8 +168,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Deleted portal $name.")
     }
 
-    @ImperiumCommand(["portal", "create"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["portal", "create"], Rank.OWNER)
     @ClientSide
     fun onHubPortalBuildCommand(
         sender: CommandSender,
@@ -189,8 +186,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Started building portal $name.")
     }
 
-    @ImperiumCommand(["portal", "undo"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["portal", "undo"], Rank.OWNER)
     @ClientSide
     fun onHubPortalUndoCommand(sender: CommandSender) {
         val builder = building[sender.player]
@@ -206,8 +202,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Removed last point.")
     }
 
-    @ImperiumCommand(["portal", "cancel"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["portal", "cancel"], Rank.OWNER)
     @ClientSide
     fun onHubPortalCancelCommand(sender: CommandSender) {
         val builder = building.remove(sender.player)
@@ -218,8 +213,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         sender.sendMessage("Cancelled portal ${builder.name}")
     }
 
-    @ImperiumCommand(["portal", "list"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["portal", "list"], Rank.OWNER)
     @ClientSide
     fun onHubPortalListCommand(sender: CommandSender) {
         if (portals.isEmpty()) {
@@ -236,8 +230,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             })
     }
 
-    @ImperiumCommand(["portal", "debug"])
-    @ImperiumPermission(Rank.OWNER)
+    @ImperiumCommand(["portal", "debug"], Rank.OWNER)
     @ClientSide
     fun onHubPortalDebugCommand(sender: CommandSender) {
         val debug = debug[sender.player] ?: false

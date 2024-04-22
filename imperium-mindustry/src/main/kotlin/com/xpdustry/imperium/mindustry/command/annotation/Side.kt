@@ -19,10 +19,8 @@ package com.xpdustry.imperium.mindustry.command.annotation
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
 annotation class ClientSide
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
 annotation class ServerSide

@@ -15,11 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command
+package com.xpdustry.imperium.mindustry.command.annotation
 
 import com.xpdustry.imperium.common.content.MindustryGamemode
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
-annotation class RequireScope(vararg val gamemodes: MindustryGamemode)
+annotation class Scope(vararg val gamemodes: MindustryGamemode)

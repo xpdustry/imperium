@@ -25,13 +25,11 @@ import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
-import com.xpdustry.imperium.common.command.RequireRank
-import com.xpdustry.imperium.common.command.RequireScope
 import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import io.leangen.geantyref.TypeToken
@@ -105,7 +103,7 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
         var builder =
             manager
                 .commandBuilder(names.first, createLiteralDescription(base), *names.second)
-                .permission(createPermission(function))
+                .permission(createPermission(function, annotation))
                 .commandDescription(createLiteralDescription(base))
 
         for (rest in annotation.path.drop(1)) {
@@ -131,14 +129,9 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
         manager.command(builder)
     }
 
-    private fun createPermission(function: KFunction<*>): Permission {
-        val default = function.findAnnotation<ImperiumPermission>()
-        val rank = default?.rank ?: function.findAnnotation<RequireRank>()?.rank ?: Rank.EVERYONE
-        val scope =
-            default?.gamemodes
-                ?: function.findAnnotation<RequireScope>()?.gamemodes
-                ?: emptyArray<MindustryGamemode>()
-        var permission = Permission.permission("imperium.rank.${rank.name.lowercase()}")
+    private fun createPermission(function: KFunction<*>, annotation: ImperiumCommand): Permission {
+        val scope = function.findAnnotation<Scope>()?.gamemodes ?: emptyArray<MindustryGamemode>()
+        var permission = Permission.permission("imperium.rank.${annotation.rank.name.lowercase()}")
         if (scope.isNotEmpty()) {
             permission =
                 Permission.allOf(

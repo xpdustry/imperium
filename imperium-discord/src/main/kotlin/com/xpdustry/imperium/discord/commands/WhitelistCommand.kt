@@ -20,7 +20,6 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
@@ -30,8 +29,7 @@ import com.xpdustry.imperium.discord.command.InteractionSender
 class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val whitelist = instances.get<AddressWhitelist>()
 
-    @ImperiumCommand(["whitelist", "add"])
-    @ImperiumPermission(Rank.ADMIN)
+    @ImperiumCommand(["whitelist", "add"], Rank.ADMIN)
     suspend fun onWhitelistAddCommand(sender: InteractionSender.Slash, address: String) {
         // TODO Add InetAddress parser, with option to prevent the use of loopback addresses
         val ip = address.toInetAddressOrNull()
@@ -47,8 +45,7 @@ class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listene
         }
     }
 
-    @ImperiumCommand(["whitelist", "remove"])
-    @ImperiumPermission(Rank.ADMIN)
+    @ImperiumCommand(["whitelist", "remove"], Rank.ADMIN)
     suspend fun onWhitelistRemoveCommand(sender: InteractionSender.Slash, address: String) {
         val ip = address.toInetAddressOrNull()
         if (ip == null) {

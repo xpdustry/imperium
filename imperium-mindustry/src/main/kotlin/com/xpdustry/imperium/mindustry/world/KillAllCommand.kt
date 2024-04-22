@@ -21,11 +21,11 @@ import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -40,35 +40,34 @@ class KillAllCommand(instances: InstanceManager) :
     ImperiumApplication.Listener {
 
     @ImperiumCommand(["killall|ku"])
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
-    @ImperiumPermission(gamemodes = [MindustryGamemode.SANDBOX])
     fun onKillUnitsCommand(sender: CommandSender) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
     @ImperiumCommand(["killall|ku", "y"])
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
-    @ImperiumPermission(gamemodes = [MindustryGamemode.SANDBOX])
     fun onKillUnitsYesCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.YES)
     }
 
     @ImperiumCommand(["killall|ku", "n"])
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
-    @ImperiumPermission(gamemodes = [(MindustryGamemode.SANDBOX)])
     fun onKillUnitsNoCommand(sender: CommandSender) {
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["killall|ku", "c"])
+    @ImperiumCommand(["killall|ku", "c"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
-    @ImperiumPermission(Rank.MODERATOR, MindustryGamemode.SANDBOX)
     fun onKillUnitsCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(["killall|ku", "team|t"])
-    @ImperiumPermission(Rank.MODERATOR)
+    @ImperiumCommand(["killall|ku", "team|t"], Rank.MODERATOR)
     @ClientSide
     fun onKillUnitsTeamCommand(sender: CommandSender, team: Team) {
         var count = 0
