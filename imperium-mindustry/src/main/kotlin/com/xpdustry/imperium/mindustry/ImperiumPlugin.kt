@@ -70,6 +70,7 @@ import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.ResourceHudListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
+import com.xpdustry.imperium.mindustry.world.SpawnCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
@@ -156,7 +157,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AntiEvadeListener::class,
                 GameListener::class,
                 TipListener::class,
-                RatingListener::class)
+                RatingListener::class,
+                SpawnCommand::class)
             .forEach(application::register)
 
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
