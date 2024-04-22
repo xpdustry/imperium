@@ -104,6 +104,12 @@ class HelpCommand : ImperiumApplication.Listener {
                                     " [accent]${argument.name}: [lightgray]$argumentDescription")
                             }
                         }
+                        for (flag in help.flags) {
+                            val argumentDescription = flag.description.getText(sender)
+                            if (argumentDescription.isNotBlank()) {
+                                appendLine(" [accent]${flag.name}: [lightgray]$argumentDescription")
+                            }
+                        }
                     },
                 )
             }

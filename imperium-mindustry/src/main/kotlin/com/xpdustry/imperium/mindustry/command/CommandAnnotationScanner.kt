@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -50,11 +51,12 @@ import mindustry.Vars
 import mindustry.server.ServerControl
 import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.caption.CaptionFormatter
-import org.incendo.cloud.component.CommandComponent
+import org.incendo.cloud.component.TypedCommandComponent
 import org.incendo.cloud.context.CommandContext
 import org.incendo.cloud.description.Description
 import org.incendo.cloud.execution.CommandExecutionHandler
 import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.parser.flag.CommandFlag
 import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
@@ -114,10 +116,13 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
 
         for (parameter in function.parameters.drop(1)) {
             if (parameter.type.classifier == CommandSender::class) continue
+            val flag = parameter.findAnnotation<Flag>()
             builder =
-                builder.argument(
-                    createCommandComponent(
-                        manager, parameter, base, TypeToken.get(parameter.type.javaType)))
+                if (flag == null) {
+                    builder.argument(createCommandComponent<Any>(manager, parameter, base))
+                } else {
+                    builder.flag(createFlagComponent<Any>(manager, parameter, base, flag))
+                }
         }
 
         builder =
@@ -151,20 +156,43 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
         return permission
     }
 
+    @Suppress("UNCHECKED_CAST")
     private fun <T : Any> createCommandComponent(
         manager: ArcCommandManager<CommandSender>,
         parameter: KParameter,
-        base: List<String>,
-        token: TypeToken<T>
-    ): CommandComponent<CommandSender> {
+        base: List<String>
+    ): TypedCommandComponent<CommandSender, T> {
+        val token = TypeToken.get(parameter.type.javaType) as TypeToken<T>
         val parameters = manager.parserRegistry().parseAnnotations(token, parameter.annotations)
-        return CommandComponent.builder<CommandSender, T>()
+        return TypedCommandComponent.builder<CommandSender, T>()
             .name(parameter.name!!)
             .parser(manager.parserRegistry().createParser(token, parameters).get())
             .valueType(token)
             .required(!parameter.isOptional)
             .description(createArgumentDescription(base, parameter.name!!))
+            .commandManager(manager)
             .build()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    private fun <T : Any> createFlagComponent(
+        manager: ArcCommandManager<CommandSender>,
+        parameter: KParameter,
+        base: List<String>,
+        flag: Flag
+    ): CommandFlag<T> {
+        if (parameter.type.classifier != Boolean::class && !parameter.isOptional) {
+            throw IllegalArgumentException("A value flag must be optional: ${parameter.name}")
+        }
+        val builder =
+            CommandFlag.builder(parameter.name!!)
+                .withAliases(if (flag.alias.isNotBlank()) listOf(flag.alias) else emptyList())
+                .withDescription(createArgumentDescription(base, parameter.name!!))
+        return if (parameter.type.classifier == Boolean::class && !parameter.isOptional) {
+            builder.build() as CommandFlag<T>
+        } else {
+            builder.withComponent(createCommandComponent<T>(manager, parameter, base)).build()
+        }
     }
 
     private fun createLiteralDescription(path: List<String>) =
@@ -190,10 +218,22 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
                 continue
             }
 
-            val argument = context.optional<Any>(parameter.name!!).getOrNull()
-            if (argument != null) {
-                arguments[parameter] = argument
-                continue
+            if (parameter.hasAnnotation<Flag>()) {
+                if (parameter.type.classifier == Boolean::class && !parameter.isOptional) {
+                    arguments[parameter] = context.flags().hasFlag(parameter.name!!)
+                    continue
+                }
+                val argument = context.flags().get<Any>(parameter.name!!)
+                if (argument != null) {
+                    arguments[parameter] = argument
+                    continue
+                }
+            } else {
+                val argument = context.optional<Any>(parameter.name!!).getOrNull()
+                if (argument != null) {
+                    arguments[parameter] = argument
+                    continue
+                }
             }
 
             if (!parameter.isOptional) {
