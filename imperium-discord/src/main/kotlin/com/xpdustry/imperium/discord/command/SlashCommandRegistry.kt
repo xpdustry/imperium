@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.ImperiumPermission
 import com.xpdustry.imperium.common.command.RequireRank
+import com.xpdustry.imperium.common.command.annotation.Range
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
@@ -60,7 +61,6 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandData
 import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
-import org.incendo.cloud.annotation.specifier.Range
 
 // TODO
 //   - This is awful, rewrite it, eventually
@@ -212,7 +212,7 @@ class SlashCommandRegistry(
                         "$function has unsupported parameter type $classifier")
                 }
 
-                arguments += createCommandEdgeArgument(parameter.name!!, optional, classifier)
+                arguments += createCommandEdgeArgument(parameter, optional, classifier)
             }
 
             function.isAccessible = true
@@ -232,14 +232,14 @@ class SlashCommandRegistry(
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> createCommandEdgeArgument(
-        name: String,
+        parameter: KParameter,
         optional: Boolean,
-        klass: KClass<T>
+        klass: KClass<T>,
     ): CommandEdge.Argument<T> {
         val handler =
             handlers[klass] as TypeHandler<T>?
                 ?: throw IllegalArgumentException("Unsupported type $klass")
-        return CommandEdge.Argument(name, optional, klass, handler)
+        return CommandEdge.Argument(parameter.name!!, optional, parameter, handler)
     }
 
     private fun compile() {

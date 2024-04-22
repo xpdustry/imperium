@@ -97,11 +97,6 @@ time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
 nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
-cloud-annotations = { module = "org.incendo:cloud-annotations", version.ref = "cloud-core" }
-cloud-kotlin-coroutines-annotations = { module = "org.incendo:cloud-kotlin-coroutines-annotations", version.ref = "cloud-core" }
-cloud-kotlin-coroutines = { module = "org.incendo:cloud-kotlin-coroutines", version.ref = "cloud-core" }
-cloud-kotlin-extensions = { module = "org.incendo:cloud-kotlin-extensions", version.ref = "cloud-core" }
-cloud-jda5 = { module = "org.incendo:cloud-jda5", version.ref = "cloud-discord" }
 cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
 
 # gradle plugins
@@ -115,4 +110,4 @@ kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serializat
 
 
 [bundles]
-cloud = ["cloud-core", "cloud-annotations", "cloud-kotlin-coroutines", "cloud-kotlin-coroutines-annotations", "cloud-kotlin-extensions", "cloud-translations-core"]
+cloud = ["cloud-core", "cloud-translations-core"]

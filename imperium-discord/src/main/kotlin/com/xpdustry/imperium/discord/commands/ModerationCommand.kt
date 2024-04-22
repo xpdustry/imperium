@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.ImperiumPermission
+import com.xpdustry.imperium.common.command.annotation.Range
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.Punishment
@@ -36,8 +37,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
-import org.incendo.cloud.annotation.specifier.Greedy
-import org.incendo.cloud.annotation.specifier.Range
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -93,7 +92,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onBanCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
-        @Greedy reason: String,
+        reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_DAYS
     ) {
         onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
@@ -104,7 +103,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onFreezeCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
-        @Greedy reason: String,
+        reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
     ) {
         onPunishCommand("Frozen", Punishment.Type.FREEZE, actor, player, reason, duration.value)
@@ -115,7 +114,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onMuteCommand(
         actor: InteractionSender.Slash,
         player: Snowflake,
-        @Greedy reason: String,
+        reason: String,
         duration: PunishmentDuration = PunishmentDuration.ONE_DAY
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, actor, player, reason, duration.value)
@@ -142,7 +141,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onPardonCommand(
         actor: InteractionSender.Slash,
         punishment: String,
-        @Greedy reason: String
+        reason: String
     ) {
         val snowflake = punishment.toLongOrNull()
         if (snowflake == null) {

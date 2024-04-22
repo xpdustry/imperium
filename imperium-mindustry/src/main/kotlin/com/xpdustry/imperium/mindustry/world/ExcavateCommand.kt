@@ -125,13 +125,14 @@ class ExcavateCommand(instances: InstanceManager) :
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
     }
 
-    @ImperiumCommand(["excavate|e select|s"])
+    @ImperiumCommand(["excavate|e", "select|s"])
     @ImperiumPermission(
         gamemodes =
             [
                 MindustryGamemode.SURVIVAL,
                 MindustryGamemode.ATTACK,
                 MindustryGamemode.SURVIVAL_EXPERT])
+    @ClientSide
     private fun onOldExcavateStartCommand(sender: CommandSender) {
         sender.player.sendMessage(
             "This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead.")
