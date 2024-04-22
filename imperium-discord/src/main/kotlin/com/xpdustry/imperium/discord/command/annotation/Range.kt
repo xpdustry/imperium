@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command.annotation
+package com.xpdustry.imperium.discord.command.annotation
 
 // TODO
 //   Using AnnotationTarget.TYPE CRASHES, AND IT HAS BEEN AN ISSUE FOR 3 YEARS!!

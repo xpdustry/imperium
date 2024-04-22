@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.ImperiumPermission
-import com.xpdustry.imperium.common.command.annotation.Range
+import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
