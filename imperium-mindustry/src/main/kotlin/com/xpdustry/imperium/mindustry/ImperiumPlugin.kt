@@ -172,11 +172,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 MethodAnnotationScanner.create(this)
                     .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR)
                     .register(MethodAnnotationScanner.TASK_HANDLER_PAIR),
-                CommandAnnotationScanner(
-                    this,
-                    application.instances.get(),
-                    application.instances.get(),
-                    application.instances.get("main")))
+                CommandAnnotationScanner(this, application.instances.get()))
 
         application.listeners.forEach(scanner::scan)
 

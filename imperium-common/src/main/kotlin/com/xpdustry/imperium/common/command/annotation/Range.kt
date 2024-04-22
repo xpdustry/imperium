@@ -15,12 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command
+package com.xpdustry.imperium.common.command.annotation
 
-import com.xpdustry.imperium.common.localization.LocalizationSource
-import org.incendo.cloud.description.Description
-
-class LocalisableDescription(val key: String, private val source: LocalizationSource) :
-    Description {
-    override fun textDescription() = source.format(key, null)
-}
+@Retention(AnnotationRetention.RUNTIME)
+@Target(AnnotationTarget.VALUE_PARAMETER)
+annotation class Range(val min: String = "", val max: String = "")

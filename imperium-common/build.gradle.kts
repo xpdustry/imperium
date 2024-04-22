@@ -35,6 +35,4 @@ dependencies {
 
     api(libs.prettytime)
     api(libs.time4j.core)
-
-    api(libs.bundles.cloud)
 }

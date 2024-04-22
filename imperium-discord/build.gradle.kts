@@ -20,7 +20,6 @@ dependencies {
     }
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
-    implementation(libs.cloud.jda5)
 }
 
 tasks.shadowJar {
@@ -57,7 +56,6 @@ tasks.shadowJar {
         exclude(dependency(libs.caffeine.get()))
         exclude(dependency(libs.prettytime.get()))
         exclude(dependency(libs.time4j.core.get()))
-        exclude(dependency(libs.cloud.kotlin.coroutines.annotations.get()))
     }
 }
 

@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.ImperiumPermission
+import com.xpdustry.imperium.common.command.annotation.Range
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -52,8 +53,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.utils.FileUpload
-import org.incendo.cloud.annotation.specifier.Greedy
-import org.incendo.cloud.annotation.specifier.Range
 
 internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ServerConfig.Discord>()
@@ -110,7 +109,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     suspend fun onMapSubmitCommand(
         actor: InteractionSender.Slash,
         map: Message.Attachment,
-        @Greedy notes: String? = null
+        notes: String? = null
     ) {
         if (!map.fileName.endsWith(".msav")) {
             actor.respond("Invalid map file!")
