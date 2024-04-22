@@ -212,7 +212,7 @@ class SlashCommandRegistry(
                         "$function has unsupported parameter type $classifier")
                 }
 
-                arguments += createCommandEdgeArgument(parameter.name!!, optional, classifier)
+                arguments += createCommandEdgeArgument(parameter, optional, classifier)
             }
 
             function.isAccessible = true
@@ -232,14 +232,14 @@ class SlashCommandRegistry(
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> createCommandEdgeArgument(
-        name: String,
+        parameter: KParameter,
         optional: Boolean,
-        klass: KClass<T>
+        klass: KClass<T>,
     ): CommandEdge.Argument<T> {
         val handler =
             handlers[klass] as TypeHandler<T>?
                 ?: throw IllegalArgumentException("Unsupported type $klass")
-        return CommandEdge.Argument(name, optional, klass, handler)
+        return CommandEdge.Argument(parameter.name!!, optional, parameter, handler)
     }
 
     private fun compile() {
