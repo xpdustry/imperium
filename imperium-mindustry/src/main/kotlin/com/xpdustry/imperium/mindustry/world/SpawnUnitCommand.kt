@@ -26,6 +26,7 @@ import kotlin.random.Random
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.type.UnitType
+import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
 
 class SpawnCommand : ImperiumApplication.Listener {
