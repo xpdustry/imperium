@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     api(libs.guava)
-    api(libs.gson)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
     api(libs.deepl)

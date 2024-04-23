@@ -17,10 +17,15 @@
  */
 package com.xpdustry.imperium.common.network
 
-import com.google.gson.Gson
-import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.config.NetworkConfig
 import java.net.InetAddress
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.boolean
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -29,8 +34,7 @@ class VpnApiIoDetection(
     private val config: NetworkConfig.VpnDetectionConfig.VpnApiIo,
     private val http: OkHttpClient
 ) : VpnDetection {
-    private val gson = Gson()
-
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
             return VpnDetection.Result.Success(false)
@@ -51,8 +55,9 @@ class VpnApiIoDetection(
                 return@use VpnDetection.Result.Failure(
                     IllegalStateException("Unexpected status code: ${response.code}"))
             }
-            val json = gson.fromJson(response.body!!.charStream(), JsonObject::class.java)
-            VpnDetection.Result.Success(json["security"].asJsonObject["vpn"].asBoolean)
+            val json = Json.decodeFromStream<JsonObject>(response.body!!.byteStream())
+            VpnDetection.Result.Success(
+                json["security"]!!.jsonObject["vpn"]!!.jsonPrimitive.boolean)
         }
     }
 }
