@@ -5,7 +5,6 @@ plugins {
 
 dependencies {
     api(libs.guava)
-    api(libs.gson)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
     api(libs.deepl)
@@ -31,7 +30,7 @@ dependencies {
     api(libs.exposed.json)
     api(libs.hikari)
     runtimeOnly(libs.mariadb)
-    testRuntimeOnly(libs.h2)
+    runtimeOnly(libs.h2)
 
     api(libs.prettytime)
     api(libs.time4j.core)

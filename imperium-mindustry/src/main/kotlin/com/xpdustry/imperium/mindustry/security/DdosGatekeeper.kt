@@ -21,9 +21,6 @@ import com.google.common.collect.Range
 import com.google.common.collect.RangeSet
 import com.google.common.collect.TreeRangeSet
 import com.google.common.net.InetAddresses
-import com.google.gson.Gson
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -37,6 +34,14 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jsoup.Jsoup
@@ -113,23 +118,19 @@ private interface AddressProvider {
 private abstract class JsonAddressProvider protected constructor(override val name: String) :
     AddressProvider {
 
+    @OptIn(ExperimentalSerializationApi::class)
     override suspend fun fetchAddressRanges(http: OkHttpClient): List<Range<BigInteger>> =
         http.newCall(Request.Builder().url(fetchUrl()).build()).await().use { response ->
             if (response.code != 200) {
                 throw IOException(
                     "Failed to download '$name' public addresses file (status-code: ${response.code}, url: ${response.request.url}).")
             }
-            extractAddressRanges(
-                GSON.fromJson(response.body!!.charStream(), JsonObject::class.java))
+            extractAddressRanges(Json.decodeFromStream<JsonObject>(response.body!!.byteStream()))
         }
 
     protected abstract suspend fun fetchUrl(): URL
 
     protected abstract fun extractAddressRanges(json: JsonObject): List<Range<BigInteger>>
-
-    companion object {
-        private val GSON = Gson()
-    }
 }
 
 private object AzureAddressProvider : JsonAddressProvider("azure") {
@@ -147,20 +148,19 @@ private object AzureAddressProvider : JsonAddressProvider("azure") {
         }
 
     override fun extractAddressRanges(json: JsonObject): List<Range<BigInteger>> =
-        json["values"]
-            .asJsonArray
-            .asList()
-            .map(JsonElement::getAsJsonObject)
-            .filter { it["name"].asString == "AzureCloud" }
-            .map { it["properties"].asJsonObject["addressPrefixes"].asJsonArray }
-            .flatMap { array -> array.asList().map { createInetAddressRange(it.asString) } }
+        json["values"]!!
+            .jsonArray
+            .map(JsonElement::jsonObject)
+            .filter { it["name"]!!.jsonPrimitive.content == "AzureCloud" }
+            .map { it["properties"]!!.jsonObject["addressPrefixes"]!!.jsonArray }
+            .flatMap { array -> array.map { createInetAddressRange(it.jsonPrimitive.content) } }
 }
 
 private object GithubActionsAddressProvider : JsonAddressProvider("github-actions") {
     override suspend fun fetchUrl(): URL = URL("https://api.github.com/meta")
 
     override fun extractAddressRanges(json: JsonObject): List<Range<BigInteger>> =
-        json["actions"].asJsonArray.asList().map { createInetAddressRange(it.asString) }
+        json["actions"]!!.jsonArray.map { createInetAddressRange(it.jsonPrimitive.content) }
 }
 
 private object AmazonWebServicesAddressProvider : JsonAddressProvider("amazon-web-services") {
@@ -178,19 +178,19 @@ private object AmazonWebServicesAddressProvider : JsonAddressProvider("amazon-we
         name: String,
         element: String
     ): Collection<Range<BigInteger>> =
-        json[name].asJsonArray.map { createInetAddressRange(it.asJsonObject[element].asString) }
+        json[name]!!.jsonArray.map {
+            createInetAddressRange(it.jsonObject[element]!!.jsonPrimitive.content)
+        }
 }
 
 private object GoogleCloudAddressProvider : JsonAddressProvider("google") {
     override suspend fun fetchUrl(): URL = URL("https://www.gstatic.com/ipranges/cloud.json")
 
     override fun extractAddressRanges(json: JsonObject): List<Range<BigInteger>> =
-        json["prefixes"].asJsonArray.map { extractAddress(it.asJsonObject) }
+        json["prefixes"]!!.jsonArray.map { extractAddress(it.jsonObject) }
 
     private fun extractAddress(json: JsonObject) =
-        createInetAddressRange(
-            if (json.has("ipv4Prefix")) json["ipv4Prefix"].asString
-            else json["ipv6Prefix"].asString)
+        createInetAddressRange((json["ipv4Prefix"] ?: json["ipv6Prefix"])!!.jsonPrimitive.content)
 }
 
 private object OracleCloudAddressProvider : JsonAddressProvider("oracle") {
@@ -198,10 +198,10 @@ private object OracleCloudAddressProvider : JsonAddressProvider("oracle") {
         URL("https://docs.cloud.oracle.com/en-us/iaas/tools/public_ip_ranges.json")
 
     override fun extractAddressRanges(json: JsonObject): List<Range<BigInteger>> =
-        json["regions"]
-            .asJsonArray
-            .flatMap { it.asJsonObject["cidrs"].asJsonArray }
-            .map { createInetAddressRange(it.asJsonObject["cidr"].asString) }
+        json["regions"]!!
+            .jsonArray
+            .flatMap { it.jsonObject["cidrs"]!!.jsonArray }
+            .map { createInetAddressRange(it.jsonObject["cidr"]!!.jsonPrimitive.content) }
 }
 
 private fun createInetAddressRange(address: String): Range<BigInteger> {

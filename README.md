@@ -17,9 +17,10 @@ just prefix the task name with the subproject name such as `./gradlew :imperium-
 
 ## Testing
 
-Imperium needs a mariadb database and a rabbitmq server in order to function.
-Fortunately for you, a docker-compose file is provided with everything.
-You will simply have to run `docker-compose up -d` once.
+Imperium needs a mariadb database and a rabbitmq server to run in production.
+But for local testing, it will default to h2 and a noop message broker.
+If you wish to test with the production setup, use the provided docker-compose file.
+You will simply have to run `docker-compose up -d` once, then update the [configuration file](imperium-common/src/main/kotlin/com/xpdustry/imperium/common/config/ImperiumConfig.kt) accordingly.
 
 > RabbitMQ has a web front-end at http://localhost:15672, you can log in with guest:guest.
 
@@ -29,7 +30,7 @@ First, create the base configuration file named `config.yaml` in the directory `
 with the following content:
 ```yaml
 server:
-  name: "name of the server (must be alphanumeric)"
+  name: "test" # name of the server (must be alphanumeric and lowercase)
   gamemode: SURVIVAL
 ```
 
@@ -54,9 +55,10 @@ server:
     maps: "some channel id"
   roles:
     OWNER: "some role id"
-    ADMIN: "some role id"
-    MODERATOR: "some role id"
-    VERIFIED: "some role id"
+    # Optional roles to add for further testing
+    # ADMIN: "some role id"
+    # MODERATOR: "some role id"
+    # VERIFIED: "some role id"
 ```
 
 Then you can start the discord bot by running `./gradlew imperium-discord:runImperiumDiscord`.

@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.database
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
@@ -63,6 +64,7 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
                     host = directory.resolve(config.host).absolutePathString()
                 }
                 hikari.jdbcUrl = "jdbc:h2:$host"
+                LOGGER.warn("Using H2 database, this is not recommended for production")
             }
             DatabaseConfig.SQL.Type.MARIADB -> {
                 hikari.jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"
@@ -103,5 +105,9 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
                 } catch (_: SQLException) {}
             }
         }
+    }
+
+    companion object {
+        private val LOGGER by LoggerDelegate()
     }
 }

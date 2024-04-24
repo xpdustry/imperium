@@ -19,11 +19,6 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.Core
 import arc.math.geom.Geometry
-import com.google.gson.GsonBuilder
-import com.google.gson.TypeAdapter
-import com.google.gson.reflect.TypeToken
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonWriter
 import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.annotation.method.TaskHandler
 import com.xpdustry.distributor.command.CommandSender
@@ -36,6 +31,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.Discovery
+import com.xpdustry.imperium.common.serialization.SerializablePolygon
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
@@ -45,7 +41,13 @@ import java.awt.Polygon
 import java.nio.file.Path
 import kotlin.experimental.or
 import kotlin.io.path.notExists
-import kotlin.io.path.writeText
+import kotlin.io.path.outputStream
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Call
@@ -58,15 +60,11 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val config = instances.get<ServerConfig.Mindustry>().hub
     private val directory = instances.get<Path>("directory").resolve("hub")
+    // TODO When dedicated plugin, load as Map<String, Polygon>
     private val portals = mutableMapOf<String, Portal>()
     private val building = PlayerMap<PortalBuilder>(instances.get())
     private val discovery = instances.get<Discovery>()
     private val debug = PlayerMap<Boolean>(instances.get())
-    private val gson =
-        GsonBuilder()
-            .setPrettyPrinting()
-            .registerTypeAdapter(Polygon::class.java, PolygonTypeAdapter().nullSafe())
-            .create()
 
     override fun onImperiumInit() {
         directory.toFile().mkdirs()
@@ -143,12 +141,13 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         updatePortals()
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private fun loadPortals(): Map<String, Portal> {
         val file = directory.resolve("${getCurrentMapName()}.json")
         if (file.notExists()) {
             return emptyMap()
         }
-        return gson.fromJson(file.toFile().reader(), PORTAL_LIST_TYPE_TOKEN.type)
+        return file.toFile().inputStream().use { Json.decodeFromStream<Map<String, Portal>>(it) }
     }
 
     @ImperiumCommand(["portal", "delete"], Rank.OWNER)
@@ -287,13 +286,16 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         } catch (error: Exception) {
             portals.remove(builder.name)
             player.sendMessage("An error occurred while creating portal ${portal.name}.")
-            logger.error("An error occurred while creating portal ${portal.name}.", error)
+            LOGGER.error("An error occurred while creating portal ${portal.name}.", error)
         }
         Core.app.post { updatePortals() }
     }
 
+    @OptIn(ExperimentalSerializationApi::class)
     private fun savePortals() {
-        directory.resolve("${getCurrentMapName()}.json").writeText(gson.toJson(portals))
+        directory.resolve("${getCurrentMapName()}.json").outputStream().use {
+            Json.encodeToStream(portals, it)
+        }
     }
 
     private fun updatePortals() {
@@ -377,9 +379,10 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private fun getCurrentMapName() =
         Vars.state.map.snowflake ?: Vars.state.map.name() ?: error("The current map has no name.")
 
+    @Serializable
     data class Portal(
         val name: String,
-        val polygon: Polygon,
+        val polygon: SerializablePolygon,
         @Transient var labels: Labels? = null
     ) {
         val x: Int = polygon.xpoints.min()
@@ -398,34 +401,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     data class PortalBuilder(val name: String, val points: List<ImmutablePoint>)
 
-    private class PolygonTypeAdapter : TypeAdapter<Polygon>() {
-        override fun write(writer: JsonWriter, value: Polygon) {
-            writer.beginArray()
-            for (i in 0 until value.npoints) {
-                writer.beginArray()
-                writer.value(value.xpoints[i])
-                writer.value(value.ypoints[i])
-                writer.endArray()
-            }
-            writer.endArray()
-        }
-
-        override fun read(reader: JsonReader): Polygon {
-            val polygon = Polygon()
-            reader.beginArray()
-            while (reader.hasNext()) {
-                reader.beginArray()
-                polygon.addPoint(reader.nextInt(), reader.nextInt())
-                reader.endArray()
-            }
-            reader.endArray()
-            return polygon
-        }
-    }
-
     companion object {
-        private val logger by LoggerDelegate()
-        private val PORTAL_LIST_TYPE_TOKEN =
-            TypeToken.getParameterized(Map::class.java, String::class.java, Portal::class.java)
+        private val LOGGER by LoggerDelegate()
     }
 }
