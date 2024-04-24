@@ -35,7 +35,7 @@ data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val translator: TranslatorConfig = TranslatorConfig.None,
     val database: DatabaseConfig = DatabaseConfig.SQL(),
-    val messenger: MessengerConfig = MessengerConfig.RabbitMQ(),
+    val messenger: MessengerConfig = MessengerConfig.None,
     val server: ServerConfig = ServerConfig.None,
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
@@ -62,14 +62,14 @@ sealed interface TranslatorConfig {
 
 sealed interface DatabaseConfig {
     data class SQL(
-        val host: String = "localhost",
+        val host: String = "./database.h2;MODE=MYSQL",
         val port: Short = 3306,
         val database: String = "imperium",
         val username: String = "root",
         val password: Secret = Secret("root"),
         val poolMin: Int = 2,
         val poolMax: Int = 8,
-        val type: Type = Type.MARIADB
+        val type: Type = Type.H2
     ) : DatabaseConfig {
         init {
             require(poolMin > 0) { "poolMin can't be below 1, got $poolMin" }
@@ -84,6 +84,8 @@ sealed interface DatabaseConfig {
 }
 
 sealed interface MessengerConfig {
+    data object None : MessengerConfig
+
     data class RabbitMQ(
         val host: String = "localhost",
         val port: Int = 5672,

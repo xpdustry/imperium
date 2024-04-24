@@ -56,6 +56,7 @@ tasks.shadowJar {
         exclude(dependency(libs.caffeine.get()))
         exclude(dependency(libs.prettytime.get()))
         exclude(dependency(libs.time4j.core.get()))
+        exclude(dependency(libs.h2.get()))
     }
 }
 

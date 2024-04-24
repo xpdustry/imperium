@@ -38,6 +38,7 @@ import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.NoopMessenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.SimpleDiscovery
@@ -89,6 +90,7 @@ fun MutableInstanceManager.registerCommonModule() {
     provider<Messenger> {
         when (get<ImperiumConfig>().messenger) {
             is MessengerConfig.RabbitMQ -> RabbitmqMessenger(get())
+            is MessengerConfig.None -> NoopMessenger()
         }
     }
 
