@@ -40,10 +40,13 @@ import kotlin.math.atan2
 import kotlin.math.ceil
 import kotlin.math.sqrt
 import mindustry.Vars
+import mindustry.ai.Pathfinder
+import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Iconc
 import mindustry.gen.Player
+import mindustry.world.Tile
 
 class TowerEditorListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
@@ -51,7 +54,11 @@ class TowerEditorListener(instances: InstanceManager) : ImperiumApplication.List
     private val directory = instances.get<Path>("directory").resolve("tower")
     private val manager = WaypointManager()
 
-    @ImperiumCommand(["tower", "editor", "mark"], rank = Rank.ADMIN)
+    override fun onImperiumInit() {
+        Vars.pathfinder = TowerPathfinder()
+    }
+
+    @ImperiumCommand(["tower", "mark"], rank = Rank.ADMIN)
     @Scope(MindustryGamemode.TOWER_DEFENSE)
     @ClientSide
     fun onTowerEditorMark(sender: CommandSender) {
@@ -67,7 +74,7 @@ class TowerEditorListener(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
-    @ImperiumCommand(["tower", "editor", "link"], rank = Rank.ADMIN)
+    @ImperiumCommand(["tower", "link"], rank = Rank.ADMIN)
     @Scope(MindustryGamemode.TOWER_DEFENSE)
     @ClientSide
     fun onTowerEditorLink(sender: CommandSender) {
@@ -86,6 +93,20 @@ class TowerEditorListener(instances: InstanceManager) : ImperiumApplication.List
     @EventHandler
     fun onMenuToPlay(event: MenuToPlayEvent) {
         manager.clear()
+    }
+
+    @EventHandler
+    fun onUnitCreateEvent(event: EventType.UnitCreateEvent) {
+        if (event.unit.team() == Vars.state.rules.waveTeam) {
+            // event.unit.controller(TowerAI(manager))
+        }
+    }
+
+    @EventHandler
+    fun onUnitSpawnEvent(event: EventType.UnitSpawnEvent) {
+        if (event.unit.team() == Vars.state.rules.waveTeam) {
+            // event.unit.controller(TowerAI(manager))
+        }
     }
 
     @EventHandler
@@ -182,44 +203,65 @@ class TowerEditorListener(instances: InstanceManager) : ImperiumApplication.List
     private fun getCurrentMapName() =
         Vars.state.map.snowflake ?: Vars.state.map.name() ?: error("The current map has no name.")
 
-    private class WaypointManager {
-        private val union = MutableUnionSet<ImmutablePoint>()
-        private val links = mutableMapOf<ImmutablePoint, MutableSet<ImmutablePoint>>()
-        val waypoints: Set<ImmutablePoint>
-            get() = union.elements
-
-        fun add(point: ImmutablePoint) = union.addElement(point)
-
-        fun remove(point: ImmutablePoint) {
-            union.removeElement(point)
-            links.remove(point)
-            links.values.forEach { it -= point }
-        }
-
-        fun getLinks(point: ImmutablePoint) = links[point] ?: emptySet()
-
-        fun setLink(point1: ImmutablePoint, point2: ImmutablePoint): Boolean {
-            if (point1 !in union.elements || point2 !in union.elements) return false
-            if (union.getUnion(point1).contains(point2)) return false
-            union.setUnion(point1, point2)
-            links.getOrPut(point1) { mutableSetOf() } += point2
-            return true
-        }
-
-        fun removeLink(point1: ImmutablePoint, point2: ImmutablePoint): Boolean {
-            links[point1]?.remove(point2)
-            return union.removeUnion(point1, point2)
-        }
-
-        fun clear() {
-            union.clear()
-            links.clear()
-        }
-    }
-
     private sealed interface EditMode {
         data object Mark : EditMode
 
         data class Link(val origin: ImmutablePoint? = null) : EditMode
+    }
+}
+
+internal class WaypointManager {
+    private val union = MutableUnionSet<ImmutablePoint>()
+    private val links = mutableMapOf<ImmutablePoint, MutableSet<ImmutablePoint>>()
+    val waypoints: Set<ImmutablePoint>
+        get() = union.elements
+
+    fun add(point: ImmutablePoint) = union.addElement(point)
+
+    fun remove(point: ImmutablePoint) {
+        union.removeElement(point)
+        links.remove(point)
+        links.values.forEach { it -= point }
+    }
+
+    fun getLinks(point: ImmutablePoint) = links[point] ?: emptySet()
+
+    fun setLink(point1: ImmutablePoint, point2: ImmutablePoint): Boolean {
+        if (point1 !in union.elements || point2 !in union.elements) return false
+        if (union.getUnion(point1).contains(point2)) return false
+        union.setUnion(point1, point2)
+        links.getOrPut(point1) { mutableSetOf() } += point2
+        return true
+    }
+
+    fun removeLink(point1: ImmutablePoint, point2: ImmutablePoint): Boolean {
+        links[point1]?.remove(point2)
+        return union.removeUnion(point1, point2)
+    }
+
+    fun clear() {
+        union.clear()
+        links.clear()
+    }
+}
+
+class TowerPathfinder : Pathfinder() {
+
+    init {
+        val costType = costTypes.get(costGround)
+        costTypes.set(costGround) { team, tile ->
+            val towerPassable = tile and BIT_MASK_TOWER_PASSABLE != 0
+            if (towerPassable || team != Vars.state.rules.waveTeam.id) costType.getCost(team, tile)
+            else -1
+        }
+    }
+
+    override fun packTile(tile: Tile): Int {
+        val towerPassable = (if (tile.floor() == Blocks.sand) BIT_MASK_TOWER_PASSABLE else 0)
+        return super.packTile(tile) or towerPassable
+    }
+
+    companion object {
+        private const val BIT_MASK_TOWER_PASSABLE = (1 shl 30)
     }
 }
