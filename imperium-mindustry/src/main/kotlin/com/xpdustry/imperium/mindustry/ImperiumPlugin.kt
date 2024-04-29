@@ -65,6 +65,7 @@ import com.xpdustry.imperium.mindustry.security.VoteKickCommand
 import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
+import com.xpdustry.imperium.mindustry.world.HereCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
 import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
@@ -158,7 +159,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 GameListener::class,
                 TipListener::class,
                 RatingListener::class,
-                SpawnCommand::class)
+                SpawnCommand::class,
+                HereCommand::class)
             .forEach(application::register)
 
         if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
