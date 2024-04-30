@@ -21,7 +21,7 @@ import arc.Core
 import com.xpdustry.distributor.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
@@ -58,8 +58,8 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
 
     provider<Path>("directory") { plugin.directory }
 
-    provider<ServerConfig.Mindustry> {
-        get<ImperiumConfig>().server as? ServerConfig.Mindustry
+    provider<MindustryConfig> {
+        get<ImperiumConfig>().mindustry
             ?: error("The current server configuration is not Mindustry")
     }
 

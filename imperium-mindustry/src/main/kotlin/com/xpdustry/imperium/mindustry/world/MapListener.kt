@@ -21,7 +21,7 @@ import arc.files.Fi
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -43,7 +43,7 @@ import mindustry.io.MapIO
 import mindustry.maps.Map
 
 class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val config = instances.get<MindustryConfig>()
     private val maps = instances.get<MindustryMapManager>()
     private val cache = instances.get<Path>("directory").resolve("map-pool")
     private val messenger = instances.get<Messenger>()

@@ -20,14 +20,13 @@ package com.xpdustry.imperium.discord.service
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.snowflake
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
-import kotlinx.coroutines.future.await
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.entities.Guild
@@ -52,7 +51,7 @@ interface DiscordService {
 }
 
 class SimpleDiscordService(
-    private val config: ServerConfig.Discord,
+    private val config: DiscordConfig,
     private val http: OkHttpClient,
     private val accounts: AccountManager,
 ) : DiscordService, ImperiumApplication.Listener {

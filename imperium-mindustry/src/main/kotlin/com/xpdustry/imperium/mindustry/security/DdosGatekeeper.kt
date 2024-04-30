@@ -22,7 +22,7 @@ import com.google.common.collect.RangeSet
 import com.google.common.collect.TreeRangeSet
 import com.google.common.net.InetAddresses
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.mindustry.processing.Processor
@@ -58,10 +58,8 @@ private val PROVIDERS =
 // TODO
 //   shit is so efficient I am not even aware of the attacks,
 //   although I do want to have a notification
-class DdosGatekeeper(
-    private val http: OkHttpClient,
-    private val config: ServerConfig.Mindustry.Security
-) : Processor<GatekeeperContext, GatekeeperResult> {
+class DdosGatekeeper(private val http: OkHttpClient, private val config: MindustryConfig.Security) :
+    Processor<GatekeeperContext, GatekeeperResult> {
 
     private val addresses: Deferred<RangeSet<BigInteger>> =
         ImperiumScope.MAIN.async { fetchAddressRanges() }

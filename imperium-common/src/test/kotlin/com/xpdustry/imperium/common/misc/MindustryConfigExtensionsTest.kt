@@ -20,7 +20,7 @@ package com.xpdustry.imperium.common.misc
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 
-class MindustryExtensionsTest {
+class MindustryConfigExtensionsTest {
 
     @Test
     fun `test mindustry color strip`() {

@@ -36,11 +36,13 @@ data class ImperiumConfig(
     val translator: TranslatorConfig = TranslatorConfig.None,
     val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.None,
-    val server: ServerConfig = ServerConfig.None,
+    val server: ServerConfig,
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),
-    val webhook: WebhookConfig = WebhookConfig.None
+    val webhook: WebhookConfig = WebhookConfig.None,
+    val discord: DiscordConfig? = null,
+    val mindustry: MindustryConfig? = null
 )
 
 data class NetworkConfig(
@@ -95,114 +97,16 @@ sealed interface MessengerConfig {
     ) : MessengerConfig
 }
 
-sealed interface ServerConfig {
-    val name: String
-    val displayName: String
-        get() = name.capitalize()
-
+data class ServerConfig(val name: String, val displayName: String = name.capitalize()) {
     val identity: Identity.Server
         get() = Identity.Server(name)
 
-    data object None : ServerConfig {
-        override val name: String = "none"
+    init {
+        require(NAME_REGEX.matches(name)) { "Server name must match regex ${NAME_REGEX.pattern}" }
     }
 
-    data class Mindustry(
-        override val name: String,
-        val gamemode: MindustryGamemode,
-        override val displayName: String = name.capitalize(),
-        val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
-        val hub: Hub = Hub(),
-        val history: History = History(),
-        val color: Color = Color.WHITE,
-        val world: World = World(),
-        val security: Security = Security(),
-        val templates: Templates = Templates(),
-        val tipsDelay: Duration = 5.minutes,
-        val tips: List<String> = listOf("discord", "rules")
-    ) : ServerConfig {
-        init {
-            require(name != "discord") { "Mindustry Server name cannot be discord" }
-            require(NAME_REGEX.matches(name)) {
-                "Mindustry Server name must match regex ${NAME_REGEX.pattern}"
-            }
-        }
-
-        data class History(
-            val tileEntriesLimit: Int = 20,
-            val playerEntriesLimit: Int = 200,
-            val doubleClickDelay: Duration = 200.milliseconds
-        )
-
-        data class World(
-            val maxExcavateSize: Int = 1024,
-            val excavationTilePrice: Int = 10,
-            val excavationItem: String = "blast-compound",
-            val coreDamageAlertDelay: Duration = 10.seconds,
-            val displayCoreId: Boolean = true,
-            val displayResourceTracker: Boolean = true,
-        )
-
-        data class Security(
-            val gatekeeper: Boolean = true,
-            val imageProcessingDelay: Duration = 3.seconds,
-        )
-
-        data class Templates(
-            val chatPrefix: String = "<%prefix%>",
-            val chatFormat: String =
-                "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display% [accent]>[white]",
-            val playerName: String =
-                "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display%",
-        )
-
-        data class Hub(
-            val preventPlayerActions: Boolean = true,
-            val errorFontSize: Float = 2F,
-            val overlays: List<Overlay> = emptyList(),
-        ) {
-            data class Overlay(
-                val text: String,
-                val offsetX: Float = 0F,
-                val offsetY: Float = 0F,
-                val fontSize: Float = 2F,
-                val outline: Boolean = false,
-                val background: Boolean = false,
-            )
-        }
-
-        companion object {
-            private val NAME_REGEX = Regex("^[a-z0-9](-?[a-z0-9])+\$")
-        }
-    }
-
-    data class Discord(
-        val token: Secret,
-        val categories: Categories,
-        val channels: Channels,
-        val ranks2roles: Map<Rank, Long> = emptyMap(),
-        val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
-        val mindustryVersion: String = "145",
-        val globalCommands: Boolean = false
-    ) : ServerConfig {
-        override val name: String = "discord"
-
-        val roles2ranks: Map<Long, Rank> =
-            ranks2roles.entries.associate { (key, value) -> value to key }
-
-        init {
-            require(ranks2roles.size == roles2ranks.size) { "some ranks have a shared role id" }
-        }
-
-        data class Categories(
-            val liveChat: Long,
-        )
-
-        data class Channels(
-            val notifications: Long,
-            val maps: Long,
-            val reports: Long,
-        )
+    companion object {
+        private val NAME_REGEX = Regex("^[a-z0-9](-?[a-z0-9])+\$")
     }
 }
 
@@ -210,4 +114,87 @@ sealed interface WebhookConfig {
     data object None : WebhookConfig
 
     data class Discord(val discordWebhookUrl: URL) : WebhookConfig
+}
+
+data class DiscordConfig(
+    val token: Secret,
+    val categories: Categories,
+    val channels: Channels,
+    val ranks2roles: Map<Rank, Long> = emptyMap(),
+    val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
+    val mindustryVersion: String = "145",
+    val globalCommands: Boolean = false
+) {
+    val roles2ranks: Map<Long, Rank> =
+        ranks2roles.entries.associate { (key, value) -> value to key }
+
+    init {
+        require(ranks2roles.size == roles2ranks.size) { "some ranks have a shared role id" }
+    }
+
+    data class Categories(
+        val liveChat: Long,
+    )
+
+    data class Channels(
+        val notifications: Long,
+        val maps: Long,
+        val reports: Long,
+    )
+}
+
+data class MindustryConfig(
+    val gamemode: MindustryGamemode,
+    val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
+    val hub: Hub = Hub(),
+    val history: History = History(),
+    val color: Color = Color.WHITE,
+    val world: World = World(),
+    val security: Security = Security(),
+    val templates: Templates = Templates(),
+    val tipsDelay: Duration = 5.minutes,
+    val tips: List<String> = listOf("discord", "rules")
+) {
+    data class History(
+        val tileEntriesLimit: Int = 20,
+        val playerEntriesLimit: Int = 200,
+        val doubleClickDelay: Duration = 200.milliseconds
+    )
+
+    data class World(
+        val maxExcavateSize: Int = 1024,
+        val excavationTilePrice: Int = 10,
+        val excavationItem: String = "blast-compound",
+        val coreDamageAlertDelay: Duration = 10.seconds,
+        val displayCoreId: Boolean = true,
+        val displayResourceTracker: Boolean = true,
+    )
+
+    data class Security(
+        val gatekeeper: Boolean = true,
+        val imageProcessingDelay: Duration = 3.seconds,
+    )
+
+    data class Templates(
+        val chatPrefix: String = "<%prefix%>",
+        val chatFormat: String =
+            "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display% [accent]>[white]",
+        val playerName: String =
+            "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display%",
+    )
+
+    data class Hub(
+        val preventPlayerActions: Boolean = true,
+        val errorFontSize: Float = 2F,
+        val overlays: List<Overlay> = emptyList(),
+    ) {
+        data class Overlay(
+            val text: String,
+            val offsetX: Float = 0F,
+            val offsetY: Float = 0F,
+            val fontSize: Float = 2F,
+            val outline: Boolean = false,
+            val background: Boolean = false,
+        )
+    }
 }

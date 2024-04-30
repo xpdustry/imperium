@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
@@ -48,9 +48,8 @@ fun MutableInstanceManager.registerDiscordModule() {
 
     provider<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
 
-    provider<ServerConfig.Discord> {
-        get<ImperiumConfig>().server as? ServerConfig.Discord
-            ?: error("The current server configuration is not Discord")
+    provider<DiscordConfig> {
+        get<ImperiumConfig>().discord ?: error("The current server configuration is not Discord")
     }
 
     provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }

@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.security
 import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.image.ImageFormat
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -45,7 +45,7 @@ import okhttp3.MediaType.Companion.toMediaType
 class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
     private val punishments = instances.get<PunishmentManager>()
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val config = instances.get<ImperiumConfig>()
     private val webhook = instances.get<WebhookMessageSender>()
 
     @EventHandler
@@ -107,7 +107,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                     val user = event.author?.uuid?.let { users.findByUuid(it) } ?: return@launch
                     val punishment =
                         punishments.punish(
-                            config.identity,
+                            config.server.identity,
                             user.snowflake,
                             "Placing NSFW image",
                             Punishment.Type.BAN,

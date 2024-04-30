@@ -31,7 +31,7 @@ import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerCommonModule
@@ -161,7 +161,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 SpawnCommand::class)
             .forEach(application::register)
 
-        if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
+        if (application.instances.get<MindustryConfig>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         } else {
             Core.settings.remove("totalPlayers")

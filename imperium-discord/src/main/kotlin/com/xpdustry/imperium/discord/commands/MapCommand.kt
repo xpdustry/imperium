@@ -20,7 +20,7 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MindustryMapTable
@@ -54,7 +54,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.utils.FileUpload
 
 internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ServerConfig.Discord>()
+    private val config = instances.get<DiscordConfig>()
     private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()

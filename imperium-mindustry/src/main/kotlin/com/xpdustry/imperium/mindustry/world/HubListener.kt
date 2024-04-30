@@ -26,7 +26,7 @@ import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -58,7 +58,7 @@ import mindustry.gen.WorldLabel
 
 class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val config = instances.get<ServerConfig.Mindustry>().hub
+    private val config = instances.get<MindustryConfig>().hub
     private val directory = instances.get<Path>("directory").resolve("hub")
     // TODO When dedicated plugin, load as Map<String, Polygon>
     private val portals = mutableMapOf<String, Portal>()
@@ -365,7 +365,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             flags(WorldLabel.flagOutline or WorldLabel.flagBackground)
         }
 
-    private fun createWorldLabel(portal: Portal, overlay: ServerConfig.Mindustry.Hub.Overlay) =
+    private fun createWorldLabel(portal: Portal, overlay: MindustryConfig.Hub.Overlay) =
         WorldLabel.create().apply {
             x((portal.centerX + (overlay.offsetX * portal.w)) * Vars.tilesize)
             y((portal.centerY + (overlay.offsetY * portal.h)) * Vars.tilesize)
@@ -395,7 +395,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         data class Labels(
             val error: WorldLabel,
-            val overlays: List<Pair<WorldLabel, ServerConfig.Mindustry.Hub.Overlay>>
+            val overlays: List<Pair<WorldLabel, MindustryConfig.Hub.Overlay>>
         )
     }
 
