@@ -36,7 +36,7 @@ data class ImperiumConfig(
     val translator: TranslatorConfig = TranslatorConfig.None,
     val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.None,
-    val server: ServerConfig,
+    val server: ServerConfig = ServerConfig("unknown"),
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),

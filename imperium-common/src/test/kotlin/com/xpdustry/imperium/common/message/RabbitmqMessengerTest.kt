@@ -20,8 +20,7 @@ package com.xpdustry.imperium.common.message
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
-import com.xpdustry.imperium.common.config.MindustryConfig
-import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.config.ServerConfig
 import java.util.UUID
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.time.Duration.Companion.seconds
@@ -224,7 +223,7 @@ class RabbitmqMessengerTest {
     private fun createClient() =
         RabbitmqMessenger(
             ImperiumConfig(
-                server = MindustryConfig("test-${UUID.randomUUID()}", MindustryGamemode.SURVIVAL),
+                server = ServerConfig("test-${UUID.randomUUID()}"),
                 messenger = MessengerConfig.RabbitMQ(port = rabbitmq.amqpPort)),
         )
 }
