@@ -15,19 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.misc
+package com.xpdustry.imperium.mindustry.misc
 
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Test
-
-class MindustryExtensionsTest {
-
-    @Test
-    fun `test mindustry color strip`() {
-        Assertions.assertEquals("Hello World", "[#ff0000]Hello World".stripMindustryColors())
-        Assertions.assertEquals("Hello [World]", "[#ff0000]Hello [World]".stripMindustryColors())
-        Assertions.assertEquals("Hello [[World]", "[#ff0000]Hello [[World]".stripMindustryColors())
-        Assertions.assertEquals("Hello World", "[red]Hello []World".stripMindustryColors())
-        Assertions.assertEquals("[[[Hello] [World]]", "[][[[Hello] [World]]".stripMindustryColors())
-    }
+enum class Rotation {
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT
 }

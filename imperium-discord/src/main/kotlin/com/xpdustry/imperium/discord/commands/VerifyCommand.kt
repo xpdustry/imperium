@@ -22,7 +22,7 @@ import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -41,7 +41,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
 class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ServerConfig.Discord>()
+    private val config = instances.get<DiscordConfig>()
     private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)

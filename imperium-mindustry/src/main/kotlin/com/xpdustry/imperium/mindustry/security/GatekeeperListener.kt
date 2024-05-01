@@ -24,7 +24,7 @@ import com.google.common.net.InetAddresses
 import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -61,7 +61,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val vpn = instances.get<VpnDetection>()
     private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<OkHttpClient>()
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val config = instances.get<MindustryConfig>()
     private val renderer = instances.get<TimeRenderer>()
     private val whitelist = instances.get<AddressWhitelist>()
 
@@ -99,7 +99,7 @@ private fun interceptPlayerConnection(
     con: NetConnection,
     packet: Packets.ConnectPacket,
     pipeline: GatekeeperPipeline,
-    config: ServerConfig.Mindustry
+    config: MindustryConfig
 ) {
     if (con.kicked) return
 

@@ -29,8 +29,7 @@ You will simply have to run `docker-compose up -d` once, then update the [config
 First, create the base configuration file named `config.yaml` in the directory `imperium-mindustry/build/tmp/runMindustryServer/config/mods/imperium`,
 with the following content:
 ```yaml
-server:
-  name: "test" # name of the server (must be alphanumeric and lowercase)
+mindustry:
   gamemode: SURVIVAL
 ```
 
@@ -46,14 +45,15 @@ First, create discord bot and a test server for it (there are plenty of online t
 Then create the base configuration file named `config.yaml` in the directory `imperium-discord/build/tmp/runImperiumDiscord`,
 with the following content:
 ```yaml
-server:
+discord:
   token: "your discord bot token"
   categories:
     live-chat: "some channel id"
   channels:
     notifications: "some channel id"
     maps: "some channel id"
-  roles:
+    reports: "some channel id"
+  ranks2roles:
     OWNER: "some role id"
     # Optional roles to add for further testing
     # ADMIN: "some role id"

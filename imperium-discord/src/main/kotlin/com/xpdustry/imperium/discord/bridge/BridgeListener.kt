@@ -22,7 +22,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -40,7 +40,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
-    private val config = instances.get<ServerConfig.Discord>()
+    private val config = instances.get<DiscordConfig>()
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->

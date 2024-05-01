@@ -21,7 +21,7 @@ import com.xpdustry.distributor.DistributorProvider
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.logger
@@ -38,7 +38,7 @@ private typealias TipWithDetails = Pair<String, String>
 
 class TipListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val config = instances.get<MindustryConfig>()
     private val language = instances.get<ImperiumConfig>().language
     private var index = 0
     private lateinit var tips: List<String>

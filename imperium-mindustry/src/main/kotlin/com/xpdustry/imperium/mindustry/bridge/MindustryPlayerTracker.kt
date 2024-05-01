@@ -23,7 +23,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.collection.LimitedList
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.function
 import com.xpdustry.imperium.common.user.UserManager
@@ -33,7 +33,7 @@ import mindustry.game.EventType
 
 class MindustryPlayerTracker(
     messenger: Messenger,
-    private val config: ServerConfig.Mindustry,
+    private val config: ImperiumConfig,
     private val users: UserManager
 ) : RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
@@ -43,7 +43,7 @@ class MindustryPlayerTracker(
 
     override fun onImperiumInit() {
         messenger.function<PlayerListRequest, PlayerListResponse> {
-            if (it.server != config.name) {
+            if (it.server != config.server.name) {
                 return@function null
             }
             PlayerListResponse(

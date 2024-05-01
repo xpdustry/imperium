@@ -18,7 +18,8 @@
 package com.xpdustry.imperium.discord.security
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -40,7 +41,8 @@ import java.awt.Color
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ServerConfig.Discord>()
+    private val imperiumConfig = instances.get<ImperiumConfig>()
+    private val discordConfig = instances.get<DiscordConfig>()
     private val discord = instances.get<DiscordService>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
@@ -78,7 +80,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 field("Target", user.toLastNameWithSnowflake())
                                 field("Type", punishment.type.toString())
                                 field("Duration", renderer.renderDuration(punishment.duration))
-                                if (server != config.name) field("Server", server)
+                                if (server != imperiumConfig.server.name) field("Server", server)
                                 field("Reason", punishment.reason, false)
 
                                 when (metadata) {
@@ -119,7 +121,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     }
 
     private fun getNotificationChannel(): TextChannel? {
-        val channel = discord.getMainServer().getTextChannelById(config.channels.notifications)
+        val channel =
+            discord.getMainServer().getTextChannelById(discordConfig.channels.notifications)
         if (channel == null) {
             LOGGER.error("Could not find notifications channel")
         }

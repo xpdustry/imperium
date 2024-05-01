@@ -14,5 +14,8 @@
       "registryUrls": ["https://maven.xpdustry.com/mindustry"],
       "matchPackagePrefixes": ["com.github.Anuken"]
     }
+  ],
+  "labels": [
+    "dependencies"
   ]
 }

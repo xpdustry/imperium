@@ -22,7 +22,7 @@ import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -45,7 +45,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val history = instances.get<BlockHistory>()
     private val taps = PlayerMap<Long>(instances.get())
     private val users = instances.get<UserManager>()
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val config = instances.get<MindustryConfig>()
     private val renderer = instances.get<TimeRenderer>()
 
     @ImperiumCommand(["history", "player"])

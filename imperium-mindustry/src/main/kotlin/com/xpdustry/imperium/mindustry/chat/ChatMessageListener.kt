@@ -29,7 +29,8 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -73,7 +74,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     private val placeholderPipeline = instances.get<PlaceholderPipeline>()
     private val accounts = instances.get<AccountManager>()
     private val punishments = instances.get<PunishmentManager>()
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val imperiumConfig = instances.get<ImperiumConfig>()
+    private val mindustryConfig = instances.get<MindustryConfig>()
     private val messenger = instances.get<Messenger>()
     // Why tf this goofy ahh client breaks the chat when the sender is specified >:(
     private val fooClients = PlayerMap<Boolean>(instances.get())
@@ -172,7 +174,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                         ?.toString()
                         ?.let { "#$it" } ?: MINDUSTRY_ORANGE_COLOR.toHexString()
                 is Identity.Discord -> BLURPLE.toHexString()
-                else -> config.color.toHexString()
+                else -> mindustryConfig.color.toHexString()
             }
         }
     }
@@ -187,7 +189,8 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val name =
                     try {
                         placeholderPipeline.pump(
-                            PlaceholderContext(player.identity, config.templates.playerName))
+                            PlaceholderContext(
+                                player.identity, mindustryConfig.templates.playerName))
                     } catch (e: Throwable) {
                         LOGGER.error("Failed to format name of player {}", player.uuid(), e)
                         "[#${player.color}]${player.info.lastName}"
@@ -266,26 +269,26 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                 val processed = chatMessagePipeline.pump(ChatMessageContext(null, target, message))
                 if (processed.isBlank()) return@launch
                 target?.sendMessage(
-                    "[${config.color.toHexString()}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(config.identity, processed)}",
+                    "[${mindustryConfig.color.toHexString()}]${getChatPrefix(Iconc.infoCircle.toString())} ${getChatFormat(imperiumConfig.server.identity, processed)}",
                     null,
                     processed)
                 if (target == null) {
                     sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
                     messenger.publish(
-                        MindustryServerMessage(config.identity, processed, chat = true))
+                        MindustryServerMessage(
+                            imperiumConfig.server.identity, processed, chat = true))
                 }
             }
         }
     }
 
     private suspend fun getChatFormat(subject: Identity, message: String): String {
-        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatFormat)) +
-            " " +
-            message
+        return placeholderPipeline.pump(
+            PlaceholderContext(subject, mindustryConfig.templates.chatFormat)) + " " + message
     }
 
     private fun getChatPrefix(prefix: String): String {
-        return config.templates.chatPrefix.replace("%prefix%", prefix)
+        return mindustryConfig.templates.chatPrefix.replace("%prefix%", prefix)
     }
 
     private fun interceptChatMessage(sender: Player, message: String) {

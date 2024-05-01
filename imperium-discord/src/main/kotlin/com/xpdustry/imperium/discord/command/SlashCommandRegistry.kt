@@ -21,8 +21,8 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
@@ -66,7 +66,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 class SlashCommandRegistry(
     private val discord: DiscordService,
     private val config: ImperiumConfig,
-    private val discordConfig: ServerConfig.Discord
+    private val discordConfig: DiscordConfig
 ) : AnnotationScanner, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()

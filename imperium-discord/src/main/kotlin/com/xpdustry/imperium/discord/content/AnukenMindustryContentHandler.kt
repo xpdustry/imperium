@@ -43,7 +43,7 @@ import arc.util.serialization.Base64Coder
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.awt.Graphics2D
 import java.awt.geom.AffineTransform
@@ -100,7 +100,7 @@ import mindustry.world.blocks.legacy.LegacyBlock
 
 // The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a
 // multithreaded environment.
-class AnukenMindustryContentHandler(directory: Path, private val config: ServerConfig.Discord) :
+class AnukenMindustryContentHandler(directory: Path, private val config: DiscordConfig) :
     MindustryContentHandler, ImperiumApplication.Listener {
     private var currentSchematicGraphics: Graphics2D? = null
     private var currentSchematicImage: BufferedImage? = null

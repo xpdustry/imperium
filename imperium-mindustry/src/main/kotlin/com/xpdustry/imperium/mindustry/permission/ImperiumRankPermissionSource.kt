@@ -23,10 +23,9 @@ import com.xpdustry.distributor.permission.rank.EnumRankNode
 import com.xpdustry.distributor.permission.rank.RankNode
 import com.xpdustry.distributor.permission.rank.RankPermissionSource
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 
-class ImperiumRankPermissionSource(private val config: ServerConfig.Mindustry) :
-    RankPermissionSource {
+class ImperiumRankPermissionSource(private val config: MindustryConfig) : RankPermissionSource {
     override fun getRankPermissions(node: RankNode): PermissionTree {
         val tree = PermissionTree.create()
         tree.setPermission("imperium.gamemode.${config.gamemode.name.lowercase()}", TriState.TRUE)
