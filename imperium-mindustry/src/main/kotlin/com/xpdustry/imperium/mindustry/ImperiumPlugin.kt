@@ -66,6 +66,7 @@ import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
+import com.xpdustry.imperium.mindustry.world.HereCommand
 import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.ResourceHudListener
