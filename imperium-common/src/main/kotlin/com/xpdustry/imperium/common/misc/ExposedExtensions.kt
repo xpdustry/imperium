@@ -33,6 +33,6 @@ fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean =
 fun Table.mediumblob(name: String): Column<ExposedBlob> =
     registerColumn(name, MediumBlobColumnType())
 
-private class MediumBlobColumnType : IColumnType<ExposedBlob> by BlobColumnType() {
+private class MediumBlobColumnType : IColumnType by BlobColumnType() {
     override fun sqlType(): String = "MEDIUMBLOB"
 }
