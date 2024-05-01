@@ -284,17 +284,13 @@ class SimpleMindustryMapManager(
                     ?.get(MindustryMapRatingTable.score.avg())
                     ?.toDouble() ?: 2.5
             val difficulty =
-                MindustryMapRatingTable.select(
-                        MindustryMapRatingTable.difficulty, MindustryMapRatingTable.score)
+                MindustryMapRatingTable.select(MindustryMapRatingTable.difficulty.avg())
                     .where { MindustryMapRatingTable.map eq map }
-                    .map {
-                        it[MindustryMapRatingTable.difficulty].ordinal *
-                            it[MindustryMapRatingTable.score]
-                    }
-                    .average()
+                    .map { it[MindustryMapRatingTable.difficulty.avg()] }
+                    .first()
                     .let {
-                        if (it.isNaN()) MindustryMap.Difficulty.NORMAL
-                        else MindustryMap.Difficulty.entries[it.roundToInt()]
+                        if (it == null) MindustryMap.Difficulty.NORMAL
+                        else MindustryMap.Difficulty.entries[it.toDouble().roundToInt()]
                     }
             val games =
                 MindustryMapGameTable.selectAll()
