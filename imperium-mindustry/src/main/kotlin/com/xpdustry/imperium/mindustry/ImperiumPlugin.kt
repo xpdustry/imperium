@@ -160,7 +160,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TipListener::class,
                 RatingListener::class,
                 SpawnCommand::class,
-                WorldEditCommand::class)
+                WorldEditCommand::class,
+                HereCommand::class)
             .forEach(application::register)
 
         if (application.instances.get<MindustryConfig>().gamemode == MindustryGamemode.HUB) {
