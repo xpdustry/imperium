@@ -47,11 +47,14 @@ class WorldEditCommand : ImperiumApplication.Listener {
         @Flag("f") floor: Block? = null,
         @Flag("o") overlay: Block? = null,
     ) {
+        val size = block?.size ?: 1
+        val x2 = x + w + (size % (x + w))
+        val y2 = y + h + (size % (y + h))
         if (x > Vars.world.width() ||
             y > Vars.world.height() ||
-            x + w > Vars.world.width() ||
-            y + h > Vars.world.height()) {
-            sender.sendWarning("The specified area is out of bounds.")
+            x2 > Vars.world.width() ||
+            y2 > Vars.world.height()) {
+            sender.sendWarning("The specified coordinates and size are out of bounds.")
             return
         }
         if (floor != null && !floor.isFloor) {
@@ -73,11 +76,13 @@ class WorldEditCommand : ImperiumApplication.Listener {
 
         repeat(w) { ox ->
             repeat(h) { oy ->
-                val tile = Vars.world.tile(x + ox, y + oy)
-                floor?.let { tile.setFloorNet(it.asFloor()) }
-                overlay?.let { tile.setOverlayNet(it.asFloor()) }
-                block?.let {
-                    tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
+                if (ox % size == 0 && oy % size == 0) {
+                    val tile = Vars.world.tile(x + ox, y + oy)
+                    floor?.let { tile.setFloorNet(it.asFloor()) }
+                    overlay?.let { tile.setOverlayNet(it.asFloor()) }
+                    block?.let {
+                        tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
+                    }
                 }
             }
         }
