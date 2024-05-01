@@ -31,7 +31,7 @@ import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerCommonModule
@@ -65,7 +65,6 @@ import com.xpdustry.imperium.mindustry.security.VoteKickCommand
 import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
-import com.xpdustry.imperium.mindustry.world.HereCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
 import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
@@ -75,6 +74,7 @@ import com.xpdustry.imperium.mindustry.world.SpawnCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
+import com.xpdustry.imperium.mindustry.world.WorldEditCommand
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
@@ -160,11 +160,10 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TipListener::class,
                 RatingListener::class,
                 SpawnCommand::class,
-                WorldEditCommand::class,
-                HereCommand::class)
+                WorldEditCommand::class)
             .forEach(application::register)
 
-        if (application.instances.get<ServerConfig.Mindustry>().gamemode == MindustryGamemode.HUB) {
+        if (application.instances.get<MindustryConfig>().gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         } else {
             Core.settings.remove("totalPlayers")
