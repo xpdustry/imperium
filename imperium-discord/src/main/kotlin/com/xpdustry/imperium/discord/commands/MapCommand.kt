@@ -282,7 +282,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                 .drop((page - 1) * 10)
                 .take(11)
                 .toCollection(mutableListOf())
-        val hasMore = result.size > 11
+        val hasMore = result.size > 10
         if (hasMore) {
             result.removeLast()
         }
