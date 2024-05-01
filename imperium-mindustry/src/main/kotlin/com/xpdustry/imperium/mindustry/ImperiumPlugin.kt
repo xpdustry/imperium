@@ -160,6 +160,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TipListener::class,
                 RatingListener::class,
                 SpawnCommand::class,
+                WorldEditCommand::class,
                 HereCommand::class)
             .forEach(application::register)
 
