@@ -19,6 +19,7 @@ package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.distributor.command.cloud.specifier.AllTeams
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -32,14 +33,14 @@ import org.incendo.cloud.type.Either
 
 class WorldEditCommand : ImperiumApplication.Listener {
 
-    @ImperiumCommand(["wedit"])
+    @ImperiumCommand(["wedit"], rank = Rank.ADMIN)
     @ClientSide
     fun onWorldEditCommand(
         sender: CommandSender,
-        @Range(min = "0") @Flag x: Int = sender.player.tileX(),
-        @Range(min = "0") @Flag y: Int = sender.player.tileY(),
-        @Range(min = "1", max = "100") @Flag w: Int = 1,
-        @Range(min = "1", max = "100") @Flag h: Int = 1,
+        @Range(min = "0") @Flag("x") x: Int = sender.player.tileX(),
+        @Range(min = "0") @Flag("y") y: Int = sender.player.tileY(),
+        @Range(min = "1", max = "100") @Flag("w") w: Int = 1,
+        @Range(min = "1", max = "100") @Flag("h") h: Int = 1,
         @Flag("b") block: Block? = null,
         @Flag("t") @AllTeams team: Team = sender.player.team(),
         @Flag("r") rotation: Either<Rotation, Int> = Either.ofPrimary(Rotation.UP),
