@@ -91,4 +91,10 @@ suspend fun Player.tryGrantAdmin(manager: AccountManager) {
     admin = ((manager.findByIdentity(identity)?.rank ?: Rank.EVERYONE) >= Rank.MODERATOR) || admin
 }
 
+fun Player.reloadWorldData() {
+    info.lastSyncTime = System.currentTimeMillis()
+    Call.worldDataBegin(con)
+    Vars.netServer.sendWorldData(this)
+}
+
 private val logger = logger("ROOT")

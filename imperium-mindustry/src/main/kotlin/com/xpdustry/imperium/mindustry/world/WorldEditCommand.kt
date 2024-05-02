@@ -25,15 +25,19 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.misc.Rotation
+import com.xpdustry.imperium.mindustry.misc.reloadWorldData
 import mindustry.Vars
+import mindustry.content.Blocks
 import mindustry.game.Team
+import mindustry.gen.Groups
+import mindustry.gen.Player
 import mindustry.world.Block
 import org.incendo.cloud.annotation.specifier.Range
 import org.incendo.cloud.type.Either
 
 class WorldEditCommand : ImperiumApplication.Listener {
 
-    @ImperiumCommand(["wedit"], rank = Rank.ADMIN)
+    @ImperiumCommand(["wedit"], Rank.ADMIN)
     @ClientSide
     fun onWorldEditCommand(
         sender: CommandSender,
@@ -46,6 +50,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
         @Flag("r") rotation: Either<Rotation, Int> = Either.ofPrimary(Rotation.UP),
         @Flag("f") floor: Block? = null,
         @Flag("o") overlay: Block? = null,
+        @Flag override: Boolean,
     ) {
         val size = block?.size ?: 1
         val x2 = x + w + (size % (x + w))
@@ -81,10 +86,19 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     floor?.let { tile.setFloorNet(it.asFloor()) }
                     overlay?.let { tile.setOverlayNet(it.asFloor()) }
                     block?.let {
-                        tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
+                        if (override || tile.build == null) {
+                            tile.setNet(Blocks.air)
+                            tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
+                        }
                     }
                 }
             }
+        }
+
+        // Reindex the spawn blocks
+        if (overlay == Blocks.spawn) {
+            Vars.spawner.reset()
+            Groups.player.each(Player::reloadWorldData)
         }
 
         sender.sendMessage(
