@@ -43,6 +43,7 @@ import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
+import com.xpdustry.imperium.mindustry.chat.HereCommand
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
@@ -160,7 +161,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TipListener::class,
                 RatingListener::class,
                 SpawnCommand::class,
-                WorldEditCommand::class)
+                WorldEditCommand::class,
+                HereCommand::class)
             .forEach(application::register)
 
         if (application.instances.get<MindustryConfig>().gamemode == MindustryGamemode.HUB) {
