@@ -31,7 +31,7 @@ import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerCommonModule
@@ -43,6 +43,7 @@ import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
+import com.xpdustry.imperium.mindustry.chat.HereCommand
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
@@ -75,6 +76,7 @@ import com.xpdustry.imperium.mindustry.world.SpawnCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
+import com.xpdustry.imperium.mindustry.world.WorldEditCommand
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
@@ -159,10 +161,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 GameListener::class,
                 TipListener::class,
                 RatingListener::class,
-                SpawnCommand::class)
+                SpawnCommand::class,
+                WorldEditCommand::class,
+                HereCommand::class)
             .forEach(application::register)
 
-        val gamemode = application.instances.get<ServerConfig.Mindustry>().gamemode
+        val gamemode = application.instances.get<MindustryConfig>().gamemode
         if (gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         } else {

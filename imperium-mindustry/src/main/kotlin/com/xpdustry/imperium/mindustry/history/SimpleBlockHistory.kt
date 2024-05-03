@@ -22,7 +22,7 @@ import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.history.factory.CANVAS_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.factory.CommonConfigurationFactory
@@ -51,7 +51,7 @@ import mindustry.world.blocks.power.LightBlock
 import mindustry.world.blocks.power.PowerNode
 import mindustry.world.blocks.units.UnitFactory
 
-class SimpleBlockHistory(private val config: ServerConfig.Mindustry) :
+class SimpleBlockHistory(private val config: MindustryConfig) :
     BlockHistory, ImperiumApplication.Listener {
     private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
     private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()

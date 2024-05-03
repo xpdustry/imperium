@@ -24,7 +24,8 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -46,14 +47,15 @@ import mindustry.gen.Iconc
 private val logger = logger("ROOT")
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val imperiumConfig = instances.get<ImperiumConfig>()
+    private val mindustryConfig = instances.get<MindustryConfig>()
     private val messenger = instances.get<Messenger>()
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
     private val placeholderPipeline = instances.get<PlaceholderPipeline>()
 
     override fun onImperiumInit() {
         messenger.consumer<BridgeChatMessage> {
-            if (it.serverName != config.name) return@consumer
+            if (it.serverName != imperiumConfig.server.name) return@consumer
             // The null target represents the server, for logging purposes
             (Entities.getPlayersAsync() + listOf(null)).forEach { target ->
                 ImperiumScope.MAIN.launch {
@@ -77,7 +79,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryPlayerMessage(
-                    config.identity, event.player.identity, MindustryPlayerMessage.Action.Join))
+                    imperiumConfig.server.identity,
+                    event.player.identity,
+                    MindustryPlayerMessage.Action.Join))
         }
 
     @EventHandler
@@ -85,7 +89,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryPlayerMessage(
-                    config.identity, event.player.identity, MindustryPlayerMessage.Action.Quit))
+                    imperiumConfig.server.identity,
+                    event.player.identity,
+                    MindustryPlayerMessage.Action.Quit))
         }
 
     @EventHandler
@@ -93,7 +99,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryPlayerMessage(
-                    config.identity,
+                    imperiumConfig.server.identity,
                     event.player.identity,
                     MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message))),
             )
@@ -108,17 +114,17 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
         ImperiumScope.MAIN.launch {
-            messenger.publish(MindustryServerMessage(config.identity, message, chat = false))
+            messenger.publish(
+                MindustryServerMessage(imperiumConfig.server.identity, message, chat = false))
         }
     }
 
     private suspend fun formatChatMessage(subject: Identity, message: String): String {
-        return placeholderPipeline.pump(PlaceholderContext(subject, config.templates.chatFormat)) +
-            " " +
-            message
+        return placeholderPipeline.pump(
+            PlaceholderContext(subject, mindustryConfig.templates.chatFormat)) + " " + message
     }
 
     private fun getDiscordChatPrefix(): String {
-        return config.templates.chatPrefix.replace("%prefix%", Iconc.discord.toString())
+        return mindustryConfig.templates.chatPrefix.replace("%prefix%", Iconc.discord.toString())
     }
 }

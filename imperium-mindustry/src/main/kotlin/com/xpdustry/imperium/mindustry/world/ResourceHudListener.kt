@@ -21,7 +21,7 @@ import com.xpdustry.distributor.annotation.method.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.LimitedList
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toHexString
@@ -56,7 +56,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     private val users = instances.get<UserManager>()
     private val views = PlayerMap<View>(instances.get())
     private val teams = mutableMapOf<Team, ResourceTracker>()
-    private val config = instances.get<ServerConfig.Mindustry>()
+    private val config = instances.get<MindustryConfig>()
     private val resourceHudInterface: Interface
 
     init {

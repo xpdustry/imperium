@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.discord.security
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.ServerConfig
+import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -31,14 +31,13 @@ import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
-import kotlinx.coroutines.future.await
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 
 // TODO Sanitize player names... Mmmh... Sanitize strings in general with an extension function?
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
-    private val config = instances.get<ServerConfig.Discord>()
+    private val config = instances.get<DiscordConfig>()
     private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {

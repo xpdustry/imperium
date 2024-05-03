@@ -31,8 +31,7 @@ class ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
     override fun create(instances: InstanceManager): ImperiumConfig {
         val file = instances.get<Path>("directory").resolve("config.yaml")
         if (file.notExists()) {
-            logger.warn("Config file not found, please create one at ${file.absolutePathString()}")
-            return ImperiumConfig()
+            error("A config file is required. Please create one at ${file.absolutePathString()}")
         }
         return ConfigLoaderBuilder.empty()
             .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
