@@ -19,6 +19,8 @@ package com.xpdustry.imperium.mindustry.account
 
 import arc.Core
 import com.xpdustry.distributor.annotation.method.EventHandler
+import com.xpdustry.distributor.annotation.method.TaskHandler
+import com.xpdustry.distributor.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.util.Priority
 import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
@@ -45,8 +47,6 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -67,26 +67,6 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         grantedSessionAchievements +=
             Json.decodeFromString<Map<Snowflake, Long>>(
                 Core.settings.getString("imperium-granted-session-achievements", "{}"))
-
-        ImperiumScope.MAIN.launch {
-            while (isActive) {
-                delay(1.minutes)
-                grantedSessionAchievements.values.removeAll {
-                    (System.currentTimeMillis() - it).milliseconds >= 1.days
-                }
-                for (player in Entities.getPlayersAsync()) {
-                    val account = accounts.findByIdentity(player.identity) ?: continue
-                    val now = System.currentTimeMillis()
-                    val playtime = (now - (playtime[player] ?: now)).milliseconds
-                    checkPlaytimeAchievements(account, playtime)
-                }
-                runMindustryThread {
-                    Core.settings.put(
-                        "imperium-granted-session-achievements",
-                        Json.encodeToString<Map<Snowflake, Long>>(grantedSessionAchievements))
-                }
-            }
-        }
 
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
@@ -110,6 +90,25 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         }
     }
 
+    @TaskHandler(delay = 1L, interval = 1L, unit = MindustryTimeUnit.MINUTES)
+    internal fun onPlaytimeAchievementCheck() =
+        ImperiumScope.MAIN.launch {
+            grantedSessionAchievements.values.removeAll {
+                (System.currentTimeMillis() - it).milliseconds >= 1.days
+            }
+            for (player in Entities.getPlayersAsync()) {
+                val account = accounts.findByIdentity(player.identity) ?: continue
+                val now = System.currentTimeMillis()
+                val playtime = (now - (playtime[player] ?: now)).milliseconds
+                checkPlaytimeAchievements(account, playtime)
+            }
+            runMindustryThread {
+                Core.settings.put(
+                    "imperium-granted-session-achievements",
+                    Json.encodeToString<Map<Snowflake, Long>>(grantedSessionAchievements))
+            }
+        }
+
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
@@ -130,12 +129,13 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     }
 
     @EventHandler
-    internal fun onPlayerLeave(event: EventType.PlayerLeave) =
+    internal fun onPlayerLeave(event: EventType.PlayerLeave) {
+        val playerPlaytime = playtime.remove(event.player)
         ImperiumScope.MAIN.launch {
             val now = System.currentTimeMillis()
             val account = accounts.findByIdentity(event.player.identity)
             if (account != null) {
-                val playtime = (now - (playtime.remove(event.player) ?: now)).milliseconds
+                val playtime = (now - (playerPlaytime ?: now)).milliseconds
                 accounts.incrementPlaytime(account.snowflake, playtime)
                 checkPlaytimeAchievements(account, playtime)
             }
@@ -143,6 +143,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                 accounts.logout(event.player.identity)
             }
         }
+    }
 
     private suspend fun checkPlaytimeAchievements(account: Account, playtime: Duration) {
         if (playtime >= 8.hours) {
