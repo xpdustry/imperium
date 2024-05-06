@@ -51,6 +51,7 @@ import mindustry.Vars
 import mindustry.server.ServerControl
 import org.incendo.cloud.SenderMapper
 import org.incendo.cloud.caption.CaptionFormatter
+import org.incendo.cloud.caption.StandardCaptionsProvider
 import org.incendo.cloud.component.TypedCommandComponent
 import org.incendo.cloud.context.CommandContext
 import org.incendo.cloud.description.Description
@@ -261,8 +262,11 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
                 }
             .apply {
                 settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)
-                captionRegistry().registerProvider(TranslationBundle.core(CommandSender::getLocale))
+                // TODO Remove explicit formatter set when distributor is updated
                 captionFormatter(CaptionFormatter.placeholderReplacing())
+                captionRegistry().registerProvider(TranslationBundle.core(CommandSender::getLocale))
+                // TODO Temporarily fixes the invalid enum parse failure message
+                captionRegistry().registerProvider(StandardCaptionsProvider())
                 captionRegistry()
                     .registerProvider(
                         TranslationBundle.resourceBundle(
