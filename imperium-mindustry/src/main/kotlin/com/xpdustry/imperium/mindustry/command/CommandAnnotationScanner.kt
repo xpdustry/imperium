@@ -32,7 +32,6 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import com.xpdustry.imperium.mindustry.misc.Rotation
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import io.leangen.geantyref.TypeToken
 import java.util.Optional
@@ -58,9 +57,6 @@ import org.incendo.cloud.description.Description
 import org.incendo.cloud.execution.CommandExecutionHandler
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.parser.flag.CommandFlag
-import org.incendo.cloud.parser.standard.EitherParser
-import org.incendo.cloud.parser.standard.EnumParser
-import org.incendo.cloud.parser.standard.IntegerParser
 import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
@@ -272,11 +268,5 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
                         TranslationBundle.resourceBundle(
                             "com/xpdustry/imperium/mindustry/cloud_bundle",
                             CommandSender::getLocale))
-
-                parserRegistry()
-                    .registerParser(
-                        EitherParser.eitherParser(
-                            EnumParser.enumParser(Rotation::class.java),
-                            IntegerParser.integerParser()))
             }
 }

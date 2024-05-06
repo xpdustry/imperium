@@ -34,7 +34,6 @@ import mindustry.gen.Player
 import mindustry.world.Block
 import mindustry.world.blocks.environment.Prop
 import org.incendo.cloud.annotation.specifier.Range
-import org.incendo.cloud.type.Either
 
 class WorldEditCommand : ImperiumApplication.Listener {
 
@@ -48,7 +47,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
         @Range(min = "1", max = "100") @Flag("h") h: Int = 1,
         @Flag("b") block: Block? = null,
         @Flag("t") @AllTeams team: Team = sender.player.team(),
-        @Flag("r") rotation: Either<Rotation, Int> = Either.ofPrimary(Rotation.UP),
+        @Flag("r") rotation: Rotation = Rotation.UP,
         @Flag("f") floor: Block? = null,
         @Flag("o") overlay: Block? = null,
         @Flag override: Boolean,
@@ -90,7 +89,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     block?.let {
                         if (override || tile.block().isAir) {
                             tile.setNet(Blocks.air)
-                            tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
+                            tile.setNet(it, team, rotation.ordinal)
                         }
                     }
                 }
