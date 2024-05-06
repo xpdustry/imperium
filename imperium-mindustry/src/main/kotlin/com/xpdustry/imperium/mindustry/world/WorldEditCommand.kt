@@ -32,6 +32,7 @@ import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.world.Block
+import mindustry.world.blocks.environment.Prop
 import org.incendo.cloud.annotation.specifier.Range
 import org.incendo.cloud.type.Either
 
@@ -70,8 +71,9 @@ class WorldEditCommand : ImperiumApplication.Listener {
             sender.sendWarning("The block $overlay is not an overlay.")
             return
         }
-        if (block != null && !(block.isStatic || block.isPlaceable)) {
-            sender.sendWarning("The block $block is not a static or placeable block.")
+        if (block != null &&
+            !(block.isStatic || block.isPlaceable || block.isAir || block is Prop)) {
+            sender.sendWarning("The block $block is not a static, placeable, prop or air block.")
             return
         }
         if (block == null && floor == null && overlay == null) {
@@ -86,7 +88,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     floor?.let { tile.setFloorNet(it.asFloor()) }
                     overlay?.let { tile.setOverlayNet(it.asFloor()) }
                     block?.let {
-                        if (override || tile.build == null) {
+                        if (override || tile.block().isAir) {
                             tile.setNet(Blocks.air)
                             tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
                         }
