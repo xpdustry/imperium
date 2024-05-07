@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.snowflake
@@ -44,6 +45,8 @@ interface DiscordService {
     fun getMainServer(): Guild
 
     suspend fun isAllowed(user: User, rank: Rank): Boolean
+
+    suspend fun isAllowed(user: User, permission: Permission): Boolean
 
     suspend fun syncRoles(snowflake: Snowflake)
 
@@ -88,6 +91,11 @@ class SimpleDiscordService(
         }
         return max >= rank
     }
+
+    override suspend fun isAllowed(user: User, permission: Permission): Boolean =
+        getMainServer().getMemberById(user.idLong)?.roles?.any {
+            it.idLong == config.permissions2roles[permission]
+        } ?: false
 
     override suspend fun syncRoles(member: Member) {
         val account = accounts.findByDiscord(member.idLong) ?: return

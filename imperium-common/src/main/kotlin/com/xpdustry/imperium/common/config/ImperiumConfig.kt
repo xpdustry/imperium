@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
+import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
 import java.net.URL
@@ -121,6 +122,7 @@ data class DiscordConfig(
     val categories: Categories,
     val channels: Channels,
     val ranks2roles: Map<Rank, Long> = emptyMap(),
+    val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
     val mindustryVersion: String = "145",
     val globalCommands: Boolean = false
