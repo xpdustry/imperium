@@ -17,32 +17,4 @@
  */
 package com.xpdustry.imperium.common.hash
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-
-@Serializable(with = HashParamsSerializer::class)
-sealed interface HashParams {
-    companion object {
-        fun fromString(str: String): HashParams =
-            when {
-                str.startsWith("argon2/") -> Argon2Params.fromString(str)
-                str.startsWith("pbkdf2/") -> PBKDF2Params.fromString(str)
-                str.startsWith("sha/") -> ShaType.fromString(str)
-                else -> throw IllegalArgumentException("Unknown params: $str")
-            }
-    }
-}
-
-object HashParamsSerializer : KSerializer<HashParams> {
-    override val descriptor = PrimitiveSerialDescriptor("HashParams", PrimitiveKind.STRING)
-
-    override fun serialize(encoder: Encoder, value: HashParams) =
-        encoder.encodeString(value.toString())
-
-    override fun deserialize(decoder: Decoder): HashParams =
-        HashParams.fromString(decoder.decodeString())
-}
+sealed interface HashParams

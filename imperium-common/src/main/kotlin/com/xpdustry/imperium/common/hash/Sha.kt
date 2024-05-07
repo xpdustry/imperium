@@ -25,21 +25,7 @@ import kotlinx.coroutines.withContext
 enum class ShaType(val length: Int) : HashParams {
     SHA256(256);
 
-    override fun toString(): String {
-        return "sha/$length"
-    }
-
-    companion object {
-        fun fromString(str: String): ShaType {
-            if (!str.startsWith("sha/")) {
-                throw IllegalArgumentException("Invalid sha params: $str")
-            }
-
-            val length = str.substring("sha/".length).toInt()
-            return entries.find { it.length == length }
-                ?: throw IllegalArgumentException("Unknown sha length: $length")
-        }
-    }
+    override fun toString() = "sha/$length"
 }
 
 object ShaHashFunction : HashFunction<ShaType> {

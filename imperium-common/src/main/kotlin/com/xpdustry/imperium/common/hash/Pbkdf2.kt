@@ -34,9 +34,7 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
         require(length > 0) { "length must be positive" }
     }
 
-    override fun toString(): String {
-        return "pbkdf2/h=${hmac.name.lowercase(Locale.ROOT)},i=$iterations,l=$length"
-    }
+    override fun toString() = "pbkdf2/h=${hmac.name.lowercase(Locale.ROOT)},i=$iterations,l=$length"
 
     enum class Hmac {
         SHA1,
@@ -44,27 +42,6 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
         SHA256,
         SHA384,
         SHA512
-    }
-
-    companion object {
-        fun fromString(str: String): PBKDF2Params {
-            if (!str.startsWith("pbkdf2/")) {
-                throw IllegalArgumentException("Invalid pbkdf2 params: $str")
-            }
-
-            val params =
-                str.substring("pbkdf2/".length)
-                    .split(",")
-                    .map { it.trim().split("=") }
-                    .associate { it[0] to it[1] }
-
-            return PBKDF2Params(
-                Hmac.valueOf(params["h"]!!.uppercase(Locale.ROOT)),
-                params["i"]!!.toInt(),
-                params["l"]!!.toInt(),
-                params["s"]!!.toInt(),
-            )
-        }
     }
 }
 
