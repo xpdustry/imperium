@@ -53,6 +53,11 @@ discord:
     notifications: "some channel id"
     maps: "some channel id"
     reports: "some channel id"
+# Optional
+# permissions2roles:
+#   MANAGE_MAPS: "some role id"
+# achievements2roles:
+    ACTIVE: "some role id"
   ranks2roles:
     OWNER: "some role id"
     # Optional roles to add for further testing
