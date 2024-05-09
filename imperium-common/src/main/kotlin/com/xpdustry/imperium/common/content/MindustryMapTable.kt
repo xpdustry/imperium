@@ -36,13 +36,13 @@ object MindustryMapTable : SnowflakeIdTable("mindustry_map") {
     val width = integer("width")
     val height = integer("height")
     val file = mediumblob("file")
-    val lastUpdate = timestamp("last_update").defaultExpression(CurrentTimestamp())
+    val lastUpdate = timestamp("last_update").defaultExpression(CurrentTimestamp)
 }
 
 object MindustryMapGameTable : SnowflakeIdTable("mindustry_map_game") {
     val map = reference("map_id", MindustryMapTable, onDelete = ReferenceOption.CASCADE)
     val server = varchar("server", 64)
-    val start = timestamp("start").defaultExpression(CurrentTimestamp())
+    val start = timestamp("start").defaultExpression(CurrentTimestamp)
     val playtime = duration("playtime").default(Duration.ZERO)
     val unitsCreated = integer("units_created").default(0)
     val ennemiesKilled = integer("ennemies_killed").default(0)

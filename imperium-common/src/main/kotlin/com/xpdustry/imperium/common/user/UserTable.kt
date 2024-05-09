@@ -28,7 +28,7 @@ object UserTable : SnowflakeIdTable("user") {
     val lastName = varchar("last_name", 64)
     val lastAddress = binary("last_address", 16)
     val timesJoined = integer("times_joined").default(0)
-    val lastJoin = timestamp("last_join").defaultExpression(CurrentTimestamp())
+    val lastJoin = timestamp("last_join").defaultExpression(CurrentTimestamp)
 }
 
 object UserNameTable : Table("user_name") {
