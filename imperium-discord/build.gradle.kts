@@ -1,6 +1,8 @@
 plugins {
     id("imperium.base-conventions")
+    application
     id("com.github.johnrengelman.shadow")
+    id("io.ktor.plugin")
     id("fr.xpdustry.toxopid")
 }
 
@@ -18,21 +20,27 @@ dependencies {
     implementation(libs.jda) {
         exclude(module = "opus-java")
     }
+
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
+
+    implementation("io.ktor:ktor-server-netty-jvm")
+    implementation("io.ktor:ktor-server-content-negotiation-jvm")
+    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm")
+    implementation("io.ktor:ktor-server-core-jvm")
+    implementation("io.ktor:ktor-server-sessions-jvm")
+    implementation("io.ktor:ktor-server-auth-jvm")
+    implementation("io.ktor:ktor-client-core-jvm")
+    implementation("io.ktor:ktor-client-apache-jvm")
+}
+
+application {
+    applicationName = "ImperiumDiscord"
+    mainClass = "com.xpdustry.imperium.discord.ImperiumDiscordKt"
 }
 
 tasks.shadowJar {
     archiveFileName.set("imperium-discord.jar")
-
-    manifest {
-        attributes(
-            "Main-Class" to "com.xpdustry.imperium.discord.ImperiumDiscordKt",
-            "Implementation-Title" to "ImperiumDiscord",
-            "Implementation-Version" to project.version,
-            "Implementation-Vendor" to "Xpdustry",
-        )
-    }
 
     doFirst {
         val file = temporaryDir.resolve("imperium-version.txt")
@@ -51,6 +59,7 @@ tasks.shadowJar {
         exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
+        exclude(dependency("io.ktor:ktor-.*:.*"))
         exclude(dependency(libs.exposed.jdbc.get()))
         exclude(dependency(libs.mariadb.get()))
         exclude(dependency(libs.caffeine.get()))
@@ -68,10 +77,6 @@ tasks.register("getArtifactPath") {
     doLast { println(tasks.shadowJar.get().archiveFile.get().toString()) }
 }
 
-tasks.register<JavaExec>("runImperiumDiscord") {
+tasks.runShadow {
     workingDir = temporaryDir
-    dependsOn(tasks.shadowJar)
-    classpath(tasks.shadowJar)
-    description = "Starts a local Imperium discord bot"
-    standardInput = System.`in`
 }

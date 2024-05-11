@@ -42,7 +42,7 @@ To play on this server, you can start a mindustry client by running `./gradlew i
 ### Discord
 
 First, create discord bot and a test server for it (there are plenty of online tutorials for that).
-Then create the base configuration file named `config.yaml` in the directory `imperium-discord/build/tmp/runImperiumDiscord`,
+Then create the base configuration file named `config.yaml` in the directory `imperium-discord/build/tmp/runShadow`,
 with the following content:
 ```yaml
 discord:
@@ -64,9 +64,12 @@ discord:
     # ADMIN: "some role id"
     # MODERATOR: "some role id"
     # VERIFIED: "some role id"
+
+webserver:
+  port: 8080
 ```
 
-Then you can start the discord bot by running `./gradlew imperium-discord:runImperiumDiscord`.
+Then you can start the discord bot by running `./gradlew imperium-discord:runShadow`.
 
 > If it's the first time you run it, it will automatically download mindustry assets from GitHub,
 > this might take less than a minute. (Or more if you have potato internet `;-;`)

@@ -33,6 +33,7 @@ import com.xpdustry.imperium.discord.commands.SchematicCommand
 import com.xpdustry.imperium.discord.commands.ServerCommand
 import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.commands.WhitelistCommand
+import com.xpdustry.imperium.discord.rest.RestListener
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
 import kotlin.system.exitProcess
@@ -41,7 +42,6 @@ import org.slf4j.LoggerFactory
 private val LOGGER = LoggerFactory.getLogger(ImperiumDiscord::class.java)
 
 class ImperiumDiscord : BaseImperiumApplication(LOGGER) {
-
     override fun exit(status: ExitStatus) {
         super.exit(status)
         exitProcess(status.ordinal)
@@ -68,7 +68,8 @@ fun main() {
             RoleSyncListener::class,
             PlayerCommand::class,
             AccountCommand::class,
-            WhitelistCommand::class)
+            WhitelistCommand::class,
+            RestListener::class)
         .forEach(application::register)
     application.init()
 

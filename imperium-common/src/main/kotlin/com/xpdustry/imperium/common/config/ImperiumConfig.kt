@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common.config
 
+import com.google.common.net.InetAddresses
 import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.Rank
@@ -25,6 +26,7 @@ import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.security.Identity
 import java.awt.Color
+import java.net.InetAddress
 import java.net.URL
 import java.util.Locale
 import kotlin.time.Duration
@@ -43,7 +45,8 @@ data class ImperiumConfig(
     val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),
     val webhook: WebhookConfig = WebhookConfig.None,
     val discord: DiscordConfig? = null,
-    val mindustry: MindustryConfig? = null
+    val mindustry: MindustryConfig? = null,
+    val webserver: WebserverConfig? = null
 )
 
 data class NetworkConfig(
@@ -200,3 +203,8 @@ data class MindustryConfig(
         )
     }
 }
+
+data class WebserverConfig(
+    val port: Int = 8080,
+    val host: InetAddress = InetAddresses.forString("0.0.0.0")
+)
