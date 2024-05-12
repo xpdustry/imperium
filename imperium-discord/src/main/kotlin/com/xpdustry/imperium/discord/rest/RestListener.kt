@@ -57,7 +57,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
                         route("/v0") { get("/servers") { call.respond(getServerEntries()) } }
                     }
                 }
-                .start(wait = true)
+                .start(wait = false)
     }
 
     private suspend fun getServerEntries() =
