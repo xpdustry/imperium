@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -60,7 +60,7 @@ class WaveCommand(instances: InstanceManager) :
     @ClientSide
     fun onWaveSetTime(sender: CommandSender, duration: Duration) {
         Vars.state.wavetime = duration.seconds.toFloat() * 60F
-        sender.sendMessage("Set wave countdown to $duration")
+        sender.reply("Set wave countdown to $duration")
     }
 
     @ImperiumCommand(["wave", "set", "counter"], Rank.MODERATOR)
@@ -68,14 +68,14 @@ class WaveCommand(instances: InstanceManager) :
     fun onWaveSetCounter(sender: CommandSender, wave: Int) {
         Vars.state.wave = wave
         Vars.state.wavetime = Vars.state.rules.waveSpacing
-        sender.sendMessage("Set wave to counter $wave")
+        sender.reply("Set wave to counter $wave")
     }
 
     @ImperiumCommand(["wave", "run"], Rank.MODERATOR)
     @ClientSide
     fun onWaveRun(sender: CommandSender, @Range(min = "1", max = "20") count: Int = 1) {
         repeat(count) { Vars.logic.runWave() }
-        sender.sendMessage("Ran $count wave(s).")
+        sender.reply("Ran $count wave(s).")
     }
 
     @ImperiumCommand(["wave", "skip"], Rank.MODERATOR)

@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.config
 
-import com.xpdustry.distributor.annotation.method.TaskHandler
-import com.xpdustry.distributor.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig

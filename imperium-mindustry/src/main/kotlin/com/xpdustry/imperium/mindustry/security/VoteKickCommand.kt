@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.player.MUUID
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand

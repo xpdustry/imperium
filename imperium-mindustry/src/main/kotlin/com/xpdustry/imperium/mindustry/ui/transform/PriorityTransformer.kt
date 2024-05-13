@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.ui.transform
 
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.mindustry.ui.Pane
 import com.xpdustry.imperium.mindustry.ui.View
 

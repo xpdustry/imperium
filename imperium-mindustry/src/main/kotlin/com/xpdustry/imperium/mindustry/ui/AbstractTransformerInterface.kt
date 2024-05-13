@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.ui
 
-import com.xpdustry.distributor.DistributorProvider
-import com.xpdustry.distributor.player.MUUID
-import com.xpdustry.distributor.plugin.MindustryPlugin
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.player.MUUID
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.mindustry.ui.state.State
 import com.xpdustry.imperium.mindustry.ui.state.stateOf
 import com.xpdustry.imperium.mindustry.ui.transform.PriorityTransformer

@@ -18,10 +18,10 @@
 package com.xpdustry.imperium.mindustry.account
 
 import arc.Core
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.annotation.method.TaskHandler
-import com.xpdustry.distributor.scheduler.MindustryTimeUnit
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage

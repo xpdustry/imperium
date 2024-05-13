@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.google.common.cache.CacheBuilder
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -133,16 +133,16 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     suspend fun onVerifyCommand(sender: CommandSender) {
         val account = manager.findByIdentity(sender.player.identity)
         if (account == null) {
-            sender.sendWarning("You are not logged in!")
+            sender.error("You are not logged in!")
             return
         } else if (account.discord != null) {
-            sender.sendWarning("Your account is already discord verified.")
+            sender.error("Your account is already discord verified.")
             return
         }
 
         var code: Int? = verifications.getIfPresent(sender.player.uuid())
         if (code != null) {
-            sender.sendWarning(
+            sender.error(
                 """
                 You already have a pending verification.
                 [lightgray]Remember:
@@ -160,7 +160,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 account.snowflake, sender.player.uuid(), sender.player.usid(), code))
         verifications.put(account.snowflake, code)
 
-        sender.sendMessage(
+        sender.reply(
             """
             To go forward with the verification process, join our discord server using the [cyan]/discord[].
             Then use the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].

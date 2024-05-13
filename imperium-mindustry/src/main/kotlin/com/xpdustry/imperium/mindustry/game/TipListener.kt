@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
-import com.xpdustry.distributor.DistributorProvider
+import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -79,13 +79,14 @@ class TipListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private fun getLocalizedTip(key: String, locale: Locale): TipWithDetails? {
-        val translator = DistributorProvider.get().globalLocalizationSource
-        val content = translator.localize("imperium.tip.$key.content", locale) ?: return null
-        return content.format(NO_ARGS) to translator.format("imperium.tip.$key.details", locale)
+        val translator = DistributorProvider.get().globalTranslationSource
+        val content =
+            translator.getTranslationOrMissing("imperium.tip.$key.content", locale) ?: return null
+        return content.formatEmpty() to
+            translator.getTranslationOrMissing("imperium.tip.$key.details", locale).formatEmpty()
     }
 
     companion object {
         private val LOGGER = logger<TipListener>()
-        private val NO_ARGS = emptyArray<Any>()
     }
 }

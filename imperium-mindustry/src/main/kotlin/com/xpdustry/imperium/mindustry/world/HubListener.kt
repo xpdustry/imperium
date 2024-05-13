@@ -19,10 +19,10 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.Core
 import arc.math.geom.Geometry
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.annotation.method.TaskHandler
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -155,7 +155,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onHubPortalListCommand(sender: CommandSender, name: String) {
         val portal = portals.remove(name)
         if (portal == null) {
-            sender.sendMessage("A portal with that name does not exist.")
+            sender.error("A portal with that name does not exist.")
             return
         }
         val labels = portal.labels
@@ -164,7 +164,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             labels.overlays.forEach { (label, _) -> label.hide() }
         }
         savePortals()
-        sender.sendMessage("Deleted portal $name.")
+        sender.reply("Deleted portal $name.")
     }
 
     @ImperiumCommand(["portal", "create"], Rank.OWNER)
@@ -174,15 +174,15 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         name: String,
     ) {
         if (building[sender.player] != null) {
-            sender.sendMessage("You are already building a portal.")
+            sender.error("You are already building a portal.")
             return
         }
         if (portals.containsKey(name)) {
-            sender.sendMessage("A portal with that name already exists.")
+            sender.error("A portal with that name already exists.")
             return
         }
         building[sender.player] = PortalBuilder(name, emptyList())
-        sender.sendMessage("Started building portal $name.")
+        sender.reply("Started building portal $name.")
     }
 
     @ImperiumCommand(["portal", "undo"], Rank.OWNER)
@@ -190,15 +190,15 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onHubPortalUndoCommand(sender: CommandSender) {
         val builder = building[sender.player]
         if (builder == null) {
-            sender.sendMessage("You are not building a portal.")
+            sender.error("You are not building a portal.")
             return
         }
         if (builder.points.isEmpty()) {
-            sender.sendMessage("You have no points to undo.")
+            sender.error("You have no points to undo.")
             return
         }
         building[sender.player] = builder.copy(points = builder.points.dropLast(1))
-        sender.sendMessage("Removed last point.")
+        sender.reply("Removed last point.")
     }
 
     @ImperiumCommand(["portal", "cancel"], Rank.OWNER)
@@ -206,20 +206,20 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onHubPortalCancelCommand(sender: CommandSender) {
         val builder = building.remove(sender.player)
         if (builder == null) {
-            sender.sendMessage("You are not building a portal.")
+            sender.error("You are not building a portal.")
             return
         }
-        sender.sendMessage("Cancelled portal ${builder.name}")
+        sender.reply("Cancelled portal ${builder.name}")
     }
 
     @ImperiumCommand(["portal", "list"], Rank.OWNER)
     @ClientSide
     fun onHubPortalListCommand(sender: CommandSender) {
         if (portals.isEmpty()) {
-            sender.sendMessage("There are no portals.")
+            sender.error("There are no portals.")
             return
         }
-        sender.sendMessage(
+        sender.reply(
             buildString {
                 append("-- [accent]Portals: --")
                 for (portal in portals.values) {
@@ -234,7 +234,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onHubPortalDebugCommand(sender: CommandSender) {
         val debug = debug[sender.player] ?: false
         this.debug[sender.player] = !debug
-        sender.sendMessage("Debug mode is now ${if (!debug) "enabled" else "disabled"}.")
+        sender.reply("Debug mode is now ${if (!debug) "enabled" else "disabled"}.")
     }
 
     @EventHandler

@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -46,19 +46,19 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
         val data = discovery.servers[server]?.data
         if (data == null) {
-            sender.sendMessage("[accent]Server not found.")
+            sender.error("[accent]Server not found.")
             return
         }
         if (data !is Discovery.Data.Mindustry) {
-            sender.sendMessage("[accent]Server is not a Mindustry server.")
+            sender.error("[accent]Server is not a Mindustry server.")
             return
         }
         if (data.state == Discovery.Data.Mindustry.State.STOPPED) {
-            sender.sendMessage("[accent]Server is not available.")
+            sender.error("[accent]Server is not available.")
             return
         }
         if (data.gameVersion != getMindustryVersion()) {
-            sender.sendMessage("[accent]Server is not running the same version of Mindustry.")
+            sender.error("[accent]Server is not running the same version of Mindustry.")
             return
         }
         switchToServer(sender.player, data)
