@@ -64,24 +64,25 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
         discovery.servers
             .asSequence()
             .filter { it.value.data is Discovery.Data.Mindustry }
-            .associate { (name, value) ->
+            .toList()
+            .map { (name, value) ->
                 val data = value.data as Discovery.Data.Mindustry
-                name to
-                    ServerEntry(
-                        host = data.host,
-                        port = data.port,
-                        mapName = data.mapName,
-                        description = data.description,
-                        wave = data.wave,
-                        playerCount = data.playerCount,
-                        playerLimit = data.playerLimit,
-                        gameVersion = data.gameVersion,
-                        gamemode = data.gamemodeName ?: data.gamemode.name.lowercase(),
-                        active = data.state == Discovery.Data.Mindustry.State.PLAYING,
-                        players =
-                            tracker.getOnlinePlayers(name)?.map { player ->
-                                ServerEntry.Player(player.player.displayName, player.snowflake)
-                            } ?: emptyList())
+                ServerEntry(
+                    name = name,
+                    host = data.host,
+                    port = data.port,
+                    mapName = data.mapName,
+                    description = data.description,
+                    wave = data.wave,
+                    playerCount = data.playerCount,
+                    playerLimit = data.playerLimit,
+                    gameVersion = data.gameVersion,
+                    gamemode = data.gamemodeName ?: data.gamemode.name.lowercase(),
+                    active = data.state == Discovery.Data.Mindustry.State.PLAYING,
+                    players =
+                        tracker.getOnlinePlayers(name)?.map { player ->
+                            ServerEntry.Player(player.player.displayName, player.snowflake)
+                        } ?: emptyList())
             }
 
     override fun onImperiumExit() {
@@ -90,6 +91,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @Serializable
     data class ServerEntry(
+        val name: String,
         val host: SerializableInetAddress,
         val port: Int,
         val mapName: String,
