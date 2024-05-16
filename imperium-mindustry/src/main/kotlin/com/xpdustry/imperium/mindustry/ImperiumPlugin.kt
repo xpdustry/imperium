@@ -57,6 +57,7 @@ import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankProvider
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
+import com.xpdustry.imperium.mindustry.security.AdminToggle
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageListener
@@ -162,7 +163,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 RatingListener::class,
                 SpawnCommand::class,
                 WorldEditCommand::class,
-                HereCommand::class)
+                HereCommand::class,
+                AdminToggle::class)
             .forEach(application::register)
 
         if (application.instances.get<MindustryConfig>().gamemode == MindustryGamemode.HUB) {
