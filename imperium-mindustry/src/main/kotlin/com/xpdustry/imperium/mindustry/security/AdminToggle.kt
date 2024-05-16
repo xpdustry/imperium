@@ -3,7 +3,6 @@ package com.xpdustry.imperium.mindustry.security
 import com.xpdustry.distributor.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import mindustry.Vars
