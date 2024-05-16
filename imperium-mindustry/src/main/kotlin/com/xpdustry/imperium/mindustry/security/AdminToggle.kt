@@ -18,15 +18,6 @@ class AdminToggle : ImperiumApplication.Listener {
         sender.player.admin = !sender.player.admin
         sender.player.sendMessage("[accent]Your admin status has been set to ${sender.player.admin}")
     } 
-
-    @ImperiumCommand(["debug"])
-    @ClientSide
-    fun onDebugCommand(
-        sender: CommandSender
-    ) {
-        var rank = sender.rank
-        sender.player.sendMessage("$rank")
-    }
 }
 
 // I plan on moving this to a centralised file,
