@@ -88,7 +88,7 @@ private fun NetConnection.kick(
 }
 
 suspend fun Player.tryGrantAdmin(manager: AccountManager) {
-    admin = ((manager.findByIdentity(identity)?.rank ?: Rank.EVERYONE) >= Rank.MODERATOR) || admin
+    admin = ((manager.findByIdentity(identity)?.rank ?: Rank.EVERYONE) >= Rank.OVERSEER) || admin
 }
 
 fun Player.reloadWorldData() {
