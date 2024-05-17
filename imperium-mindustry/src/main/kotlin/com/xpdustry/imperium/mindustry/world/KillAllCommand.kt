@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -77,7 +77,7 @@ class KillAllCommand(instances: InstanceManager) :
                 Call.unitDespawn(unit)
             }
         }
-        sender.sendMessage("Killed $count unit(s) from team ${team.coloredName()}")
+        sender.reply("Killed $count unit(s) from team ${team.coloredName()}")
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Unit>): String =

@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.command.cloud.specifier.AllTeams
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -59,24 +59,24 @@ class WorldEditCommand : ImperiumApplication.Listener {
             y > Vars.world.height() ||
             x2 > Vars.world.width() ||
             y2 > Vars.world.height()) {
-            sender.sendWarning("The specified coordinates and size are out of bounds.")
+            sender.error("The specified coordinates and size are out of bounds.")
             return
         }
         if (floor != null && !floor.isFloor) {
-            sender.sendWarning("The block $floor is not a floor.")
+            sender.error("The block $floor is not a floor.")
             return
         }
         if (overlay != null && !overlay.isOverlay) {
-            sender.sendWarning("The block $overlay is not an overlay.")
+            sender.error("The block $overlay is not an overlay.")
             return
         }
         if (block != null &&
             !(block.isStatic || block.isPlaceable || block.isAir || block is Prop)) {
-            sender.sendWarning("The block $block is not a static, placeable, prop or air block.")
+            sender.error("The block $block is not a static, placeable, prop or air block.")
             return
         }
         if (block == null && floor == null && overlay == null) {
-            sender.sendWarning("You must specify at least one of block, floor, or overlay.")
+            sender.error("You must specify at least one of block, floor, or overlay.")
             return
         }
 
@@ -102,7 +102,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
             Groups.player.each(Player::reloadWorldData)
         }
 
-        sender.sendMessage(
+        sender.reply(
             buildString {
                 if (w != 1 || h != 1) {
                     append("Set tiles between ($x, $y) and (${x + w - 1}, ${y + h - 1}) to ")

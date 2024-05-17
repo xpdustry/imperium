@@ -21,7 +21,7 @@ import arc.Events
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.MindustryConfig

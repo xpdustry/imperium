@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -76,10 +76,10 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     fun onCoreListCommand(sender: CommandSender) {
         val clusters = getManager(sender.player.team()).clusters
         if (clusters.isEmpty()) {
-            sender.sendMessage("No cores found")
+            sender.error("No cores found")
             return
         }
-        sender.sendMessage(
+        sender.reply(
             buildString {
                 appendLine("Found ${clusters.size} cores: ")
                 for ((index, cluster) in clusters.withIndex()) {
@@ -95,17 +95,17 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
     fun onCoreTeleportCommand(sender: CommandSender, @Range(min = "1") id: Int) {
         val clusters = getManager(sender.player.team()).clusters
         if (clusters.isEmpty()) {
-            sender.sendMessage("No cores found")
+            sender.error("No cores found")
             return
         }
         val cluster = clusters.getOrNull(id - 1)
         if (cluster == null) {
-            sender.sendMessage("Invalid core id")
+            sender.error("Invalid core id")
             return
         }
         val core = cluster.blocks.first()
         Call.playerSpawn(Vars.world.tile(core.x, core.y), sender.player)
-        sender.sendMessage("Teleported to core at ${cluster.x}, ${cluster.y}")
+        sender.reply("Teleported to core at ${cluster.x}, ${cluster.y}")
     }
 
     @EventHandler

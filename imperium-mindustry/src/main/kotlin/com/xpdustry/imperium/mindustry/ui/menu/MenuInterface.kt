@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.ui.menu
 
-import com.xpdustry.distributor.player.MUUID
-import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.player.MUUID
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.imperium.mindustry.ui.TransformerInterface
 import mindustry.gen.Call

@@ -20,14 +20,13 @@ package com.xpdustry.imperium.mindustry
 import arc.Application
 import arc.ApplicationListener
 import arc.Core
-import com.xpdustry.distributor.DistributorProvider
-import com.xpdustry.distributor.annotation.PluginAnnotationScanner
-import com.xpdustry.distributor.annotation.method.MethodAnnotationScanner
-import com.xpdustry.distributor.localization.LocalizationSourceRegistry
-import com.xpdustry.distributor.permission.rank.RankPermissionSource
-import com.xpdustry.distributor.permission.rank.RankProvider
-import com.xpdustry.distributor.plugin.AbstractMindustryPlugin
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
+import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
+import com.xpdustry.distributor.api.permission.rank.RankSource
+import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+import com.xpdustry.distributor.api.translation.TranslationRegistry
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -83,7 +82,6 @@ import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication()
-    private lateinit var scanner: PluginAnnotationScanner<*>
 
     override fun onInit() {
         // https://github.com/Anuken/Arc/pull/158
@@ -108,7 +106,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(provider)
         DistributorProvider.get()
             .serviceManager
-            .register(this, RankProvider::class.java, Priority.NORMAL, provider)
+            .register(this, RankSource::class.java, Priority.NORMAL, provider)
 
         val source = ImperiumRankPermissionSource(application.instances.get())
         DistributorProvider.get()
@@ -116,10 +114,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             .register(this, RankPermissionSource::class.java, Priority.NORMAL, source)
 
         DistributorProvider.get()
-            .globalLocalizationSource
-            .addLocalizationSource(
-                LocalizationSourceRegistry.create(
-                        application.instances.get<ImperiumConfig>().language)
+            .globalTranslationSource
+            .register(
+                TranslationRegistry.create(application.instances.get<ImperiumConfig>().language)
                     .apply {
                         application.instances.get<ImperiumConfig>().supportedLanguages.forEach {
                             registerAll(
@@ -175,14 +172,13 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         application.init()
 
-        scanner =
-            PluginAnnotationScanner.list(
-                MethodAnnotationScanner.create(this)
-                    .register(MethodAnnotationScanner.EVENT_HANDLER_PAIR)
-                    .register(MethodAnnotationScanner.TASK_HANDLER_PAIR),
-                CommandAnnotationScanner(this, application.instances.get()))
+        val processor =
+            PluginAnnotationProcessor.compose(
+                CommandAnnotationScanner(this, application.instances.get()),
+                PluginAnnotationProcessor.tasks(this),
+                PluginAnnotationProcessor.events(this))
 
-        application.listeners.forEach(scanner::scan)
+        application.listeners.forEach(processor::process)
 
         runBlocking {
             application.instances

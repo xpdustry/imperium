@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.math.geom.Vec2
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -52,12 +52,12 @@ class SpawnCommand : ImperiumApplication.Listener {
             if (!entity.dead()) spawned++
         }
         if (spawned == 0) {
-            sender.sendWarning(
+            sender.error(
                 "You reached the unit cap of ${unit.name} for the team ${team.coloredName()}.")
             return
         }
         if (silent) {
-            sender.sendMessage(
+            sender.reply(
                 "You spawned $spawned ${unit.name} for team ${team.coloredName()} at ($x, $y).")
         } else {
             Call.sendMessage(

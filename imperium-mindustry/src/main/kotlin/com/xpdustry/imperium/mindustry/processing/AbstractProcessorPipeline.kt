@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.processing
 
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.misc.logger
 
 abstract class AbstractProcessorPipeline<I : Any, O : Any>(name: String) : ProcessorPipeline<I, O> {

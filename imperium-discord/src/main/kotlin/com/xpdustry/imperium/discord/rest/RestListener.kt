@@ -78,7 +78,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     playerLimit = data.playerLimit,
                     gameVersion = data.gameVersion,
                     gamemode = data.gamemodeName ?: data.gamemode.name.lowercase(),
-                    active = data.state == Discovery.Data.Mindustry.State.PLAYING,
+                    active = data.state != Discovery.Data.Mindustry.State.STOPPED,
                     players =
                         tracker.getOnlinePlayers(name)?.map { player ->
                             ServerEntry.Player(player.player.displayName, player.snowflake)

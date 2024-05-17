@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry
 
 import arc.Core
-import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig

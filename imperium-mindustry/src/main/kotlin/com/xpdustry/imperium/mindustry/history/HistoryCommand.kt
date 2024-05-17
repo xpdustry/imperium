@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -38,7 +38,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
-import mindustry.net.Administration.PlayerInfo
+import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Range
 
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -53,19 +53,18 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ServerSide
     suspend fun onPlayerHistoryCommand(
         sender: CommandSender,
-        player: PlayerInfo,
+        player: Player,
         @Range(min = "1", max = "50") limit: Int = 10
     ) {
-        val entries = runMindustryThread { normalize(history.getHistory(player.id), limit) }
+        val entries = runMindustryThread { normalize(history.getHistory(player.uuid()), limit) }
         if (entries.none()) {
-            sender.sendWarning("No history found.")
+            sender.error("No history found.")
             return
         }
-        val builder =
-            StringBuilder("[accent]History of player [white]").append(player.plainLastName())
+        val builder = StringBuilder("[accent]History of player [white]").append(player.plainName())
         builder
             .append(" [lightgray](#")
-            .append(users.findByUuid(player.id)?.snowflake ?: "unknown")
+            .append(users.findByUuid(player.uuid())?.snowflake ?: "unknown")
             .append(")")
         builder.append(":")
         for (entry in entries) {
@@ -76,7 +75,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 )
         }
 
-        sender.sendMessage(
+        sender.reply(
             if (sender.isServer) builder.toString().stripMindustryColors() else builder.toString())
     }
 
@@ -110,7 +109,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             normalize(history.getHistory(x.toInt(), y.toInt()), limit)
         }
         if (entries.none()) {
-            sender.sendWarning("No history found.")
+            sender.error("No history found.")
             return
         }
         val builder =
@@ -126,7 +125,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 .append(renderEntry(entry, name = true, position = false, 3))
         }
 
-        sender.sendMessage(
+        sender.reply(
             if (sender.isServer) builder.toString().stripMindustryColors() else builder.toString())
     }
 

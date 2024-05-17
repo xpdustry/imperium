@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand

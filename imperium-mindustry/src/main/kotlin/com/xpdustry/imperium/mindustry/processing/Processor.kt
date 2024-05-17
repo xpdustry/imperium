@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.processing
 
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.misc.buildAsyncCache
 import com.xpdustry.imperium.common.misc.getSuspending
 import kotlin.time.Duration
