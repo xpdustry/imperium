@@ -190,7 +190,7 @@ class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listen
         var building = event.tile.build
         if (event.breaking &&
             building is ConstructBlock.ConstructBuild &&
-            !building.prevBuild.isEmpty) {
+            building.prevBuild?.isEmpty == false) {
             building = building.prevBuild.first()
         }
 
