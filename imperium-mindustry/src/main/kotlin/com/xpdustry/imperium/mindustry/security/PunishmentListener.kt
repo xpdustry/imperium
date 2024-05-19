@@ -50,6 +50,7 @@ import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
+import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.MessageBlock
 
 // TODO PunishmentListener should cache all non-ban punishments of online players
@@ -148,7 +149,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
             if ((action.type == Administration.ActionType.configure && action.config is String) ||
                 (action.type == Administration.ActionType.placeBlock &&
-                    action.block is MessageBlock)) {
+                    (action.block is MessageBlock || action.block is LogicBlock))) {
                 tryNotifyPlayer(
                     action.player,
                     """
