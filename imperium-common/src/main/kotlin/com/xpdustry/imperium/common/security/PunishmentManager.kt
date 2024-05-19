@@ -49,6 +49,7 @@ interface PunishmentManager {
 
     suspend fun findAllByUser(snowflake: Snowflake): List<Punishment>
 
+    // TODO active punishments of a same kind should be merged
     suspend fun punish(
         author: Identity,
         user: Snowflake,
