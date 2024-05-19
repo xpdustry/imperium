@@ -131,14 +131,8 @@ tasks.register<MindustryExec>("runMindustryClient2") {
 }
 
 tasks.runMindustryServer {
-    mods.setFrom(
-        downloadKotlinRuntime,
-        tasks.shadowJar,
-        downloadNoHorny,
-        downloadDistributor4LoggingSimple,
-        downloadDistributor4Common,
-        downloadDistributor4PermissionRank,
-    )
+    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadNoHorny)
+    mods.from(rootProject.file("libs").listFiles())
 }
 
 // Second server for testing discovery

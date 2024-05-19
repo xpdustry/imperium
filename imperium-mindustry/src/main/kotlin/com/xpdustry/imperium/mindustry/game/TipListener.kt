@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -82,8 +83,10 @@ class TipListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val translator = DistributorProvider.get().globalTranslationSource
         val content =
             translator.getTranslationOrMissing("imperium.tip.$key.content", locale) ?: return null
-        return content.formatEmpty() to
-            translator.getTranslationOrMissing("imperium.tip.$key.details", locale).formatEmpty()
+        return content.format(TranslationArguments.empty()) to
+            translator
+                .getTranslationOrMissing("imperium.tip.$key.details", locale)
+                .format(TranslationArguments.empty())
     }
 
     companion object {
