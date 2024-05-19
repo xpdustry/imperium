@@ -25,7 +25,7 @@ import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
 import com.xpdustry.distributor.api.permission.rank.RankSource
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
-import com.xpdustry.distributor.api.translation.TranslationRegistry
+import com.xpdustry.distributor.api.translation.ResourceTranslationSource
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
@@ -105,17 +105,18 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.register(provider)
         DistributorProvider.get()
             .serviceManager
-            .register(this, RankSource::class.java, Priority.NORMAL, provider)
+            .register(this, RankSource::class.java, provider, Priority.NORMAL)
 
         val source = ImperiumRankPermissionSource(application.instances.get())
         DistributorProvider.get()
             .serviceManager
-            .register(this, RankPermissionSource::class.java, Priority.NORMAL, source)
+            .register(this, RankPermissionSource::class.java, source, Priority.NORMAL)
 
         DistributorProvider.get()
             .globalTranslationSource
             .register(
-                TranslationRegistry.create(application.instances.get<ImperiumConfig>().language)
+                ResourceTranslationSource.create(
+                        application.instances.get<ImperiumConfig>().language)
                     .apply {
                         application.instances.get<ImperiumConfig>().supportedLanguages.forEach {
                             registerAll(

@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.localization
 
 import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.localization.LocalizationSource
 import java.util.Locale
@@ -27,5 +28,5 @@ class DistributorLocalisationSource(private val config: ImperiumConfig) : Locali
         DistributorProvider.get()
             .globalTranslationSource
             .getTranslationOrMissing(key, config.language)
-            .formatArray(*arguments)
+            .format(TranslationArguments.array(*arguments))
 }
