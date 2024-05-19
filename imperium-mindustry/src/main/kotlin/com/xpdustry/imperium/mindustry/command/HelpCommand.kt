@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.command
 
-import com.xpdustry.distributor.command.CommandElement
-import com.xpdustry.distributor.command.CommandFacade
-import com.xpdustry.distributor.command.CommandHelp
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.command.CommandElement
+import com.xpdustry.distributor.api.command.CommandFacade
+import com.xpdustry.distributor.api.command.CommandHelp
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -44,7 +44,7 @@ class HelpCommand : ImperiumApplication.Listener {
         val path = query!!.split(" ")
         val results = getCommandList(sender).filter { it.name.startsWith(path[0]) }
         if (results.isEmpty()) {
-            sender.sendWarning("No command found.")
+            sender.error("No command found.")
             return
         }
 
@@ -54,7 +54,7 @@ class HelpCommand : ImperiumApplication.Listener {
         } else {
             command = results.find { it.name.equals(path[0], ignoreCase = true) }
             if (command == null) {
-                sender.sendMessage(
+                sender.reply(
                     buildString {
                         appendLine(
                             "[orange]-- Too many root commands found for [lightgray]${path[0]}[] --")
@@ -67,16 +67,16 @@ class HelpCommand : ImperiumApplication.Listener {
         }
 
         when (val help = command!!.getHelp(sender, path.drop(1).joinToString(" "))) {
-            is CommandHelp.Empty -> sender.sendWarning("No help found.")
+            is CommandHelp.Empty -> sender.error("No help found.")
             is CommandHelp.Suggestion -> {
                 if (help.childSuggestions.isEmpty()) {
-                    sender.sendMessage("[scarlet]No command found.")
+                    sender.reply("[scarlet]No command found.")
                     logger.error(
                         "Impossible state: No suggestions for CommandHelp.Suggestion (query={})",
                         query)
                     return
                 }
-                sender.sendMessage(
+                sender.reply(
                     buildString {
                         appendLine(
                             "[orange]-- Suggestions for [lightgray]${help.longestSharedPath}[orange] --")
@@ -89,7 +89,7 @@ class HelpCommand : ImperiumApplication.Listener {
                 )
             }
             is CommandHelp.Entry -> {
-                sender.sendMessage(
+                sender.reply(
                     buildString {
                         appendLine("[orange]-- [lightgray]/${help.syntax}[orange] --")
                         val description = help.description.getText(sender)
@@ -120,11 +120,11 @@ class HelpCommand : ImperiumApplication.Listener {
         val commands = getCommandList(sender)
         val pages = ceil(commands.size.toFloat() / COMMANDS_PER_PAGE).toInt()
         if (page < 1 || page > pages) {
-            sender.sendMessage(
+            sender.reply(
                 "[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
             return
         }
-        sender.sendMessage(
+        sender.reply(
             buildString {
                 appendLine(
                     "[orange]-- Commands Page[lightgray] $page[gray]/[lightgray]${pages}[orange] --")

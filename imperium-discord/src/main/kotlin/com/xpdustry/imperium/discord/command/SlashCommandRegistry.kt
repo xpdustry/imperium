@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.commands.PunishmentDuration
@@ -94,15 +95,15 @@ class SlashCommandRegistry(
             val command = node.edge!!
             val responder = event.deferReply(command.ephemeral).await()
 
-            if (!discord.isAllowed(event.user, command.rank)) {
+            val sender = InteractionSender.Slash(event)
+            val arguments = mutableMapOf<KParameter, Any>()
+
+            if (!command.permission.test(sender)) {
                 responder
                     .sendMessage(":warning: **You do not have permission to use this command.**")
                     .await()
                 return@addSuspendingEventListener
             }
-
-            val actor = InteractionSender.Slash(event)
-            val arguments = mutableMapOf<KParameter, Any>()
 
             try {
                 for (parameter in command.function.parameters) {
@@ -112,7 +113,7 @@ class SlashCommandRegistry(
                     }
 
                     if (isSupportedActor(parameter.type.classifier!!)) {
-                        arguments[parameter] = actor
+                        arguments[parameter] = sender
                         continue
                     }
 
@@ -209,6 +210,18 @@ class SlashCommandRegistry(
                 arguments += createCommandEdgeArgument(parameter, optional, classifier)
             }
 
+            var permission = PermissionPredicate {
+                discord.isAllowed(it.interaction.user, command.rank)
+            }
+
+            val allow = function.findAnnotation<AlsoAllow>()
+            if (allow != null) {
+                val previous = permission
+                permission = PermissionPredicate {
+                    previous.test(it) or discord.isAllowed(it.interaction.user, allow.permission)
+                }
+            }
+
             function.isAccessible = true
             tree.resolve(
                 path = command.path.toList(),
@@ -216,7 +229,7 @@ class SlashCommandRegistry(
                     CommandEdge(
                         container,
                         function,
-                        command.rank,
+                        permission,
                         arguments,
                         !function.hasAnnotation<NonEphemeral>(),
                     ),
@@ -382,7 +395,7 @@ private data class CommandNode(val name: String, val parent: CommandNode?) {
 private data class CommandEdge(
     val container: Any,
     val function: KFunction<*>,
-    val rank: Rank,
+    val permission: PermissionPredicate,
     val arguments: List<Argument<*>>,
     val ephemeral: Boolean,
 ) {

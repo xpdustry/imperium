@@ -19,11 +19,11 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.CommandHandler.ResponseType
 import arc.util.Time
-import com.xpdustry.distributor.DistributorProvider
-import com.xpdustry.distributor.annotation.method.TaskHandler
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.scheduler.MindustryTimeUnit
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -236,7 +236,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     @ClientSide
     suspend fun onWhisperCommand(sender: CommandSender, target: Player, @Greedy message: String) {
         if (sender.player == target) {
-            sender.sendWarning("You can't whisper to yourself.")
+            sender.error("You can't whisper to yourself.")
             return
         }
         val filtered1 = runMindustryThread {
@@ -259,7 +259,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     @ServerSide
     suspend fun onServerMessageCommand(sender: CommandSender, @Greedy message: String) {
         if (!Vars.state.isGame) {
-            sender.sendWarning("Not hosting. Host a game first.")
+            sender.error("Not hosting. Host a game first.")
             return
         }
 
@@ -273,7 +273,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
                     null,
                     processed)
                 if (target == null) {
-                    sender.sendMessage("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
+                    sender.reply("&fi&lcServer: &fr&lw${processed.stripMindustryColors()}")
                     messenger.publish(
                         MindustryServerMessage(
                             imperiumConfig.server.identity, processed, chat = true))

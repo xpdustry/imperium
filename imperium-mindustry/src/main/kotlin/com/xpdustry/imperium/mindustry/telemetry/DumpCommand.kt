@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.telemetry
 
 import com.sun.management.HotSpotDiagnosticMXBean
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -47,9 +47,9 @@ class DumpCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     HotSpotDiagnosticMXBean::class.java)
             val file = directory.resolve("${System.currentTimeMillis()}.hprof")
             mxBean.dumpHeap(file.toString(), live)
-            sender.sendMessage("Dumped heap to $file")
+            sender.reply("Dumped heap to $file")
         } catch (e: Exception) {
-            sender.sendMessage("Failed to dump heap: ${e.message}")
+            sender.reply("Failed to dump heap: ${e.message}")
         }
     }
 }

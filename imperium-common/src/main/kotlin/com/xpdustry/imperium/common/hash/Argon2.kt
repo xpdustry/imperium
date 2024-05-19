@@ -43,9 +43,8 @@ data class Argon2Params(
         require(parallelism > 0) { "parallelism must be positive" }
     }
 
-    override fun toString(): String {
-        return "argon2/m=$memory,i=$iterations,p=$parallelism,l=$length,t=${type.name.lowercase(Locale.ROOT)},v=${version.name.lowercase()},s=$saltLength"
-    }
+    override fun toString() =
+        "argon2/m=$memory,i=$iterations,p=$parallelism,l=$length,t=${type.name.lowercase(Locale.ROOT)},v=${version.name.lowercase()},s=$saltLength"
 
     enum class Type {
         ID,
@@ -56,30 +55,6 @@ data class Argon2Params(
     enum class Version {
         V10,
         V13
-    }
-
-    companion object {
-        fun fromString(str: String): Argon2Params {
-            if (!str.startsWith("argon2/")) {
-                throw IllegalArgumentException("Invalid argon2 params: $str")
-            }
-
-            val params =
-                str.substring("argon2/".length)
-                    .split(",")
-                    .map { it.trim().split("=") }
-                    .associate { it[0] to it[1] }
-
-            return Argon2Params(
-                params["m"]!!.toInt(),
-                params["i"]!!.toInt(),
-                params["l"]!!.toInt(),
-                params["p"]!!.toInt(),
-                Type.valueOf(params["t"]!!.uppercase(Locale.ROOT)),
-                Version.valueOf(params["v"]!!.uppercase(Locale.ROOT)),
-                params["s"]!!.toInt(),
-            )
-        }
     }
 }
 

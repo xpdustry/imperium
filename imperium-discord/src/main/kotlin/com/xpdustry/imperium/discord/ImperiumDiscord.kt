@@ -23,7 +23,7 @@ import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.discord.account.RoleSyncListener
-import com.xpdustry.imperium.discord.bridge.BridgeListener
+import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
@@ -33,6 +33,7 @@ import com.xpdustry.imperium.discord.commands.SchematicCommand
 import com.xpdustry.imperium.discord.commands.ServerCommand
 import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.commands.WhitelistCommand
+import com.xpdustry.imperium.discord.rest.RestListener
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
 import kotlin.system.exitProcess
@@ -41,7 +42,6 @@ import org.slf4j.LoggerFactory
 private val LOGGER = LoggerFactory.getLogger(ImperiumDiscord::class.java)
 
 class ImperiumDiscord : BaseImperiumApplication(LOGGER) {
-
     override fun exit(status: ExitStatus) {
         super.exit(status)
         exitProcess(status.ordinal)
@@ -56,7 +56,7 @@ fun main() {
     application.instances.createAll()
 
     sequenceOf(
-            BridgeListener::class,
+            MindustryBridgeListener::class,
             PingCommand::class,
             ServerCommand::class,
             ReportListener::class,
@@ -68,7 +68,8 @@ fun main() {
             RoleSyncListener::class,
             PlayerCommand::class,
             AccountCommand::class,
-            WhitelistCommand::class)
+            WhitelistCommand::class,
+            RestListener::class)
         .forEach(application::register)
     application.init()
 

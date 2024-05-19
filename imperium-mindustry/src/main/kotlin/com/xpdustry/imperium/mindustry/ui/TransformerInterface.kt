@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.ui
 
-import com.xpdustry.distributor.util.Priority
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.mindustry.ui.transform.Transformer
 
 interface TransformerInterface<P : Pane> : Interface {

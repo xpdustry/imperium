@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.command.cloud.specifier.AllTeams
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -32,8 +32,8 @@ import mindustry.game.Team
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.world.Block
+import mindustry.world.blocks.environment.Prop
 import org.incendo.cloud.annotation.specifier.Range
-import org.incendo.cloud.type.Either
 
 class WorldEditCommand : ImperiumApplication.Listener {
 
@@ -47,7 +47,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
         @Range(min = "1", max = "100") @Flag("h") h: Int = 1,
         @Flag("b") block: Block? = null,
         @Flag("t") @AllTeams team: Team = sender.player.team(),
-        @Flag("r") rotation: Either<Rotation, Int> = Either.ofPrimary(Rotation.UP),
+        @Flag("r") rotation: Rotation = Rotation.UP,
         @Flag("f") floor: Block? = null,
         @Flag("o") overlay: Block? = null,
         @Flag override: Boolean,
@@ -59,23 +59,24 @@ class WorldEditCommand : ImperiumApplication.Listener {
             y > Vars.world.height() ||
             x2 > Vars.world.width() ||
             y2 > Vars.world.height()) {
-            sender.sendWarning("The specified coordinates and size are out of bounds.")
+            sender.error("The specified coordinates and size are out of bounds.")
             return
         }
         if (floor != null && !floor.isFloor) {
-            sender.sendWarning("The block $floor is not a floor.")
+            sender.error("The block $floor is not a floor.")
             return
         }
         if (overlay != null && !overlay.isOverlay) {
-            sender.sendWarning("The block $overlay is not an overlay.")
+            sender.error("The block $overlay is not an overlay.")
             return
         }
-        if (block != null && !(block.isStatic || block.isPlaceable)) {
-            sender.sendWarning("The block $block is not a static or placeable block.")
+        if (block != null &&
+            !(block.isStatic || block.isPlaceable || block.isAir || block is Prop)) {
+            sender.error("The block $block is not a static, placeable, prop or air block.")
             return
         }
         if (block == null && floor == null && overlay == null) {
-            sender.sendWarning("You must specify at least one of block, floor, or overlay.")
+            sender.error("You must specify at least one of block, floor, or overlay.")
             return
         }
 
@@ -86,9 +87,9 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     floor?.let { tile.setFloorNet(it.asFloor()) }
                     overlay?.let { tile.setOverlayNet(it.asFloor()) }
                     block?.let {
-                        if (override || tile.build == null) {
+                        if (override || tile.block().isAir) {
                             tile.setNet(Blocks.air)
-                            tile.setNet(it, team, rotation.fallbackOrMapPrimary(Rotation::ordinal))
+                            tile.setNet(it, team, rotation.ordinal)
                         }
                     }
                 }
@@ -101,7 +102,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
             Groups.player.each(Player::reloadWorldData)
         }
 
-        sender.sendMessage(
+        sender.reply(
             buildString {
                 if (w != 1 || h != 1) {
                     append("Set tiles between ($x, $y) and (${x + w - 1}, ${y + h - 1}) to ")

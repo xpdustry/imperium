@@ -17,11 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.command
 
-import com.xpdustry.distributor.annotation.PluginAnnotationScanner
-import com.xpdustry.distributor.command.CommandSender
-import com.xpdustry.distributor.command.DescriptionFacade
-import com.xpdustry.distributor.command.cloud.ArcCommandManager
-import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
+import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.command.DescriptionFacade
+import com.xpdustry.distributor.api.command.cloud.MindustryCommandManager
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -32,7 +32,6 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import com.xpdustry.imperium.mindustry.misc.Rotation
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import io.leangen.geantyref.TypeToken
 import java.util.Optional
@@ -51,27 +50,23 @@ import kotlinx.coroutines.future.future
 import mindustry.Vars
 import mindustry.server.ServerControl
 import org.incendo.cloud.SenderMapper
-import org.incendo.cloud.caption.CaptionFormatter
 import org.incendo.cloud.component.TypedCommandComponent
 import org.incendo.cloud.context.CommandContext
 import org.incendo.cloud.description.Description
 import org.incendo.cloud.execution.CommandExecutionHandler
 import org.incendo.cloud.execution.ExecutionCoordinator
 import org.incendo.cloud.parser.flag.CommandFlag
-import org.incendo.cloud.parser.standard.EitherParser
-import org.incendo.cloud.parser.standard.EnumParser
-import org.incendo.cloud.parser.standard.IntegerParser
 import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
 
 class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: ImperiumConfig) :
-    PluginAnnotationScanner<Void> {
+    PluginAnnotationProcessor<Void> {
     private val clientCommandManager = createArcCommandManager(plugin)
     private val serverCommandManager = createArcCommandManager(plugin)
     private var initialized = false
 
-    override fun scan(instance: Any): Optional<Void> {
+    override fun process(instance: Any): Optional<Void> {
         if (!initialized) {
             clientCommandManager.initialize(Vars.netServer.clientCommands)
             serverCommandManager.initialize(ServerControl.instance.handler)
@@ -98,7 +93,7 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
     }
 
     private fun parse(
-        manager: ArcCommandManager<CommandSender>,
+        manager: MindustryCommandManager<CommandSender>,
         container: Any,
         function: KFunction<*>,
         annotation: ImperiumCommand
@@ -162,7 +157,7 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> createCommandComponent(
-        manager: ArcCommandManager<CommandSender>,
+        manager: MindustryCommandManager<CommandSender>,
         parameter: KParameter,
         base: List<String>
     ): TypedCommandComponent<CommandSender, T> {
@@ -170,7 +165,9 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
         val parameters = manager.parserRegistry().parseAnnotations(token, parameter.annotations)
         return TypedCommandComponent.builder<CommandSender, T>()
             .name(parameter.name!!)
-            .parser(manager.parserRegistry().createParser(token, parameters).get())
+            .parser(
+                manager.parserRegistry().createParser(token, parameters).getOrNull()
+                    ?: error("No parser found for type: ${parameter.type.javaType}"))
             .valueType(token)
             .required(!parameter.isOptional)
             .description(createArgumentDescription(base, parameter.name!!))
@@ -180,7 +177,7 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
 
     @Suppress("UNCHECKED_CAST")
     private fun <T : Any> createFlagComponent(
-        manager: ArcCommandManager<CommandSender>,
+        manager: MindustryCommandManager<CommandSender>,
         parameter: KParameter,
         base: List<String>,
         flag: Flag
@@ -189,7 +186,7 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
             throw IllegalArgumentException("A value flag must be optional: ${parameter.name}")
         }
         val builder =
-            CommandFlag.builder(parameter.name!!)
+            CommandFlag.builder<CommandSender>(parameter.name!!)
                 .withAliases(if (flag.alias.isNotBlank()) listOf(flag.alias) else emptyList())
                 .withDescription(createArgumentDescription(base, parameter.name!!))
         return if (parameter.type.classifier == Boolean::class && !parameter.isOptional) {
@@ -259,24 +256,20 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
     }
 
     private fun createArcCommandManager(plugin: MindustryPlugin) =
-        ArcCommandManager(
-                plugin, ExecutionCoordinator.asyncCoordinator(), SenderMapper.identity()) {
-                    DescriptionFacade.localized(it.textDescription(), config.language)
-                }
+        MindustryCommandManager(
+                plugin, ExecutionCoordinator.asyncCoordinator(), SenderMapper.identity())
             .apply {
+                descriptionMapper {
+                    DescriptionFacade.translated(it.textDescription(), config.language)
+                }
                 settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)
                 captionRegistry().registerProvider(TranslationBundle.core(CommandSender::getLocale))
-                captionFormatter(CaptionFormatter.placeholderReplacing())
+                /*
                 captionRegistry()
                     .registerProvider(
                         TranslationBundle.resourceBundle(
                             "com/xpdustry/imperium/mindustry/cloud_bundle",
                             CommandSender::getLocale))
-
-                parserRegistry()
-                    .registerParser(
-                        EitherParser.eitherParser(
-                            EnumParser.enumParser(Rotation::class.java),
-                            IntegerParser.integerParser()))
+                 */
             }
 }

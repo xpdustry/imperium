@@ -15,13 +15,25 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command
+package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class ImperiumCommand(val path: Array<String>, val rank: Rank = Rank.EVERYONE)
+// TODO
+//  Jason:
+//   I plan on moving this to a centralised file,
+//   with other moderation based mindustry commands in the future #142
+class AdminToggle : ImperiumApplication.Listener {
 
-val ImperiumCommand.name: String
-    get() = path[0]
+    @ImperiumCommand(["admin"], Rank.OVERSEER)
+    @ClientSide
+    fun onAdminToggleCommand(sender: CommandSender) {
+        sender.player.admin = !sender.player.admin
+        sender.player.sendMessage(
+            "[accent]Your admin status has been set to ${sender.player.admin}")
+    }
+}

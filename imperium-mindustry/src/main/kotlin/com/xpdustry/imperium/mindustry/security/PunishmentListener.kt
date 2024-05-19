@@ -18,7 +18,9 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
+import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -31,23 +33,35 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
+import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.launch
 import mindustry.Vars
+import mindustry.game.EventType
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Call
+import mindustry.gen.Player
+import mindustry.net.Administration
+import mindustry.world.blocks.logic.LogicBlock
+import mindustry.world.blocks.logic.MessageBlock
 
+// TODO PunishmentListener should cache all non-ban punishments of online players
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val messenger = instances.get<Messenger>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val freezes = instances.get<FreezeManager>()
-    private val freezeMessageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
+    private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
     private val renderer = instances.get<TimeRenderer>()
+    private val mutes = PlayerMap<Mute>(instances.get())
 
     override fun onImperiumInit() {
         // TODO Properly notify the target when it gets punished by a non-ban punishment
@@ -87,24 +101,92 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
         }
 
+        messenger.consumer<PunishmentMessage> { message ->
+            val punishment = punishments.findBySnowflake(message.snowflake) ?: return@consumer
+            if (punishment.type != Punishment.Type.MUTE) {
+                return@consumer
+            }
+            Entities.getPlayersAsync().forEach { player ->
+                ImperiumScope.MAIN.launch {
+                    val user = users.getByIdentity(player.identity)
+                    if (user.snowflake != punishment.target) return@launch
+                    runMindustryThread {
+                        when (message.type) {
+                            PunishmentMessage.Type.CREATE ->
+                                mutes[player] =
+                                    Mute(
+                                        punishment.snowflake,
+                                        punishment.reason,
+                                        punishment.expiration)
+                            PunishmentMessage.Type.PARDON -> mutes.remove(player)
+                        }
+                    }
+                }
+            }
+        }
+
         Vars.netServer.admins.addActionFilter { action ->
             val freeze = freezes.getFreeze(action.player) ?: return@addActionFilter true
 
-            if (freezeMessageCooldowns.incrementAndCheck(action.player.uuid())) {
-                action.player.sendMessage(
-                    buildString {
-                        appendLine(
-                            "You are [cyan]Frozen[white]! You can't interact with anything until a moderator unfreezes you.")
-                        appendLine("Reason: \"${freeze.reason}\"")
-                        if (freeze.punishment != null) {
-                            appendLine("[lightgray]ID: ${freeze.punishment}")
-                        }
-                    })
-            }
+            tryNotifyPlayer(
+                action.player,
+                """
+                You are [cyan]Frozen[white]! You can't interact with anything for a while.
+                Reason: "${freeze.reason}"
+                ${if (freeze.punishment != null) "[lightgray]ID: ${freeze.punishment}" else ""}
+                """
+                    .trimIndent())
 
             return@addActionFilter false
         }
+
+        Vars.netServer.admins.addActionFilter { action ->
+            val mute = mutes[action.player] ?: return@addActionFilter true
+            if (mute.expiration != null && Instant.now() > mute.expiration) {
+                mutes.remove(action.player)
+                return@addActionFilter true
+            }
+
+            if ((action.type == Administration.ActionType.configure && action.config is String) ||
+                (action.type == Administration.ActionType.placeBlock &&
+                    (action.block is MessageBlock || action.block is LogicBlock))) {
+                tryNotifyPlayer(
+                    action.player,
+                    """
+                    You are [cyan]Muted[white]! You can't build nor configure blocks that can display text for a while.
+                    Reason: "${mute.reason}"
+                    [lightgray]ID: ${mute.punishment}
+                    """
+                        .trimIndent())
+                return@addActionFilter false
+            }
+
+            return@addActionFilter true
+        }
     }
+
+    @EventHandler
+    fun onPlayerJoin(event: EventType.PlayerJoin) =
+        ImperiumScope.MAIN.launch {
+            val mute =
+                punishments
+                    .findAllByIdentity(event.player.identity)
+                    .filter { it.type == Punishment.Type.MUTE && !it.expired }
+                    .maxByOrNull { it.expiration ?: Instant.MIN }
+            if (mute != null) {
+                runMindustryThread {
+                    mutes[event.player] = Mute(mute.snowflake, mute.reason, mute.expiration)
+                }
+            }
+        }
+
+    private fun tryNotifyPlayer(player: Player, message: String) {
+        if (messageCooldowns.incrementAndCheck(player.uuid())) {
+            player.sendMessage(message)
+        }
+    }
+
+    data class Mute(val punishment: Snowflake, val reason: String, val expiration: Instant?)
 
     companion object {
         private val logger by LoggerDelegate()

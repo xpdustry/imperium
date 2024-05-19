@@ -18,8 +18,8 @@
 package com.xpdustry.imperium.mindustry.misc
 
 enum class Rotation {
-    UP,
     RIGHT,
-    DOWN,
-    LEFT
+    UP,
+    LEFT,
+    DOWN
 }

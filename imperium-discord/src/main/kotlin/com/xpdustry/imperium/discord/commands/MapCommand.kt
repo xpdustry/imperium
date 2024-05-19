@@ -29,10 +29,12 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.discord.command.ButtonCommand
 import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
@@ -184,12 +186,14 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     @ButtonCommand(MAP_REJECT_BUTTON, Rank.ADMIN)
+    @AlsoAllow(Permission.MANAGE_MAP)
     private suspend fun onMapReject(actor: InteractionSender.Button) {
         updateSubmissionEmbed(actor, Color.RED, "rejected")
         actor.respond("Map submission rejected!")
     }
 
     @ButtonCommand(MAP_UPLOAD_BUTTON, Rank.ADMIN)
+    @AlsoAllow(Permission.MANAGE_MAP)
     private suspend fun onMapUpload(actor: InteractionSender.Button) {
         val attachment = actor.message.attachments.first()
         val meta =
@@ -406,6 +410,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     @ImperiumCommand(["map", "gamemode", "add"], Rank.MODERATOR)
+    @AlsoAllow(Permission.MANAGE_MAP)
     suspend fun onMapGamemodeAdd(
         actor: InteractionSender.Slash,
         id: Snowflake,
@@ -426,6 +431,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     @ImperiumCommand(["map", "gamemode", "remove"], Rank.MODERATOR)
+    @AlsoAllow(Permission.MANAGE_MAP)
     suspend fun onMapGamemodeRemove(
         actor: InteractionSender.Slash,
         id: Snowflake,
@@ -445,6 +451,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     @ImperiumCommand(["map", "delete"], Rank.ADMIN)
+    @AlsoAllow(Permission.MANAGE_MAP)
     suspend fun onMapDelete(actor: InteractionSender.Slash, id: Snowflake) {
         if (maps.deleteMapBySnowflake(id)) {
             actor.respond("Map deleted!")

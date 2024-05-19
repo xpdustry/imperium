@@ -17,21 +17,21 @@
  */
 package com.xpdustry.imperium.mindustry.permission
 
-import com.xpdustry.distributor.permission.PermissionTree
-import com.xpdustry.distributor.permission.TriState
-import com.xpdustry.distributor.permission.rank.EnumRankNode
-import com.xpdustry.distributor.permission.rank.RankNode
-import com.xpdustry.distributor.permission.rank.RankPermissionSource
+import com.xpdustry.distributor.api.permission.MutablePermissionTree
+import com.xpdustry.distributor.api.permission.PermissionTree
+import com.xpdustry.distributor.api.permission.rank.EnumRankNode
+import com.xpdustry.distributor.api.permission.rank.RankNode
+import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.config.MindustryConfig
 
 class ImperiumRankPermissionSource(private val config: MindustryConfig) : RankPermissionSource {
     override fun getRankPermissions(node: RankNode): PermissionTree {
-        val tree = PermissionTree.create()
-        tree.setPermission("imperium.gamemode.${config.gamemode.name.lowercase()}", TriState.TRUE)
+        val tree = MutablePermissionTree.create()
+        tree.setPermission("imperium.gamemode.${config.gamemode.name.lowercase()}", true)
         if (node is EnumRankNode<*> && node.value is Rank) {
-            for (rank in (node.value as Rank).getRanksBelow()) {
-                tree.setPermission("imperium.rank.${rank.name.lowercase()}", TriState.TRUE)
+            (node.value as Rank).getRanksBelow().forEach { rank ->
+                tree.setPermission("imperium.rank.${rank.name.lowercase()}", true)
             }
         }
         return tree

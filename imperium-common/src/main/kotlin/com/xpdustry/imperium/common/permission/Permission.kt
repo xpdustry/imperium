@@ -15,13 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.command
+package com.xpdustry.imperium.common.permission
 
-import com.xpdustry.imperium.common.account.Rank
-
-@Target(AnnotationTarget.FUNCTION)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class ImperiumCommand(val path: Array<String>, val rank: Rank = Rank.EVERYONE)
-
-val ImperiumCommand.name: String
-    get() = path[0]
+// TODO Migrate all commands to permissions, then refactor rank system to a role system
+enum class Permission {
+    MANAGE_MAP
+}

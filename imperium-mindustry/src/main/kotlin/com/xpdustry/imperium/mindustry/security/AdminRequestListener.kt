@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
-import com.xpdustry.distributor.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication

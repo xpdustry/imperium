@@ -19,8 +19,8 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.graphics.Color
 import arc.math.Mathf
-import com.xpdustry.distributor.annotation.method.EventHandler
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -139,10 +139,10 @@ class ExcavateCommand(instances: InstanceManager) :
     fun onExcavateSelectCommand(sender: CommandSender) {
         if (areas[sender.player] != null) {
             areas.remove(sender.player)
-            sender.sendMessage("You have cancelled selecting excavation points!")
+            sender.reply("You have cancelled selecting excavation points!")
         } else {
             areas[sender.player] = ExcavateArea()
-            sender.sendMessage("You have started selecting excavation points!")
+            sender.reply("You have started selecting excavation points!")
         }
     }
 
@@ -160,7 +160,7 @@ class ExcavateCommand(instances: InstanceManager) :
         val area = areas[sender.player]
 
         if (area == null || area.p1 == UNSET_POINT || area.p2 == UNSET_POINT) {
-            sender.sendMessage("You have not selected both points yet!")
+            sender.error("You have not selected both points yet!")
             return
         }
 
@@ -174,7 +174,7 @@ class ExcavateCommand(instances: InstanceManager) :
         }
 
         if (price == 0) {
-            sender.sendWarning("[scarlet]The area you selected does no contain any walls.")
+            sender.error("[scarlet]The area you selected does no contain any walls.")
             return
         }
 
@@ -182,7 +182,7 @@ class ExcavateCommand(instances: InstanceManager) :
         if (items.has(item, price)) {
             Vars.state.rules.defaultTeam.items().remove(item, price)
         } else {
-            sender.sendMessage(
+            sender.error(
                 """
                 [scarlet]You do not have enough ${item.name} to do that.
                 You currently have [orange]${items.get(item)}[] ${item.name} but [orange]${price - items.get(item)}[] more is needed.

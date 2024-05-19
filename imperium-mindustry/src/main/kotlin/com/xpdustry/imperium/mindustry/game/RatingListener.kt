@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
-import com.xpdustry.distributor.command.CommandSender
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -91,7 +91,7 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
         val user = users.getByIdentity(sender.player.identity).snowflake
         val map = Vars.state.map.snowflake
         if (map == null || maps.findMapBySnowflake(map) == null) {
-            runMindustryThread { sender.sendWarning("This map can't be rated.") }
+            runMindustryThread { sender.error("This map can't be rated.") }
         } else {
             val rating = maps.findRatingByMapAndUser(map, user)
             runMindustryThread {
