@@ -19,7 +19,6 @@ package com.xpdustry.imperium.common.geometry
 
 import java.util.LinkedList
 
-// TODO Index this shit
 class ClusterManager<T : Any>(private val listener: Listener<T>) {
     val clusters: List<Cluster<T>>
         get() = _clusters

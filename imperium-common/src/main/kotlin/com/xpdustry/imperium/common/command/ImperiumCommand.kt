@@ -25,6 +25,3 @@ annotation class ImperiumCommand(val path: Array<String>, val rank: Rank = Rank.
 
 val ImperiumCommand.name: String
     get() = path[0]
-
-val ImperiumCommand.pathWithoutAliases: List<String>
-    get() = path.map { it.split("|")[0] }
