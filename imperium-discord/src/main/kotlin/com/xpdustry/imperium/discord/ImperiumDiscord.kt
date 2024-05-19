@@ -23,7 +23,7 @@ import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.discord.account.RoleSyncListener
-import com.xpdustry.imperium.discord.bridge.BridgeListener
+import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
@@ -56,7 +56,7 @@ fun main() {
     application.instances.createAll()
 
     sequenceOf(
-            BridgeListener::class,
+            MindustryBridgeListener::class,
             PingCommand::class,
             ServerCommand::class,
             ReportListener::class,
