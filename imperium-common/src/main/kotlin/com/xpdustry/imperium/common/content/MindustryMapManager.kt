@@ -229,9 +229,15 @@ class SimpleMindustryMapManager(
                     it[MindustryMapTable.author] = author
                     it[MindustryMapTable.width] = width
                     it[MindustryMapTable.height] = height
+                    it[lastUpdate] = Instant.now()
                     it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
                 }
-            rows != 0
+            if (rows != 0) {
+                messenger.publish(MapReloadMessage(getMapGamemodes(snowflake)))
+                return@newSuspendTransaction true
+            } else {
+                return@newSuspendTransaction false
+            }
         }
 
     override suspend fun addMapGame(
