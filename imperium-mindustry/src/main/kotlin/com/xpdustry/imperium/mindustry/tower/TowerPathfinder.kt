@@ -35,15 +35,8 @@ class TowerPathfinder(plugin: MindustryPlugin) : Pathfinder() {
     private val towerPassableFloors = Collections.newSetFromMap<Floor>(IdentityHashMap())
 
     init {
-        val costType = costTypes.get(costGround)
-        costTypes.set(costGround) { team, tile ->
-            val towerPassable = tile and BIT_MASK_TOWER_PASSABLE != 0
-            var cost = costType.getCost(team, tile)
-            if (!towerPassable && team == Vars.state.rules.waveTeam.id && cost >= 0) {
-                cost += 6000
-            }
-            return@set cost
-        }
+        wrapPathCost(costGround)
+        wrapPathCost(costLegs)
 
         DistributorProvider.get().eventBus.subscribe(
             WorldLoadEvent::class.java, Priority.HIGH, plugin) {
@@ -64,6 +57,18 @@ class TowerPathfinder(plugin: MindustryPlugin) : Pathfinder() {
         val towerPassable =
             (if (tile.floor() in towerPassableFloors) BIT_MASK_TOWER_PASSABLE else 0)
         return super.packTile(tile) or towerPassable
+    }
+
+    private fun wrapPathCost(pathCostType: Int) {
+        val costType = costTypes.get(pathCostType)
+        costTypes.set(pathCostType) { team, tile ->
+            val towerPassable = tile and BIT_MASK_TOWER_PASSABLE != 0
+            var cost = costType.getCost(team, tile)
+            if (!towerPassable && team == Vars.state.rules.waveTeam.id && cost >= 0) {
+                cost += 6000
+            }
+            return@set cost
+        }
     }
 
     companion object {
