@@ -36,6 +36,7 @@ import kotlin.time.Duration.Companion.seconds
 
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
+    val testing: Boolean = false,
     val translator: TranslatorConfig = TranslatorConfig.None,
     val database: DatabaseConfig = DatabaseConfig.SQL(),
     val messenger: MessengerConfig = MessengerConfig.None,

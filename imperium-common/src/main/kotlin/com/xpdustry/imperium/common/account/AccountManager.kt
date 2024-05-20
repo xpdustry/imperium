@@ -19,6 +19,7 @@ package com.xpdustry.imperium.common.account
 
 import com.google.common.annotations.VisibleForTesting
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.hash.Argon2HashFunction
 import com.xpdustry.imperium.common.hash.Argon2Params
@@ -29,6 +30,7 @@ import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
@@ -45,6 +47,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
@@ -146,7 +149,8 @@ sealed interface AccountResult {
 class SimpleAccountManager(
     private val provider: SQLProvider,
     private val generator: SnowflakeGenerator,
-    private val messenger: Messenger
+    private val messenger: Messenger,
+    private val config: ImperiumConfig
 ) : AccountManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -157,6 +161,24 @@ class SimpleAccountManager(
                 AccountAchievementTable,
                 LegacyAccountTable,
                 LegacyAccountAchievementTable)
+
+            if (config.testing) {
+                if (AccountTable.exists { AccountTable.username eq "test" }) {
+                    return@newTransaction
+                }
+                val password = runBlocking {
+                    GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS)
+                }
+                AccountTable.insert {
+                    it[id] = generator.generate()
+                    it[username] = "test"
+                    it[passwordHash] = password.hash
+                    it[passwordSalt] = password.salt
+                    it[rank] = Rank.OWNER
+                }
+                LOGGER.warn(
+                    "Testing mode enabled, created test account, with credentials {}", "test:test")
+            }
         }
     }
 
@@ -534,6 +556,8 @@ class SimpleAccountManager(
             completed = this[AccountAchievementTable.completed])
 
     companion object {
+        private val LOGGER by LoggerDelegate()
+
         private val SESSION_TOKEN_DURATION = 7.days
 
         private val SESSION_TOKEN_PARAMS =

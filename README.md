@@ -29,6 +29,10 @@ You will simply have to run `docker-compose up -d` once, then update the [config
 First, create the base configuration file named `config.yaml` in the directory `imperium-mindustry/build/tmp/runMindustryServer/config/mods/imperium`,
 with the following content:
 ```yaml
+# Enable this so the server create presets for easier testing, look out for warnings in the console
+# DO NOT USE IT IN PRODUCTION
+testing: true
+
 mindustry:
   gamemode: SURVIVAL
 ```
