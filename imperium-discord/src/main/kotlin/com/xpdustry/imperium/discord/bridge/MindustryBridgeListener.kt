@@ -37,7 +37,7 @@ import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
-class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
     private val config = instances.get<DiscordConfig>()
@@ -104,6 +104,6 @@ class BridgeListener(instances: InstanceManager) : ImperiumApplication.Listener 
     }
 
     companion object {
-        private val LOGGER = logger<BridgeListener>()
+        private val LOGGER = logger<MindustryBridgeListener>()
     }
 }
