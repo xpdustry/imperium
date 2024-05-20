@@ -83,6 +83,7 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val downgrade = downgrades[event.unit.type] ?: return
             val unit = downgrade.create(Vars.state.rules.waveTeam)
             unit.set(event.unit.x, event.unit.y)
+            unit.rotation(event.unit.rotation())
             unit.apply(
                 StatusEffects.slow,
                 MindustryTimeUnit.TICKS.convert(5L, MindustryTimeUnit.SECONDS).toFloat())
