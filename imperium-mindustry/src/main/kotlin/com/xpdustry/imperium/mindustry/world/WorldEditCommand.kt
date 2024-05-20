@@ -87,7 +87,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     floor?.let { tile.setFloorNet(it.asFloor()) }
                     overlay?.let { tile.setOverlayNet(it.asFloor()) }
                     block?.let {
-                        if (override || tile.block().isAir) {
+                        if (override || tile.build != null) {
                             tile.setNet(Blocks.air)
                             tile.setNet(it, team, rotation.ordinal)
                         }
