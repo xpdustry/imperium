@@ -25,7 +25,6 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.time.Duration
@@ -33,30 +32,22 @@ import java.util.Locale
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
-class DeeplTranslator(config: ImperiumConfig, version: ImperiumVersion) :
+class DeeplTranslator(config: TranslatorConfig.DeepL, version: ImperiumVersion) :
     Translator, ImperiumApplication.Listener {
-    private val translator: com.deepl.api.Translator
-    private val cache: Cache<TranslatorKey, String>
+
+    private val translator =
+        com.deepl.api.Translator(
+            config.deeplToken.value,
+            TranslatorOptions()
+                .setTimeout(Duration.ofSeconds(3L))
+                .setAppInfo("Imperium", version.toString()),
+        )
+
+    private val cache: Cache<TranslatorKey, String> =
+        CacheBuilder.newBuilder().maximumSize(1000).expireAfterWrite(Duration.ofMinutes(5)).build()
+
     private lateinit var sourceLanguages: List<Locale>
     private lateinit var targetLanguages: List<Locale>
-
-    init {
-        if (config.translator !is TranslatorConfig.DeepL) {
-            throw IllegalArgumentException("Invalid translator config")
-        }
-        translator =
-            com.deepl.api.Translator(
-                config.translator.token.value,
-                TranslatorOptions()
-                    .setTimeout(Duration.ofSeconds(3L))
-                    .setAppInfo("Imperium", version.toString()),
-            )
-        cache =
-            CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterWrite(Duration.ofMinutes(5))
-                .build()
-    }
 
     override fun onImperiumInit() =
         runBlocking(ImperiumScope.MAIN.coroutineContext) {

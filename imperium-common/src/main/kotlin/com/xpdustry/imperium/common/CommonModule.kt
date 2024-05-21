@@ -53,6 +53,7 @@ import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.translator.DeeplTranslator
+import com.xpdustry.imperium.common.translator.LibreTranslateTranslator
 import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.user.SimpleUserManager
 import com.xpdustry.imperium.common.user.UserManager
@@ -71,10 +72,10 @@ fun MutableInstanceManager.registerCommonModule() {
     provider(ImperiumConfigProvider())
 
     provider<Translator> {
-        val config = get<ImperiumConfig>().translator
-        when (config) {
+        when (val config = get<ImperiumConfig>().translator) {
             is TranslatorConfig.None -> Translator.Noop
-            is TranslatorConfig.DeepL -> DeeplTranslator(get(), get())
+            is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(config, get())
+            is TranslatorConfig.DeepL -> DeeplTranslator(config, get())
         }
     }
 

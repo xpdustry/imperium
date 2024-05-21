@@ -64,7 +64,9 @@ data class NetworkConfig(
 sealed interface TranslatorConfig {
     data object None : TranslatorConfig
 
-    data class DeepL(val token: Secret) : TranslatorConfig
+    data class LibreTranslate(val ltEndpoint: URL, val ltToken: Secret) : TranslatorConfig
+
+    data class DeepL(val deeplToken: Secret) : TranslatorConfig
 }
 
 sealed interface DatabaseConfig {
