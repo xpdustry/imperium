@@ -25,7 +25,6 @@ import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
-import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
@@ -33,7 +32,6 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
-import com.xpdustry.imperium.mindustry.localization.DistributorLocalisationSource
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
@@ -62,8 +60,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
         get<ImperiumConfig>().mindustry
             ?: error("The current server configuration is not Mindustry")
     }
-
-    provider<LocalizationSource> { DistributorLocalisationSource(get()) }
 
     provider<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
 
