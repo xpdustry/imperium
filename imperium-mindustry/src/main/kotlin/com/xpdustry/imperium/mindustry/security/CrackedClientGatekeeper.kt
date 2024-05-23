@@ -30,7 +30,7 @@ private val CRACKED_CLIENT_USERNAMES =
         "freetp.org",
         "goldberg",
     )
-    
+
 // FINISHME Jason: This should use regex, but im lazy and this works for now...
 private val USERNAME_BLACKLIST =
     setOf(
@@ -55,8 +55,7 @@ private val USERNAME_BLACKLIST =
         "негритянка",
         "негритос",
         "глупый",
-        "пошел ты нахер"
-    )
+        "пошел ты нахер")
 
 // Go figure why but some people are using cracked clients on a free game... Incredible.
 class NameGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
