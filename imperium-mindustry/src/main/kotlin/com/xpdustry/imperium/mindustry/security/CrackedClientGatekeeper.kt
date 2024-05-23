@@ -73,7 +73,7 @@ class NameGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
         } else if (context.name.lowercase() in USERNAME_BLACKLIST) {
             return GatekeeperResult.Failure(
                 """
-                Your [accent]current player-name[white] is [#f]not allowed[white] on this server.
+                Your [accent]current player-name[white] ${context.name}[white] is [#f]not allowed[white] on this server.
                 Please [green[change it[white] to something else.
                 """
                     .trimIndent(),
