@@ -30,9 +30,36 @@ private val CRACKED_CLIENT_USERNAMES =
         "freetp.org",
         "goldberg",
     )
+    
+// FINISHME Jason: This should use regex, but im lazy and this works for now...
+private val USERNAME_BLACKLIST =
+    setOf(
+        "adolf hilter",
+        "hitler",
+        "asshole",
+        "idiot",
+        "nigger",
+        "nigga",
+        "negr",
+        "neger",
+        "niga",
+        "stupid",
+        "fuck you",
+        "адольф гитлер",
+        "гитлер",
+        "проказник",
+        "идиот",
+        "ниггер",
+        "нига",
+        "негр",
+        "негритянка",
+        "негритос",
+        "глупый",
+        "пошел ты нахер"
+    )
 
 // Go figure why but some people are using cracked clients on a free game... Incredible.
-class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
+class NameGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         if (context.name.lowercase() in CRACKED_CLIENT_USERNAMES) {
             return GatekeeperResult.Failure(
@@ -40,6 +67,14 @@ class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
                 [green]Mindustry is a free and open source game.
                 [white]It is available on [royal]https://anuke.itch.io/mindustry[].
                 [red]Please, get a legit copy of the game.
+                """
+                    .trimIndent(),
+            )
+        } else if (context.name.lowercase() in USERNAME_BLACKLIST) {
+            return GatekeeperResult.Failure(
+                """
+                Your [accent]current player-name[white] is [#f]not allowed[white] on this server.
+                Please [green[change it[white] to something else.
                 """
                     .trimIndent(),
             )
