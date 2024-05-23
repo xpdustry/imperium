@@ -74,7 +74,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         pipeline.register(
             "punishment", Priority.NORMAL, PunishmentGatekeeper(punishments, renderer))
 
-        pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
+        pipeline.register("cracked-client", Priority.NORMAL, NameGatekeeper())
         pipeline.register("links", Priority.NORMAL) { context ->
             if (context.name.containsLink()) {
                 GatekeeperResult.Failure("Your name cannot contain a link.")
