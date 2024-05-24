@@ -23,14 +23,12 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
-import com.xpdustry.imperium.common.localization.LocalizationSource
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.ButtonCommandRegistry
 import com.xpdustry.imperium.discord.command.SlashCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
-import com.xpdustry.imperium.discord.localization.BundleLocalizationSource
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
@@ -58,6 +56,4 @@ fun MutableInstanceManager.registerDiscordModule() {
         ImperiumVersion.parse(
             this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
     }
-
-    provider<LocalizationSource> { BundleLocalizationSource(get()) }
 }
