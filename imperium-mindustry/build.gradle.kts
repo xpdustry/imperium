@@ -21,12 +21,11 @@ toxopid {
 
 dependencies {
     api(projects.imperiumCommon)
-
     mindustryDependencies()
-    implementation(libs.distributor4.command.cloud)
+    implementation(libs.distributor.command.cloud)
     implementation(libs.bundles.cloud)
-    compileOnly(libs.distributor4.common)
-    compileOnly(libs.distributor4.permission.rank)
+    compileOnly(libs.distributor.common)
+    compileOnly(libs.distributor.permission.rank)
     compileOnly(libs.nohorny)
     implementation(libs.jsoup)
 }
@@ -88,28 +87,28 @@ val downloadKotlinRuntime =
         )
     }
 
-val downloadDistributor4LoggingSimple =
-    tasks.register<GithubArtifactDownload>("downloadDistributor4LoggingSimple") {
+val downloadDistributorLoggingSimple =
+    tasks.register<GithubArtifactDownload>("downloadDistributorLoggingSimple") {
         user.set("xpdustry")
         repo.set("distributor")
         name.set("distributor-logging-simple.jar")
-        version.set(libs.versions.distributor4.map { "v$it" })
+        version.set(libs.versions.distributor.map { "v$it" })
     }
 
-val downloadDistributor4Common =
-    tasks.register<GithubArtifactDownload>("downloadDistributor4Common") {
+val downloadDistributorCommon =
+    tasks.register<GithubArtifactDownload>("downloadDistributorCommon") {
         user.set("xpdustry")
         repo.set("distributor")
         name.set("distributor-common.jar")
-        version.set(libs.versions.distributor4.map { "v$it" })
+        version.set(libs.versions.distributor.map { "v$it" })
     }
 
-val downloadDistributor4PermissionRank =
-    tasks.register<GithubArtifactDownload>("downloadDistributor4PermissionRank") {
+val downloadDistributorPermissionRank =
+    tasks.register<GithubArtifactDownload>("downloadDistributorPermissionRank") {
         user.set("xpdustry")
         repo.set("distributor")
         name.set("distributor-permission-rank.jar")
-        version.set(libs.versions.distributor4.map { "v$it" })
+        version.set(libs.versions.distributor.map { "v$it" })
     }
 
 val downloadNoHorny =
@@ -131,8 +130,14 @@ tasks.register<MindustryExec>("runMindustryClient2") {
 }
 
 tasks.runMindustryServer {
-    mods.setFrom(downloadKotlinRuntime, tasks.shadowJar, downloadNoHorny)
-    mods.from(rootProject.file("libs").listFiles())
+    mods.setFrom(
+        downloadKotlinRuntime,
+        tasks.shadowJar,
+        downloadNoHorny,
+        downloadDistributorLoggingSimple,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
+    )
 }
 
 // Second server for testing discovery
@@ -146,8 +151,8 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadKotlinRuntime,
         tasks.shadowJar,
         downloadNoHorny,
-        downloadDistributor4LoggingSimple,
-        downloadDistributor4Common,
-        downloadDistributor4PermissionRank,
+        downloadDistributorLoggingSimple,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }

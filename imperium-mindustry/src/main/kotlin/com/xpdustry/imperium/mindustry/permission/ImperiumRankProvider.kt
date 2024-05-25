@@ -55,7 +55,7 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
 
     override fun getRanks(player: Player): List<RankNode> {
         val rank = cache.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE
-        return listOf(EnumRankNode.linear(rank, { "imperium:" + it.name.lowercase() }, true))
+        return listOf(EnumRankNode.linear(rank, { "imperium-" + it.name.lowercase() }, true))
     }
 
     private suspend fun fetchPlayerRank(player: Player) {

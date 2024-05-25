@@ -42,7 +42,6 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -96,29 +95,6 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             // https://github.com/mindustry-antigrief/mindustry-client/blob/23025185c20d102f3fbb9d9a4c20196cc871d94b/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
             if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2)
             else msg
-        }
-
-        chatMessagePipeline.register("mute", Priority.HIGH) { ctx ->
-            if (ctx.sender == null) {
-                return@register ctx.message
-            }
-            val muted =
-                punishments.findAllByIdentity(ctx.sender.identity).firstOrNull {
-                    !it.expired && it.type == Punishment.Type.MUTE
-                }
-            if (muted != null) {
-                if (ctx.target == ctx.sender) {
-                    ctx.sender.sendMessage(
-                        """
-                        [scarlet]You can't talk. You are currently muted for '${muted.reason}'.
-                        [orange]You can appeal this decision with the punishment id [cyan]${muted.snowflake}[].
-                        """
-                            .trimIndent(),
-                    )
-                }
-                return@register ""
-            }
-            ctx.message
         }
 
         chatMessagePipeline.register("anti-links", Priority.NORMAL) { ctx ->

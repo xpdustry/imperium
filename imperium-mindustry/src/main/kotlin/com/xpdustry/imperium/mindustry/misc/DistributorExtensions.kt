@@ -22,10 +22,17 @@ import arc.struct.ObjectSet
 import arc.struct.Seq
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.collection.MindustryCollections
+import com.xpdustry.distributor.api.gui.Pane
+import com.xpdustry.distributor.api.gui.State
+import com.xpdustry.distributor.api.gui.transform.Transformer
+import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.util.TypeToken
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.reflect.jvm.javaType
+import kotlin.reflect.typeOf
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -33,6 +40,7 @@ import kotlinx.coroutines.withTimeout
 import mindustry.Vars
 import mindustry.entities.EntityGroup
 import mindustry.gen.Entityc
+import mindustry.gen.Player
 
 fun <T> Seq<T>.asList(): List<T> = MindustryCollections.immutableList(this)
 
@@ -55,3 +63,14 @@ suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T)
                 }
         }
     }
+
+// TODO Clean this shit up
+operator fun <P : Pane> Transformer.Context<P>.component1(): P = pane
+
+operator fun <P : Pane> Transformer.Context<P>.component2(): State = state
+
+operator fun <P : Pane> Transformer.Context<P>.component3(): Player = viewer
+
+@Suppress("UNCHECKED_CAST")
+inline fun <reified T> key(name: String): Key<T> =
+    Key.of("imperium", name, TypeToken.of(typeOf<T>().javaType) as TypeToken<T>)

@@ -40,6 +40,7 @@ import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
+import java.util.Locale
 import kotlin.time.Duration
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -71,9 +72,6 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.security))
-        pipeline.register(
-            "punishment", Priority.NORMAL, PunishmentGatekeeper(punishments, renderer))
-
         pipeline.register("cracked-client", Priority.NORMAL, NameGatekeeper())
         pipeline.register("links", Priority.NORMAL) { context ->
             if (context.name.containsLink()) {
@@ -271,7 +269,11 @@ private fun interceptPlayerConnection(
 
         runMindustryThread {
             if (result is GatekeeperResult.Failure) {
-                con.kick(result.reason, result.time, result.silent)
+                con.kick(
+                    result.reason,
+                    result.time,
+                    result.silent,
+                    Locale.forLanguageTag(packet.locale.replace('_', '-')))
                 return@runMindustryThread
             }
 

@@ -15,30 +15,19 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history
+package com.xpdustry.imperium.mindustry.component
 
-import java.time.Instant
-import mindustry.world.Block
+import com.xpdustry.distributor.api.component.Component
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.component.style.ComponentStyle
+import kotlin.time.Duration
 
-data class HistoryEntry(
-    val x: Int,
-    val y: Int,
-    val buildX: Int,
-    val buildY: Int,
-    val author: HistoryAuthor,
-    val block: Block,
-    val type: Type,
-    val rotation: Int,
-    val configuration: HistoryConfig? = null,
-    val virtual: Boolean = false,
-    val timestamp: Instant = Instant.now(),
-) {
-    enum class Type {
-        PLACING,
-        PLACE,
-        BREAKING,
-        ROTATE,
-        BREAK,
-        CONFIGURE,
-    }
+fun duration(duration: Duration, style: ComponentStyle) = DurationComponent(duration, style)
+
+fun duration(duration: Duration, textColor: ComponentColor) =
+    DurationComponent(duration, ComponentStyle.style(textColor))
+
+data class DurationComponent(val duration: Duration, private val style: ComponentStyle) :
+    Component {
+    override fun getStyle() = style
 }

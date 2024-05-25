@@ -11,8 +11,7 @@ java = "17"
 mindustry = "146"
 
 # libraries
-distributor = "3.3.0"
-distributor4 = "4.0.0-beta.3-SNAPSHOT"
+distributor = "4.0.0-beta.3"
 junit = "5.10.2"
 testcontainers = "1.19.8"
 guava = "33.2.0-jre"
@@ -52,11 +51,9 @@ ktor-gradle = "2.3.11"
 
 [libraries]
 # libraries
-distributor4-common = { module = "com.xpdustry:distributor-common", version.ref = "distributor4" }
-distributor4-permission-rank = { module = "com.xpdustry:distributor-permission-rank", version.ref = "distributor4" }
-distributor4-command-cloud = { module = "com.xpdustry:distributor-command-cloud", version.ref = "distributor4" }
-distributor-api = { module = "fr.xpdustry:distributor-api", version.ref = "distributor" }
-distributor-kotlin = { module = "fr.xpdustry:distributor-kotlin", version.ref = "distributor" }
+distributor-common = { module = "com.xpdustry:distributor-common", version.ref = "distributor" }
+distributor-permission-rank = { module = "com.xpdustry:distributor-permission-rank", version.ref = "distributor" }
+distributor-command-cloud = { module = "com.xpdustry:distributor-command-cloud", version.ref = "distributor" }
 junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }

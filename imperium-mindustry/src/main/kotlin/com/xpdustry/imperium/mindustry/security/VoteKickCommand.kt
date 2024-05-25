@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.player.MUUID
@@ -63,6 +64,13 @@ import mindustry.gen.Player
 import mindustry.net.Administration
 import org.incendo.cloud.annotation.specifier.Greedy
 
+data class VotekickEvent(val target: Player, val type: Type) {
+    enum class Type {
+        START,
+        CLOSE
+    }
+}
+
 class VoteKickCommand(instances: InstanceManager) :
     AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", 1.minutes),
     ImperiumApplication.Listener {
@@ -72,7 +80,6 @@ class VoteKickCommand(instances: InstanceManager) :
     private val votekickInterface = createVotekickInterface()
     private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
-    private val freezes = instances.get<FreezeManager>()
     private val recentBans =
         Collections.newSetFromMap(
             buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
@@ -145,7 +152,11 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
-        runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
+        runMindustryThread {
+            DistributorProvider.get()
+                .eventBus
+                .post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
+        }
         val yes = mutableSetOf<MindustryUUIDAsLong>()
         val nay = mutableSetOf<MindustryUUIDAsLong>()
         for ((voter, vote) in session.voters) {
@@ -161,7 +172,12 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionFailure(session: VoteManager.Session<Context>) {
-        runMindustryThread { freezes.setTemporaryFreeze(session.objective.target, null) }
+        runMindustryThread {
+            DistributorProvider.get()
+                .eventBus
+                .post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
+        }
+        // TODO Move to PunishmentListener
         session.objective.target.sendMessage(
             "[sky]You are no longer involved in a vote kick, you have been unfrozen.")
     }
@@ -181,10 +197,9 @@ class VoteKickCommand(instances: InstanceManager) :
                 "[scarlet]You are limited to one votekick per minute. Please try again later.")
             return false
         }
-        freezes.setTemporaryFreeze(
-            objective.target,
-            FreezeManager.Freeze(
-                "[sky]You are involved in a vote kick so you will be temporarily frozen. Being frozen prevents you from building or interacting. You will be un-frozen once the vote kick ends."))
+        DistributorProvider.get()
+            .eventBus
+            .post(VotekickEvent(objective.target, VotekickEvent.Type.START))
         return true
     }
 

@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.snowflake.timestamp
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
+import kotlin.time.toKotlinDuration
 import kotlinx.serialization.Serializable
 
 data class Punishment(
@@ -41,8 +42,11 @@ data class Punishment(
         get() =
             if (duration.isInfinite()) null else snowflake.timestamp.plus(duration.toJavaDuration())
 
-    val permanent: Boolean
-        get() = duration.isInfinite()
+    val remaining: Duration?
+        get() {
+            val expiration = expiration ?: return null
+            return java.time.Duration.between(Instant.now(), expiration).toKotlinDuration()
+        }
 
     data class Pardon(val timestamp: Instant, val reason: String)
 
