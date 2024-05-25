@@ -17,6 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.mindustry.processing.Processor
 
 private val CRACKED_CLIENT_USERNAMES =
@@ -31,7 +35,6 @@ private val CRACKED_CLIENT_USERNAMES =
         "goldberg",
     )
 
-// FINISHME Jason: This should use regex, but im lazy and this works for now...
 private val USERNAME_BLACKLIST =
     setOf(
         "adolf hilter",
@@ -57,6 +60,8 @@ private val USERNAME_BLACKLIST =
         "глупый",
         "пошел ты нахер")
 
+private val pattern = Regex("(n|и|i|н){1,32}((g{2,32}|г{2,32}|q){1,32}|[gqг]{2,32})[e3рr]{1,32}") // Regex to check for both english and russian n-word
+    
 // Go figure why but some people are using cracked clients on a free game... Incredible.
 class NameGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
@@ -69,7 +74,7 @@ class NameGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
                 """
                     .trimIndent(),
             )
-        } else if (context.name.lowercase() in USERNAME_BLACKLIST) {
+        } else if (context.name.lowercase() in USERNAME_BLACKLIST || pattern.matches(context.name.lowercase())) {
             return GatekeeperResult.Failure(
                 """
                 Your [accent]current player-name[white] ${context.name}[white] is [#f]not allowed[white] on this server.
@@ -81,3 +86,23 @@ class NameGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
         return GatekeeperResult.Success
     }
 }
+
+internal class BlacklistCommand() : ImperiumApplication.Listener {
+    
+    @ImperiumCommand(["name-blacklist", "add"], Rank.MODERATOR)
+    suspend fun onNameAddCommand(
+        actor: InteractionSender.Slash,
+        name: String
+    ) {
+        database.add(name) // this totally works legit trust
+     }
+
+    @ImperiumCommand(["name-blacklist", "remove"], Rank.MODERATOR)
+    suspend fun onNameRemoveCommand(
+        actor: InteractionSender.Slash,
+        name: String
+    ) {
+        database.remove(name) // this also totally works
+    }
+}
+// Idk i cant do anything more, so this is the last i can do, goodluck phinner!
