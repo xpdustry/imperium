@@ -22,10 +22,12 @@ import arc.ApplicationListener
 import arc.Core
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
+import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
 import com.xpdustry.distributor.api.permission.rank.RankSource
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
-import com.xpdustry.distributor.api.translation.ResourceTranslationSource
+import com.xpdustry.distributor.api.translation.BundleTranslationSource
+import com.xpdustry.distributor.api.translation.ResourceTranslationBundles
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
@@ -45,6 +47,7 @@ import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
 import com.xpdustry.imperium.mindustry.chat.HereCommand
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
+import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
@@ -117,17 +120,25 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         DistributorProvider.get()
             .globalTranslationSource
             .register(
-                ResourceTranslationSource.create(
-                        application.instances.get<ImperiumConfig>().language)
+                BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language)
                     .apply {
                         application.instances.get<ImperiumConfig>().supportedLanguages.forEach {
+                            locale ->
                             registerAll(
-                                it,
-                                "com/xpdustry/imperium/bundles/bundle",
-                                ImperiumPlugin::class.java.classLoader,
-                            )
+                                ResourceTranslationBundles.fromClasspath(
+                                    locale,
+                                    "com/xpdustry/imperium/bundles/bundle",
+                                    ImperiumPlugin::class.java.classLoader))
                         }
                     })
+
+        DistributorProvider.get()
+            .serviceManager
+            .register(
+                this,
+                ComponentRendererProvider::class.java,
+                ImperiumComponentRendererProvider(application.instances.get()),
+            )
 
         sequenceOf(
                 ConventionListener::class,

@@ -17,6 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
+import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.audience.Audience
+import com.xpdustry.distributor.api.component.ComponentLike
+import com.xpdustry.distributor.api.component.render.ComponentAppendable
+import com.xpdustry.distributor.api.metadata.MetadataContainer
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.misc.logger
@@ -44,6 +49,9 @@ val Player.joinTime: Instant
 val Player.javaLocale: Locale
     get() = Locale.forLanguageTag(locale().replace('_', '-'))
 
+val Player.asAudience: Audience
+    get() = DistributorProvider.get().audienceProvider.getPlayer(this)
+
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
 
 fun NetConnection.kick(reason: KickReason, silent: Boolean = false) {
@@ -56,6 +64,28 @@ fun NetConnection.kick(reason: KickReason, silent: Boolean = false) {
 
 fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = false) {
     kick(reason, null, duration, silent)
+}
+
+// TODO Very ugly hack, create a sane way to get a NetConnection audience
+fun NetConnection.kick(
+    message: ComponentLike,
+    duration: Duration,
+    silent: Boolean = false,
+    locale: Locale? = null
+) {
+    val builder =
+        if (player != null) {
+            DistributorProvider.get().audienceProvider.getPlayer(player).metadata.toBuilder()
+        } else {
+            MetadataContainer.builder()
+        }
+    if (locale != null) {
+        builder.putConstant(Audience.LOCALE, locale)
+    }
+    kick(
+        ComponentAppendable.mindustry(builder.build()).append(message.asComponent()).toString(),
+        duration,
+        silent)
 }
 
 private fun NetConnection.kick(

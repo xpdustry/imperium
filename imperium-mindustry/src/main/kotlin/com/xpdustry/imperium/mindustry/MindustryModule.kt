@@ -35,9 +35,7 @@ import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
-import com.xpdustry.imperium.mindustry.security.FreezeManager
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
-import com.xpdustry.imperium.mindustry.security.SimpleFreezeManager
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import java.nio.file.Path
 import java.util.concurrent.Executor
@@ -66,8 +64,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().metadata.version) }
 
     provider<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
-
-    provider<FreezeManager> { SimpleFreezeManager(get(), get(), get(), get()) }
 
     provider<Executor>("main") { Executor(Core.app::post) }
 }

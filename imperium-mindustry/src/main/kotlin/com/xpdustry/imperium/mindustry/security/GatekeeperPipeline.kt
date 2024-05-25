@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
+import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
@@ -36,10 +38,16 @@ sealed interface GatekeeperResult {
     data object Success : GatekeeperResult
 
     data class Failure(
-        val reason: String,
+        val reason: Component,
         val time: Duration = Duration.ZERO,
         val silent: Boolean = false
-    ) : GatekeeperResult
+    ) : GatekeeperResult {
+        constructor(
+            reason: String,
+            time: Duration = Duration.ZERO,
+            silent: Boolean = false
+        ) : this(DistributorProvider.get().mindustryComponentDecoder.decode(reason), time, silent)
+    }
 }
 
 interface GatekeeperPipeline : ProcessorPipeline<GatekeeperContext, GatekeeperResult>
