@@ -18,6 +18,9 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -27,13 +30,16 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
-import com.xpdustry.imperium.mindustry.ui.state.stateKey
+import com.xpdustry.imperium.mindustry.translation.gui_close
+import com.xpdustry.imperium.mindustry.translation.gui_user_settings_description
+import com.xpdustry.imperium.mindustry.translation.gui_user_settings_entry
+import com.xpdustry.imperium.mindustry.translation.gui_user_settings_title
+import com.xpdustry.imperium.mindustry.translation.user_setting_description
 import kotlinx.coroutines.launch
 
 class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -45,37 +51,37 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
     suspend fun onUserSettingsCommand(sender: CommandSender) {
         val settings = loadUserSettings(sender.player.uuid())
         runMindustryThread {
-            playerSettingsInterface.open(sender.player) { it[SETTINGS] = settings }
+            val window = playerSettingsInterface.create(sender.player)
+            window.state[SETTINGS] = settings
+            window.show()
         }
     }
 
-    private fun createPlayerSettingsInterface(plugin: MindustryPlugin): Interface {
-        val playerSettingsInterface = MenuInterface.create(plugin)
-        playerSettingsInterface.addTransformer { view, pane ->
-            pane.title = "Player Settings"
-            pane.content = "Change your settings by clicking on the corresponding buttons."
-            for ((setting, value) in view.state[SETTINGS]!!.entries.sortedBy { it.key.name }) {
-                val text = buildString {
-                    append(setting.name.lowercase().replace("_", "-"))
-                    append(": ")
-                    append(if (value) "[green]enabled" else "[red]disabled")
+    private fun createPlayerSettingsInterface(plugin: MindustryPlugin): MenuManager =
+        MenuManager.create(plugin).addTransformer { (pane, state) ->
+            pane.title = gui_user_settings_title()
+            pane.content = gui_user_settings_description()
+            state[SETTINGS]!!
+                .entries
+                .sortedBy { it.key.name }
+                .forEach { (setting, value) ->
+                    pane.grid.addRow(
+                        MenuOption.of(gui_user_settings_entry(setting, value)) { window ->
+                            val settings = window.state[SETTINGS]!!.toMutableMap()
+                            settings[setting] = !value
+                            ImperiumScope.MAIN.launch {
+                                users.setSettings(window.viewer.identity, settings)
+                                runMindustryThread {
+                                    window.state[SETTINGS] = settings
+                                    window.show()
+                                }
+                            }
+                        })
+                    pane.grid.addRow(
+                        MenuOption.of(user_setting_description(setting), Action.none()))
                 }
-                pane.options.addRow(
-                    MenuOption(text) { _ ->
-                        val settings = view.state[SETTINGS]!!.toMutableMap()
-                        settings[setting] = !value
-                        ImperiumScope.MAIN.launch {
-                            users.setSettings(view.viewer.identity, settings)
-                            view.state[SETTINGS] = settings
-                            runMindustryThread { view.open() }
-                        }
-                    })
-                pane.options.addRow(MenuOption("[lightgray]${setting.description}"))
-            }
-            pane.options.addRow(MenuOption("Close", View::back))
+            pane.grid.addRow(MenuOption.of(gui_close(), Action.back()))
         }
-        return playerSettingsInterface
-    }
 
     private suspend fun loadUserSettings(uuid: String): Map<User.Setting, Boolean> {
         val settings = users.getSettings(uuid).toMutableMap()
@@ -86,6 +92,6 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     companion object {
-        private val SETTINGS = stateKey<Map<User.Setting, Boolean>>("imperium:player-settings")
+        private val SETTINGS = key<Map<User.Setting, Boolean>>("settings")
     }
 }

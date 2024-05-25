@@ -15,19 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+@file:Suppress("FunctionName")
+
 package com.xpdustry.imperium.mindustry.translation
 
 import arc.graphics.Color
+import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.TextComponent.newline
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.component.style.ComponentColor.GREEN
 import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
 import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.time.truncatedTo
+import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.duration
 import java.time.temporal.ChronoUnit
 
@@ -38,7 +43,7 @@ private val LIGHT_GRAY = ComponentColor.from(Color.lightGray)
 
 private const val MESSAGE_PREFIX = "imperium.messages"
 
-fun punishment_message_simple(type: Punishment.Type, reason: String) =
+fun punishment_message_simple(type: Punishment.Type, reason: String): Component =
     components()
         .setTextColor(SCARLET)
         .append(
@@ -55,7 +60,7 @@ fun punishment_message_simple(type: Punishment.Type, reason: String) =
             translatable("$MESSAGE_PREFIX.punishment.type.${type.name.lowercase()}.details", WHITE))
         .build()
 
-fun punishment_message(punishment: Punishment) =
+fun punishment_message(punishment: Punishment): Component =
     components()
         .setTextColor(SCARLET)
         .append(punishment_message_simple(punishment.type, punishment.reason))
@@ -91,3 +96,24 @@ fun punishment_message(punishment: Punishment) =
                 .setParameters(
                     TranslationArguments.array(text(punishment.snowflake.toString(), LIGHT_GRAY))))
         .build()
+
+fun status(status: Boolean): Component =
+    translatable(
+        "imperium.status.${if (status) "enabled" else "disabled"}", if (status) GREEN else SCARLET)
+
+fun gui_user_settings_title(): Component = translatable("imperium.gui.user-settings.title")
+
+fun gui_user_settings_description(): Component =
+    translatable("imperium.gui.user-settings.description")
+
+fun gui_user_settings_entry(setting: User.Setting, value: Boolean): Component =
+    components()
+        .append(text(setting.name.lowercase().replace('_', '-'), WHITE))
+        .append(text(": "))
+        .append(status(value))
+        .build()
+
+fun gui_close(): Component = translatable("imperium.gui.close")
+
+fun user_setting_description(setting: User.Setting): Component =
+    translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
