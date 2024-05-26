@@ -29,7 +29,7 @@ private val CRACKED_CLIENT_USERNAMES =
         "igruhaorg",
         "freetp.org",
         "goldberg",
-    )
+        "rog")
 
 // Go figure why but some people are using cracked clients on a free game... Incredible.
 class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
