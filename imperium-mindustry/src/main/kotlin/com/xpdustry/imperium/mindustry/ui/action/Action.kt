@@ -64,7 +64,7 @@ fun interface Action {
         }
 
         fun uri(uri: URI): Action {
-            return Action { _ -> Call.openURI(uri.toString()) }
+            return Action { view -> Call.openURI(view.viewer.con(), uri.toString()) }
         }
 
         fun run(runnable: Runnable): Action {
