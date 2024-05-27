@@ -70,57 +70,41 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
     private lateinit var adminActionInterface: Interface
 
     override fun onImperiumInit() {
-        val banConfirmationInterface = MenuInterface.create(plugin)
-        banConfirmationInterface.addTransformer { view, pane ->
-            pane.title = "Admin Action (4/4)"
-            val duration =
-                if (view.state[PUNISHMENT_DURATION] == null) "permanently" else "temporarily"
-            pane.content =
-                "Are you sure you want to [scarlet]$duration[] ${view.state[PUNISHMENT_TYPE].toString().lowercase()} [accent]${view.state[PUNISHMENT_TARGET]!!.name}[] for [accent]${view.state[PUNISHMENT_REASON]!!}[] ?"
-            pane.options.addRow(
-                MenuOption("[green]Yes") { _ ->
-                    view.closeAll()
-                    ImperiumScope.MAIN.launch {
-                        val target = users.getByIdentity(view.state[PUNISHMENT_TARGET]!!)
-                        punishments.punish(
-                            view.viewer.identity,
-                            target.snowflake,
-                            view.state[PUNISHMENT_REASON]!!,
-                            view.state[PUNISHMENT_TYPE]!!,
-                            view.state[PUNISHMENT_DURATION]!!,
-                        )
-                        // TODO Move to PunishmentListener ?
-                        logger.info(
-                            "{} ({}) has {} {} ({})",
-                            view.viewer.plainName(),
-                            view.viewer.uuid(),
-                            view.state[PUNISHMENT_TYPE]!!.name.lowercase(),
-                            target.lastName,
-                            target.uuid,
-                        )
-                    }
-                },
-                MenuOption("[orange]No", View::back),
-                MenuOption("[red]Abort", View::closeAll),
-            )
-        }
-
         val detailsInterface = TextInputInterface.create(plugin)
         detailsInterface.addTransformer { v, pane ->
-            pane.title = "Admin Action (3/4)"
+            pane.title = "Admin Action (3/3)"
             pane.description =
                 "Enter the reason of the ${v.state[PUNISHMENT_TYPE].toString().lowercase()}"
+            pane.placeholder = v.state[PUNISHMENT_TYPE].toString().lowercase()
             pane.inputAction = BiAction { view, input ->
-                view.close()
+                view.closeAll()
                 view.state[PUNISHMENT_REASON] = input
-                banConfirmationInterface.open(view)
+                ImperiumScope.MAIN.launch {
+                    val target = users.getByIdentity(view.state[PUNISHMENT_TARGET]!!)
+                    punishments.punish(
+                        view.viewer.identity,
+                        target.snowflake,
+                        view.state[PUNISHMENT_REASON]!!,
+                        view.state[PUNISHMENT_TYPE]!!,
+                        view.state[PUNISHMENT_DURATION]!!,
+                    )
+                    // TODO Move to PunishmentListener ?
+                    logger.info(
+                        "{} ({}) has {} {} ({})",
+                        view.viewer.plainName(),
+                        view.viewer.uuid(),
+                        view.state[PUNISHMENT_TYPE]!!.name.lowercase(),
+                        target.lastName,
+                        target.uuid,
+                    )
+                }
             }
         }
 
         val durationInterface =
             MenuInterface.create(plugin).apply {
                 addTransformer { view, pane ->
-                    pane.title = "Ban (2/4)"
+                    pane.title = "Ban (2/3)"
                     pane.content =
                         "Select duration of the ${view.state[PUNISHMENT_TYPE].toString().lowercase()} of ${view.state[PUNISHMENT_TARGET]!!.name}"
 
@@ -150,7 +134,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         adminActionInterface =
             MenuInterface.create(plugin).apply {
                 addTransformer { _, pane ->
-                    pane.title = "Admin Action (1/4)"
+                    pane.title = "Admin Action (1/3)"
                     pane.content = "What kind of action you want to take ?"
 
                     Punishment.Type.entries.forEach { type ->
