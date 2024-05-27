@@ -160,8 +160,7 @@ data class MindustryConfig(
     val world: World = World(),
     val security: Security = Security(),
     val templates: Templates = Templates(),
-    val tipsDelay: Duration = 5.minutes,
-    val tips: List<String> = listOf("discord", "rules")
+    val tipsDelay: Duration = 5.minutes
 ) {
     data class History(
         val tileEntriesLimit: Int = 20,

@@ -26,6 +26,8 @@ import com.xpdustry.distributor.api.component.TextComponent.newline
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.component.style.ComponentColor.ACCENT
+import com.xpdustry.distributor.api.component.style.ComponentColor.CYAN
 import com.xpdustry.distributor.api.component.style.ComponentColor.GREEN
 import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
 import com.xpdustry.distributor.api.translation.TranslationArguments
@@ -34,6 +36,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.duration
+import com.xpdustry.imperium.mindustry.game.Tip
 import java.time.temporal.ChronoUnit
 
 private val SCARLET = ComponentColor.from(Color.scarlet)
@@ -117,3 +120,14 @@ fun gui_close(): Component = translatable("imperium.gui.close")
 
 fun user_setting_description(setting: User.Setting): Component =
     translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
+
+fun announcement_tip(tip: Tip): Component =
+    components()
+        .setTextColor(WHITE)
+        .append(text(">>> ", CYAN))
+        .append(translatable("imperium.tip", ACCENT))
+        .append(text(": ", ACCENT))
+        .append(translatable("imperium.tip.${tip.name.lowercase()}.content"))
+        .append(newline())
+        .append(translatable("imperium.tip.${tip.name.lowercase()}.details", LIGHT_GRAY))
+        .build()

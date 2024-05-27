@@ -18,41 +18,30 @@
 package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.DistributorProvider
-import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.logger
-import com.xpdustry.imperium.mindustry.misc.Entities
-import com.xpdustry.imperium.mindustry.misc.javaLocale
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import java.util.Locale
+import com.xpdustry.imperium.mindustry.translation.announcement_tip
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 
-private typealias TipWithDetails = Pair<String, String>
+enum class Tip {
+    DISCORD,
+    RULES,
+    EXCAVATE,
+}
 
 class TipListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
     private val config = instances.get<MindustryConfig>()
-    private val language = instances.get<ImperiumConfig>().language
     private var index = 0
-    private lateinit var tips: List<String>
+    private val tips = Tip.entries.shuffled()
 
     override fun onImperiumInit() {
-        LOGGER.debug("Loading tips: {}", config.tips)
-        tips = config.tips.filter { getLocalizedTip(it, language) != null }.shuffled()
-        val failures = config.tips - tips.toSet()
-
-        if (failures.isNotEmpty()) {
-            LOGGER.warn("Failed to load tips: {}", failures)
-        }
-
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(config.tipsDelay)
@@ -62,34 +51,12 @@ class TipListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private fun showNextTip() {
-        if (!Vars.state.isPlaying || tips.isEmpty()) {
-            return
+        if (Vars.state.isPlaying && tips.isNotEmpty()) {
+            index = (index + 1) % tips.size
+            DistributorProvider.get()
+                .audienceProvider
+                .players
+                .sendMessage(announcement_tip(tips[index]))
         }
-
-        index = (index + 1) % tips.size
-        Entities.getPlayers().forEach {
-            it.sendMessage(
-                buildString {
-                    val (content, details) = getLocalizedTip(tips[index], it.javaLocale)!!
-                    append("[cyan]>>> [accent]Tip: ")
-                    append(content)
-                    append("\n[lightgray]")
-                    append(details)
-                })
-        }
-    }
-
-    private fun getLocalizedTip(key: String, locale: Locale): TipWithDetails? {
-        val translator = DistributorProvider.get().globalTranslationSource
-        val content =
-            translator.getTranslationOrMissing("imperium.tip.$key.content", locale) ?: return null
-        return content.format(TranslationArguments.empty()) to
-            translator
-                .getTranslationOrMissing("imperium.tip.$key.details", locale)
-                .format(TranslationArguments.empty())
-    }
-
-    companion object {
-        private val LOGGER = logger<TipListener>()
     }
 }
