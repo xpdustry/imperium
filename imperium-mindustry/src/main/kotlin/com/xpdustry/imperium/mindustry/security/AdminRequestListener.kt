@@ -194,7 +194,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             return
         }
 
-        if (packet.other.admin() && packet.action != AdminAction.switchTeam) {
+        if (packet.other.admin() &&
+            (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action on the admin {} ({})",
                 con.player.plainName(),
