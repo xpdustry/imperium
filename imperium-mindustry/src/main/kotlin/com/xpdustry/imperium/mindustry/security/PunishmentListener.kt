@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
+import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.component.ComponentLike
 import com.xpdustry.distributor.api.util.Priority
@@ -37,7 +38,6 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.snowflake.timestamp
-import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -46,6 +46,7 @@ import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.translation.announcement_ban
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
 import kotlin.time.Duration
@@ -55,7 +56,6 @@ import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
-import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
 import mindustry.world.blocks.logic.LogicBlock
@@ -66,7 +66,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
-    private val renderer = instances.get<TimeRenderer>()
     private val cache = PlayerMap<List<Punishment>>(instances.get())
     private val kicking = PlayerMap<Boolean>(instances.get())
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
@@ -75,12 +74,20 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
             val punishment = punishments.findBySnowflake(message.snowflake) ?: return@consumer
-            val targets = findOnlineTargets(punishment)
+            val punished = users.findBySnowflake(punishment.target) ?: return@consumer
+            val data = users.findNamesAndAddressesBySnowflake(punishment.target)
+            val targets =
+                Entities.getPlayersAsync().filter { player ->
+                    val user = users.getByIdentity(player.identity)
+                    user.snowflake == punished.snowflake ||
+                        user.uuid == punished.uuid ||
+                        player.ip().toInetAddress() in data.addresses
+                }
+
             if (punishment.type == Punishment.Type.BAN &&
                 message.type == PunishmentMessage.Type.CREATE) {
-                val user = users.findBySnowflake(punishment.target) ?: return@consumer
                 runMindustryThread {
-                    Events.fire(PlayerIpBanEvent(user.lastAddress.hostAddress))
+                    Events.fire(PlayerIpBanEvent(punished.lastAddress.hostAddress))
                     targets.forEach { target ->
                         Events.fire(PlayerBanEvent(target, target.uuid()))
                         target.con.kick(punishment_message(punishment), Duration.ZERO)
@@ -90,8 +97,14 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             target.uuid(),
                             punishment.reason,
                         )
-                        Call.sendMessage(
-                            "[scarlet]Player [orange]${target.name.stripMindustryColors()}[] has been banned for [orange]${punishment.reason}[] for [orange]${renderer.renderDuration(punishment.duration)}[].")
+                        DistributorProvider.get()
+                            .audienceProvider
+                            .players
+                            .sendMessage(
+                                announcement_ban(
+                                    target.name.stripMindustryColors(),
+                                    punishment.reason,
+                                    punishment.duration))
                     }
                 }
             } else {
@@ -195,16 +208,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 .sortedByDescending { it.duration }
         runMindustryThread { cache[player] = result }
     }
-
-    private suspend fun findOnlineTargets(punishment: Punishment) =
-        Entities.getPlayersAsync().filter {
-            val user = users.getByIdentity(it.identity)
-            if (user.snowflake == punishment.target) {
-                return@filter true
-            }
-            val data = users.findNamesAndAddressesBySnowflake(punishment.target)
-            return@filter it.uuid() == user.uuid || it.ip().toInetAddress() in data.addresses
-        }
 
     companion object {
         private val logger by LoggerDelegate()

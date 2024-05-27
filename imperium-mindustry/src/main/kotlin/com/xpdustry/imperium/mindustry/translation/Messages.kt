@@ -38,6 +38,7 @@ import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.game.Tip
 import java.time.temporal.ChronoUnit
+import kotlin.time.Duration
 
 private val SCARLET = ComponentColor.from(Color.scarlet)
 private val ORANGE = ComponentColor.from(Color.orange)
@@ -131,3 +132,10 @@ fun announcement_tip(tip: Tip): Component =
         .append(newline())
         .append(translatable("imperium.tip.${tip.name.lowercase()}.details", LIGHT_GRAY))
         .build()
+
+fun announcement_ban(target: String, reason: String, duration: Duration): Component =
+    translatable(
+        "imperium.announcement.ban",
+        TranslationArguments.array(
+            text(target, ORANGE), text(reason, ORANGE), duration(duration, ORANGE)),
+        SCARLET)
