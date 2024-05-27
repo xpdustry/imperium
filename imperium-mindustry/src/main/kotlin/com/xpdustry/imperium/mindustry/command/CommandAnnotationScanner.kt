@@ -35,6 +35,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import io.leangen.geantyref.TypeToken
 import java.util.Optional
+import java.util.concurrent.CompletableFuture
 import kotlin.jvm.optionals.getOrNull
 import kotlin.reflect.KClass
 import kotlin.reflect.KFunction
@@ -46,6 +47,8 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaType
+import kotlin.time.Duration as KotlinDuration
+import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.future.future
 import mindustry.Vars
 import mindustry.server.ServerControl
@@ -55,7 +58,9 @@ import org.incendo.cloud.context.CommandContext
 import org.incendo.cloud.description.Description
 import org.incendo.cloud.execution.CommandExecutionHandler
 import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.parser.ParserDescriptor
 import org.incendo.cloud.parser.flag.CommandFlag
+import org.incendo.cloud.parser.standard.DurationParser
 import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
@@ -264,12 +269,14 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
                 }
                 settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)
                 captionRegistry().registerProvider(TranslationBundle.core(CommandSender::getLocale))
-                /*
-                captionRegistry()
-                    .registerProvider(
-                        TranslationBundle.resourceBundle(
-                            "com/xpdustry/imperium/mindustry/cloud_bundle",
-                            CommandSender::getLocale))
-                 */
+                parserRegistry().registerParser(KotlinDurationParser())
             }
+
+    @Suppress("FunctionName")
+    private fun KotlinDurationParser(): ParserDescriptor<CommandSender, KotlinDuration> {
+        val parser = DurationParser.durationParser<CommandSender>()
+        return parser.mapSuccess(KotlinDuration::class.java) { _, result ->
+            CompletableFuture.completedFuture(result.toKotlinDuration())
+        }
+    }
 }

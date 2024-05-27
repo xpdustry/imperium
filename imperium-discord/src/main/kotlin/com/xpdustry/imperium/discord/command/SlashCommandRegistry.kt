@@ -25,10 +25,10 @@ import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.command.annotation.Range
-import com.xpdustry.imperium.discord.commands.PunishmentDuration
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.getTranslatedTextOrNull

@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.timestamp
@@ -33,9 +34,6 @@ import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.days
-import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -156,15 +154,4 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         punishments.pardon(actor.member.identity, snowflake, reason)
         actor.respond("Pardoned user.")
     }
-}
-
-enum class PunishmentDuration(val value: Duration) {
-    THIRTY_MINUTES(30.minutes),
-    ONE_HOUR(1.hours),
-    THREE_HOURS(3.hours),
-    ONE_DAY(1.days),
-    THREE_DAYS(3.days),
-    ONE_WEEK(7.days),
-    ONE_MONTH(30.days),
-    PERMANENT(Duration.INFINITE)
 }

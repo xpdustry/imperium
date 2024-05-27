@@ -63,6 +63,7 @@ import com.xpdustry.imperium.mindustry.security.AdminToggle
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageListener
+import com.xpdustry.imperium.mindustry.security.ModerationCommand
 import com.xpdustry.imperium.mindustry.security.PunishmentListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
 import com.xpdustry.imperium.mindustry.security.VoteKickCommand
@@ -174,7 +175,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 SpawnCommand::class,
                 WorldEditCommand::class,
                 HereCommand::class,
-                AdminToggle::class)
+                AdminToggle::class,
+                ModerationCommand::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode
