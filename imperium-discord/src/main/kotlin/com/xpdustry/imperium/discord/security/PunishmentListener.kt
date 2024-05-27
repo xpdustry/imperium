@@ -95,6 +95,14 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                                     }
                                 }
                             }
+                            PunishmentMessage.Type.MODIFY -> {
+                                color = Color.ORANGE.rgb
+                                title = "Punishment Edit"
+                                field("Target", user.toLastNameWithSnowflake())
+                                field("Type", punishment.type.toString())
+                                field("Duration", renderer.renderDuration(punishment.duration))
+                                field("Reason", punishment.reason, false)
+                            }
                             PunishmentMessage.Type.PARDON -> {
                                 color = Color.GREEN.rgb
                                 title = "Pardon"

@@ -49,7 +49,6 @@ interface PunishmentManager {
 
     suspend fun findAllByUser(snowflake: Snowflake): List<Punishment>
 
-    // TODO active punishments of a same kind should be merged
     suspend fun punish(
         author: Identity,
         user: Snowflake,
@@ -78,7 +77,8 @@ data class PunishmentMessage(
 ) : Message {
     enum class Type {
         CREATE,
-        PARDON
+        PARDON,
+        MODIFY
     }
 }
 
@@ -134,21 +134,42 @@ class SimplePunishmentManager(
         duration: Duration,
         metadata: Punishment.Metadata
     ): Snowflake {
-        val snowflake = generator.generate()
-        provider.newSuspendTransaction {
-            PunishmentTable.insert {
-                it[PunishmentTable.id] = snowflake
-                it[target] = user
-                it[PunishmentTable.reason] = reason
-                it[PunishmentTable.type] = type
-                it[PunishmentTable.duration] =
-                    if (duration.isInfinite()) null else duration.toJavaDuration()
-                it[server] = config.server.name
+        val latest =
+            findAllByUser(user)
+                .filter { !it.expired && it.type == type }
+                .maxByOrNull { it.duration }
+        val snowflake: Snowflake
+        if (latest != null) {
+            provider.newSuspendTransaction {
+                PunishmentTable.update({ PunishmentTable.id eq latest.snowflake }) {
+                    it[PunishmentTable.duration] =
+                        if (duration.isInfinite()) null else duration.toJavaDuration()
+                    it[PunishmentTable.reason] = reason
+                }
+            }
+            snowflake = latest.snowflake
+        } else {
+            snowflake = generator.generate()
+            provider.newSuspendTransaction {
+                PunishmentTable.insert {
+                    it[PunishmentTable.id] = snowflake
+                    it[target] = user
+                    it[PunishmentTable.reason] = reason
+                    it[PunishmentTable.type] = type
+                    it[PunishmentTable.duration] =
+                        if (duration.isInfinite()) null else duration.toJavaDuration()
+                    it[server] = config.server.name
+                }
             }
         }
         messenger.publish(
             PunishmentMessage(
-                author, PunishmentMessage.Type.CREATE, snowflake, config.server.name, metadata),
+                author,
+                if (latest == null) PunishmentMessage.Type.CREATE
+                else PunishmentMessage.Type.MODIFY,
+                snowflake,
+                config.server.name,
+                metadata),
             local = true)
         return snowflake
     }
