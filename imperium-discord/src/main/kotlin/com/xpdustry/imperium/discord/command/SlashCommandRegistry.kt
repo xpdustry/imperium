@@ -275,7 +275,8 @@ class SlashCommandRegistry(
                     val wrapper =
                         SlashCommandNode.Option(argument.name, parent.path, argument.handler.type)
                     wrapper.delegate.isRequired = !argument.optional
-                    argument.handler.apply(wrapper.delegate, argument.annotations)
+                    argument.handler.apply(
+                        wrapper.delegate, argument.annotations, argument.optional)
                     wrapper.applyBuilderTranslations()
                     parent.addOptions(wrapper.delegate)
                 }
@@ -410,14 +411,14 @@ private data class CommandEdge(
 abstract class TypeHandler<T : Any>(val type: OptionType) {
     abstract fun parse(option: OptionMapping): T?
 
-    open fun apply(builder: OptionData, annotation: KAnnotatedElement) = Unit
+    open fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) = Unit
 }
 
 private val STRING_TYPE_HANDLER =
     object : TypeHandler<String>(OptionType.STRING) {
         override fun parse(option: OptionMapping) = option.asString
 
-        override fun apply(builder: OptionData, annotation: KAnnotatedElement) {
+        override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
                 if (min.isNotEmpty()) builder.setMinLength(min.toInt())
                 if (max.isNotEmpty()) builder.setMaxLength(max.toInt())
@@ -429,7 +430,7 @@ private val INT_TYPE_HANDLER =
     object : TypeHandler<Int>(OptionType.INTEGER) {
         override fun parse(option: OptionMapping) = option.asInt
 
-        override fun apply(builder: OptionData, annotation: KAnnotatedElement) {
+        override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
                 builder.setMinValue(if (min.isNotEmpty()) min.toLong() else Int.MIN_VALUE.toLong())
                 builder.setMaxValue(if (max.isNotEmpty()) max.toLong() else Int.MAX_VALUE.toLong())
@@ -441,7 +442,7 @@ private val LONG_TYPE_HANDLER =
     object : TypeHandler<Long>(OptionType.INTEGER) {
         override fun parse(option: OptionMapping) = option.asLong
 
-        override fun apply(builder: OptionData, annotation: KAnnotatedElement) {
+        override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
                 if (min.isNotEmpty()) builder.setMinValue(min.toLong())
                 if (max.isNotEmpty()) builder.setMinValue(max.toLong())
@@ -510,10 +511,15 @@ private class EnumTypeHandler<T : Enum<T>>(
         return klass.java.enumConstants.firstOrNull { option.asString == it.name }
     }
 
-    override fun apply(builder: OptionData, annotation: KAnnotatedElement) {
+    override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
         klass.java.enumConstants.forEach {
+            if (optional && it.name == "none")
+                error("Can't have a none enum value if the argument is optional")
             val choice = it as T
             builder.addChoice(renderer(choice), choice.name)
+        }
+        if (optional) {
+            builder.addChoice("none", "none")
         }
     }
 }
