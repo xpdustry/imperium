@@ -38,23 +38,21 @@ class LibreTranslateTranslator(
     private val http: OkHttpClient
 ) : Translator, ImperiumApplication.Listener {
 
-    private lateinit var languages: Set<String>
+    private lateinit var languages: List<SupportedLanguage>
 
     override fun onImperiumInit() {
-        runBlocking {
-            languages = getSupportedLanguages().mapTo(mutableSetOf(), SupportedLanguage::code)
-        }
+        runBlocking { languages = fetchSupportedLanguages() }
     }
 
     override suspend fun translate(text: String, source: Locale, target: Locale): TranslatorResult {
-        val supported =
-            try {
-                getSupportedLanguages()
-            } catch (e: Exception) {
-                return TranslatorResult.Failure(e)
-            }
+        if (source.language == "router" || target.language == "router") {
+            return TranslatorResult.Success("router")
+        }
+        if (text.isBlank() || source.language == target.language) {
+            return TranslatorResult.Success(text)
+        }
 
-        val candidate = supported.firstOrNull { it.code == source.language }
+        val candidate = languages.firstOrNull { it.code == source.language }
         if (candidate == null) {
             return TranslatorResult.UnsupportedLanguage(source)
         } else if (target.language !in candidate.targets) {
@@ -92,10 +90,10 @@ class LibreTranslateTranslator(
         return TranslatorResult.Success(json["translatedText"]!!.jsonPrimitive.content)
     }
 
-    override fun isSupportedLanguage(locale: Locale) = locale.language in languages
+    override fun isSupportedLanguage(locale: Locale) = languages.any { it.code == locale.language }
 
     @OptIn(ExperimentalSerializationApi::class)
-    private suspend fun getSupportedLanguages(): List<SupportedLanguage> {
+    private suspend fun fetchSupportedLanguages(): List<SupportedLanguage> {
         val response =
             http
                 .newCall(
