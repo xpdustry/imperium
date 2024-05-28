@@ -70,7 +70,7 @@ class ImperiumComponentRendererProvider(
                 source.registerAll(
                     ResourceTranslationBundles.fromClasspath(
                         it,
-                        "com/xpdustry/imperium/bundles/mindustry_bundle",
+                        "com/xpdustry/imperium/mindustry/bundles/mindustry_bundle",
                         javaClass.classLoader))
             }
         }

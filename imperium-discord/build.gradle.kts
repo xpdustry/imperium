@@ -48,13 +48,6 @@ tasks.shadowJar {
         from(file)
     }
 
-    /*
-    from(rootProject.fileTree("imperium-bundles")) {
-        into("com/xpdustry/imperium/bundles/")
-    }
-
-     */
-
     minimize {
         exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
         exclude(dependency("org.slf4j:slf4j-.*:.*"))

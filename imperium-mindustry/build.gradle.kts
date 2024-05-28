@@ -46,10 +46,6 @@ tasks.shadowJar {
         into("META-INF")
     }
 
-    from(rootProject.fileTree("imperium-bundles")) {
-        into("com/xpdustry/imperium/bundles/")
-    }
-
     from(downloadMindustryBundles) {
         into("com/xpdustry/imperium/bundles/")
         rename { "mindustry_$it" }

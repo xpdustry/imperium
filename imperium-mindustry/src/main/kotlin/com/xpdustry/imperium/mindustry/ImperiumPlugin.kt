@@ -129,7 +129,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                             registerAll(
                                 ResourceTranslationBundles.fromClasspath(
                                     locale,
-                                    "com/xpdustry/imperium/bundles/bundle",
+                                    "com/xpdustry/imperium/mindustry/bundles/bundle",
                                     ImperiumPlugin::class.java.classLoader))
                         }
                     })
