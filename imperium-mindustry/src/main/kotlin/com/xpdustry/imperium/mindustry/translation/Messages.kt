@@ -72,11 +72,10 @@ fun punishment_message(punishment: Punishment): Component =
         .append(newline())
         .append(
             translatable()
-                .setTextColor(ComponentColor.ACCENT)
+                .setTextColor(ACCENT)
                 .setKey("$MESSAGE_PREFIX.punishment.message.appeal")
                 .setParameters(
-                    TranslationArguments.array(
-                        text(DISCORD_INVITATION_LINK.toString(), ComponentColor.CYAN))))
+                    TranslationArguments.array(text(DISCORD_INVITATION_LINK.toString(), CYAN))))
         .append(newline())
         .append(
             translatable().setTextColor(WHITE).apply {
@@ -85,8 +84,7 @@ fun punishment_message(punishment: Punishment): Component =
                     setKey("$MESSAGE_PREFIX.punishment.expiration")
                     setParameters(
                         TranslationArguments.array(
-                            duration(
-                                remaining.truncatedTo(ChronoUnit.MINUTES), ComponentColor.ACCENT)))
+                            duration(remaining.truncatedTo(ChronoUnit.MINUTES), ACCENT)))
                 } else {
                     setKey("$MESSAGE_PREFIX.punishment.expiration.permanent")
                 }
@@ -138,4 +136,10 @@ fun announcement_ban(target: String, reason: String, duration: Duration): Compon
         "imperium.announcement.ban",
         TranslationArguments.array(
             text(target, ORANGE), text(reason, ORANGE), duration(duration, ORANGE)),
+        SCARLET)
+
+fun announcement_power_void_destroyed(x: Int, y: Int): Component =
+    translatable(
+        "imperium.announcement.power-void-destroyed",
+        TranslationArguments.array(text(x.toString(), ORANGE), text(y.toString(), ORANGE)),
         SCARLET)

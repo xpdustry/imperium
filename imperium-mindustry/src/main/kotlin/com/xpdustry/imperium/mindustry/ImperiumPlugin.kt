@@ -49,6 +49,7 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
@@ -176,7 +177,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 WorldEditCommand::class,
                 HereCommand::class,
                 AdminToggle::class,
-                ModerationCommand::class)
+                ModerationCommand::class,
+                AlertListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode
