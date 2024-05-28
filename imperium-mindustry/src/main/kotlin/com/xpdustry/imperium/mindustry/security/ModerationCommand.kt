@@ -46,7 +46,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onBanCommand(
         sender: CommandSender,
         player: Player,
-        reason: String,
+        reason: String = UNDEFINED_REASON,
         duration: Duration = 3.days
     ) {
         onPunishCommand("Banned", Punishment.Type.BAN, sender, player, reason, duration)
@@ -58,7 +58,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onFreezeCommand(
         sender: CommandSender,
         player: Player,
-        reason: String,
+        reason: String = UNDEFINED_REASON,
         duration: Duration = 3.hours
     ) {
         onPunishCommand("Frozen", Punishment.Type.FREEZE, sender, player, reason, duration)
@@ -70,7 +70,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onMuteCommand(
         sender: CommandSender,
         player: Player,
-        reason: String,
+        reason: String = UNDEFINED_REASON,
         duration: Duration = 1.days
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, sender, player, reason, duration)
@@ -84,9 +84,14 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         reason: String,
         duration: Duration
     ) {
-        punishments.punish(
-            sender.identity, users.getByIdentity(player.identity).snowflake, reason, type, duration)
-        sender.reply("$verb user $player.")
+        val id =
+            punishments.punish(
+                sender.identity,
+                users.getByIdentity(player.identity).snowflake,
+                reason,
+                type,
+                duration)
+        sender.reply("$verb user $player ($id).")
     }
 
     @ImperiumCommand(["pardon"], Rank.MODERATOR)
@@ -116,4 +121,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     private val CommandSender.identity
         get() = if (isPlayer) player.identity else config.server.identity
+
+    companion object {
+        private const val UNDEFINED_REASON = "No reason provided."
+    }
 }
