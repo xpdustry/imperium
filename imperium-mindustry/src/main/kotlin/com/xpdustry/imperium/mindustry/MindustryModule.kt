@@ -30,6 +30,8 @@ import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
+import com.xpdustry.imperium.mindustry.game.ClientDetector
+import com.xpdustry.imperium.mindustry.game.SimpleClientDetector
 import com.xpdustry.imperium.mindustry.history.BlockHistory
 import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
@@ -66,4 +68,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
 
     provider<Executor>("main") { Executor(Core.app::post) }
+
+    provider<ClientDetector> { SimpleClientDetector(get()) }
 }

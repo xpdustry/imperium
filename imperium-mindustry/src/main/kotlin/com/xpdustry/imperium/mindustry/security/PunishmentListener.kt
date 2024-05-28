@@ -40,6 +40,7 @@ import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
+import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -53,11 +54,14 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.Vars
+import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
 import mindustry.gen.Player
 import mindustry.net.Administration
+import mindustry.world.Block
+import mindustry.world.Tile
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.MessageBlock
 
@@ -70,6 +74,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val kicking = PlayerMap<Boolean>(instances.get())
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
     private val gatekeeper = instances.get<GatekeeperPipeline>()
+    private val detector = instances.get<ClientDetector>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
@@ -123,12 +128,16 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                     it.type == Punishment.Type.FREEZE && !it.expired
                 }
             if (freeze != null) {
-                action.player.sendMessageRateLimited(punishment_message(freeze))
+                if (!isFooNetworking(action.block, action.tile)) {
+                    action.player.sendMessageRateLimited(punishment_message(freeze))
+                }
                 return@addActionFilter false
             }
             if (kicking[action.player] == true) {
-                action.player.sendMessageRateLimited(
-                    punishment_message_simple(Punishment.Type.FREEZE, "votekick"))
+                if (!isFooNetworking(action.block, action.tile)) {
+                    action.player.sendMessageRateLimited(
+                        punishment_message_simple(Punishment.Type.FREEZE, "votekick"))
+                }
                 return@addActionFilter false
             }
             return@addActionFilter true
@@ -208,6 +217,12 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 .sortedByDescending { it.duration }
         runMindustryThread { cache[player] = result }
     }
+
+    private fun isFooNetworking(block: Block?, tile: Tile?) =
+        block == Blocks.microProcessor &&
+            tile != null &&
+            (tile.x.toInt() == 0 || tile.x.toInt() == Vars.world.width() - 1) &&
+            (tile.y.toInt() == 0 || tile.y.toInt() == Vars.world.height() - 1)
 
     companion object {
         private val logger by LoggerDelegate()
