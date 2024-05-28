@@ -59,6 +59,7 @@ import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.Sounds
 import mindustry.type.Item
+import mindustry.world.blocks.environment.TreeBlock
 
 class ExcavateCommand(instances: InstanceManager) :
     AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", 1.minutes),
@@ -252,7 +253,7 @@ class ExcavateCommand(instances: InstanceManager) :
             runMindustryThread {
                 for (x in area.x1..area.x2) {
                     val tile = Vars.world.tile(x, y)
-                    if (tile.block()?.isStatic != true) {
+                    if (!(tile.block()?.isStatic == true || tile.block() is TreeBlock)) {
                         continue
                     }
                     val floor = tile.floor()
