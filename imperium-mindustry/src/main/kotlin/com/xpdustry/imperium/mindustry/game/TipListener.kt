@@ -34,6 +34,8 @@ enum class Tip {
     DISCORD,
     RULES,
     EXCAVATE,
+    HELP,
+    GENERIC,
 }
 
 class TipListener(instances: InstanceManager) : ImperiumApplication.Listener {
