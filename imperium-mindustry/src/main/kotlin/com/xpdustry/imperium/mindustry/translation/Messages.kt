@@ -35,10 +35,12 @@ import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.mindustry.component.block
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.game.Tip
 import java.time.temporal.ChronoUnit
 import kotlin.time.Duration
+import mindustry.world.Block
 
 private val SCARLET = ComponentColor.from(Color.scarlet)
 private val ORANGE = ComponentColor.from(Color.orange)
@@ -142,4 +144,14 @@ fun announcement_power_void_destroyed(x: Int, y: Int): Component =
     translatable(
         "imperium.announcement.power-void-destroyed",
         TranslationArguments.array(text(x.toString(), ORANGE), text(y.toString(), ORANGE)),
+        SCARLET)
+
+fun announcement_dangerous_block_build(player: String, block: Block, x: Int, y: Int): Component =
+    translatable(
+        "imperium.announcement.dangerous-block-build",
+        TranslationArguments.array(
+            text(player, ORANGE),
+            block(block, ORANGE),
+            text(x.toString(), ORANGE),
+            text(y.toString(), ORANGE)),
         SCARLET)

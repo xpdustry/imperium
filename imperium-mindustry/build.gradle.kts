@@ -30,6 +30,8 @@ dependencies {
     implementation(libs.jsoup)
 }
 
+val downloadMindustryBundles by tasks.registering(DownloadMindustryBundles::class)
+
 tasks.shadowJar {
     archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
@@ -46,6 +48,11 @@ tasks.shadowJar {
 
     from(rootProject.fileTree("imperium-bundles")) {
         into("com/xpdustry/imperium/bundles/")
+    }
+
+    from(downloadMindustryBundles) {
+        into("com/xpdustry/imperium/bundles/")
+        rename { "mindustry_$it" }
     }
 
     mergeServiceFiles()

@@ -20,23 +20,29 @@ package com.xpdustry.imperium.mindustry.game
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_build
 import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
 import mindustry.Vars
 import mindustry.game.EventType
+import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
+import mindustry.world.blocks.power.NuclearReactor
+import mindustry.world.blocks.production.Incinerator
 import mindustry.world.blocks.sandbox.PowerVoid
+import mindustry.world.blocks.storage.CoreBlock
+import mindustry.world.blocks.storage.StorageBlock
 
 class AlertListener : ImperiumApplication.Listener {
 
     @EventHandler
-    fun onBlockDestroy(event: EventType.BlockDestroyEvent) {
+    fun onPowerVoidDestroy(event: EventType.BlockDestroyEvent) {
         if (event.tile.block() is PowerVoid && !Vars.state.rules.infiniteResources) {
             notifyPowerVoidDestroyed(event.tile.x.toInt(), event.tile.y.toInt())
         }
     }
 
     @EventHandler
-    fun onBlockDelete(event: EventType.BlockBuildBeginEvent) {
+    fun onPowerVoidDelete(event: EventType.BlockBuildBeginEvent) {
         val building = event.tile.build
         if (event.breaking &&
             building is ConstructBuild &&
@@ -46,10 +52,59 @@ class AlertListener : ImperiumApplication.Listener {
         }
     }
 
+    @EventHandler
+    fun onDangerousBlockBuildEvent(event: EventType.BlockBuildBeginEvent) {
+        if (Vars.state.rules.infiniteResources ||
+            event.breaking ||
+            event.unit == null ||
+            !event.unit.isPlayer) {
+            return
+        }
+
+        val building = event.tile.build
+        var block = event.tile.block()
+        if (building is ConstructBlock.ConstructBuild) {
+            block = building.current
+        }
+
+        if (!(block is Incinerator ||
+            (block is NuclearReactor && Vars.state.rules.reactorExplosions))) {
+            return
+        }
+
+        val x = ((event.tile.x + block.sizeOffset) - SEARCH_RADIUS) * Vars.tilesize * 1F
+        val y = ((event.tile.y + block.sizeOffset) - SEARCH_RADIUS) * Vars.tilesize * 1F
+        val size = ((SEARCH_RADIUS * 2) + block.size) * Vars.tilesize * 1F
+
+        var found = false
+        event.unit.player.team().data().buildingTree.intersect(x, y, size, size) { build ->
+            if (build.block() is CoreBlock ||
+                (build is StorageBlock.StorageBuild && build.linkedCore != null)) {
+                found = true
+            }
+        }
+
+        if (found) {
+            DistributorProvider.get()
+                .audienceProvider
+                .getTeam(event.unit.player.team())
+                .sendMessage(
+                    announcement_dangerous_block_build(
+                        event.unit.player.plainName(),
+                        block,
+                        event.tile.x.toInt(),
+                        event.tile.y.toInt()))
+        }
+    }
+
     private fun notifyPowerVoidDestroyed(x: Int, y: Int) {
         DistributorProvider.get()
             .audienceProvider
             .players
             .sendMessage(announcement_power_void_destroyed(x, y))
+    }
+
+    companion object {
+        private const val SEARCH_RADIUS = 5
     }
 }

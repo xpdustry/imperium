@@ -139,7 +139,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             .register(
                 this,
                 ComponentRendererProvider::class.java,
-                ImperiumComponentRendererProvider(application.instances.get()),
+                ImperiumComponentRendererProvider(
+                    application.instances.get(), application.instances.get()),
             )
 
         sequenceOf(
