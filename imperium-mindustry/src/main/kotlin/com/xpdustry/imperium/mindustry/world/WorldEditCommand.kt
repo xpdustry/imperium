@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import arc.struct.Seq
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
 import com.xpdustry.imperium.common.account.Rank
@@ -71,7 +72,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
             return
         }
         if (block != null &&
-            !(block.isStatic || block.isPlaceable || block.isAir || block is Prop)) {
+            !(block.isStatic || block.hasBuilding() || block.isAir || block is Prop)) {
             sender.error("The block $block is not a static, placeable, prop or air block.")
             return
         }
@@ -86,11 +87,11 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     val tile = Vars.world.tile(x + ox, y + oy)
                     floor?.let { tile.setFloorNet(it.asFloor()) }
                     overlay?.let { tile.setOverlayNet(it.asFloor()) }
-                    block?.let {
-                        if (override || tile.build != null) {
-                            tile.setNet(Blocks.air)
-                            tile.setNet(it, team, rotation.ordinal)
-                        }
+                    if (block != null &&
+                        (override ||
+                            tile.getLinkedTilesAs(block, Seq()).all { it.build == null })) {
+                        tile.setNet(Blocks.air)
+                        tile.setNet(block, team, rotation.ordinal)
                     }
                 }
             }
