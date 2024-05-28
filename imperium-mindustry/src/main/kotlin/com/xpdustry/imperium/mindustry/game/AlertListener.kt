@@ -24,6 +24,7 @@ import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_
 import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
 import mindustry.Vars
 import mindustry.game.EventType
+import mindustry.gen.Building
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.blocks.power.NuclearReactor
@@ -32,6 +33,7 @@ import mindustry.world.blocks.sandbox.PowerVoid
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.StorageBlock
 
+// TODO Add ConsumeGenerator warning when explosive items are inside
 class AlertListener : ImperiumApplication.Listener {
 
     @EventHandler
@@ -78,8 +80,7 @@ class AlertListener : ImperiumApplication.Listener {
 
         var found = false
         event.unit.player.team().data().buildingTree.intersect(x, y, size, size) { build ->
-            if (build.block() is CoreBlock ||
-                (build is StorageBlock.StorageBuild && build.linkedCore != null)) {
+            if (build.isCoreBuilding) {
                 found = true
             }
         }
@@ -103,6 +104,9 @@ class AlertListener : ImperiumApplication.Listener {
             .players
             .sendMessage(announcement_power_void_destroyed(x, y))
     }
+
+    private val Building.isCoreBuilding: Boolean
+        get() = block() is CoreBlock || (this is StorageBlock.StorageBuild && linkedCore != null)
 
     companion object {
         private const val SEARCH_RADIUS = 5
