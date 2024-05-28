@@ -34,6 +34,7 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.world.Block
 import mindustry.world.blocks.environment.Prop
+import mindustry.world.blocks.environment.TreeBlock
 import org.incendo.cloud.annotation.specifier.Range
 
 class WorldEditCommand : ImperiumApplication.Listener {
@@ -72,7 +73,11 @@ class WorldEditCommand : ImperiumApplication.Listener {
             return
         }
         if (block != null &&
-            !(block.isStatic || block.hasBuilding() || block.isAir || block is Prop)) {
+            !(block.isStatic ||
+                block.hasBuilding() ||
+                block.isAir ||
+                block is Prop ||
+                block is TreeBlock)) {
             sender.error("The block $block is not a static, placeable, prop or air block.")
             return
         }
