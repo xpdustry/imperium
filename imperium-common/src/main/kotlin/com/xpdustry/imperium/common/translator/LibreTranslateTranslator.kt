@@ -22,10 +22,8 @@ import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.network.await
 import java.util.Locale
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -59,63 +57,60 @@ class LibreTranslateTranslator(
             return TranslatorResult.UnsupportedLanguage(target)
         }
 
-        val response =
-            http
-                .newCall(
-                    Request.Builder()
-                        .url(
-                            config.ltEndpoint
-                                .toHttpUrlOrNull()!!
-                                .newBuilder()
-                                .addPathSegment("translate")
-                                .build())
-                        .post(
-                            MultipartBody.Builder()
-                                .setType(MultipartBody.FORM)
-                                .addFormDataPart("q", text)
-                                .addFormDataPart("source", source.language)
-                                .addFormDataPart("target", target.language)
-                                .addFormDataPart("api_key", config.ltToken.value)
-                                .addFormDataPart("format", "text")
-                                .build())
-                        .build())
-                .await()
-
-        val json = Json.parseToJsonElement(response.body!!.string()).jsonObject
-        if (response.code != 200) {
-            return TranslatorResult.Failure(
-                Exception("Failed to translate: ${json["error"]} (code=${response.code})"))
-        }
-
-        return TranslatorResult.Success(json["translatedText"]!!.jsonPrimitive.content)
+        return http
+            .newCall(
+                Request.Builder()
+                    .url(
+                        config.ltEndpoint
+                            .toHttpUrlOrNull()!!
+                            .newBuilder()
+                            .addPathSegment("translate")
+                            .build())
+                    .post(
+                        MultipartBody.Builder()
+                            .setType(MultipartBody.FORM)
+                            .addFormDataPart("q", text)
+                            .addFormDataPart("source", source.language)
+                            .addFormDataPart("target", target.language)
+                            .addFormDataPart("api_key", config.ltToken.value)
+                            .addFormDataPart("format", "text")
+                            .build())
+                    .build())
+            .await()
+            .use { response ->
+                val json = Json.parseToJsonElement(response.body!!.string()).jsonObject
+                if (response.code != 200) {
+                    TranslatorResult.Failure(
+                        Exception("Failed to translate: ${json["error"]} (code=${response.code})"))
+                } else {
+                    TranslatorResult.Success(json["translatedText"]!!.jsonPrimitive.content)
+                }
+            }
     }
 
     override fun isSupportedLanguage(locale: Locale) = languages.any { it.code == locale.language }
 
-    @OptIn(ExperimentalSerializationApi::class)
-    private suspend fun fetchSupportedLanguages(): List<SupportedLanguage> {
-        val response =
-            http
-                .newCall(
-                    Request.Builder()
-                        .url(
-                            config.ltEndpoint
-                                .toHttpUrlOrNull()!!
-                                .newBuilder()
-                                .addPathSegment("languages")
-                                .build())
-                        .header("Accept", "application/json")
-                        .get()
-                        .build())
-                .await()
-        if (response.code != 200) {
-            error(
-                "Failed to fetch supported languages: ${response.message} (code=${response.code})")
-        }
-        return response.body!!.source().inputStream().use {
-            Json.decodeFromStream<List<SupportedLanguage>>(it)
-        }
-    }
+    private suspend fun fetchSupportedLanguages(): List<SupportedLanguage> =
+        http
+            .newCall(
+                Request.Builder()
+                    .url(
+                        config.ltEndpoint
+                            .toHttpUrlOrNull()!!
+                            .newBuilder()
+                            .addPathSegment("languages")
+                            .build())
+                    .header("Accept", "application/json")
+                    .get()
+                    .build())
+            .await()
+            .use { response ->
+                if (response.code != 200) {
+                    error(
+                        "Failed to fetch supported languages: ${response.message} (code=${response.code})")
+                }
+                Json.decodeFromString<List<SupportedLanguage>>(response.body!!.string())
+            }
 
     @Serializable
     data class SupportedLanguage(val code: String, val name: String, val targets: Set<String>)
