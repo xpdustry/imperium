@@ -20,9 +20,11 @@
 package com.xpdustry.imperium.mindustry.translation
 
 import arc.graphics.Color
+import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.TextComponent.newline
+import com.xpdustry.distributor.api.component.TextComponent.space
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
@@ -38,14 +40,19 @@ import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.block
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.game.Tip
+import com.xpdustry.imperium.mindustry.security.MindustryRules
 import java.time.temporal.ChronoUnit
 import kotlin.time.Duration
+import mindustry.gen.Iconc
+import mindustry.net.Administration.Config
 import mindustry.world.Block
 
 private val SCARLET = ComponentColor.from(Color.scarlet)
 private val ORANGE = ComponentColor.from(Color.orange)
 private val GRAY = ComponentColor.from(Color.gray)
 private val LIGHT_GRAY = ComponentColor.from(Color.lightGray)
+private val BLURPLE = ComponentColor.from(com.xpdustry.imperium.common.misc.BLURPLE)
+private val ROYAL = ComponentColor.from(Color.royal)
 
 private const val MESSAGE_PREFIX = "imperium.messages"
 
@@ -117,7 +124,66 @@ fun gui_user_settings_entry(setting: User.Setting, value: Boolean): Component =
         .append(status(value))
         .build()
 
+fun gui_welcome_title(): Component = translatable("imperium.gui.welcome.title")
+
+fun gui_welcome_content(): Component =
+    components()
+        .append(
+            translatable(
+                "imperium.gui.welcome.content.header",
+                TranslationArguments.array(
+                    DistributorProvider.get()
+                        .mindustryComponentDecoder
+                        .decode(Config.serverName.string()))))
+        .append(newline())
+        .append(translatable("imperium.gui.welcome.content.body"))
+        .append(newline())
+        .append(newline())
+        .append(translatable("imperium.gui.welcome.content.footer", GRAY))
+        .build()
+
+fun gui_welcome_button_rules(): Component =
+    components()
+        .setTextColor(ACCENT)
+        .append(text(Iconc.bookOpen.toString()))
+        .append(space())
+        .append(translatable("imperium.gui.welcome.button.rules"))
+        .build()
+
+fun gui_welcome_button_discord(): Component = text(Iconc.discord + " Discord", BLURPLE)
+
+fun gui_rules_title(): Component = translatable("imperium.gui.rules.title")
+
+fun gui_rules_content(): Component =
+    components()
+        .append(
+            components()
+                .setTextColor(SCARLET)
+                .append(text(Iconc.warning.toString()))
+                .append(space())
+                .append(translatable("imperium.gui.rules.content.header")))
+        .modify {
+            for (rule in MindustryRules.entries) {
+                it.append(newline())
+                it.append(newline())
+                it.append(text("» ", ROYAL))
+                it.append(translatable("imperium.rule.${rule.name.lowercase()}.title", ACCENT))
+                it.append(newline())
+                it.append(translatable("imperium.rule.${rule.name.lowercase()}.description"))
+                it.append(newline())
+                it.append(
+                    components()
+                        .setTextColor(LIGHT_GRAY)
+                        .append(translatable("imperium.gui.rules.content.example"))
+                        .append(space())
+                        .append(translatable("imperium.rule.${rule.name.lowercase()}.example")))
+            }
+        }
+        .build()
+
 fun gui_close(): Component = translatable("imperium.gui.close")
+
+fun gui_back(): Component = translatable("imperium.gui.back")
 
 fun user_setting_description(setting: User.Setting): Component =
     translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")

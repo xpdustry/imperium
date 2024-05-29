@@ -17,24 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-// TODO Should be a bare bone enum class, but I'm too lazy to do it right now.
-enum class MindustryRules(val title: String, val description: String, val example: String) {
-    GRIEFING(
-        "Griefing (sabotaging)",
-        "Sabotaging your team is annoying, childish and makes the game less fun for other people.",
-        "Deconstructing everything near core."),
-    VOTEKICK_ABUSE(
-        "Vote kick abuse",
-        "The vote kick system is only for removing a griefer from the game, not removing noobs or people you don't like.",
-        "Vote kicking someone you dislike."),
-    ADVERTISING(
-        "Advertising",
-        "Everyone finds advertising annoying.",
-        "Advertising some generic server someone is hosting."),
-    NSFW(
-        "NSFW", "No one wants to see that here, specially Anuke.", "Explicit logic display image."),
-    AUTOMATION(
-        "Automation",
-        "Anything that makes the player (you) do anything automatically.",
-        "Foo client auto-item, player assist, etc.")
+enum class MindustryRules {
+    GRIEFING,
+    VOTEKICK_ABUSE,
+    ADVERTISING,
+    NSFW,
+    AUTOMATION
 }

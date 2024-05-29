@@ -19,79 +19,64 @@ package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.Window
+import com.xpdustry.distributor.api.gui.WindowManager
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
-import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.security.MindustryRules
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.action.Action
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
+import com.xpdustry.imperium.mindustry.misc.OpenURIAction
+import com.xpdustry.imperium.mindustry.misc.ShowAction
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.translation.gui_close
+import com.xpdustry.imperium.mindustry.translation.gui_rules_content
+import com.xpdustry.imperium.mindustry.translation.gui_rules_title
+import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_discord
+import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_rules
+import com.xpdustry.imperium.mindustry.translation.gui_welcome_content
+import com.xpdustry.imperium.mindustry.translation.gui_welcome_title
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Call
-import mindustry.gen.Iconc
-import mindustry.net.Administration.Config
 
 class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
-    private val rulesInterface: Interface
-    private val welcomeInterface: Interface
+    private val rulesInterface: WindowManager
+    private val welcomeInterface: WindowManager
 
     init {
-        rulesInterface = MenuInterface.create(instances.get())
-        rulesInterface.addTransformer { _, pane ->
-            pane.title = "Da Rules"
-            pane.content = buildString {
-                // TODO Rules are only "don'ts" right now, add some "do's" too
-                append(
-                    "[scarlet]${Iconc.warning} You may be banned if you do any of the following:")
-                for (rule in MindustryRules.entries) {
-                    append("\n\n[royal]» [accent]")
-                    append(rule.title)
-                    append("\n[white]")
-                    append(rule.description)
-                    append("\n[lightgray]Example: ")
-                    append(rule.example)
-                }
-            }
-            pane.options.addRow(MenuOption("Close", View::back))
+        rulesInterface = MenuManager.create(instances.get())
+        rulesInterface.addTransformer { (pane) ->
+            pane.title = gui_rules_title()
+            pane.content = gui_rules_content()
+            pane.grid.addRow(MenuOption.of(gui_close(), Action.back()))
         }
 
-        welcomeInterface = MenuInterface.create(instances.get())
-        welcomeInterface.addTransformer { _, pane ->
-            pane.title = "Hello there"
-            pane.content =
-                """
-                Welcome to
-                [white]${Config.serverName.string()}
-                [white]Have fun on our server network!
-
-                [gray]You can disable this message with the [accent]/settings[] command.
-                """
-                    .trimIndent()
-            pane.options.addRow(MenuOption("${Iconc.bookOpen} Rules", rulesInterface::open))
-            pane.options.addRow(
-                MenuOption(
-                    "[${BLURPLE.toHexString()}]${Iconc.discord} Discord",
-                    Action.uri(DISCORD_INVITATION_LINK.toURI())))
-            pane.options.addRow(MenuOption("Close", View::close))
+        welcomeInterface = MenuManager.create(instances.get())
+        welcomeInterface.addTransformer { (pane) ->
+            pane.title = gui_welcome_title()
+            pane.content = gui_welcome_content()
+            pane.grid.addRow(MenuOption.of(gui_welcome_button_rules(), ShowAction(rulesInterface)))
+            pane.grid.addRow(
+                MenuOption.of(
+                    gui_welcome_button_discord(), OpenURIAction(DISCORD_INVITATION_LINK.toURI())))
+            pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
         }
     }
 
     @ImperiumCommand(["rules"])
     @ClientSide
     fun onWelcomeCommand(sender: CommandSender) {
-        rulesInterface.open(sender.player)
+        rulesInterface.create(sender.player).show()
     }
 
     @ImperiumCommand(["discord"])
@@ -104,7 +89,7 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         ImperiumScope.MAIN.launch {
             if (users.getSetting(event.player.uuid(), User.Setting.SHOW_WELCOME_MESSAGE)) {
-                welcomeInterface.open(event.player)
+                runMindustryThread { welcomeInterface.create(event.player).show() }
             }
         }
     }

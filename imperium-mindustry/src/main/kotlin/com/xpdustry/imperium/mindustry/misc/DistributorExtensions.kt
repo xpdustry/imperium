@@ -22,13 +22,16 @@ import arc.struct.ObjectSet
 import arc.struct.Seq
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.collection.MindustryCollections
+import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.Pane
 import com.xpdustry.distributor.api.gui.State
+import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.gui.transform.Transformer
 import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.TypeToken
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
+import java.net.URI
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.reflect.jvm.javaType
@@ -39,6 +42,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import mindustry.Vars
 import mindustry.entities.EntityGroup
+import mindustry.gen.Call
 import mindustry.gen.Entityc
 import mindustry.gen.Player
 
@@ -74,3 +78,9 @@ operator fun <P : Pane> Transformer.Context<P>.component3(): Player = viewer
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T> key(name: String): Key<T> =
     Key.of("imperium", name, TypeToken.of(typeOf<T>().javaType) as TypeToken<T>)
+
+@Suppress("FunctionName")
+fun OpenURIAction(uri: URI) = Action { Call.openURI(it.viewer.con(), uri.toString()) }
+
+@Suppress("FunctionName")
+fun ShowAction(manager: WindowManager) = Action { manager.create(it).show() }
