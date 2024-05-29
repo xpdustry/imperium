@@ -34,6 +34,16 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
+private val SUPPORTED_LANGUAGE =
+    setOf(
+        Locale.ENGLISH,
+        Locale.FRENCH,
+        Locale.GERMAN,
+        Locale.forLanguageTag("es"),
+        Locale.forLanguageTag("ru"),
+        Locale.forLanguageTag("pl"),
+        Locale.forLanguageTag("hr"))
+
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
@@ -43,7 +53,8 @@ data class ImperiumConfig(
     val server: ServerConfig = ServerConfig("unknown"),
     val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
-    val supportedLanguages: Set<Locale> = setOf(Locale.ENGLISH, Locale.FRENCH),
+    // TODO Remove this goofy aah way of loading locales
+    val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,
     val webhook: WebhookConfig = WebhookConfig.None,
     val discord: DiscordConfig? = null,
     val mindustry: MindustryConfig? = null,

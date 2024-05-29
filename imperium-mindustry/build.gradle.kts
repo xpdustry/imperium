@@ -47,7 +47,7 @@ tasks.shadowJar {
     }
 
     from(downloadMindustryBundles) {
-        into("com/xpdustry/imperium/bundles/")
+        into("com/xpdustry/imperium/mindustry/bundles/")
         rename { "mindustry_$it" }
     }
 
