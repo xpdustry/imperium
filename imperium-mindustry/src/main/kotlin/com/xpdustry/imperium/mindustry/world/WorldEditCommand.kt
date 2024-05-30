@@ -57,10 +57,10 @@ class WorldEditCommand : ImperiumApplication.Listener {
         val size = block?.size ?: 1
         val x2 = x + w + (size % (x + w))
         val y2 = y + h + (size % (y + h))
-        if (x > Vars.world.width() ||
-            y > Vars.world.height() ||
-            x2 > Vars.world.width() ||
-            y2 > Vars.world.height()) {
+        if (x > (Vars.world.width() + 1) ||
+            y > (Vars.world.height() + 1) ||
+            x2 > (Vars.world.width() + 1) ||
+            y2 > (Vars.world.height() + 1)) {
             sender.error("The specified coordinates and size are out of bounds.")
             return
         }
