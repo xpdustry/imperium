@@ -40,6 +40,14 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val users = instances.get<UserManager>()
     private val config = instances.get<ImperiumConfig>()
 
+    @ImperiumCommand(["admin"], Rank.OVERSEER)
+    @ClientSide
+    fun onAdminToggleCommand(sender: CommandSender) {
+        sender.player.admin = !sender.player.admin
+        sender.player.sendMessage(
+            "[accent]Your admin status has been set to ${sender.player.admin}")
+    }
+    
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     @ClientSide
     @ServerSide
