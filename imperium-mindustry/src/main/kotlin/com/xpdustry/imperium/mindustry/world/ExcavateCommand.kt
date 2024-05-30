@@ -97,7 +97,7 @@ class ExcavateCommand(instances: InstanceManager) :
     internal fun onTapEvent(event: EventType.TapEvent) {
         val area = areas[event.player] ?: return
         val point = ImmutablePoint(event.tile.x.toInt(), event.tile.y.toInt())
-        if (point.x !in 0..Vars.world.width() || point.y !in 0..Vars.world.height()) {
+        if (point.x !in 0..(Vars.world.width() + 1) || point.y !in 0..(Vars.world.height() + 1)) {
             event.player.sendMessage("The chosen excavate point is out of bounds, try again!")
             return
         }
