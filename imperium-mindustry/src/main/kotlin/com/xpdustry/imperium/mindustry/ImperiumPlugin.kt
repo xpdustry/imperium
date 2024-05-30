@@ -60,7 +60,6 @@ import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankProvider
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
-import com.xpdustry.imperium.mindustry.security.AdminToggle
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.LogicImageListener
@@ -177,7 +176,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 SpawnCommand::class,
                 WorldEditCommand::class,
                 HereCommand::class,
-                AdminToggle::class,
                 ModerationCommand::class,
                 AlertListener::class)
             .forEach(application::register)
