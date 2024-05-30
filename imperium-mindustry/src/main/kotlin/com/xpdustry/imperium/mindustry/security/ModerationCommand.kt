@@ -47,7 +47,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         sender.player.sendMessage(
             "[accent]Your admin status has been set to ${sender.player.admin}")
     }
-    
+
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     @ClientSide
     @ServerSide
