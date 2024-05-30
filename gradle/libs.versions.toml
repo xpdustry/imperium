@@ -37,7 +37,7 @@ prettytime = "5.0.8.Final"
 time4j = "4.38"
 nohorny = "2.2.0"
 jda = "5.0.0-beta.24"
-cloud-core = "2.0.0-beta.4"
+cloud-core = "2.0.0-rc.2"
 cloud-translations = "1.0.0-beta.2"
 cloud-discord = "1.0.0-beta.2"
 
