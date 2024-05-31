@@ -7,6 +7,7 @@ import java.util.Properties
 import java.util.zip.ZipInputStream
 import kotlin.io.path.bufferedReader
 import kotlin.io.path.bufferedWriter
+import kotlin.io.path.moveTo
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.tasks.CacheableTask
@@ -65,6 +66,8 @@ open class DownloadMindustryBundles : DefaultTask() {
                 Properties().apply { putAll(filtered) }.store(it, null)
             }
         }
+
+        directory.resolve("bundle.properties").moveTo(directory.resolve("bundle_en.properties"))
     }
 
     companion object {

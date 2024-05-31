@@ -62,7 +62,7 @@ class ImperiumComponentRendererProvider(
 
     class BlockComponentRenderer(config: ImperiumConfig) : ComponentRenderer<BlockComponent> {
 
-        private val source = BundleTranslationSource.create(Locale.ROOT)
+        private val source = BundleTranslationSource.create(Locale.ENGLISH)
 
         init {
             // TODO Replace by ResourceTranslationBundles#fromClasspathDirectory
