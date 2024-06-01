@@ -24,7 +24,8 @@ import net.dv8tion.jda.api.interactions.DiscordLocale
 
 fun getTranslatedTextOrNull(key: String, locale: Locale): String? =
     try {
-        ResourceBundle.getBundle("com/xpdustry/imperium/discord/bundles", locale).getString(key)
+        ResourceBundle.getBundle("com/xpdustry/imperium/discord/bundles/bundle", locale)
+            .getString(key)
     } catch (error: MissingResourceException) {
         null
     }
