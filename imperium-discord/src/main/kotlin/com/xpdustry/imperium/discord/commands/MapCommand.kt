@@ -110,6 +110,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     suspend fun onMapSubmitCommand(
         actor: InteractionSender.Slash,
         map: Message.Attachment,
+        gamemode: MindustryGamemode
         notes: String? = null
     ) {
         if (!map.fileName.endsWith(".msav")) {
@@ -152,6 +153,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                                 meta.description?.stripMindustryColors() ?: "Unknown",
                                 false)
                             field("Size", "${preview.width} x ${preview.height}", false)
+                            field("Gamemode", gamemode, false)
                             if (notes != null) {
                                 field("Notes", notes, false)
                             }
