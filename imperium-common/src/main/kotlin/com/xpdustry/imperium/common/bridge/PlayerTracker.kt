@@ -29,8 +29,6 @@ import kotlinx.serialization.Serializable
 interface PlayerTracker {
     suspend fun getPlayerJoins(server: String): List<Entry>?
 
-    suspend fun getPlayerQuits(server: String): List<Entry>?
-
     suspend fun getOnlinePlayers(server: String): List<Entry>?
 
     @Serializable
@@ -45,9 +43,6 @@ open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerT
 
     override suspend fun getPlayerJoins(server: String): List<PlayerTracker.Entry>? =
         requestPlayerList(server, PlayerListRequest.Type.JOIN)
-
-    override suspend fun getPlayerQuits(server: String): List<PlayerTracker.Entry>? =
-        requestPlayerList(server, PlayerListRequest.Type.QUIT)
 
     override suspend fun getOnlinePlayers(server: String): List<PlayerTracker.Entry>? =
         requestPlayerList(server, PlayerListRequest.Type.ONLINE)
