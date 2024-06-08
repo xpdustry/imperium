@@ -1,10 +1,10 @@
+import com.xpdustry.toxopid.Toxopid
+import com.xpdustry.toxopid.extension.configureDesktop
+import com.xpdustry.toxopid.extension.configureServer
 import com.xpdustry.toxopid.spec.ModMetadata
 import com.xpdustry.toxopid.spec.ModPlatform
 import com.xpdustry.toxopid.task.GithubAssetDownload
 import com.xpdustry.toxopid.task.MindustryExec
-import com.xpdustry.toxopid.Toxopid
-import com.xpdustry.toxopid.extension.configureDesktop
-import com.xpdustry.toxopid.extension.configureServer
 
 plugins {
     id("imperium.base-conventions")
