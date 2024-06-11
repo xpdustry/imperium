@@ -32,6 +32,7 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.ACCENT
 import com.xpdustry.distributor.api.component.style.ComponentColor.CYAN
 import com.xpdustry.distributor.api.component.style.ComponentColor.GREEN
 import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
+import com.xpdustry.distributor.api.component.style.ComponentColor.from
 import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
@@ -42,6 +43,7 @@ import com.xpdustry.imperium.mindustry.game.Tip
 import com.xpdustry.imperium.mindustry.security.MindustryRules
 import java.time.temporal.ChronoUnit
 import kotlin.time.Duration
+import mindustry.game.Team
 import mindustry.gen.Iconc
 import mindustry.net.Administration.Config
 import mindustry.world.Block
@@ -220,3 +222,8 @@ fun announcement_dangerous_block_build(player: String, block: Block, x: Int, y: 
             text(x.toString(), ORANGE),
             text(y.toString(), ORANGE)),
         SCARLET)
+
+fun command_team_success(team: Team): Component =
+    translatable(
+        "imperium.command.team.success",
+        TranslationArguments.array(translatable(team, from(team.color))))
