@@ -21,9 +21,11 @@ import arc.Events
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.component.ComponentLike
+import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -40,7 +42,6 @@ import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
-import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -50,7 +51,10 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.announcement_ban
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
+import com.xpdustry.imperium.mindustry.translation.warning
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -74,7 +78,9 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val kicking = PlayerMap<Boolean>(instances.get())
     private val chatMessagePipeline = instances.get<ChatMessagePipeline>()
     private val gatekeeper = instances.get<GatekeeperPipeline>()
-    private val detector = instances.get<ClientDetector>()
+    private val badWords = instances.get<BadWordDetector>()
+    private val badWordsCounter = SimpleRateLimiter<MUUID>(3, 10.minutes)
+    private val config = instances.get<ImperiumConfig>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
@@ -168,6 +174,26 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             if (muted != null) {
                 if (ctx.target == ctx.sender) {
                     ctx.sender.asAudience.sendMessage(punishment_message(muted))
+                }
+                return@register ""
+            }
+            ctx.message
+        }
+
+        chatMessagePipeline.register("bad-word", Priority.HIGH) { ctx ->
+            val words = badWords.findBadWords(ctx.message)
+            if (words.isNotEmpty()) {
+                if (ctx.sender == ctx.target && ctx.sender != null) {
+                    if (badWordsCounter.incrementAndCheck(MUUID.from(ctx.sender))) {
+                        ctx.sender.asAudience.sendMessage(warning("bad_word"))
+                    } else {
+                        punishments.punish(
+                            config.server.identity,
+                            users.getByIdentity(ctx.sender.identity).snowflake,
+                            "Bad words: $words",
+                            Punishment.Type.MUTE,
+                            1.hours)
+                    }
                 }
                 return@register ""
             }

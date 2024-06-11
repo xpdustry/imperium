@@ -41,6 +41,7 @@ jda = "5.0.0-beta.24"
 cloud-core = "2.0.0-beta.4"
 cloud-translations = "1.0.0-beta.2"
 cloud-discord = "1.0.0-beta.2"
+ahocorasick = "0.6.3"
 
 # gradle plugins
 toxopid = "4.0.0"
@@ -95,6 +96,7 @@ nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
 cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
+ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasick" }
 
 # gradle plugins
 toxopid = { module = "com.xpdustry:toxopid", version.ref = "toxopid" }

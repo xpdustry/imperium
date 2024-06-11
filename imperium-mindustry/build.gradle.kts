@@ -35,6 +35,7 @@ dependencies {
     compileOnly(libs.distributor.permission.rank)
     compileOnly(libs.nohorny)
     implementation(libs.jsoup)
+    implementation(libs.ahocorasick)
 }
 
 val generateResources by tasks.registering {
