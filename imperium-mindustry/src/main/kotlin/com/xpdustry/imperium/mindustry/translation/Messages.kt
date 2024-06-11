@@ -37,7 +37,6 @@ import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
-import com.xpdustry.imperium.mindustry.component.block
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.game.Tip
 import com.xpdustry.imperium.mindustry.security.MindustryRules
@@ -217,7 +216,7 @@ fun announcement_dangerous_block_build(player: String, block: Block, x: Int, y: 
         "imperium.announcement.dangerous-block-build",
         TranslationArguments.array(
             text(player, ORANGE),
-            block(block, ORANGE),
+            translatable(block, ORANGE),
             text(x.toString(), ORANGE),
             text(y.toString(), ORANGE)),
         SCARLET)

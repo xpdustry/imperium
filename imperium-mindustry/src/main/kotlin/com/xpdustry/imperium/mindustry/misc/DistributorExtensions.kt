@@ -24,10 +24,10 @@ import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.Pane
-import com.xpdustry.distributor.api.gui.State
 import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.gui.transform.Transformer
 import com.xpdustry.distributor.api.key.Key
+import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.TypeToken
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
@@ -71,7 +71,7 @@ suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T)
 // TODO Clean this shit up
 operator fun <P : Pane> Transformer.Context<P>.component1(): P = pane
 
-operator fun <P : Pane> Transformer.Context<P>.component2(): State = state
+operator fun <P : Pane> Transformer.Context<P>.component2(): MutableKeyContainer = state
 
 operator fun <P : Pane> Transformer.Context<P>.component3(): Player = viewer
 

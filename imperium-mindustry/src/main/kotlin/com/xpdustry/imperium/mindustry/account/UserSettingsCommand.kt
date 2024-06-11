@@ -58,29 +58,31 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     private fun createPlayerSettingsInterface(plugin: MindustryPlugin): MenuManager =
-        MenuManager.create(plugin).addTransformer { (pane, state) ->
-            pane.title = gui_user_settings_title()
-            pane.content = gui_user_settings_description()
-            state[SETTINGS]!!
-                .entries
-                .sortedBy { it.key.name }
-                .forEach { (setting, value) ->
-                    pane.grid.addRow(
-                        MenuOption.of(gui_user_settings_entry(setting, value)) { window ->
-                            val settings = window.state[SETTINGS]!!.toMutableMap()
-                            settings[setting] = !value
-                            ImperiumScope.MAIN.launch {
-                                users.setSettings(window.viewer.identity, settings)
-                                runMindustryThread {
-                                    window.state[SETTINGS] = settings
-                                    window.show()
+        MenuManager.create(plugin).apply {
+            addTransformer { (pane, state) ->
+                pane.title = gui_user_settings_title()
+                pane.content = gui_user_settings_description()
+                state[SETTINGS]!!
+                    .entries
+                    .sortedBy { it.key.name }
+                    .forEach { (setting, value) ->
+                        pane.grid.addRow(
+                            MenuOption.of(gui_user_settings_entry(setting, value)) { window ->
+                                val settings = window.state[SETTINGS]!!.toMutableMap()
+                                settings[setting] = !value
+                                ImperiumScope.MAIN.launch {
+                                    users.setSettings(window.viewer.identity, settings)
+                                    runMindustryThread {
+                                        window.state[SETTINGS] = settings
+                                        window.show()
+                                    }
                                 }
-                            }
-                        })
-                    pane.grid.addRow(
-                        MenuOption.of(user_setting_description(setting), Action.none()))
-                }
-            pane.grid.addRow(MenuOption.of(gui_close(), Action.back()))
+                            })
+                        pane.grid.addRow(
+                            MenuOption.of(user_setting_description(setting), Action.none()))
+                    }
+                pane.grid.addRow(MenuOption.of(gui_close(), Action.back()))
+            }
         }
 
     private suspend fun loadUserSettings(uuid: String): Map<User.Setting, Boolean> {

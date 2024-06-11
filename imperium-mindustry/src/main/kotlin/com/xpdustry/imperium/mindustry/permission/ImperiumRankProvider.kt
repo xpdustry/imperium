@@ -21,7 +21,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.permission.rank.EnumRankNode
 import com.xpdustry.distributor.api.permission.rank.RankNode
-import com.xpdustry.distributor.api.permission.rank.RankSource
+import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
@@ -39,7 +39,7 @@ import mindustry.game.EventType
 import mindustry.gen.Player
 
 class ImperiumRankProvider(private val accounts: AccountManager) :
-    RankSource, ImperiumApplication.Listener {
+    RankProvider, ImperiumApplication.Listener {
 
     private val cache = buildCache<MUUID, Rank> { expireAfterWrite(20.seconds.toJavaDuration()) }
 
@@ -55,7 +55,7 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
 
     override fun getRanks(player: Player): List<RankNode> {
         val rank = cache.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE
-        return listOf(EnumRankNode.linear(rank, { "imperium-" + it.name.lowercase() }, true))
+        return listOf(EnumRankNode.linear(rank, "imperium", true))
     }
 
     private suspend fun fetchPlayerRank(player: Player) {

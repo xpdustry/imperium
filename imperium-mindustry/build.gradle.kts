@@ -1,16 +1,16 @@
+import com.xpdustry.toxopid.Toxopid
+import com.xpdustry.toxopid.extension.configureDesktop
+import com.xpdustry.toxopid.extension.configureServer
 import com.xpdustry.toxopid.spec.ModMetadata
 import com.xpdustry.toxopid.spec.ModPlatform
 import com.xpdustry.toxopid.task.GithubAssetDownload
 import com.xpdustry.toxopid.task.MindustryExec
-import com.xpdustry.toxopid.Toxopid
-import com.xpdustry.toxopid.extension.configureDesktop
-import com.xpdustry.toxopid.extension.configureServer
 
 plugins {
     id("imperium.base-conventions")
     id("imperium.publishing-conventions")
-    id("com.xpdustry.toxopid")
     id("com.github.johnrengelman.shadow")
+    id("com.xpdustry.toxopid")
 }
 
 val metadata = ModMetadata.fromJson(project.file("plugin.json"))
@@ -37,8 +37,6 @@ dependencies {
     implementation(libs.jsoup)
 }
 
-val downloadMindustryBundles by tasks.registering(DownloadMindustryBundles::class)
-
 val generateResources by tasks.registering {
     outputs.files(fileTree(temporaryDir))
     doLast {
@@ -54,11 +52,6 @@ tasks.shadowJar {
 
     from(rootProject.file("LICENSE.md")) {
         into("META-INF")
-    }
-
-    from(downloadMindustryBundles) {
-        into("com/xpdustry/imperium/mindustry/bundles/")
-        rename { "mindustry_$it" }
     }
 
     mergeServiceFiles()
@@ -96,13 +89,12 @@ val downloadKotlinRuntime =
         )
     }
 
-val downloadDistributorLoggingSimple =
-    tasks.register<GithubAssetDownload>("downloadDistributorLoggingSimple") {
-        owner.set("xpdustry")
-        repo.set("distributor")
-        asset.set("distributor-logging-simple.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
-    }
+val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "slf4md"
+    asset = "slf4md-simple.jar"
+    version = libs.versions.slf4md.map { "v$it" }
+}
 
 val downloadDistributorCommon =
     tasks.register<GithubAssetDownload>("downloadDistributorCommon") {
@@ -137,7 +129,7 @@ tasks.runMindustryServer {
     mods.from(
         downloadKotlinRuntime,
         downloadNoHorny,
-        downloadDistributorLoggingSimple,
+        downloadSlf4md,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )
@@ -150,7 +142,7 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     mods.from(
         downloadKotlinRuntime,
         downloadNoHorny,
-        downloadDistributorLoggingSimple,
+        downloadSlf4md,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )

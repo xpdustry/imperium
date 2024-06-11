@@ -20,8 +20,9 @@ package com.xpdustry.imperium.mindustry.misc
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.component.ComponentLike
-import com.xpdustry.distributor.api.component.render.ComponentAppendable
-import com.xpdustry.distributor.api.metadata.MetadataContainer
+import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
+import com.xpdustry.distributor.api.key.DynamicKeyContainer
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.misc.logger
@@ -75,15 +76,17 @@ fun NetConnection.kick(
 ) {
     val builder =
         if (player != null) {
-            DistributorProvider.get().audienceProvider.getPlayer(player).metadata.toBuilder()
+            (DistributorProvider.get().audienceProvider.getPlayer(player).metadata
+                    as DynamicKeyContainer)
+                .toBuilder()
         } else {
-            MetadataContainer.builder()
+            DynamicKeyContainer.builder()
         }
     if (locale != null) {
-        builder.putConstant(Audience.LOCALE, locale)
+        builder.putConstant(StandardKeys.LOCALE, locale)
     }
     kick(
-        ComponentAppendable.mindustry(builder.build()).append(message.asComponent()).toString(),
+        ComponentStringBuilder.mindustry(builder.build()).append(message.asComponent()).toString(),
         duration,
         silent)
 }
