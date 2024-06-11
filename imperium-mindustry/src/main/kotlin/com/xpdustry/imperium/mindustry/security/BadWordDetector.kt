@@ -60,7 +60,11 @@ class SimpleBadWordDetector(private val http: OkHttpClient) :
                     fs.getPath("/bad-words-list-master/languages/")
                         .listDirectoryEntries()
                         .forEach { entry ->
-                            entry.useLines { lines -> lines.forEach { builder.addKeyword(it) } }
+                            entry.useLines { lines ->
+                                lines.forEach { line ->
+                                    if (!line.startsWith("#")) builder.addKeyword(line)
+                                }
+                            }
                         }
                 }
                 trie = builder.build()
