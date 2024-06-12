@@ -39,6 +39,7 @@ dependencies {
 }
 
 val generateResources by tasks.registering {
+    inputs.property("metadata", metadata)
     outputs.files(fileTree(temporaryDir))
     doLast {
         temporaryDir.resolve("plugin.json").writeText(ModMetadata.toJson(metadata))
