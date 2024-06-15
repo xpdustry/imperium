@@ -110,7 +110,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     suspend fun onMapSubmitCommand(
         actor: InteractionSender.Slash,
         map: Message.Attachment,
-        gamemode: MindustryGamemode,
+        gamemode: String,
         notes: String? = null
     ) {
         if (!map.fileName.endsWith(".msav")) {
