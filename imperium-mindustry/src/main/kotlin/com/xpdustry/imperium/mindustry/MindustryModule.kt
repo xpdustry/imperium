@@ -37,7 +37,9 @@ import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
+import com.xpdustry.imperium.mindustry.security.BadWordDetector
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
+import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import java.nio.file.Path
 import java.util.concurrent.Executor
@@ -70,4 +72,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<Executor>("main") { Executor(Core.app::post) }
 
     provider<ClientDetector> { SimpleClientDetector(get()) }
+
+    provider<BadWordDetector> { SimpleBadWordDetector(get()) }
 }

@@ -1,54 +1,58 @@
-import fr.xpdustry.toxopid.dsl.mindustryDependencies
-import fr.xpdustry.toxopid.task.GithubArtifactDownload
-import fr.xpdustry.toxopid.task.MindustryExec
+import com.xpdustry.toxopid.Toxopid
+import com.xpdustry.toxopid.extension.configureDesktop
+import com.xpdustry.toxopid.extension.configureServer
+import com.xpdustry.toxopid.spec.ModMetadata
+import com.xpdustry.toxopid.spec.ModPlatform
+import com.xpdustry.toxopid.task.GithubAssetDownload
+import com.xpdustry.toxopid.task.MindustryExec
 
 plugins {
     id("imperium.base-conventions")
     id("imperium.publishing-conventions")
-    id("fr.xpdustry.toxopid")
     id("com.github.johnrengelman.shadow")
+    id("com.xpdustry.toxopid")
 }
 
-val metadata = fr.xpdustry.toxopid.spec.ModMetadata.fromJson(project.file("plugin.json"))
+val metadata = ModMetadata.fromJson(project.file("plugin.json"))
 metadata.minGameVersion = libs.versions.mindustry.get()
 metadata.description = rootProject.description!!
 metadata.version = rootProject.version.toString()
 
 toxopid {
-    compileVersion.set(libs.versions.mindustry.map { "v$it" })
-    platforms.add(fr.xpdustry.toxopid.spec.ModPlatform.HEADLESS)
+    compileVersion = libs.versions.mindustry.map { "v$it" }
+    platforms = setOf(ModPlatform.SERVER)
 }
 
 dependencies {
+    compileOnly(toxopid.dependencies.mindustryCore)
+    compileOnly(toxopid.dependencies.arcCore)
+    testImplementation(toxopid.dependencies.mindustryCore)
+    testImplementation(toxopid.dependencies.arcCore)
     api(projects.imperiumCommon)
-    mindustryDependencies()
     implementation(libs.distributor.command.cloud)
     implementation(libs.bundles.cloud)
     compileOnly(libs.distributor.common)
     compileOnly(libs.distributor.permission.rank)
     compileOnly(libs.nohorny)
     implementation(libs.jsoup)
+    implementation(libs.ahocorasick)
 }
 
-val downloadMindustryBundles by tasks.registering(DownloadMindustryBundles::class)
+val generateResources by tasks.registering {
+    outputs.files(fileTree(temporaryDir))
+    doLast {
+        temporaryDir.resolve("plugin.json").writeText(ModMetadata.toJson(metadata))
+    }
+}
 
 tasks.shadowJar {
     archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
 
-    doFirst {
-        val temp = temporaryDir.resolve("plugin.json")
-        temp.writeText(metadata.toJson(true))
-        from(temp)
-    }
+    from(generateResources)
 
     from(rootProject.file("LICENSE.md")) {
         into("META-INF")
-    }
-
-    from(downloadMindustryBundles) {
-        into("com/xpdustry/imperium/mindustry/bundles/")
-        rename { "mindustry_$it" }
     }
 
     mergeServiceFiles()
@@ -75,10 +79,10 @@ tasks.register("getArtifactPath") {
 tasks.build { dependsOn(tasks.shadowJar) }
 
 val downloadKotlinRuntime =
-    tasks.register<GithubArtifactDownload>("downloadKotlinRuntime") {
-        user.set("xpdustry")
+    tasks.register<GithubAssetDownload>("downloadKotlinRuntime") {
+        owner.set("xpdustry")
         repo.set("kotlin-runtime")
-        name.set("kotlin-runtime.jar")
+        asset.set("kotlin-runtime.jar")
         version.set(
             libs.versions.kotlin.runtime.zip(libs.versions.kotlin.core) { runtime, core ->
                 "v$runtime-k.$core"
@@ -86,54 +90,47 @@ val downloadKotlinRuntime =
         )
     }
 
-val downloadDistributorLoggingSimple =
-    tasks.register<GithubArtifactDownload>("downloadDistributorLoggingSimple") {
-        user.set("xpdustry")
-        repo.set("distributor")
-        name.set("distributor-logging-simple.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
-    }
+val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "slf4md"
+    asset = "slf4md-simple.jar"
+    version = libs.versions.slf4md.map { "v$it" }
+}
 
 val downloadDistributorCommon =
-    tasks.register<GithubArtifactDownload>("downloadDistributorCommon") {
-        user.set("xpdustry")
+    tasks.register<GithubAssetDownload>("downloadDistributorCommon") {
+        owner.set("xpdustry")
         repo.set("distributor")
-        name.set("distributor-common.jar")
+        asset.set("distributor-common.jar")
         version.set(libs.versions.distributor.map { "v$it" })
     }
 
 val downloadDistributorPermissionRank =
-    tasks.register<GithubArtifactDownload>("downloadDistributorPermissionRank") {
-        user.set("xpdustry")
+    tasks.register<GithubAssetDownload>("downloadDistributorPermissionRank") {
+        owner.set("xpdustry")
         repo.set("distributor")
-        name.set("distributor-permission-rank.jar")
+        asset.set("distributor-permission-rank.jar")
         version.set(libs.versions.distributor.map { "v$it" })
     }
 
 val downloadNoHorny =
-    tasks.register<GithubArtifactDownload>("downloadNoHorny") {
-        user.set("xpdustry")
+    tasks.register<GithubAssetDownload>("downloadNoHorny") {
+        owner.set("xpdustry")
         repo.set("nohorny")
-        name.set("nohorny.jar")
+        asset.set("nohorny.jar")
         version.set(libs.versions.nohorny.map { "v$it" })
     }
 
-tasks.runMindustryClient { mods.setFrom() }
-
-tasks.register<MindustryExec>("runMindustryClient2") {
-    group = fr.xpdustry.toxopid.Toxopid.TASK_GROUP_NAME
-    classpath(tasks.downloadMindustryClient)
-    mainClass.convention("mindustry.desktop.DesktopLauncher")
-    modsPath.convention("./mods")
-    standardInput = System.`in`
+tasks.register<MindustryExec>("runMindustryDesktop2") {
+    group = Toxopid.TASK_GROUP_NAME
+    configureDesktop()
 }
 
 tasks.runMindustryServer {
-    mods.setFrom(
+    mods.from(
         downloadKotlinRuntime,
-        tasks.shadowJar,
         downloadNoHorny,
-        downloadDistributorLoggingSimple,
+        downloadSlf4md,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )
@@ -141,16 +138,12 @@ tasks.runMindustryServer {
 
 // Second server for testing discovery
 tasks.register<MindustryExec>("runMindustryServer2") {
-    group = fr.xpdustry.toxopid.Toxopid.TASK_GROUP_NAME
-    classpath(tasks.downloadMindustryServer)
-    mainClass.set("mindustry.server.ServerLauncher")
-    modsPath.set("./config/mods")
-    standardInput = System.`in`
-    mods.setFrom(
+    group = Toxopid.TASK_GROUP_NAME
+    configureServer()
+    mods.from(
         downloadKotlinRuntime,
-        tasks.shadowJar,
         downloadNoHorny,
-        downloadDistributorLoggingSimple,
+        downloadSlf4md,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )
