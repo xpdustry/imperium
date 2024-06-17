@@ -33,11 +33,10 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.AddressWhitelist
-import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.translation.gatekeeper_failure
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.util.Locale
@@ -60,11 +59,10 @@ private val logger = logger("ROOT")
 class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val pipeline = instances.get<GatekeeperPipeline>()
     private val vpn = instances.get<VpnDetection>()
-    private val punishments = instances.get<PunishmentManager>()
     private val http = instances.get<OkHttpClient>()
     private val config = instances.get<MindustryConfig>()
-    private val renderer = instances.get<TimeRenderer>()
     private val whitelist = instances.get<AddressWhitelist>()
+    private val badWords = instances.get<BadWordDetector>()
 
     override fun onImperiumInit() {
         if (!config.security.gatekeeper) {
@@ -82,6 +80,13 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, whitelist))
+        pipeline.register("bad-name", Priority.HIGH) { ctx ->
+            if (badWords.findBadWords(ctx.name).isNotEmpty()) {
+                GatekeeperResult.Failure(gatekeeper_failure("name.bad_word"))
+            } else {
+                GatekeeperResult.Success
+            }
+        }
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
             interceptPlayerConnection(con, packet, pipeline, config)

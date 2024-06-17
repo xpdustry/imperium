@@ -17,78 +17,31 @@
  */
 package com.xpdustry.imperium.mindustry.component
 
-import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.component.Component
-import com.xpdustry.distributor.api.component.render.ComponentAppendable
 import com.xpdustry.distributor.api.component.render.ComponentRenderer
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
-import com.xpdustry.distributor.api.metadata.MetadataContainer
-import com.xpdustry.distributor.api.translation.BundleTranslationSource
-import com.xpdustry.distributor.api.translation.ResourceTranslationBundles
-import com.xpdustry.distributor.api.translation.TranslationArguments
-import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.imperium.common.time.TimeRenderer
 import java.util.Locale
-import kotlin.jvm.optionals.getOrNull
 
-class ImperiumComponentRendererProvider(
-    private val renderer: TimeRenderer,
-    config: ImperiumConfig
-) : ComponentRendererProvider {
+class ImperiumComponentRendererProvider(renderer: TimeRenderer) : ComponentRendererProvider {
 
-    private val blockRenderer = BlockComponentRenderer(config)
+    private val duration = DurationComponentRenderer(renderer)
 
     @Suppress("UNCHECKED_CAST")
     override fun <T : Component> getRenderer(component: T) =
         when (component) {
-            is DurationComponent -> DurationComponentRenderer(renderer) as ComponentRenderer<T>
-            is BlockComponent -> blockRenderer as ComponentRenderer<T>
+            is DurationComponent -> duration as ComponentRenderer<T>
             else -> null
         }
 
     class DurationComponentRenderer(private val renderer: TimeRenderer) :
         ComponentRenderer<DurationComponent> {
-        override fun render(
-            component: DurationComponent,
-            appendable: ComponentAppendable,
-            metadata: MetadataContainer
-        ) {
-            appendable.append(
+        override fun render(component: DurationComponent, builder: ComponentStringBuilder) {
+            builder.append(
                 renderer.renderDuration(
-                    component.duration,
-                    metadata.getMetadata(Audience.LOCALE).getOrNull() ?: Locale.ENGLISH))
-        }
-    }
-
-    class BlockComponentRenderer(config: ImperiumConfig) : ComponentRenderer<BlockComponent> {
-
-        private val source = BundleTranslationSource.create(Locale.ENGLISH)
-
-        init {
-            // TODO Replace by ResourceTranslationBundles#fromClasspathDirectory
-            config.supportedLanguages.forEach {
-                source.registerAll(
-                    ResourceTranslationBundles.fromClasspath(
-                        it,
-                        "com/xpdustry/imperium/mindustry/bundles/mindustry_bundle",
-                        javaClass.classLoader))
-            }
-        }
-
-        override fun render(
-            component: BlockComponent,
-            appendable: ComponentAppendable,
-            metadata: MetadataContainer
-        ) {
-            val locale = metadata.getMetadata(Audience.LOCALE).getOrNull() ?: Locale.ENGLISH
-            if (locale.language == "router") {
-                appendable.append("router")
-            } else {
-                appendable.append(
-                    source
-                        .getTranslationOrMissing("block.${component.block.name}.name", locale)
-                        .format(TranslationArguments.empty()))
-            }
+                    component.duration, builder.context.get(StandardKeys.LOCALE) ?: Locale.ENGLISH))
         }
     }
 }

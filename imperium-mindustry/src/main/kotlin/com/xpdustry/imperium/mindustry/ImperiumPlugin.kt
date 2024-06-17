@@ -24,10 +24,11 @@ import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
-import com.xpdustry.distributor.api.permission.rank.RankSource
+import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.api.translation.BundleTranslationSource
-import com.xpdustry.distributor.api.translation.ResourceTranslationBundles
+import com.xpdustry.distributor.api.translation.ResourceBundles
+import com.xpdustry.distributor.api.translation.TranslationSource
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
@@ -53,6 +54,7 @@ import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
+import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
@@ -81,6 +83,7 @@ import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
 import com.xpdustry.imperium.mindustry.world.WorldEditCommand
+import kotlin.reflect.KClass
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
@@ -107,40 +110,29 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.instances.registerMindustryModule(this)
         application.instances.createAll()
 
-        val provider = ImperiumRankProvider(application.instances.get())
-        application.register(provider)
-        DistributorProvider.get()
-            .serviceManager
-            .register(this, RankSource::class.java, provider, Priority.NORMAL)
+        registerService(
+            RankProvider::class,
+            ImperiumRankProvider(application.instances.get()).also(application::register))
 
-        val source = ImperiumRankPermissionSource(application.instances.get())
-        DistributorProvider.get()
-            .serviceManager
-            .register(this, RankPermissionSource::class.java, source, Priority.NORMAL)
+        registerService(
+            RankPermissionSource::class, ImperiumRankPermissionSource(application.instances.get()))
 
-        DistributorProvider.get()
-            .globalTranslationSource
-            .register(
-                BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language)
-                    .apply {
-                        application.instances.get<ImperiumConfig>().supportedLanguages.forEach {
-                            locale ->
-                            registerAll(
-                                ResourceTranslationBundles.fromClasspath(
-                                    locale,
-                                    "com/xpdustry/imperium/mindustry/bundles/bundle",
-                                    ImperiumPlugin::class.java.classLoader))
-                        }
-                    })
+        registerService(
+            TranslationSource::class,
+            BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language)
+                .apply {
+                    registerAll(
+                        ResourceBundles.fromClasspathDirectory(
+                            ImperiumPlugin::class.java,
+                            "com/xpdustry/imperium/mindustry/bundles/",
+                            "bundle",
+                        ),
+                        ResourceBundles::getMessageFormatTranslation)
+                })
 
-        DistributorProvider.get()
-            .serviceManager
-            .register(
-                this,
-                ComponentRendererProvider::class.java,
-                ImperiumComponentRendererProvider(
-                    application.instances.get(), application.instances.get()),
-            )
+        registerService(
+            ComponentRendererProvider::class,
+            ImperiumComponentRendererProvider(application.instances.get()))
 
         sequenceOf(
                 ConventionListener::class,
@@ -177,7 +169,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 WorldEditCommand::class,
                 HereCommand::class,
                 ModerationCommand::class,
-                AlertListener::class)
+                AlertListener::class,
+                TeamCommand::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode
@@ -211,6 +204,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
     override fun onExit() {
         application.exit(ExitStatus.EXIT)
+    }
+
+    private fun <T : Any> registerService(klass: KClass<T>, instance: T) {
+        DistributorProvider.get()
+            .serviceManager
+            .register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }
 
     private inner class MindustryImperiumApplication : BaseImperiumApplication(logger) {

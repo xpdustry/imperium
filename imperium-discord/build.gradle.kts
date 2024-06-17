@@ -3,14 +3,9 @@ plugins {
     application
     id("com.github.johnrengelman.shadow")
     id("io.ktor.plugin")
-    id("fr.xpdustry.toxopid")
 }
 
 version = rootProject.version
-
-toxopid {
-    compileVersion.set(libs.versions.mindustry.map { "v$it" })
-}
 
 dependencies {
     implementation(projects.imperiumCommon)

@@ -19,15 +19,14 @@ package com.xpdustry.imperium.mindustry.component
 
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.style.ComponentColor
-import com.xpdustry.distributor.api.component.style.ComponentStyle
+import com.xpdustry.distributor.api.component.style.TextStyle
 import kotlin.time.Duration
 
-fun duration(duration: Duration, style: ComponentStyle) = DurationComponent(duration, style)
+fun duration(duration: Duration, textStyle: TextStyle) = DurationComponent(duration, textStyle)
 
 fun duration(duration: Duration, textColor: ComponentColor) =
-    DurationComponent(duration, ComponentStyle.style(textColor))
+    DurationComponent(duration, TextStyle.of(textColor))
 
-data class DurationComponent(val duration: Duration, private val style: ComponentStyle) :
-    Component {
-    override fun getStyle() = style
+data class DurationComponent(val duration: Duration, private val textStyle: TextStyle) : Component {
+    override fun getTextStyle() = textStyle
 }
