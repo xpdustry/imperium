@@ -24,7 +24,7 @@ import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.snowflake.Snowflake
-import com.xpdustry.imperium.discord.misc.await
+import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.misc.snowflake
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -106,14 +106,14 @@ class SimpleDiscordService(
         val account = accounts.findBySnowflake(snowflake)
         val discord = account?.discord ?: return
         val member = getMainServer().getMemberById(discord) ?: return
-        val roles = member.roles.associateBy(Role::getIdLong)
+        val current = member.roles.associateBy(Role::getIdLong)
 
         for ((achievement, progression) in accounts.getAchievements(snowflake)) {
             val roleId = config.achievements2roles[achievement] ?: continue
-            val role = roles[roleId] ?: continue
+            val role = getMainServer().getRoleById(roleId) ?: continue
             if (progression.completed) {
-                if (roleId in roles.keys) continue
-                getMainServer().addRoleToMember(member.snowflake, role).await()
+                if (roleId in current.keys) continue
+                getMainServer().addRoleToMember(member.snowflake, role).awaitVoid()
                 logger.debug(
                     "Added achievement role {} (achievement={}) to {} (id={})",
                     role.name,
@@ -121,8 +121,8 @@ class SimpleDiscordService(
                     member.effectiveName,
                     member.idLong)
             } else {
-                if (roleId !in roles.keys) continue
-                getMainServer().removeRoleFromMember(member.snowflake, role).await()
+                if (roleId !in current.keys) continue
+                getMainServer().removeRoleFromMember(member.snowflake, role).awaitVoid()
                 logger.debug(
                     "Removed achievement role {} (achievement={}) from {} (id={})",
                     role.name,
@@ -135,10 +135,10 @@ class SimpleDiscordService(
         val ranks = account.rank.getRanksBelow()
         for (rank in Rank.entries) {
             val roleId = config.ranks2roles[rank] ?: continue
-            val role = roles[roleId] ?: continue
+            val role = getMainServer().getRoleById(roleId) ?: continue
             if (rank in ranks) {
-                if (roleId in roles) continue
-                getMainServer().addRoleToMember(member.snowflake, role).await()
+                if (roleId in current) continue
+                getMainServer().addRoleToMember(member.snowflake, role).awaitVoid()
                 logger.debug(
                     "Added rank role {} (rank={}) to {} (id={})",
                     role.name,
@@ -146,8 +146,8 @@ class SimpleDiscordService(
                     member.effectiveName,
                     member.idLong)
             } else {
-                if (roleId !in roles) continue
-                getMainServer().removeRoleFromMember(member.snowflake, role).await()
+                if (roleId !in current) continue
+                getMainServer().removeRoleFromMember(member.snowflake, role).awaitVoid()
                 logger.debug(
                     "Removed rank role {} (rank={}) from {} (id={})",
                     role.name,
