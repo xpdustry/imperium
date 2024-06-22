@@ -236,5 +236,5 @@ fun command_team_success(team: Team): Component =
         "imperium.command.team.success",
         TranslationArguments.array(translatable(team, from(team.color))))
 
-fun gatekeeper_failure(kind: String): Component =
-    translatable("imperium.gatekeeper.failure.$kind", SCARLET)
+fun gatekeeper_failure(kind: String, details: String = "none"): Component =
+    translatable("imperium.gatekeeper.failure.$kind", TranslationArguments.array(details), SCARLET)

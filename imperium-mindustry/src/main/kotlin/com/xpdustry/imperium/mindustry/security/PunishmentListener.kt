@@ -25,6 +25,7 @@ import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -181,7 +182,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         chatMessagePipeline.register("bad-word", Priority.HIGH) { ctx ->
-            val words = badWords.findBadWords(ctx.message)
+            val words =
+                badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
             if (words.isNotEmpty()) {
                 if (ctx.sender == ctx.target && ctx.sender != null) {
                     if (badWordsCounter.incrementAndCheck(MUUID.from(ctx.sender))) {
