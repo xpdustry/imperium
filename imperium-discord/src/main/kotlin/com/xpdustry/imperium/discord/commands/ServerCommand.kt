@@ -57,17 +57,6 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(createPlayerListEmbed(joins, "Join"))
     }
 
-    @ImperiumCommand(["player", "quits"])
-    @NonEphemeral
-    suspend fun onServerPlayerQuit(actor: InteractionSender.Slash, server: String) {
-        val quits = tracker.getPlayerQuits(server)
-        if (quits == null) {
-            actor.respond("Server not found.")
-            return
-        }
-        actor.respond(createPlayerListEmbed(quits, "Quit"))
-    }
-
     @ImperiumCommand(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
