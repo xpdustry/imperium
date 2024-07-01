@@ -34,6 +34,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import mindustry.gen.Player
+import org.incendo.cloud.annotation.specifier.Greedy
+import org.incendo.cloud.annotation.specifier.Quoted
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -54,7 +56,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onBanCommand(
         sender: CommandSender,
         player: Player,
-        reason: String = UNDEFINED_REASON,
+        @Quoted reason: String = UNDEFINED_REASON,
         duration: Duration = 3.days
     ) {
         onPunishCommand("Banned", Punishment.Type.BAN, sender, player, reason, duration)
@@ -66,7 +68,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onFreezeCommand(
         sender: CommandSender,
         player: Player,
-        reason: String = UNDEFINED_REASON,
+        @Quoted reason: String = UNDEFINED_REASON,
         duration: Duration = 3.hours
     ) {
         onPunishCommand("Frozen", Punishment.Type.FREEZE, sender, player, reason, duration)
@@ -78,7 +80,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     suspend fun onMuteCommand(
         sender: CommandSender,
         player: Player,
-        reason: String = UNDEFINED_REASON,
+        @Quoted reason: String = UNDEFINED_REASON,
         duration: Duration = 1.days
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, sender, player, reason, duration)
@@ -105,7 +107,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @ImperiumCommand(["pardon"], Rank.MODERATOR)
     @ClientSide
     @ServerSide
-    suspend fun onPardonCommand(sender: CommandSender, punishment: String, reason: String) {
+    suspend fun onPardonCommand(sender: CommandSender, punishment: String, @Greedy reason: String) {
         val snowflake = punishment.toLongOrNull()
         if (snowflake == null) {
             sender.error("Invalid Punishment ID.")
