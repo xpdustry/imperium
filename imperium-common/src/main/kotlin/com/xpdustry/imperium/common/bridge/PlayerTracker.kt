@@ -59,7 +59,6 @@ open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerT
     ) : Message {
         enum class Type {
             JOIN,
-            QUIT,
             ONLINE
         }
     }
