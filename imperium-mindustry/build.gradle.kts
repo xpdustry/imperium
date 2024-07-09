@@ -127,13 +127,14 @@ tasks.register<MindustryExec>("runMindustryDesktop2") {
     configureDesktop()
 }
 
+val pluginLibs = fileTree("libs") { include("*.jar") }
+
 tasks.runMindustryServer {
     mods.from(
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
-        downloadDistributorCommon,
-        downloadDistributorPermissionRank,
+        pluginLibs,
     )
 }
 
@@ -145,7 +146,6 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
-        downloadDistributorCommon,
-        downloadDistributorPermissionRank,
+        pluginLibs,
     )
 }

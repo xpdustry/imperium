@@ -27,12 +27,12 @@ import com.xpdustry.distributor.api.component.TextComponent.newline
 import com.xpdustry.distributor.api.component.TextComponent.space
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
-import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.component.style.ComponentColor.ACCENT
 import com.xpdustry.distributor.api.component.style.ComponentColor.CYAN
 import com.xpdustry.distributor.api.component.style.ComponentColor.GREEN
 import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
 import com.xpdustry.distributor.api.component.style.ComponentColor.from
+import com.xpdustry.distributor.api.component.style.TextStyle
 import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
@@ -48,45 +48,38 @@ import mindustry.gen.Iconc
 import mindustry.net.Administration.Config
 import mindustry.world.Block
 
-private val SCARLET = ComponentColor.from(Color.scarlet)
-private val ORANGE = ComponentColor.from(Color.orange)
-private val GRAY = ComponentColor.from(Color.gray)
-private val LIGHT_GRAY = ComponentColor.from(Color.lightGray)
-private val BLURPLE = ComponentColor.from(com.xpdustry.imperium.common.misc.BLURPLE)
-private val ROYAL = ComponentColor.from(Color.royal)
+private val SCARLET = from(Color.scarlet)
+private val ORANGE = from(Color.orange)
+private val GRAY = from(Color.gray)
+private val LIGHT_GRAY = from(Color.lightGray)
+private val BLURPLE = from(com.xpdustry.imperium.common.misc.BLURPLE)
+private val ROYAL = from(Color.royal)
 
 fun punishment_type_verb(type: Punishment.Type): Component =
     translatable("imperium.messages.punishment.type.${type.name.lowercase()}.verb", ORANGE)
 
 fun punishment_message_simple(type: Punishment.Type, reason: String): Component =
-    components()
-        .setTextColor(SCARLET)
-        .append(
-            translatable()
-                .setKey("imperium.messages.punishment.message.header")
-                .setParameters(
-                    TranslationArguments.array(punishment_type_verb(type), text(reason, ORANGE))))
-        .append(newline())
-        .append(
-            translatable(
-                "imperium.messages.punishment.type.${type.name.lowercase()}.details", WHITE))
-        .build()
+    components(
+        SCARLET,
+        translatable(
+            "imperium.messages.punishment.message.header",
+            TranslationArguments.array(punishment_type_verb(type), text(reason, ORANGE))),
+        newline(),
+        translatable("imperium.messages.punishment.type.${type.name.lowercase()}.details", WHITE))
 
 fun punishment_message(punishment: Punishment): Component =
-    components()
-        .setTextColor(SCARLET)
-        .append(punishment_message_simple(punishment.type, punishment.reason))
-        .append(newline())
-        .append(newline())
-        .append(
-            translatable()
-                .setTextColor(ACCENT)
-                .setKey("imperium.messages.punishment.message.appeal")
-                .setParameters(
-                    TranslationArguments.array(text(DISCORD_INVITATION_LINK.toString(), CYAN))))
-        .append(newline())
-        .append(
-            translatable().setTextColor(WHITE).apply {
+    components(
+        SCARLET,
+        punishment_message_simple(punishment.type, punishment.reason),
+        newline(),
+        newline(),
+        translatable(
+            "imperium.messages.punishment.message.appeal",
+            TranslationArguments.array(text(DISCORD_INVITATION_LINK.toString(), CYAN)),
+            ACCENT),
+        translatable()
+            .apply {
+                setTextStyle(TextStyle.of(WHITE))
                 val remaining = punishment.remaining
                 if (remaining != null) {
                     setKey("imperium.messages.punishment.expiration")
@@ -96,16 +89,14 @@ fun punishment_message(punishment: Punishment): Component =
                 } else {
                     setKey("imperium.messages.punishment.expiration.permanent")
                 }
-            })
-        .append(newline())
-        .append(newline())
-        .append(
-            translatable()
-                .setTextColor(GRAY)
-                .setKey("imperium.messages.punishment.message.footer")
-                .setParameters(
-                    TranslationArguments.array(text(punishment.snowflake.toString(), LIGHT_GRAY))))
-        .build()
+            }
+            .build(),
+        newline(),
+        newline(),
+        translatable(
+            "imperium.messages.punishment.message.footer",
+            TranslationArguments.array(text(punishment.snowflake.toString(), LIGHT_GRAY)),
+            GRAY))
 
 fun warning(kind: String): Component =
     components(
@@ -152,12 +143,11 @@ fun gui_welcome_content(): Component =
         .build()
 
 fun gui_welcome_button_rules(): Component =
-    components()
-        .setTextColor(ACCENT)
-        .append(text(Iconc.bookOpen.toString()))
-        .append(space())
-        .append(translatable("imperium.gui.welcome.button.rules"))
-        .build()
+    components(
+        ACCENT,
+        text(Iconc.bookOpen.toString()),
+        space(),
+        translatable("imperium.gui.welcome.button.rules"))
 
 fun gui_welcome_button_discord(): Component = text(Iconc.discord + " Discord", BLURPLE)
 
@@ -166,26 +156,26 @@ fun gui_rules_title(): Component = translatable("imperium.gui.rules.title")
 fun gui_rules_content(): Component =
     components()
         .append(
-            components()
-                .setTextColor(SCARLET)
-                .append(text(Iconc.warning.toString()))
-                .append(space())
-                .append(translatable("imperium.gui.rules.content.header")))
-        .modify {
+            components(
+                SCARLET,
+                text(Iconc.warning.toString()),
+                space(),
+                translatable("imperium.gui.rules.content.header")))
+        .apply {
             for (rule in MindustryRules.entries) {
-                it.append(newline())
-                it.append(newline())
-                it.append(text("» ", ROYAL))
-                it.append(translatable("imperium.rule.${rule.name.lowercase()}.title", ACCENT))
-                it.append(newline())
-                it.append(translatable("imperium.rule.${rule.name.lowercase()}.description"))
-                it.append(newline())
-                it.append(
-                    components()
-                        .setTextColor(LIGHT_GRAY)
-                        .append(translatable("imperium.gui.rules.content.example"))
-                        .append(space())
-                        .append(translatable("imperium.rule.${rule.name.lowercase()}.example")))
+                append(
+                    newline(),
+                    newline(),
+                    text("» ", ROYAL),
+                    translatable("imperium.rule.${rule.name.lowercase()}.title", ACCENT),
+                    newline(),
+                    translatable("imperium.rule.${rule.name.lowercase()}.description"),
+                    newline(),
+                    components(
+                        LIGHT_GRAY,
+                        translatable("imperium.gui.rules.content.example"),
+                        space(),
+                        translatable("imperium.rule.${rule.name.lowercase()}.example")))
             }
         }
         .build()
@@ -198,15 +188,15 @@ fun user_setting_description(setting: User.Setting): Component =
     translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
 
 fun announcement_tip(tip: Tip): Component =
-    components()
-        .setTextColor(WHITE)
-        .append(text(">>> ", CYAN))
-        .append(translatable("imperium.tip", ACCENT))
-        .append(text(": ", ACCENT))
-        .append(translatable("imperium.tip.${tip.name.lowercase()}.content"))
-        .append(newline())
-        .append(translatable("imperium.tip.${tip.name.lowercase()}.details", LIGHT_GRAY))
-        .build()
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable("imperium.tip", ACCENT),
+        text(": ", ACCENT),
+        translatable("imperium.tip.${tip.name.lowercase()}.content"),
+        newline(),
+        translatable("imperium.tip.${tip.name.lowercase()}.details", LIGHT_GRAY),
+    )
 
 fun announcement_ban(target: String, reason: String, duration: Duration): Component =
     translatable(

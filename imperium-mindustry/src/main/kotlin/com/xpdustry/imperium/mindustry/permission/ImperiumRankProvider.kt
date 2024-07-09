@@ -62,7 +62,9 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
                 EnumRankNode.linear(
                     rank.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE, "imperium", true))
         ranks.addAll(
-            achievements.getIfPresent(MUUID.from(player)).orEmpty().map { AchievementRankNode(it) })
+            achievements.getIfPresent(MUUID.from(player)).orEmpty().map {
+                EnumRankNode.singular(it, "imperium")
+            })
         return ranks
     }
 

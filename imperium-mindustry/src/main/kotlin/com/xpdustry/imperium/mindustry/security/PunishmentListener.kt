@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.security
 import arc.Events
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
-import com.xpdustry.distributor.api.component.ComponentLike
+import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -231,7 +231,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     fun onPlayerJoin(event: EventType.PlayerJoin) =
         ImperiumScope.MAIN.launch { refreshPunishments(event.player) }
 
-    private fun Player.sendMessageRateLimited(message: ComponentLike) {
+    private fun Player.sendMessageRateLimited(message: Component) {
         if (messageCooldowns.incrementAndCheck(uuid())) {
             asAudience.sendMessage(message)
         }
