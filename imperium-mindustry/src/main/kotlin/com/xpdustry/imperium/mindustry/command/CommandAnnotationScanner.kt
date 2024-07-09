@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
+import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -139,24 +140,34 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
     }
 
     private fun createPermission(function: KFunction<*>, annotation: ImperiumCommand): Permission {
-        val scope = function.findAnnotation<Scope>()?.gamemodes ?: emptyArray<MindustryGamemode>()
         var permission = Permission.permission("imperium.rank.${annotation.rank.name.lowercase()}")
+
+        val achievement = function.findAnnotation<RequireAchievement>()?.achievement
+        if (achievement != null) {
+            permission =
+                Permission.allOf(
+                    permission,
+                    Permission.permission("imperium.achievement.${achievement.name.lowercase()}"))
+        }
+
+        val scope = function.findAnnotation<Scope>()?.gamemodes ?: emptyArray<MindustryGamemode>()
         if (scope.isNotEmpty()) {
             permission =
                 Permission.allOf(
                     permission,
                     Permission.anyOf(
-                        buildList {
-                            add(
-                                Permission.permission(
-                                    "imperium.rank.${Rank.ADMIN.name.lowercase()}"))
-                            scope.forEach {
-                                add(
-                                    Permission.permission(
-                                        "imperium.gamemode.${it.name.lowercase()}"))
-                            }
+                        scope.map {
+                            Permission.permission("imperium.gamemode.${it.name.lowercase()}")
                         }))
         }
+
+        if (annotation.rank != Rank.OWNER) {
+            permission =
+                Permission.anyOf(
+                    permission,
+                    Permission.permission("imperium.rank.${Rank.ADMIN.name.lowercase()}"))
+        }
+
         return permission
     }
 

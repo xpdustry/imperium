@@ -56,6 +56,7 @@ import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
+import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
@@ -170,7 +171,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 HereCommand::class,
                 ModerationCommand::class,
                 AlertListener::class,
-                TeamCommand::class)
+                TeamCommand::class,
+                FormationListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode

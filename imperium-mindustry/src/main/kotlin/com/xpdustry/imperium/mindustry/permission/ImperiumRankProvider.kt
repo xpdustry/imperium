@@ -25,6 +25,7 @@ import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
+import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -41,25 +42,37 @@ import mindustry.gen.Player
 class ImperiumRankProvider(private val accounts: AccountManager) :
     RankProvider, ImperiumApplication.Listener {
 
-    private val cache = buildCache<MUUID, Rank> { expireAfterWrite(20.seconds.toJavaDuration()) }
-
-    override fun onImperiumInit() {}
+    private val rank = buildCache<MUUID, Rank> { expireAfterWrite(20.seconds.toJavaDuration()) }
+    private val achievements =
+        buildCache<MUUID, Set<Account.Achievement>> {
+            expireAfterWrite(20.seconds.toJavaDuration())
+        }
 
     @EventHandler(priority = Priority.HIGH)
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch { fetchPlayerRank(event.player) }
+        ImperiumScope.MAIN.launch { fetchPlayerInfo(event.player) }
 
     @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
     fun refreshPlayerRank() =
-        ImperiumScope.MAIN.launch { Entities.getPlayersAsync().forEach { fetchPlayerRank(it) } }
+        ImperiumScope.MAIN.launch { Entities.getPlayersAsync().forEach { fetchPlayerInfo(it) } }
 
     override fun getRanks(player: Player): List<RankNode> {
-        val rank = cache.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE
-        return listOf(EnumRankNode.linear(rank, "imperium", true))
+        val ranks =
+            mutableListOf(
+                EnumRankNode.linear(
+                    rank.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE, "imperium", true))
+        ranks.addAll(
+            achievements.getIfPresent(MUUID.from(player)).orEmpty().map { AchievementRankNode(it) })
+        return ranks
     }
 
-    private suspend fun fetchPlayerRank(player: Player) {
-        cache.put(
-            MUUID.from(player), accounts.findByIdentity(player.identity)?.rank ?: Rank.EVERYONE)
+    private suspend fun fetchPlayerInfo(player: Player) {
+        val account = accounts.findByIdentity(player.identity)
+        rank.put(MUUID.from(player), account?.rank ?: Rank.EVERYONE)
+        achievements.put(
+            MUUID.from(player),
+            (account?.let { accounts.getAchievements(it.snowflake) } ?: emptyMap())
+                .filterValues { it.completed }
+                .keys)
     }
 }
