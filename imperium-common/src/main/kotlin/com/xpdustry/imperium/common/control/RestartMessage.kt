@@ -15,17 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.content
+package com.xpdustry.imperium.common.control
 
-enum class MindustryGamemode(val pvp: Boolean = false) {
-    SURVIVAL,
-    ATTACK,
-    PVP(pvp = true),
-    SANDBOX,
-    ROUTER,
-    SURVIVAL_EXPERT,
-    HEXED(pvp = true),
-    TOWER_DEFENSE,
-    HUB,
-    TESTING,
-}
+import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
+
+@Serializable data class RestartMessage(val target: String, val immediate: Boolean) : Message

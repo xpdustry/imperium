@@ -21,6 +21,7 @@ import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
@@ -51,9 +52,12 @@ class ImperiumDiscord : BaseImperiumApplication(LOGGER) {
 fun main() {
     val application = ImperiumDiscord()
 
-    application.instances.registerCommonModule()
-    application.instances.registerDiscordModule()
-    application.instances.createAll()
+    with(application.instances) {
+        registerApplication(application)
+        registerCommonModule()
+        registerDiscordModule()
+        createAll()
+    }
 
     sequenceOf(
             MindustryBridgeListener::class,

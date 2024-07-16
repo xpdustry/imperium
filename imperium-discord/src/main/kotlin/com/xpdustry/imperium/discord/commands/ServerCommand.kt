@@ -17,11 +17,15 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.control.RestartMessage
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
@@ -35,6 +39,8 @@ import net.dv8tion.jda.api.entities.MessageEmbed
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
     private val tracker = instances.get<PlayerTracker>()
+    private val application = instances.get<ImperiumApplication>()
+    private val messenger = instances.get<Messenger>()
 
     @ImperiumCommand(["server", "list"])
     @NonEphemeral
@@ -79,6 +85,27 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 }
             }
             actor.respond { addEmbeds(embeds) }
+        }
+    }
+
+    @ImperiumCommand(["server", "restart"], Rank.ADMIN)
+    @NonEphemeral
+    suspend fun onServerRestart(
+        actor: InteractionSender.Slash,
+        server: String,
+        immediate: Boolean = false
+    ) {
+        if (server == "discord") {
+            actor.respond("Restarting discord bot.")
+            application.exit(ExitStatus.RESTART)
+            return
+        } else {
+            if (discovery.servers[server] == null) {
+                actor.respond("Server not found.")
+                return
+            }
+            messenger.publish(RestartMessage(server, immediate))
+            actor.respond("Sent restart request to server **$server**.")
         }
     }
 

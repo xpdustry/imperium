@@ -36,6 +36,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
@@ -50,6 +51,7 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.control.RestartListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
@@ -107,9 +109,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        application.instances.registerCommonModule()
-        application.instances.registerMindustryModule(this)
-        application.instances.createAll()
+        with(application.instances) {
+            registerApplication(application)
+            registerCommonModule()
+            registerMindustryModule(this@ImperiumPlugin)
+            createAll()
+        }
 
         registerService(
             RankProvider::class,
@@ -172,7 +177,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ModerationCommand::class,
                 AlertListener::class,
                 TeamCommand::class,
-                FormationListener::class)
+                FormationListener::class,
+                RestartListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode

@@ -230,3 +230,20 @@ fun command_team_success(team: Team): Component =
 
 fun gatekeeper_failure(kind: String, details: String = "none"): Component =
     translatable("imperium.gatekeeper.failure.$kind", TranslationArguments.array(details), SCARLET)
+
+fun server_restart_delay(reason: String, delay: Duration): Component =
+    components(
+        SCARLET,
+        translatable("imperium.restart.reason.$reason"),
+        space(),
+        translatable(
+            "imperium.restart.trigger.delay", TranslationArguments.array(duration(delay, ACCENT))),
+    )
+
+fun server_restart_game_over(reason: String): Component =
+    components(
+        SCARLET,
+        translatable("imperium.restart.reason.$reason"),
+        space(),
+        translatable("imperium.restart.trigger.game-over"),
+    )
