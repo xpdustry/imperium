@@ -98,14 +98,16 @@ fun punishment_message(punishment: Punishment): Component =
             TranslationArguments.array(text(punishment.snowflake.toString(), LIGHT_GRAY)),
             GRAY))
 
-fun warning(kind: String): Component =
+fun warning(kind: String, vararg arguments: String): Component =
     components(
         text(">>> ", SCARLET),
         translatable("imperium.messages.warning", ORANGE),
         text(": ", ORANGE),
         translatable(
             "imperium.messages.warning.$kind",
-            TranslationArguments.array(punishment_type_verb(Punishment.Type.MUTE)),
+            TranslationArguments.array(
+                listOf(punishment_type_verb(Punishment.Type.MUTE)) +
+                    arguments.map { text(it, ORANGE) }),
             WHITE))
 
 fun status(status: Boolean): Component =

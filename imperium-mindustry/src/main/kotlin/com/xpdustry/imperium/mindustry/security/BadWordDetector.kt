@@ -61,7 +61,7 @@ class SimpleBadWordDetector(private val http: OkHttpClient) :
                 }
                 val temp = Files.createTempFile("imperium", ".zip")
                 temp.outputStream().use { out -> response.body!!.byteStream().copyTo(out) }
-                val builder = PayloadTrie.builder<Category>().ignoreCase().stopOnHit()
+                val builder = PayloadTrie.builder<Category>().ignoreCase()
                 FileSystems.newFileSystem(temp, null as ClassLoader?).use { fs ->
                     fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach {
                         entry ->
@@ -84,7 +84,15 @@ class SimpleBadWordDetector(private val http: OkHttpClient) :
     }
 
     override fun findBadWords(text: String, categories: Set<Category>) =
-        trie.parseText(text).filter { it.payload in categories }.map { it.keyword }
+        trie
+            .parseText(text)
+            .filter {
+                it.payload in categories &&
+                    (it.keyword.length >= 5 ||
+                        (text.getOrNull(it.start - 1)?.isWhitespace() ?: true &&
+                            text.getOrNull(it.end + 1)?.isWhitespace() ?: true))
+            }
+            .map { it.keyword }
 
     @Serializable private data class BadWordCategory(val category: String, val words: Set<String>)
 }

@@ -187,7 +187,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             if (words.isNotEmpty()) {
                 if (ctx.sender == ctx.target && ctx.sender != null) {
                     if (badWordsCounter.incrementAndCheck(MUUID.from(ctx.sender))) {
-                        ctx.sender.asAudience.sendMessage(warning("bad_word"))
+                        ctx.sender.asAudience.sendMessage(warning("bad_word", words.toString()))
                     } else {
                         punishments.punish(
                             config.server.identity,
