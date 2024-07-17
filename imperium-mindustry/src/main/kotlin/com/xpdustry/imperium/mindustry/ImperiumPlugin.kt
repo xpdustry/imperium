@@ -36,6 +36,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
@@ -50,12 +51,14 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.control.RestartListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
+import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
@@ -106,9 +109,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        application.instances.registerCommonModule()
-        application.instances.registerMindustryModule(this)
-        application.instances.createAll()
+        with(application.instances) {
+            registerApplication(application)
+            registerCommonModule()
+            registerMindustryModule(this@ImperiumPlugin)
+            createAll()
+        }
 
         registerService(
             RankProvider::class,
@@ -170,7 +176,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 HereCommand::class,
                 ModerationCommand::class,
                 AlertListener::class,
-                TeamCommand::class)
+                TeamCommand::class,
+                FormationListener::class,
+                RestartListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode

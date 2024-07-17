@@ -19,7 +19,7 @@ package com.xpdustry.imperium.mindustry.misc
 
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.distributor.api.component.ComponentLike
+import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
 import com.xpdustry.distributor.api.key.DynamicKeyContainer
 import com.xpdustry.distributor.api.key.StandardKeys
@@ -69,7 +69,7 @@ fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = fal
 
 // TODO Very ugly hack, create a sane way to get a NetConnection audience
 fun NetConnection.kick(
-    message: ComponentLike,
+    message: Component,
     duration: Duration,
     silent: Boolean = false,
     locale: Locale? = null
@@ -86,7 +86,7 @@ fun NetConnection.kick(
         builder.putConstant(StandardKeys.LOCALE, locale)
     }
     kick(
-        ComponentStringBuilder.mindustry(builder.build()).append(message.asComponent()).toString(),
+        ComponentStringBuilder.mindustry(builder.build()).append(message).toString(),
         duration,
         silent)
 }

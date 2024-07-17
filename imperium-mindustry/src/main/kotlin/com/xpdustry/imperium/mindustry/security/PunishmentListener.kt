@@ -20,11 +20,12 @@ package com.xpdustry.imperium.mindustry.security
 import arc.Events
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
-import com.xpdustry.distributor.api.component.ComponentLike
+import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -181,11 +182,12 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         chatMessagePipeline.register("bad-word", Priority.HIGH) { ctx ->
-            val words = badWords.findBadWords(ctx.message)
+            val words =
+                badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
             if (words.isNotEmpty()) {
                 if (ctx.sender == ctx.target && ctx.sender != null) {
                     if (badWordsCounter.incrementAndCheck(MUUID.from(ctx.sender))) {
-                        ctx.sender.asAudience.sendMessage(warning("bad_word"))
+                        ctx.sender.asAudience.sendMessage(warning("bad_word", words.toString()))
                     } else {
                         punishments.punish(
                             config.server.identity,
@@ -229,7 +231,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     fun onPlayerJoin(event: EventType.PlayerJoin) =
         ImperiumScope.MAIN.launch { refreshPunishments(event.player) }
 
-    private fun Player.sendMessageRateLimited(message: ComponentLike) {
+    private fun Player.sendMessageRateLimited(message: Component) {
         if (messageCooldowns.incrementAndCheck(uuid())) {
             asAudience.sendMessage(message)
         }

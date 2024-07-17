@@ -29,6 +29,7 @@ import com.xpdustry.distributor.api.gui.transform.Transformer
 import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.distributor.api.util.TypeToken
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
 import java.net.URI
@@ -84,3 +85,24 @@ fun OpenURIAction(uri: URI) = Action { Call.openURI(it.viewer.con(), uri.toStrin
 
 @Suppress("FunctionName")
 fun ShowAction(manager: WindowManager) = Action { manager.create(it).show() }
+
+inline fun <reified E : Any> onEvent(
+    priority: Priority = Priority.NORMAL,
+    crossinline listener: (E) -> Unit
+) =
+    DistributorProvider.get().eventBus.subscribe(
+        E::class.java,
+        priority,
+        Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
+            listener(it)
+        }
+
+inline fun <E : Enum<E>> onEvent(
+    enum: E,
+    priority: Priority = Priority.NORMAL,
+    crossinline listener: () -> Unit
+) =
+    DistributorProvider.get().eventBus.subscribe(
+        enum, priority, Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
+            listener()
+        }

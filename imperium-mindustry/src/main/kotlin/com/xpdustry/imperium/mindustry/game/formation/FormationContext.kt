@@ -15,17 +15,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.content
+package com.xpdustry.imperium.mindustry.game.formation
 
-enum class MindustryGamemode(val pvp: Boolean = false) {
-    SURVIVAL,
-    ATTACK,
-    PVP(pvp = true),
-    SANDBOX,
-    ROUTER,
-    SURVIVAL_EXPERT,
-    HEXED(pvp = true),
-    TOWER_DEFENSE,
-    HUB,
-    TESTING,
+data class FormationContext(
+    val members: MutableList<FormationMember>,
+    val assignments: MutableMap<Int, Int>,
+    val slots: Int,
+    var pattern: FormationPattern,
+    val strategy: SlotAssignmentStrategy,
+    var deleted: Boolean = false
+) {
+    fun remove(member: FormationMember) {
+        strategy.remove(this, member)
+    }
 }

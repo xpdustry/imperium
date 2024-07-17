@@ -15,17 +15,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.content
+package com.xpdustry.imperium.mindustry.command.annotation
 
-enum class MindustryGamemode(val pvp: Boolean = false) {
-    SURVIVAL,
-    ATTACK,
-    PVP(pvp = true),
-    SANDBOX,
-    ROUTER,
-    SURVIVAL_EXPERT,
-    HEXED(pvp = true),
-    TOWER_DEFENSE,
-    HUB,
-    TESTING,
-}
+import com.xpdustry.imperium.common.account.Account
+
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class RequireAchievement(val achievement: Account.Achievement)

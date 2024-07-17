@@ -21,6 +21,7 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.SimpleAccountManager
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.DatabaseConfig
@@ -148,4 +149,8 @@ fun MutableInstanceManager.registerCommonModule() {
     provider<AddressWhitelist> { SimpleAddressWhitelist(get()) }
 
     provider<Executor>("main") { MoreExecutors.directExecutor() }
+}
+
+fun MutableInstanceManager.registerApplication(application: ImperiumApplication) {
+    provider<ImperiumApplication> { application }
 }

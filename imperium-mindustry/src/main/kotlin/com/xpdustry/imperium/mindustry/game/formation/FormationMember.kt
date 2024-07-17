@@ -15,17 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.content
+package com.xpdustry.imperium.mindustry.game.formation
 
-enum class MindustryGamemode(val pvp: Boolean = false) {
-    SURVIVAL,
-    ATTACK,
-    PVP(pvp = true),
-    SANDBOX,
-    ROUTER,
-    SURVIVAL_EXPERT,
-    HEXED(pvp = true),
-    TOWER_DEFENSE,
-    HUB,
-    TESTING,
+import arc.math.geom.Vec2
+
+interface FormationMember {
+    val targetVector: Vec2
+    val id: Int
 }

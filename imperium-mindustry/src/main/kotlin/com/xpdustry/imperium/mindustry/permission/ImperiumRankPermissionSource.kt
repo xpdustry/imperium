@@ -22,6 +22,7 @@ import com.xpdustry.distributor.api.permission.PermissionTree
 import com.xpdustry.distributor.api.permission.rank.EnumRankNode
 import com.xpdustry.distributor.api.permission.rank.RankNode
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
+import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.config.MindustryConfig
 
@@ -33,6 +34,11 @@ class ImperiumRankPermissionSource(private val config: MindustryConfig) : RankPe
             (node.value as Rank).getRanksBelow().forEach { rank ->
                 tree.setPermission("imperium.rank.${rank.name.lowercase()}", true)
             }
+        }
+        if (node is EnumRankNode<*> && node.value is Account.Achievement) {
+            tree.setPermission(
+                "imperium.achievement.${(node.value as Account.Achievement).name.lowercase()}",
+                true)
         }
         return tree
     }

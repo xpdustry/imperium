@@ -24,6 +24,7 @@ import com.google.common.net.InetAddresses
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.collection.enumSetAllOf
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -81,8 +82,9 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, whitelist))
         pipeline.register("bad-name", Priority.HIGH) { ctx ->
-            if (badWords.findBadWords(ctx.name).isNotEmpty()) {
-                GatekeeperResult.Failure(gatekeeper_failure("name.bad_word"))
+            val words = badWords.findBadWords(ctx.name, enumSetAllOf())
+            if (words.isNotEmpty()) {
+                GatekeeperResult.Failure(gatekeeper_failure("name.bad_word", words.toString()))
             } else {
                 GatekeeperResult.Success
             }

@@ -17,6 +17,8 @@
  */
 package com.xpdustry.imperium.common.collection
 
+import java.util.EnumSet
+
 fun <T : Any> List<T>.findMostCommon(): T? {
     val map = mutableMapOf<T, Int>()
     var max: T? = null
@@ -30,3 +32,8 @@ fun <T : Any> List<T>.findMostCommon(): T? {
     }
     return max
 }
+
+inline fun <reified T : Enum<T>> enumSetOf(vararg elements: T): Set<T> =
+    EnumSet.noneOf(T::class.java).apply { addAll(elements) }
+
+inline fun <reified T : Enum<T>> enumSetAllOf(): Set<T> = EnumSet.allOf(T::class.java)

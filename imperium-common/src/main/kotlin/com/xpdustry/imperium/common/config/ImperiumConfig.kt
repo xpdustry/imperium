@@ -115,7 +115,11 @@ sealed interface MessengerConfig {
     ) : MessengerConfig
 }
 
-data class ServerConfig(val name: String, val displayName: String = name.capitalize()) {
+data class ServerConfig(
+    val name: String,
+    val displayName: String = name.capitalize(),
+    val autoUpdate: Boolean = true
+) {
     val identity: Identity.Server
         get() = Identity.Server(name)
 

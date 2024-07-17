@@ -66,6 +66,11 @@ inline val Member.identity: Identity
 
 suspend inline fun <T : Any> RestAction<T>.await(): T = submit().await()
 
+// TODO Totally sane pattern
+suspend inline fun RestAction<Void>.awaitVoid() {
+    submit().await()
+}
+
 // https://github.com/MinnDevelopment/jda-ktx/blob/master/src/main/kotlin/dev/minn/jda/ktx/messages/builder.kt
 
 @DslMarker
