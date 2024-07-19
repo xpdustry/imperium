@@ -19,12 +19,9 @@ hoplite = "2.7.5"
 deepl = "1.5.0"
 slf4j = "2.0.13"
 slf4md = "1.0.0"
-discord4j = "3.2.6"
 password4j = "1.8.2"
 rabbitmq-client = "5.21.0"
 jsoup = "1.18.1"
-javacord = "3.8.0"
-log4j-to-slf4j = "2.23.1"
 snowflake-id = "0.0.2"
 okhttp = "4.12.0"
 classgraph = "4.8.174"
@@ -38,9 +35,8 @@ prettytime = "5.0.9.Final"
 time4j = "4.38"
 nohorny = "2.2.0"
 jda = "5.0.1"
-cloud-core = "2.0.0-beta.4"
-cloud-translations = "1.0.0-beta.2"
-cloud-discord = "1.0.0-beta.2"
+cloud-core = "2.0.0-rc.2"
+cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
 
 # gradle plugins
@@ -67,16 +63,12 @@ hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "ho
 deepl = { module = "com.deepl.api:deepl-java", version.ref = "deepl" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-discord4j-core = { module = "com.discord4j:discord4j-core", version.ref = "discord4j" }
 password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 rabbitmq-client = { module = "com.rabbitmq:amqp-client", version.ref = "rabbitmq-client" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutine" }
 kotlinx-coroutines-jdk8 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8", version.ref = "kotlin-coroutine" }
-javacord-api = { module = "org.javacord:javacord-api", version.ref = "javacord" }
-javacord-core = { module = "org.javacord:javacord-core", version.ref = "javacord" }
-log4j-to-slf4j = { module = "org.apache.logging.log4j:log4j-to-slf4j", version.ref = "log4j-to-slf4j" }
 snowflake-id = { module = "de.mkammerer.snowflake-id:snowflake-id", version.ref = "snowflake-id" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
@@ -109,4 +101,4 @@ kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serializat
 ktor-gradle = { module = "io.ktor.plugin:plugin", version.ref = "ktor-gradle" }
 
 [bundles]
-cloud = ["cloud-core", "cloud-translations-core"]
+cloud = [ "cloud-core", "cloud-translations-core" ]
