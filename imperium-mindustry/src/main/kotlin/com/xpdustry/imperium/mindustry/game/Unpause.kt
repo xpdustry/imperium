@@ -1,3 +1,5 @@
+package com.xpdustry.imperium.mindustry.game
+
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -5,8 +7,8 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.onEvent
 import mindustry.core.GameState
 import mindustry.game.EventType.PlayerJoin
-
-package com.xpdustry.imperium.mindustry.game
+import mindustry.gen.Call
+import mindustry.Vars
 
 class UnpauseCommand : ImperiumApplication.Listener {
 
@@ -19,7 +21,7 @@ class UnpauseCommand : ImperiumApplication.Listener {
   @ClientSide
   fun onUnpauseCommand(sender: CommandSender) {
     if (Vars.state.isPaused()) {
-      state.set(GameState.State.playing)
+      Vars.state.set(GameState.State.playing)
       Call.sendChatMessage("${sender.player.name}[white] unpaused the server using [orange]/unpause")
     } else {
       Call.sendMessage("The server is already unpaused")
