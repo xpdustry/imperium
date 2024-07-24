@@ -26,7 +26,7 @@ import kotlin.math.sqrt
 
 interface FormationPattern {
 
-    fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float = 20F)
+    fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float = 20f)
 }
 
 object CircleFormationPattern : FormationPattern {
@@ -47,6 +47,7 @@ object SquareFormationPattern : FormationPattern {
         val side = ceil(sqrt((slots + 1).toFloat())).toInt()
         var cx = slot % side
         var cy = slot / side
+        val newSpacing = spacing + 20f // give the player space to move
 
         // don't hog the middle spot
         if ((cx == side / 2) && cy == side / 2 && (side % 2) == 1) {
@@ -54,6 +55,6 @@ object SquareFormationPattern : FormationPattern {
             cy = slots / side
         }
 
-        location.set(cx - (side / 2f - 0.5f), cy - (side / 2f - 0.5f)).scl(spacing)
+        location.set(cx - (side / 2f - 0.5f), cy - (side / 2f - 0.5f)).scl(newSpacing)
     }
 }
