@@ -16,6 +16,10 @@ repositories {
     xpdustryMindustry()
     xpdustryReleases()
     xpdustrySnapshots()
+    maven("https://oss.sonatype.org/content/repositories/snapshots/") {
+        name = "sonatype-snapshots"
+        mavenContent { snapshotsOnly() }
+    }
 }
 
 kotlin {

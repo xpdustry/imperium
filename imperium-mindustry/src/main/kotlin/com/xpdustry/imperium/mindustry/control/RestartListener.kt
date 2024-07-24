@@ -95,7 +95,7 @@ class RestartListener(instances: InstanceManager) : ImperiumApplication.Listener
                         LOGGER.error(
                             "Failed to check for updates (code={}): {}",
                             response.code,
-                            response.message)
+                            response.body!!.string())
                         return@launch
                     }
                     val latest =
