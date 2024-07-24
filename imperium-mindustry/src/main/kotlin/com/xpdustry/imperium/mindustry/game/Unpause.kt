@@ -12,11 +12,14 @@ import mindustry.Vars
 
 class UnpauseCommand : ImperiumApplication.Listener {
 
-  onEvent<PlayerJoin> {
-    if (Vars.state.isPaused())
-      Call.sendChatMessage("[lightgray]The server is paused, type [orange]/unpause[lightgray] to unpause the server")
+  init {
+    onEvent<PlayerJoin> {
+      if (Vars.state.isPaused()) {
+        Call.sendChatMessage("[lightgray]The server is paused, type [orange]/unpause[lightgray] to unpause the server")
+      }
+    }
   }
-
+  
   @ImperiumCommand(["unpause"])
   @ClientSide
   fun onUnpauseCommand(sender: CommandSender) {
