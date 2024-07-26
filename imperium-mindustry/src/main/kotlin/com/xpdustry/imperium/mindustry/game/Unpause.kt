@@ -5,6 +5,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.onEvent
+import kotlinx.coroutines.delay
 import mindustry.core.GameState
 import mindustry.game.EventType.PlayerJoin
 import mindustry.gen.Call
@@ -15,7 +16,7 @@ class UnpauseCommand : ImperiumApplication.Listener {
   init {
     onEvent<PlayerJoin> {
       if (Vars.state.isPaused()) {
-        Call.sendChatMessage("[lightgray]The server is paused, type [orange]/unpause[lightgray] to unpause the server")
+        Call.sendMessage("[lightgray]The server is paused, type [orange]/unpause[lightgray] to unpause the server")
       }
     }
   }
@@ -25,6 +26,7 @@ class UnpauseCommand : ImperiumApplication.Listener {
   fun onUnpauseCommand(sender: CommandSender) {
     if (Vars.state.isPaused()) {
       Vars.state.set(GameState.State.playing)
+      delay(1500)
       Call.sendChatMessage("${sender.player.name}[white] unpaused the server using [orange]/unpause")
     } else {
       Call.sendMessage("The server is already unpaused")
