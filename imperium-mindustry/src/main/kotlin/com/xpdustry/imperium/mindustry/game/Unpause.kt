@@ -45,10 +45,10 @@ class UnpauseCommand : ImperiumApplication.Listener {
         if (Vars.state.isPaused()) {
             Vars.state.set(GameState.State.playing)
             delay(1500)
-            Call.sendChatMessage(
+            Call.sendMessage(
                 "${sender.player.name}[white] unpaused the server using [orange]/unpause")
         } else {
-            Call.sendMessage("The server is already unpaused")
+            sender.sendMessage("The server is already unpaused")
         }
     }
 }
