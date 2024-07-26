@@ -48,7 +48,7 @@ class UnpauseCommand : ImperiumApplication.Listener {
             Call.sendMessage(
                 "${sender.player.name}[white] unpaused the server using [orange]/unpause")
         } else {
-            sender.sendMessage("The server is already unpaused")
+            sender.player.sendMessage("The server is already unpaused")
         }
     }
 }
