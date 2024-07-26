@@ -109,9 +109,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     fun onGameOver(event: EventType.GameOverEvent) {
         val message =
             if (Vars.state.rules.waves) {
-                "Game over! Reached wave ${Vars.state.wave} with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
+                "Game over! Reached wave ${Vars.state.wave} with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}. \nThe next map is ${nextMap.stripMindustryColors()}"
             } else {
-                "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
+                "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}. \nThe next map is ${nextMap.stripMindustryColors()}"
             }
         ImperiumScope.MAIN.launch {
             messenger.publish(
