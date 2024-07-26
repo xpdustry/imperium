@@ -41,7 +41,7 @@ class UnpauseCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["unpause"])
     @ClientSide
-    fun onUnpauseCommand(sender: CommandSender) {
+    suspend fun onUnpauseCommand(sender: CommandSender) {
         if (Vars.state.isPaused()) {
             Vars.state.set(GameState.State.playing)
             delay(1500)
