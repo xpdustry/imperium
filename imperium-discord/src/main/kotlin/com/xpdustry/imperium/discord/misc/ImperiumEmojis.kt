@@ -26,4 +26,7 @@ object ImperiumEmojis {
     val PENCIL = Emoji.fromUnicode("✏️")
     val INBOX_TRAY = Emoji.fromUnicode("📥")
     val WASTE_BASKET = Emoji.fromUnicode("🗑️")
+    val MAGNIFYING_GLASS = Emoji.fromUnicode("🔎")
+    val HAMMER = Emoji.fromUnicode("🔨")
+    val NOTEPAD = Emoji.fromUnicode("📝")
 }
