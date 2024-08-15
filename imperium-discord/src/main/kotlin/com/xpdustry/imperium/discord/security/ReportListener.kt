@@ -81,8 +81,8 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                                     .withEmoji(ImperiumEmojis.HAMMER),
                                 Button.primary(REPORT_REVIEW_BUTTON, "Review")
                                     .withEmoji(ImperiumEmojis.MAGNIFYING_GLASS),
-                                Button.secondary(REPORT_HISTORY_BUTTON, "History")
-                                    .withEmoji(ImperiumEmojis.NOTEPAD)
+                                Button.primary(REPORT_HISTORY_BUTTON, "History")
+                                    .withEmoji(ImperiumEmojis.NOTEPAD),
                                 Button.secondary(REPORT_CLOSE_BUTTON, "Close")
                                     .withEmoji(ImperiumEmojis.CROSS_MARK),
                             )
