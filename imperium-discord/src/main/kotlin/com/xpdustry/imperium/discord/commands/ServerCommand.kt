@@ -55,6 +55,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["player", "joins"])
     @NonEphemeral
     suspend fun onServerPlayerJoin(actor: InteractionSender.Slash, server: String) {
+        val server = server?.lowercase()
         val joins = tracker.getPlayerJoins(server)
         if (joins == null) {
             actor.respond("Server not found.")
@@ -66,6 +67,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
+        val server = server.lowercase()
         if (server != null) {
             val online = tracker.getOnlinePlayers(server)
             if (online == null) {
@@ -95,6 +97,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         server: String,
         immediate: Boolean = false
     ) {
+        val server = server?.lowercase()
         if (server == "discord") {
             actor.respond("Restarting discord bot.")
             application.exit(ExitStatus.RESTART)
