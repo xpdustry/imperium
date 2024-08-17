@@ -67,7 +67,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
-        val server = server.lowercase()
+        val server = server?.lowercase()
         if (server != null) {
             val online = tracker.getOnlinePlayers(server)
             if (online == null) {
