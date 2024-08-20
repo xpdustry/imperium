@@ -52,6 +52,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
             })
 
+    @Suppress("NAME_SHADOWING")
     @ImperiumCommand(["player", "joins"])
     @NonEphemeral
     suspend fun onServerPlayerJoin(actor: InteractionSender.Slash, server: String) {
@@ -64,6 +65,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         actor.respond(createPlayerListEmbed(joins, "Join"))
     }
 
+    @Suppress("NAME_SHADOWING")
     @ImperiumCommand(["player", "online"])
     @NonEphemeral
     suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
@@ -90,6 +92,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
+    @Suppress("NAME_SHADOWING")
     @ImperiumCommand(["server", "restart"], Rank.ADMIN)
     @NonEphemeral
     suspend fun onServerRestart(
