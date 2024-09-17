@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+
 plugins {
     org.jetbrains.kotlin.jvm
     org.jetbrains.kotlin.plugin.serialization
@@ -25,15 +28,10 @@ repositories {
 kotlin {
     jvmToolchain(libs.versions.java.get().toInt())
     coreLibrariesVersion = libs.versions.kotlin.core.get()
-    target {
-        compilations.configureEach {
-            kotlinOptions {
-                javaParameters = true // Needed for commands
-                jvmTarget = libs.versions.java.get()
-                // The kotlin version of libs is in the format x.y.z, but apiVersion needs to be in the format x.y
-                apiVersion = libs.versions.kotlin.core.get().split(".").take(2).joinToString(".")
-            }
-        }
+    compilerOptions {
+        javaParameters = true
+        jvmTarget = JvmTarget.fromTarget(libs.versions.java.get())
+        apiVersion = KotlinVersion.KOTLIN_2_0
     }
 }
 
