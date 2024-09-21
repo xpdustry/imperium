@@ -213,9 +213,7 @@ class SimpleMindustryMapManager(
                 it[MindustryMapTable.height] = height
                 it[file] = ExposedBlob(byteArrayOf())
             }
-            stream.get().use {
-                storage.getObject("maps", "$snowflake.msav").putData(it)
-            }
+            stream.get().use { storage.getObject("maps", "$snowflake.msav").putData(it) }
             snowflake
         }
 
@@ -237,9 +235,7 @@ class SimpleMindustryMapManager(
                     it[lastUpdate] = Instant.now()
                     it[file] = ExposedBlob(byteArrayOf())
                 }
-            stream.get().use {
-                storage.getObject("maps", "$snowflake.msav").putData(it)
-            }
+            stream.get().use { storage.getObject("maps", "$snowflake.msav").putData(it) }
             if (rows != 0) {
                 messenger.publish(MapReloadMessage(getMapGamemodes(snowflake)))
                 return@newSuspendTransaction true
@@ -331,11 +327,11 @@ class SimpleMindustryMapManager(
     override suspend fun getMapInputStream(map: Snowflake): InputStream? =
         provider.newSuspendTransaction {
             storage.getObject("maps", "$map.msav").takeIf { it.exists }?.getData()
-            ?: MindustryMapTable.select(MindustryMapTable.file)
-                .where { MindustryMapTable.id eq map }
-                .firstOrNull()
-                ?.get(MindustryMapTable.file)
-                ?.inputStream
+                ?: MindustryMapTable.select(MindustryMapTable.file)
+                    .where { MindustryMapTable.id eq map }
+                    .firstOrNull()
+                    ?.get(MindustryMapTable.file)
+                    ?.inputStream
         }
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =
