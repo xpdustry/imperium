@@ -3,7 +3,7 @@ services:
   # The RabbitMQ instance for inter-server communication
   # This image comes with an admin frontend available at http://localhost:15672, login with guest:guest
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:4-management
     ports:
       - "5672:5672"
       - "15672:15672"
