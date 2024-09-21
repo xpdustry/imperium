@@ -1,6 +1,13 @@
 # imperium
 
+[![Translation status](https://hosted.weblate.org/widget/imperium/svg-badge.svg)](https://hosted.weblate.org/engage/imperium/)
+
 The core of the Chaotic server network, maintained by Xpdustry.
+
+## Translations
+
+If you do not know how to code but still want to help, you can help with translations.
+They are hosted on [Weblate](https://hosted.weblate.org/projects/imperium/).
 
 ## Building
 
