@@ -35,6 +35,7 @@ jda = "5.1.1"
 cloud-core = "2.0.0"
 cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
+minio = "8.5.2"
 
 # gradle plugins
 toxopid = "4.0.2"
@@ -54,6 +55,7 @@ junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
+testcontainers-minio = { module = "org.testcontainers:minio", version.ref = "testcontainers" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
@@ -86,6 +88,7 @@ jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
 cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
 ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasick" }
+minio = { module = "io.minio:minio", version.ref = "minio" }
 
 # gradle plugins
 toxopid = { module = "com.xpdustry:toxopid", version.ref = "toxopid" }

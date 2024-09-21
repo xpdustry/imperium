@@ -58,7 +58,8 @@ data class ImperiumConfig(
     val webhook: WebhookConfig = WebhookConfig.None,
     val discord: DiscordConfig? = null,
     val mindustry: MindustryConfig? = null,
-    val webserver: WebserverConfig? = null
+    val webserver: WebserverConfig? = null,
+    val storage: StorageConfig = StorageConfig.Local
 )
 
 data class NetworkConfig(
@@ -226,3 +227,16 @@ data class WebserverConfig(
     val port: Int = 8080,
     val host: InetAddress = InetAddresses.forString("0.0.0.0")
 )
+
+sealed interface StorageConfig {
+    data object Local : StorageConfig
+
+    data class Minio(
+        val host: String = "localhost",
+        val port: Int = 9000,
+        val secure: Boolean = false,
+        val accessKey: Secret = Secret("minioadmin"),
+        val secretKey: Secret = Secret("minioadmin"),
+        val bucket: String = "imperium",
+    ) : StorageConfig
+}

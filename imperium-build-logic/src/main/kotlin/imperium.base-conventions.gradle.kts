@@ -47,6 +47,7 @@ dependencies {
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.rabbitmq)
+    testImplementation(libs.testcontainers.minio)
 }
 
 spotless {

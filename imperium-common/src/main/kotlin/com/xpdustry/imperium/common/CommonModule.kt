@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigProvider
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
+import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -51,6 +52,9 @@ import com.xpdustry.imperium.common.security.SimpleAddressWhitelist
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
 import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.storage.LocalStorageBucket
+import com.xpdustry.imperium.common.storage.MinioStorageBucket
+import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.translator.DeeplTranslator
@@ -61,6 +65,7 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.common.webhook.DiscordWebhookMessageSender
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
+import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.function.Supplier
@@ -149,6 +154,13 @@ fun MutableInstanceManager.registerCommonModule() {
     provider<AddressWhitelist> { SimpleAddressWhitelist(get()) }
 
     provider<Executor>("main") { MoreExecutors.directExecutor() }
+
+    provider<StorageBucket> {
+        when (val config = get<ImperiumConfig>().storage) {
+            is StorageConfig.Local -> LocalStorageBucket(get<Path>("directory").resolve("storage"))
+            is StorageConfig.Minio -> MinioStorageBucket(config, get())
+        }
+    }
 }
 
 fun MutableInstanceManager.registerApplication(application: ImperiumApplication) {
