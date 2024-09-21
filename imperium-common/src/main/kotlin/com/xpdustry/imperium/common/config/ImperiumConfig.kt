@@ -118,7 +118,8 @@ sealed interface MessengerConfig {
 data class ServerConfig(
     val name: String,
     val displayName: String = name.capitalize(),
-    val autoUpdate: Boolean = true
+    // TODO Fix the autoupdate spamming github API
+    val autoUpdate: Boolean = false
 ) {
     val identity: Identity.Server
         get() = Identity.Server(name)
