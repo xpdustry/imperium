@@ -30,9 +30,9 @@ import mindustry.gen.Call
 
 class UnpauseCommand : ImperiumApplication.Listener {
 
-    init {
+    override fun onImperiumInit() {
         onEvent<PlayerJoin> {
-            if (Vars.state.isPaused()) {
+            if (Vars.state.isPaused) {
                 Call.sendMessage(
                     "[lightgray]The server is paused, type [orange]/unpause[lightgray] to unpause the server")
             }
@@ -42,9 +42,9 @@ class UnpauseCommand : ImperiumApplication.Listener {
     @ImperiumCommand(["unpause"])
     @ClientSide
     suspend fun onUnpauseCommand(sender: CommandSender) {
-        if (Vars.state.isPaused()) {
+        if (Vars.state.isPaused) {
             Vars.state.set(GameState.State.playing)
-            delay(1500)
+            delay(1500) // TODO Is it necessary ?
             Call.sendMessage(
                 "${sender.player.name}[white] unpaused the server using [orange]/unpause")
         } else {
