@@ -109,7 +109,7 @@ fun MutableInstanceManager.registerCommonModule() {
 
     provider<AccountManager> { SimpleAccountManager(get(), get(), get(), get()) }
 
-    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get()) }
+    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get(), get()) }
 
     provider<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
 
