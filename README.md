@@ -1,6 +1,13 @@
 # imperium
 
+[![Translation status](https://hosted.weblate.org/widget/imperium/svg-badge.svg)](https://hosted.weblate.org/engage/imperium/)
+
 The core of the Chaotic server network, maintained by Xpdustry.
+
+## Translations
+
+If you do not know how to code but still want to help, you can help with translations.
+They are hosted on [Weblate](https://hosted.weblate.org/projects/imperium/).
 
 ## Building
 
@@ -17,12 +24,12 @@ just prefix the task name with the subproject name such as `./gradlew :imperium-
 
 ## Testing
 
-Imperium needs a mariadb database and a rabbitmq server to run in production.
-But for local testing, it will default to h2 and a noop message broker.
+Imperium needs a mariadb database, a rabbitmq server and a s3 server to run in production.
+But for local testing, it will default to h2, a noop message broker and local file storage.
 If you wish to test with the production setup, use the provided docker-compose file.
 You will simply have to run `docker-compose up -d` once, then update the [configuration file](imperium-common/src/main/kotlin/com/xpdustry/imperium/common/config/ImperiumConfig.kt) accordingly.
 
-> RabbitMQ has a web front-end at http://localhost:15672, you can log in with guest:guest.
+> Some of the docker-compose services have an admin interface, more details in the [docker-compose file](docker-compose.yaml).
 
 ### Mindustry
 
