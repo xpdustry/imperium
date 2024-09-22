@@ -57,7 +57,7 @@ class FormationListener : ImperiumApplication.Listener {
                         member.targetVector,
                         context.assignments[member.id] ?: 0,
                         min(context.slots, context.members.size),
-                        player.unit().hitSize * 1.4F)
+                        player.unit().hitSize * 1.6F)
                     member.targetVector.add(anchor)
                 }
             }

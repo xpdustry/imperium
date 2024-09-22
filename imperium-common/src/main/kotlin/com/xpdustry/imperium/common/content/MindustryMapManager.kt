@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
+import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
 import java.time.Instant
 import java.util.function.Supplier
@@ -116,7 +117,8 @@ class SimpleMindustryMapManager(
     private val provider: SQLProvider,
     private val generator: SnowflakeGenerator,
     private val config: ImperiumConfig,
-    private val messenger: Messenger
+    private val messenger: Messenger,
+    private val storage: StorageBucket
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -209,8 +211,9 @@ class SimpleMindustryMapManager(
                 it[MindustryMapTable.author] = author
                 it[MindustryMapTable.width] = width
                 it[MindustryMapTable.height] = height
-                it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
+                it[file] = ExposedBlob(byteArrayOf())
             }
+            stream.get().use { storage.getObject("maps", "$snowflake.msav").putData(it) }
             snowflake
         }
 
@@ -230,8 +233,9 @@ class SimpleMindustryMapManager(
                     it[MindustryMapTable.width] = width
                     it[MindustryMapTable.height] = height
                     it[lastUpdate] = Instant.now()
-                    it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
+                    it[file] = ExposedBlob(byteArrayOf())
                 }
+            stream.get().use { storage.getObject("maps", "$snowflake.msav").putData(it) }
             if (rows != 0) {
                 messenger.publish(MapReloadMessage(getMapGamemodes(snowflake)))
                 return@newSuspendTransaction true
@@ -322,11 +326,12 @@ class SimpleMindustryMapManager(
 
     override suspend fun getMapInputStream(map: Snowflake): InputStream? =
         provider.newSuspendTransaction {
-            MindustryMapTable.select(MindustryMapTable.file)
-                .where { MindustryMapTable.id eq map }
-                .firstOrNull()
-                ?.get(MindustryMapTable.file)
-                ?.inputStream
+            storage.getObject("maps", "$map.msav").takeIf { it.exists }?.getData()
+                ?: MindustryMapTable.select(MindustryMapTable.file)
+                    .where { MindustryMapTable.id eq map }
+                    .firstOrNull()
+                    ?.get(MindustryMapTable.file)
+                    ?.inputStream
         }
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =

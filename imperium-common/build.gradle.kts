@@ -13,6 +13,7 @@ dependencies {
     api(libs.snowflake.id)
     api(libs.okhttp)
     api(libs.caffeine)
+    api(libs.minio)
 
     api(libs.slf4j.api)
     testApi(libs.slf4j.simple)

@@ -1,43 +1,41 @@
-[metadata]
-version = "1.0"
-
 [versions]
 # platforms
-kotlin-core = "1.9.24"
-kotlin-coroutine = "1.8.1"
-kotlin-runtime = "3.2.1"
-kotlinx-serialization = "1.6.3"
+kotlin-core = "2.0.20"
+kotlin-coroutine = "1.9.0"
+kotlin-runtime = "4.0.0"
+kotlinx-serialization = "1.7.3"
 java = "17"
 mindustry = "146"
 
 # libraries
 distributor = "4.0.0-rc.2-SNAPSHOT"
-junit = "5.10.3"
-testcontainers = "1.19.8"
-guava = "33.2.1-jre"
-hoplite = "2.7.5"
-deepl = "1.5.0"
-slf4j = "2.0.13"
+junit = "5.11.0"
+testcontainers = "1.20.1"
+guava = "33.3.0-jre"
+hoplite = "2.8.0"
+deepl = "1.6.0"
+slf4j = "2.0.16"
 slf4md = "1.0.0"
 password4j = "1.8.2"
-rabbitmq-client = "5.21.0"
+rabbitmq-client = "5.22.0"
 jsoup = "1.18.1"
 snowflake-id = "0.0.2"
 okhttp = "4.12.0"
-classgraph = "4.8.174"
-logback = "1.5.6"
+classgraph = "4.8.176"
+logback = "1.5.8"
 hikari = "5.1.0"
-exposed = "0.52.0"
-h2 = "2.3.230"
+exposed = "0.54.0"
+h2 = "2.3.232"
 mariadb = "3.4.1"
 caffeine = "3.1.8"
 prettytime = "5.0.9.Final"
 time4j = "4.38"
 nohorny = "2.2.0"
-jda = "5.0.1"
-cloud-core = "2.0.0-rc.2"
+jda = "5.1.1"
+cloud-core = "2.0.0"
 cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
+minio = "8.5.12"
 
 # gradle plugins
 toxopid = "4.0.2"
@@ -57,6 +55,7 @@ junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref 
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
+testcontainers-minio = { module = "org.testcontainers:minio", version.ref = "testcontainers" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
@@ -89,6 +88,7 @@ jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
 cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
 ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasick" }
+minio = { module = "io.minio:minio", version.ref = "minio" }
 
 # gradle plugins
 toxopid = { module = "com.xpdustry:toxopid", version.ref = "toxopid" }
