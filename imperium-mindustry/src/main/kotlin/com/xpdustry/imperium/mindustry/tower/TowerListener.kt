@@ -75,20 +75,35 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 }
             }
         }
+
+        // Quality of life changes
+
+        // Dont be punished for killing crawlers
+        UnitTypes.crawler.weapons.get(0).shootOnDeath = false
+        // Need to do this so we can control its target
+        for (i in 0 until 5) {
+            val weapon = UnitTypes.navanax.weapons.get(i)
+            if (weapon.name == "plasma-laser-mount") {
+                weapon.controllable = true;
+                weapon.autoTarget = false;
+            }
+        }
     }
 
     @EventHandler
     fun onUnitDestroyEvent(event: EventType.UnitDestroyEvent) {
         if (event.unit.team() == Vars.state.rules.waveTeam) {
             val downgrade = downgrades[event.unit.type] ?: return
-            val unit = downgrade.create(Vars.state.rules.waveTeam)
-            unit.set(event.unit.x, event.unit.y)
-            unit.rotation(event.unit.rotation())
-            unit.apply(
-                StatusEffects.slow,
-                MindustryTimeUnit.TICKS.convert(5L, MindustryTimeUnit.SECONDS).toFloat())
-            unit.add()
-            Call.effect(Fx.spawn, event.unit.x, event.unit.y, 0f, Color.red)
+            for (i in 0 until 2) {
+                val unit = downgrade.create(Vars.state.rules.waveTeam)
+                unit.set(event.unit.x, event.unit.y)
+                unit.rotation(event.unit.rotation())
+                unit.apply(
+                    StatusEffects.slow,
+                    MindustryTimeUnit.TICKS.convert(5L, MindustryTimeUnit.SECONDS).toFloat())
+                unit.add()
+                Call.effect(Fx.spawn, event.unit.x, event.unit.y, 0f, Color.red)
+            }
         }
     }
 
