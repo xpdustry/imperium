@@ -26,10 +26,11 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
-import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
@@ -49,14 +50,17 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
     }
 
     @ImperiumCommand(["sync-roles"])
-    suspend fun onSyncRolesCommand(sender: InteractionSender.Slash) {
-        val account = accounts.findByDiscord(sender.member.idLong)
+    suspend fun onSyncRolesCommand(interaction: SlashCommandInteraction) {
+        val reply = interaction.deferReply(true).await()
+        val account = accounts.findByDiscord(interaction.user.idLong)
         if (account == null) {
-            sender.respond("You are not linked to a cn account.")
+            reply.sendMessage("You are not linked to a cn account.").await()
             return
         }
         discord.syncRoles(account.snowflake)
-        sender.respond(
-            "Your discord roles have been synchronized with your account rank and achievements.")
+        reply
+            .sendMessage(
+                "Your discord roles have been synchronized with your account rank and achievements.")
+            .await()
     }
 }

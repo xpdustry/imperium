@@ -15,9 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.discord.command.annotation
+package com.xpdustry.imperium.discord.command
+
+import com.xpdustry.imperium.common.account.Rank
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
 @MustBeDocumented
-annotation class NonEphemeral
+annotation class MenuCommand(val name: String, val rank: Rank = Rank.EVERYONE)

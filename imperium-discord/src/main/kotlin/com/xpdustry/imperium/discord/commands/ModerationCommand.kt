@@ -29,11 +29,12 @@ import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
-import com.xpdustry.imperium.discord.command.InteractionSender
 import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.misc.Embed
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.identity
 import kotlin.time.Duration
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val punishments = instances.get<PunishmentManager>()
@@ -42,31 +43,33 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["punishment", "list"], Rank.MODERATOR)
     suspend fun onPunishmentListCommand(
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         player: Snowflake,
         @Range(min = "0") page: Int = 0
     ) {
+        val reply = interaction.deferReply(true).await()
         val result = punishments.findAllByUser(player).drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
-            actor.respond("No punishments found.")
+            reply.sendMessage("No punishments found.").await()
             return
         }
-        actor.respond(*result.map { it.toEmbed() }.toTypedArray())
+        reply.sendMessageEmbeds(result.map { it.toEmbed() }).await()
     }
 
     @ImperiumCommand(["punishment", "info"], Rank.MODERATOR)
-    suspend fun onPunishmentInfoCommand(actor: InteractionSender.Slash, punishment: String) {
+    suspend fun onPunishmentInfoCommand(interaction: SlashCommandInteraction, punishment: String) {
+        val reply = interaction.deferReply(true).await()
         val id = punishment.toLongOrNull()
         if (id == null) {
-            actor.respond("Invalid id.")
+            reply.sendMessage("Invalid id.").await()
             return
         }
         val result = punishments.findBySnowflake(id)
         if (result == null) {
-            actor.respond("No punishment found.")
+            reply.sendMessage("No punishment found.").await()
             return
         }
-        actor.respond(result.toEmbed())
+        reply.sendMessageEmbeds(result.toEmbed()).await()
     }
 
     private fun Punishment.toEmbed() = Embed {
@@ -84,74 +87,77 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
 
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     suspend fun onBanCommand(
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_DAYS
     ) {
-        onPunishCommand("Banned", Punishment.Type.BAN, actor, player, reason, duration.value)
+        onPunishCommand("Banned", Punishment.Type.BAN, interaction, player, reason, duration.value)
     }
 
     @ImperiumCommand(["freeze"], Rank.MODERATOR)
     suspend fun onFreezeCommand(
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_HOURS
     ) {
-        onPunishCommand("Frozen", Punishment.Type.FREEZE, actor, player, reason, duration.value)
+        onPunishCommand(
+            "Frozen", Punishment.Type.FREEZE, interaction, player, reason, duration.value)
     }
 
     @ImperiumCommand(["mute"], Rank.MODERATOR)
     suspend fun onMuteCommand(
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         player: Snowflake,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.ONE_DAY
     ) {
-        onPunishCommand("Muted", Punishment.Type.MUTE, actor, player, reason, duration.value)
+        onPunishCommand("Muted", Punishment.Type.MUTE, interaction, player, reason, duration.value)
     }
 
     private suspend fun onPunishCommand(
         verb: String,
         type: Punishment.Type,
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         player: Snowflake,
         reason: String,
         duration: Duration
     ) {
+        val reply = interaction.deferReply(true).await()
         if (users.findBySnowflake(player) == null) {
-            actor.respond("Target is not a valid IP address, UUID or USER ID.")
-            return
+            reply.sendMessage("Target is not a valid IP address, UUID or USER ID.").await()
+        } else {
+            punishments.punish(interaction.member!!.identity, player, reason, type, duration)
+            reply.sendMessage("$verb user $player.").await()
         }
-        punishments.punish(actor.member.identity, player, reason, type, duration)
-        actor.respond("$verb user $player.")
     }
 
     @ImperiumCommand(["pardon"], Rank.MODERATOR)
     suspend fun onPardonCommand(
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         punishment: String,
         reason: String
     ) {
+        val reply = interaction.deferReply(true).await()
         val snowflake = punishment.toLongOrNull()
         if (snowflake == null) {
-            actor.respond("Invalid Punishment ID.")
+            reply.sendMessage("Invalid Punishment ID.").await()
             return
         }
 
         val entry = punishments.findBySnowflake(snowflake)
         if (entry == null) {
-            actor.respond("Punishment not found.")
+            reply.sendMessage("Punishment not found.").await()
             return
         }
 
         if (entry.pardon != null) {
-            actor.respond("Punishment already pardoned.")
+            reply.sendMessage("Punishment already pardoned.").await()
             return
         }
 
-        punishments.pardon(actor.member.identity, snowflake, reason)
-        actor.respond("Pardoned user.")
+        punishments.pardon(interaction.member!!.identity, snowflake, reason)
+        reply.sendMessage("Pardoned user.").await()
     }
 }
