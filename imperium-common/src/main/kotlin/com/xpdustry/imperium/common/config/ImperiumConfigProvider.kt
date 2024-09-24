@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.common.config
 
 import com.sksamuel.hoplite.ConfigLoaderBuilder
+import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.InstanceProvider
@@ -38,6 +39,7 @@ class ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addDefaultDecoders()
             .addDefaultPreprocessors()
             .addDefaultParamMappers()
+            .addParameterMapper(KebabCaseParamMapper)
             .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
             .addPathSource(file)
@@ -45,9 +47,5 @@ class ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .strict()
             .build()
             .loadConfigOrThrow()
-    }
-
-    companion object {
-        private val logger by LoggerDelegate()
     }
 }
