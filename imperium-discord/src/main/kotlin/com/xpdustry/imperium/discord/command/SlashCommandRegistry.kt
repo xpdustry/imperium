@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
@@ -43,6 +44,7 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
 import kotlinx.coroutines.launch
@@ -121,7 +123,9 @@ class SlashCommandRegistry(
                     val argument = command.arguments.find { it.name == parameter.name!! }!!
                     val option =
                         try {
-                            event.getOption(parameter.name!!)?.let { argument.handler.parse(it) }
+                            event.getOption(parameter.name!!)?.let {
+                                argument.handler.parse(it, parameter)
+                            }
                         } catch (e: OptionParsingException) {
                             event
                                 .deferReply(true)
@@ -412,14 +416,18 @@ private data class CommandEdge(
 }
 
 abstract class TypeHandler<T : Any>(val type: OptionType) {
-    abstract fun parse(option: OptionMapping): T?
+    abstract fun parse(option: OptionMapping, annotations: KAnnotatedElement): T?
 
     open fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) = Unit
 }
 
 private val STRING_TYPE_HANDLER =
     object : TypeHandler<String>(OptionType.STRING) {
-        override fun parse(option: OptionMapping) = option.asString
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement): String {
+            var result = option.asString
+            if (annotations.hasAnnotation<Lowercase>()) result = result.lowercase()
+            return result
+        }
 
         override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
@@ -431,7 +439,7 @@ private val STRING_TYPE_HANDLER =
 
 private val INT_TYPE_HANDLER =
     object : TypeHandler<Int>(OptionType.INTEGER) {
-        override fun parse(option: OptionMapping) = option.asInt
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asInt
 
         override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
@@ -443,7 +451,7 @@ private val INT_TYPE_HANDLER =
 
 private val LONG_TYPE_HANDLER =
     object : TypeHandler<Long>(OptionType.INTEGER) {
-        override fun parse(option: OptionMapping) = option.asLong
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asLong
 
         override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
@@ -455,22 +463,23 @@ private val LONG_TYPE_HANDLER =
 
 private val BOOLEAN_TYPE_HANDLER =
     object : TypeHandler<Boolean>(OptionType.BOOLEAN) {
-        override fun parse(option: OptionMapping) = option.asBoolean
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asBoolean
     }
 
 private val DISCORD_USER_TYPE_HANDLER =
     object : TypeHandler<User>(OptionType.USER) {
-        override fun parse(option: OptionMapping) = option.asUser
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asUser
     }
 
 private val CHANNEL_TYPE_HANDLER =
     object : TypeHandler<GuildChannel>(OptionType.CHANNEL) {
-        override fun parse(option: OptionMapping) = option.asChannel
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asChannel
     }
 
 private val ATTACHMENT_TYPE_HANDLER =
     object : TypeHandler<Message.Attachment>(OptionType.ATTACHMENT) {
-        override fun parse(option: OptionMapping) = option.asAttachment
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) =
+            option.asAttachment
     }
 
 // https://github.com/Incendo/cloud/blob/fda52448c20f5537c8f03aaf6a3b844119c20463/cloud-core/src/main/java/cloud/commandframework/arguments/standard/DurationArgument.java
@@ -478,7 +487,7 @@ private val DURATION_TYPE_HANDLER =
     object : TypeHandler<Duration>(OptionType.STRING) {
         private val DURATION_PATTERN = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
 
-        override fun parse(option: OptionMapping): Duration? {
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement): Duration? {
             val matcher = DURATION_PATTERN.matcher(option.asString)
             var duration = Duration.ZERO
 
@@ -510,7 +519,7 @@ private class EnumTypeHandler<T : Enum<T>>(
     private val klass: KClass<T>,
     private val renderer: (T) -> String = { it.name.lowercase().replace("_", " ") }
 ) : TypeHandler<T>(OptionType.STRING) {
-    override fun parse(option: OptionMapping): T? {
+    override fun parse(option: OptionMapping, annotations: KAnnotatedElement): T? {
         return klass.java.enumConstants.firstOrNull { option.asString == it.name }
     }
 
