@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.github.benmanes.caffeine.cache.RemovalCause
+import com.github.benmanes.caffeine.cache.Scheduler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
@@ -56,6 +57,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
         buildCache<Long, MapSearchState> {
             expireAfterWrite(10.minutes.toJavaDuration())
             expireAfterAccess(10.minutes.toJavaDuration())
+            scheduler(Scheduler.systemScheduler())
             removalListener<Long, MapSearchState> { key, value, cause ->
                 if (key == null ||
                     value == null ||
