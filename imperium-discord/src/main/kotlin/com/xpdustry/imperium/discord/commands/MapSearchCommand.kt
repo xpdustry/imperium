@@ -30,6 +30,7 @@ import com.xpdustry.imperium.discord.command.MenuCommand
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
+import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
@@ -52,7 +53,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
     @ImperiumCommand(["map", "search"])
     suspend fun onMapSearchCommand(interaction: SlashCommandInteraction, query: String? = null) {
-        val state = MapSearchState(query, 1, emptySet())
+        val state = MapSearchState(query, 0, emptySet(), interaction.user.idLong)
         val result = getResultFromState(state)
         val message =
             interaction.deferReply().await().sendMessage(createMessage(result, state)).await()
@@ -70,12 +71,12 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     }
 
     @MenuCommand(MAP_SEARCH_FIRST_BUTTON)
-    suspend fun onFirstButton(interaction: StringSelectInteraction) {
-        onMapSearchMessageUpdate(interaction) { it.copy(page = 1) }
+    suspend fun onFirstButton(interaction: ButtonInteraction) {
+        onMapSearchMessageUpdate(interaction) { it.copy(page = 0) }
     }
 
     @MenuCommand(MAP_SEARCH_LAST_BUTTON)
-    suspend fun onLastButton(interaction: StringSelectInteraction) {
+    suspend fun onLastButton(interaction: ButtonInteraction) {
         onMapSearchMessageUpdate(interaction) { it.copy(page = Int.MAX_VALUE) }
     }
 
@@ -94,25 +95,23 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
             interaction.deferReply(true).await().sendMessage("This button has has expired").await()
             return
         }
+        if (state.owner != interaction.user.idLong) {
+            interaction.deferReply(true).await().sendMessage("This button is not for you").await()
+            return
+        }
+        val edit = interaction.deferEdit().await()
         state = update(state)
         val result = getResultFromState(state)
-        state = state.copy(page = state.page.coerceAtMost((result.size / PAGE_SIZE) + 1))
+        state =
+            state.copy(
+                page = state.page.coerceAtMost(ceil(result.size.toFloat() / PAGE_SIZE).toInt() - 1))
         states.put(interaction.message.idLong, state)
-        interaction.message
-            .editMessage(MessageEditData.fromCreateData(createMessage(result, state)))
-            .await()
+        edit.editOriginal(MessageEditData.fromCreateData(createMessage(result, state))).await()
     }
 
     private fun createMessage(result: List<MindustryMap>, state: MapSearchState) = MessageCreate {
-        val pages = (result.size / PAGE_SIZE) + 1
-        val listing =
-            result
-                .drop((state.page - 1) * PAGE_SIZE)
-                .take(PAGE_SIZE + 1)
-                .toCollection(mutableListOf())
-        if (pages > state.page) {
-            listing.removeLast()
-        }
+        val pages = ceil(result.size.toFloat() / PAGE_SIZE).toInt() - 1
+        val listing = result.drop(state.page * PAGE_SIZE).take(PAGE_SIZE)
 
         embeds += Embed {
             color = MINDUSTRY_ACCENT_COLOR.rgb
@@ -126,11 +125,11 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
         components +=
             ActionRow.of(
-                Button.success(MAP_SEARCH_PREVIOUS_BUTTON, "Previous")
-                    .withDisabled(state.page == 1),
-                Button.secondary("none", "${state.page} / $pages").withDisabled(true),
-                Button.success(MAP_SEARCH_NEXT_BUTTON, "Next").withDisabled(state.page == pages),
-                Button.success(MAP_SEARCH_FIRST_BUTTON, "First").withDisabled(state.page == 1),
+                Button.primary(MAP_SEARCH_PREVIOUS_BUTTON, "Previous")
+                    .withDisabled(state.page == 0),
+                Button.secondary("none", "${state.page + 1} / ${pages + 1}").withDisabled(true),
+                Button.primary(MAP_SEARCH_NEXT_BUTTON, "Next").withDisabled(state.page == pages),
+                Button.success(MAP_SEARCH_FIRST_BUTTON, "First").withDisabled(state.page == 0),
                 Button.success(MAP_SEARCH_LAST_BUTTON, "Last").withDisabled(state.page == pages))
 
         components +=
@@ -161,6 +160,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
         val query: String?,
         val page: Int,
         val gamemodes: Set<MindustryGamemode>,
+        val owner: Long
     )
 
     companion object {

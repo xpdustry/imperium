@@ -28,15 +28,15 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.jvm.jvmErasure
 import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.components.ComponentInteraction
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
-import net.dv8tion.jda.api.interactions.components.selections.EntitySelectInteraction
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectInteraction
 
 // TODO Add support for different kinds of ack
 class MenuCommandRegistry(private val discord: DiscordService) :
@@ -77,10 +77,16 @@ class MenuCommandRegistry(private val discord: DiscordService) :
             }
 
             try {
-                handler.function.callSuspend(handler.container, event)
+                handler.function.callSuspend(handler.container, event.interaction)
             } catch (e: Exception) {
                 logger.error("Error while executing button ${event.componentId}", e)
-                event.reply("An error occurred while executing this button").await()
+                try {
+                    event.deferReply().await()
+                } catch (_: Exception) {}
+                event.hook
+                    .sendMessage(
+                        "**:warning: An unexpected error occurred while executing this interaction.**")
+                    .await()
             }
         }
     }
@@ -119,11 +125,7 @@ class MenuCommandRegistry(private val discord: DiscordService) :
     }
 
     private fun isSupportedInteraction(classifier: KClassifier) =
-        classifier == Interaction::class ||
-            classifier == ComponentInteraction::class ||
-            classifier == ButtonInteraction::class ||
-            classifier == EntitySelectInteraction::class ||
-            classifier == StringSelectInteraction::class
+        classifier.createType().jvmErasure.isSubclassOf(ComponentInteraction::class)
 
     companion object {
         private val logger by LoggerDelegate()

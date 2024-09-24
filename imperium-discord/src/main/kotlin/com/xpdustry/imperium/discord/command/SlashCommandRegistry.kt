@@ -155,8 +155,11 @@ class SlashCommandRegistry(
                 command.function.callSuspendBy(arguments)
             } catch (e: Exception) {
                 LOGGER.error("Error while executing command ${node.fullName}", e)
-                event
-                    .reply(
+                try {
+                    event.deferReply().await()
+                } catch (_: Exception) {}
+                event.hook
+                    .sendMessage(
                         ":warning: **An unexpected error occurred while executing your command.**")
                     .await()
             }
