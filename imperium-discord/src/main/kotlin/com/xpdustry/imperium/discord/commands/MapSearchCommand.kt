@@ -155,16 +155,17 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
                 Button.success(MAP_SEARCH_FIRST_BUTTON, "First").withDisabled(state.page == 0),
                 Button.success(MAP_SEARCH_LAST_BUTTON, "Last").withDisabled(state.page == pages))
 
+        val entries = (MindustryGamemode.entries + null)
         components +=
             ActionRow.of(
                 StringSelectMenu.create(MAP_SEARCH_GAMEMODE_SELECT)
                     .setPlaceholder("Gamemode")
                     .setMinValues(0)
-                    .setMaxValues(MindustryGamemode.entries.size)
+                    .setMaxValues(entries.size)
                     .setDefaultValues(state.gamemodes.map { it?.name ?: NONE_GAMEMODE })
                     .apply {
                         val options =
-                            (MindustryGamemode.entries + null).associateWith {
+                            entries.associateWith {
                                 val name = it?.name ?: NONE_GAMEMODE
                                 SelectOption.of(name.lowercase().replace("_", " "), name)
                             }
