@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.github.benmanes.caffeine.cache.RemovalCause
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
@@ -30,12 +31,17 @@ import com.xpdustry.imperium.discord.command.MenuCommand
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
+import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
+import net.dv8tion.jda.api.interactions.components.ActionComponent
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.ComponentInteraction
+import net.dv8tion.jda.api.interactions.components.ItemComponent
+import net.dv8tion.jda.api.interactions.components.LayoutComponent
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption
@@ -44,16 +50,30 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu
 import net.dv8tion.jda.api.utils.messages.MessageEditData
 
 class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val discord = instances.get<DiscordService>()
     private val maps = instances.get<MindustryMapManager>()
     private val states =
         buildCache<Long, MapSearchState> {
             expireAfterWrite(10.minutes.toJavaDuration())
             expireAfterAccess(10.minutes.toJavaDuration())
+            removalListener<Long, MapSearchState> { key, value, cause ->
+                if (key == null ||
+                    value == null ||
+                    !(cause == RemovalCause.EXPLICIT || cause == RemovalCause.EXPIRED))
+                    return@removalListener
+                runBlocking { disableMessageComponents(key, value.channel) }
+            }
         }
+
+    override fun onImperiumExit() {
+        states.invalidateAll()
+    }
 
     @ImperiumCommand(["map", "search"])
     suspend fun onMapSearchCommand(interaction: SlashCommandInteraction, query: String? = null) {
-        val state = MapSearchState(query, 0, emptySet(), interaction.user.idLong)
+        val state =
+            MapSearchState(
+                query, 0, emptySet(), interaction.user.idLong, interaction.channel.idLong)
         val result = getResultFromState(state)
         val message =
             interaction.deferReply().await().sendMessage(createMessage(result, state)).await()
@@ -156,11 +176,31 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
                 state.gamemodes.isEmpty() || it.gamemodes.intersect(state.gamemodes).isNotEmpty()
             }
 
+    private suspend fun disableMessageComponents(messageId: Long, channelId: Long) {
+        val message =
+            discord.jda.getTextChannelById(channelId)?.retrieveMessageById(messageId)?.await()
+                ?: return
+        message.editMessageComponents(message.components.map { it.disableComponent() }).await()
+    }
+
+    private fun LayoutComponent.disableComponent(): ActionRow =
+        when (this) {
+            is ActionRow -> ActionRow.of(components.map { it.disableComponent() })
+            else -> error("Unsupported component type: ${this::class}")
+        }
+
+    private fun ItemComponent.disableComponent(): ItemComponent =
+        when (this) {
+            is ActionComponent -> asDisabled()
+            else -> error("Unsupported component type: ${this::class}")
+        }
+
     data class MapSearchState(
         val query: String?,
         val page: Int,
         val gamemodes: Set<MindustryGamemode>,
-        val owner: Long
+        val owner: Long,
+        val channel: Long
     )
 
     companion object {
