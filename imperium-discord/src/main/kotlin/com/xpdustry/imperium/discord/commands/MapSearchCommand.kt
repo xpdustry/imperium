@@ -122,6 +122,11 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
         }
         if (state.owner != interaction.user.idLong) {
             interaction.deferReply(true).await().sendMessage("This button is not for you").await()
+            // Ensures selects are reset
+            val result = getResultFromState(state)
+            interaction.message
+                .editMessage(MessageEditData.fromCreateData(createMessage(result, state)))
+                .await()
             return
         }
         val edit = interaction.deferEdit().await()
