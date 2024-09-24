@@ -33,17 +33,15 @@ import com.xpdustry.imperium.discord.command.MenuCommand
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
+import com.xpdustry.imperium.discord.misc.disableComponents
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
-import net.dv8tion.jda.api.interactions.components.ActionComponent
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.ComponentInteraction
-import net.dv8tion.jda.api.interactions.components.ItemComponent
-import net.dv8tion.jda.api.interactions.components.LayoutComponent
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.interactions.components.selections.SelectOption
@@ -190,23 +188,12 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
             }
 
     private suspend fun disableMessageComponents(messageId: Long, channelId: Long) {
-        val message =
-            discord.jda.getTextChannelById(channelId)?.retrieveMessageById(messageId)?.await()
-                ?: return
-        message.editMessageComponents(message.components.map { it.disableComponent() }).await()
+        discord.jda
+            .getTextChannelById(channelId)
+            ?.retrieveMessageById(messageId)
+            ?.await()
+            ?.disableComponents()
     }
-
-    private fun LayoutComponent.disableComponent(): ActionRow =
-        when (this) {
-            is ActionRow -> ActionRow.of(components.map { it.disableComponent() })
-            else -> error("Unsupported component type: ${this::class}")
-        }
-
-    private fun ItemComponent.disableComponent(): ItemComponent =
-        when (this) {
-            is ActionComponent -> asDisabled()
-            else -> error("Unsupported component type: ${this::class}")
-        }
 
     private val List<MindustryMap>.pages: Int
         get() = (ceil(size.toFloat() / PAGE_SIZE).toInt() - 1).coerceAtLeast(0)
