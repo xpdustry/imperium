@@ -102,7 +102,10 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
     @MenuCommand(MAP_SEARCH_GAMEMODE_SELECT)
     suspend fun onGamemodeSelect(interaction: StringSelectInteraction) {
-        val gamemodes = interaction.values.map { MindustryGamemode.valueOf(it) }.toSet()
+        val gamemodes =
+            interaction.values
+                .map { if (it == NONE_GAMEMODE) null else MindustryGamemode.valueOf(it) }
+                .toSet()
         onMapSearchMessageUpdate(interaction) { it.copy(gamemodes = gamemodes) }
     }
 
@@ -147,7 +150,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
             ActionRow.of(
                 Button.primary(MAP_SEARCH_PREVIOUS_BUTTON, "Previous")
                     .withDisabled(state.page == 0),
-                Button.secondary("none", "${state.page + 1} / ${pages + 1}").withDisabled(true),
+                Button.secondary("unused", "${state.page + 1} / ${pages + 1}").withDisabled(true),
                 Button.primary(MAP_SEARCH_NEXT_BUTTON, "Next").withDisabled(state.page == pages),
                 Button.success(MAP_SEARCH_FIRST_BUTTON, "First").withDisabled(state.page == 0),
                 Button.success(MAP_SEARCH_LAST_BUTTON, "Last").withDisabled(state.page == pages))
@@ -158,11 +161,12 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
                     .setPlaceholder("Gamemode")
                     .setMinValues(0)
                     .setMaxValues(MindustryGamemode.entries.size)
-                    .setDefaultValues(state.gamemodes.map { it.name })
+                    .setDefaultValues(state.gamemodes.map { it?.name ?: NONE_GAMEMODE })
                     .apply {
                         val options =
-                            MindustryGamemode.entries.associateWith {
-                                SelectOption.of(it.name.lowercase().replace("_", " "), it.name)
+                            (MindustryGamemode.entries + null).associateWith {
+                                val name = it?.name ?: NONE_GAMEMODE
+                                SelectOption.of(name.lowercase().replace("_", " "), name)
                             }
                         addOptions(options.values)
                         setDefaultOptions(state.gamemodes.map { options[it]!! })
@@ -173,7 +177,9 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     private suspend fun getResultFromState(state: MapSearchState) =
         (if (state.query == null) maps.findAllMaps() else maps.searchMapByName(state.query))
             .filter {
-                state.gamemodes.isEmpty() || it.gamemodes.intersect(state.gamemodes).isNotEmpty()
+                state.gamemodes.isEmpty() ||
+                    it.gamemodes.intersect(state.gamemodes).isNotEmpty() ||
+                    (null in state.gamemodes && it.gamemodes.isEmpty())
             }
 
     private suspend fun disableMessageComponents(messageId: Long, channelId: Long) {
@@ -198,7 +204,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     data class MapSearchState(
         val query: String?,
         val page: Int,
-        val gamemodes: Set<MindustryGamemode>,
+        val gamemodes: Set<MindustryGamemode?>,
         val owner: Long,
         val channel: Long
     )
@@ -209,6 +215,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
         private const val MAP_SEARCH_FIRST_BUTTON = "map-search-first:1"
         private const val MAP_SEARCH_LAST_BUTTON = "map-search-last:1"
         private const val MAP_SEARCH_GAMEMODE_SELECT = "map-search-gamemode-select:1"
+        private const val NONE_GAMEMODE = "none"
         private const val PAGE_SIZE = 15
     }
 }
