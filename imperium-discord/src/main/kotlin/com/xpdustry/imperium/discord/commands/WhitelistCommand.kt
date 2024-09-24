@@ -24,39 +24,38 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.AddressWhitelist
-import com.xpdustry.imperium.discord.command.InteractionSender
+import com.xpdustry.imperium.discord.misc.await
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val whitelist = instances.get<AddressWhitelist>()
 
     @ImperiumCommand(["whitelist", "add"], Rank.ADMIN)
-    suspend fun onWhitelistAddCommand(sender: InteractionSender.Slash, address: String) {
+    suspend fun onWhitelistAddCommand(interaction: SlashCommandInteraction, address: String) {
+        val reply = interaction.deferReply(true).await()
         // TODO Add InetAddress parser, with option to prevent the use of loopback addresses
         val ip = address.toInetAddressOrNull()
         if (ip == null) {
-            sender.respond("The ip address is not valid.")
-            return
-        }
-        if (whitelist.containsAddress(ip)) {
-            sender.respond("The whitelist already contains this address.")
+            reply.sendMessage("The ip address is not valid.").await()
+        } else if (whitelist.containsAddress(ip)) {
+            reply.sendMessage("The whitelist already contains this address.").await()
         } else {
             whitelist.addAddress(ip)
-            sender.respond("Added address to whitelist.")
+            reply.sendMessage("Added address to whitelist.").await()
         }
     }
 
     @ImperiumCommand(["whitelist", "remove"], Rank.ADMIN)
-    suspend fun onWhitelistRemoveCommand(sender: InteractionSender.Slash, address: String) {
+    suspend fun onWhitelistRemoveCommand(interaction: SlashCommandInteraction, address: String) {
+        val reply = interaction.deferReply(true).await()
         val ip = address.toInetAddressOrNull()
         if (ip == null) {
-            sender.respond("The ip address is not valid.")
-            return
-        }
-        if (whitelist.containsAddress(ip)) {
+            reply.sendMessage("The ip address is not valid.").await()
+        } else if (whitelist.containsAddress(ip)) {
             whitelist.removeAddress(ip)
-            sender.respond("Removed address from whitelist.")
+            reply.sendMessage("Removed address from whitelist.").await()
         } else {
-            sender.respond("The whitelist does not contain this address.")
+            reply.sendMessage("The whitelist does not contain this address.").await()
         }
     }
 }

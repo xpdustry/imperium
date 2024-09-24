@@ -23,72 +23,83 @@ import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.discord.command.InteractionSender
-import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.misc.Embed
+import com.xpdustry.imperium.discord.misc.MessageCreate
+import com.xpdustry.imperium.discord.misc.await
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlinx.coroutines.future.await
 import net.dv8tion.jda.api.entities.Message
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
 class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val content = instances.get<MindustryContentHandler>()
 
     @ImperiumCommand(["schematic", "text"])
-    @NonEphemeral
-    suspend fun onSchematicCommand(actor: InteractionSender.Slash, schematic: String) {
+    suspend fun onSchematicCommand(interaction: SlashCommandInteraction, schematic: String) {
+        val reply = interaction.deferReply(false).await()
         val parsed = content.getSchematic(schematic)
         if (parsed.isFailure) {
-            actor.respond("Failed to parse the schematic: ${parsed.exceptionOrNull()!!.message}")
+            reply
+                .sendMessage("Failed to parse the schematic: ${parsed.exceptionOrNull()!!.message}")
+                .await()
             return
         }
 
         val preview = content.getSchematicPreview(parsed.getOrThrow())
         if (preview.isFailure) {
-            actor.respond(
-                "Failed to generate schematic preview: ${preview.exceptionOrNull()!!.message}")
+            reply
+                .sendMessage(
+                    "Failed to generate schematic preview: ${preview.exceptionOrNull()!!.message}")
+                .await()
             return
         }
 
         val stream = ByteArrayOutputStream()
         content.writeSchematic(parsed.getOrThrow(), stream).getOrThrow()
 
-        actor.respond {
-            addFiles(
-                FileUpload.fromData(
-                    stream.toByteArray(),
-                    "${parsed.getOrThrow().name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"),
-                FileUpload.fromStreamSupplier("preview.png", preview.getOrThrow()::inputStream))
-            addEmbeds(
-                Embed {
-                    author(actor.member)
-                    title = parsed.getOrThrow().name()
-                    image = "attachment://preview.png"
+        reply
+            .sendMessage(
+                MessageCreate {
+                    files +=
+                        listOf(
+                            FileUpload.fromData(
+                                stream.toByteArray(),
+                                "${parsed.getOrThrow().name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"),
+                            FileUpload.fromStreamSupplier(
+                                "preview.png", preview.getOrThrow()::inputStream))
+                    embeds += Embed {
+                        author(interaction.member!!)
+                        title = parsed.getOrThrow().name()
+                        image = "attachment://preview.png"
+                    }
                 })
-        }
+            .await()
     }
 
     @ImperiumCommand(["schematic", "file"])
-    @NonEphemeral
-    suspend fun onSchematicCommand(actor: InteractionSender.Slash, file: Message.Attachment) {
+    suspend fun onSchematicCommand(interaction: SlashCommandInteraction, file: Message.Attachment) {
+        val reply = interaction.deferReply(false).await()
         if (!file.fileName.endsWith(".msch")) {
-            actor.respond("Invalid schematic file!")
+            reply.sendMessage("Invalid schematic file!").await()
             return
         }
 
         if (file.size > SCHEMATIC_MAX_FILE_SIZE) {
-            actor.respond("Schematic file is too large!")
+            reply.sendMessage("Schematic file is too large!").await()
             return
         }
 
         val bytes = file.proxy.download().await().use(InputStream::readBytes)
         val result = content.getSchematic(bytes.inputStream())
         if (result.isFailure) {
-            actor.respond("Failed to parse the schematic: ${result.exceptionOrNull()!!.message}")
+            reply
+                .sendMessage("Failed to parse the schematic: ${result.exceptionOrNull()!!.message}")
+                .await()
             return
         }
 
@@ -96,17 +107,20 @@ class SchematicCommand(instances: InstanceManager) : ImperiumApplication.Listene
         val preview = content.getSchematicPreview(parsed).getOrThrow()
         val name = "${parsed.name().stripMindustryColors()}_${Random.nextInt(1000..9999)}.msch"
 
-        actor.respond {
-            addFiles(
-                FileUpload.fromStreamSupplier(name, bytes::inputStream),
-                FileUpload.fromStreamSupplier("preview.png", preview::inputStream))
-            addEmbeds(
-                Embed {
-                    author(actor.member)
-                    title = parsed.name()
-                    image = "attachment://preview.png"
+        reply
+            .sendMessage(
+                MessageCreate {
+                    files +=
+                        listOf(
+                            FileUpload.fromData(bytes, name),
+                            FileUpload.fromStreamSupplier("preview.png", preview::inputStream))
+                    embeds += Embed {
+                        author(interaction.member!!)
+                        title = parsed.name()
+                        image = "attachment://preview.png"
+                    }
                 })
-        }
+            .await()
     }
 
     companion object {

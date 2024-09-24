@@ -26,10 +26,10 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
-import com.xpdustry.imperium.discord.command.InteractionSender
-import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.misc.Embed
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
@@ -37,42 +37,45 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val renderer = instances.get<TimeRenderer>()
 
     @ImperiumCommand(["player", "info"])
-    suspend fun onPlayerInfoCommand(actor: InteractionSender.Slash, player: String) {
+    suspend fun onPlayerInfoCommand(interaction: SlashCommandInteraction, player: String) {
+        val reply = interaction.deferReply(true).await()
         // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
         var user = users.findByUuid(player)
         if (user == null && player.toLongOrNull() != null) {
             user = users.findBySnowflake(player.toLong())
         }
         if (user == null) {
-            actor.respond("Player not found.")
+            reply.sendMessage("Player not found.").await()
             return
         }
         val details = users.findNamesAndAddressesBySnowflake(user.snowflake)
-        actor.respond(
-            Embed {
-                title = "Player Info"
-                field("ID", "`${user.snowflake}`")
-                field("Last Name", "`${user.lastName}`")
-                field("Names", details.names.joinToString(transform = { "`$it`" }))
-                field("First Join", renderer.renderInstant(user.snowflake.timestamp))
-                field("Last Join", renderer.renderInstant(user.lastJoin))
-                field("Times Joined", user.timesJoined.toString())
-                if (discord.isAllowed(actor.member.user, Rank.ADMIN)) {
-                    field("Uuid", "`${user.uuid}`")
-                    field("Last Address", "`${user.lastAddress.hostAddress}`")
-                    field(
-                        "Addresses",
-                        details.addresses.joinToString(transform = { "`${it.hostAddress}`" }))
-                }
-            })
+        reply
+            .sendMessageEmbeds(
+                Embed {
+                    title = "Player Info"
+                    field("ID", "`${user.snowflake}`")
+                    field("Last Name", "`${user.lastName}`")
+                    field("Names", details.names.joinToString(transform = { "`$it`" }))
+                    field("First Join", renderer.renderInstant(user.snowflake.timestamp))
+                    field("Last Join", renderer.renderInstant(user.lastJoin))
+                    field("Times Joined", user.timesJoined.toString())
+                    if (discord.isAllowed(interaction.user, Rank.ADMIN)) {
+                        field("Uuid", "`${user.uuid}`")
+                        field("Last Address", "`${user.lastAddress.hostAddress}`")
+                        field(
+                            "Addresses",
+                            details.addresses.joinToString(transform = { "`${it.hostAddress}`" }))
+                    }
+                })
+            .await()
     }
 
     @ImperiumCommand(["player", "search"])
-    @NonEphemeral
-    suspend fun onPlayerSearch(actor: InteractionSender.Slash, query: String) {
+    suspend fun onPlayerSearch(interaction: SlashCommandInteraction, query: String) {
+        val reply = interaction.deferReply(true).await()
         val users = users.searchUserByName(query).take(21).toCollection(mutableListOf())
         if (users.isEmpty()) {
-            actor.respond("No players found.")
+            reply.sendMessage("No players found.").await()
             return
         }
         var hasMore = false
@@ -93,10 +96,12 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             text += "\n\nAnd more..."
         }
 
-        actor.respond(
-            Embed {
-                title = "Player Search"
-                description = text
-            })
+        reply
+            .sendMessageEmbeds(
+                Embed {
+                    title = "Player Search"
+                    description = text
+                })
+            .await()
     }
 }

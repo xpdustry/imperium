@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.command
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -27,7 +28,6 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
-import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
@@ -43,9 +43,9 @@ import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User as DiscordUser
@@ -53,8 +53,10 @@ import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent
 import net.dv8tion.jda.api.interactions.DiscordLocale
+import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.commands.OptionMapping
 import net.dv8tion.jda.api.interactions.commands.OptionType
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.commands.build.Commands
 import net.dv8tion.jda.api.interactions.commands.build.OptionData
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData
@@ -93,13 +95,12 @@ class SlashCommandRegistry(
         discord.jda.addSuspendingEventListener<SlashCommandInteractionEvent> { event ->
             val node = tree.resolve(event.interaction.fullCommandName.split(" "))
             val command = node.edge!!
-            val responder = event.deferReply(command.ephemeral).await()
-
-            val sender = InteractionSender.Slash(event)
             val arguments = mutableMapOf<KParameter, Any>()
 
-            if (!command.permission.test(sender)) {
-                responder
+            if (!command.permission.test(event)) {
+                event
+                    .deferReply(true)
+                    .await()
                     .sendMessage(":warning: **You do not have permission to use this command.**")
                     .await()
                 return@addSuspendingEventListener
@@ -113,7 +114,7 @@ class SlashCommandRegistry(
                     }
 
                     if (isSupportedActor(parameter.type.classifier!!)) {
-                        arguments[parameter] = sender
+                        arguments[parameter] = event.interaction
                         continue
                     }
 
@@ -122,7 +123,9 @@ class SlashCommandRegistry(
                         try {
                             event.getOption(parameter.name!!)?.let { argument.handler.parse(it) }
                         } catch (e: OptionParsingException) {
-                            responder
+                            event
+                                .deferReply(true)
+                                .await()
                                 .sendMessage(
                                     ":warning: Failed to parse the **${argument.name}** argument: ${e.message}")
                                 .await()
@@ -141,7 +144,9 @@ class SlashCommandRegistry(
                 }
             } catch (e: Exception) {
                 LOGGER.error("Error while parsing arguments for command ${node.fullName}", e)
-                responder
+                event
+                    .deferReply(true)
+                    .await()
                     .sendMessage(
                         ":warning: **An unexpected error occurred while parsing your command.**")
                     .await()
@@ -152,7 +157,10 @@ class SlashCommandRegistry(
                 command.function.callSuspendBy(arguments)
             } catch (e: Exception) {
                 LOGGER.error("Error while executing command ${node.fullName}", e)
-                responder
+                try {
+                    event.deferReply().await()
+                } catch (_: Exception) {}
+                event.hook
                     .sendMessage(
                         ":warning: **An unexpected error occurred while executing your command.**")
                     .await()
@@ -210,29 +218,20 @@ class SlashCommandRegistry(
                 arguments += createCommandEdgeArgument(parameter, optional, classifier)
             }
 
-            var permission = PermissionPredicate {
-                discord.isAllowed(it.interaction.user, command.rank)
-            }
+            var permission = PermissionPredicate { discord.isAllowed(it.user, command.rank) }
 
             val allow = function.findAnnotation<AlsoAllow>()
             if (allow != null) {
                 val previous = permission
                 permission = PermissionPredicate {
-                    previous.test(it) or discord.isAllowed(it.interaction.user, allow.permission)
+                    previous.test(it) or discord.isAllowed(it.user, allow.permission)
                 }
             }
 
             function.isAccessible = true
             tree.resolve(
                 path = command.path.toList(),
-                edge =
-                    CommandEdge(
-                        container,
-                        function,
-                        permission,
-                        arguments,
-                        !function.hasAnnotation<NonEphemeral>(),
-                    ),
+                edge = CommandEdge(container, function, permission, arguments),
             )
         }
     }
@@ -261,6 +260,11 @@ class SlashCommandRegistry(
         runBlocking {
             if (discordConfig.globalCommands) {
                 discord.jda.updateCommands().addCommands(compiled).await()
+                discord.getMainServer().retrieveCommands().await().map {
+                    ImperiumScope.MAIN.launch {
+                        discord.getMainServer().deleteCommandById(it.idLong).await()
+                    }
+                }
             } else {
                 discord.getMainServer().updateCommands().addCommands(compiled).await()
             }
@@ -310,7 +314,7 @@ class SlashCommandRegistry(
     }
 
     private fun isSupportedActor(classifier: KClassifier) =
-        classifier == InteractionSender::class || classifier == InteractionSender.Slash::class
+        classifier == Interaction::class || classifier == SlashCommandInteraction::class
 
     private fun SlashCommandNode.applyBuilderTranslations() {
         var key = "imperium.command.[${path.joinToString(".")}]"
@@ -398,7 +402,6 @@ private data class CommandEdge(
     val function: KFunction<*>,
     val permission: PermissionPredicate,
     val arguments: List<Argument<*>>,
-    val ephemeral: Boolean,
 ) {
     data class Argument<T : Any>(
         val name: String,

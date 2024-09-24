@@ -34,11 +34,11 @@ import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.common.snowflake.Snowflake
-import com.xpdustry.imperium.discord.command.InteractionSender
-import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<DiscordConfig>()
@@ -57,45 +57,47 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @ImperiumCommand(["verify"])
-    @NonEphemeral
-    suspend fun onVerifyCommand(actor: InteractionSender.Slash, code: Int) {
-        if (!limiter.incrementAndCheck(actor.member.idLong)) {
-            actor.respond("You made too many attempts! Wait 10 minutes and try again.")
+    suspend fun onVerifyCommand(interaction: SlashCommandInteraction, code: Int) {
+        val reply = interaction.deferReply(false).await()
+        if (!limiter.incrementAndCheck(interaction.user.idLong)) {
+            reply.sendMessage("You made too many attempts! Wait 10 minutes and try again.").await()
             return
         }
 
         val verification = pending.getIfPresent(code)
         if (verification == null) {
-            actor.respond("Invalid code.")
+            reply.sendMessage("Invalid code.").await()
             return
         }
 
-        val bound = accounts.findByDiscord(actor.member.idLong)
+        val bound = accounts.findByDiscord(interaction.user.idLong)
         if (bound != null) {
-            actor.respond(
-                "Your discord account is already bound to the cn account ${bound.username}.")
+            reply
+                .sendMessage(
+                    "Your discord account is already bound to the cn account ${bound.username}.")
+                .await()
             return
         }
 
-        when (accounts.updateDiscord(verification.account, actor.member.idLong)) {
+        when (accounts.updateDiscord(verification.account, interaction.user.idLong)) {
             is AccountResult.Success -> Unit
             else -> {
-                actor.respond("An unexpected error occurred while verifying you.")
-                logger.error("Failed to update user discord ${actor.member.effectiveName}")
+                reply.sendMessage("An unexpected error occurred while verifying you.").await()
+                logger.error("Failed to update user discord ${interaction.user.effectiveName}")
             }
         }
 
         var rank = accounts.findBySnowflake(verification.account)!!.rank
-        for (role in actor.member.roles) {
+        for (role in interaction.member!!.roles) {
             rank = maxOf(rank, config.roles2ranks[role.idLong] ?: Rank.VERIFIED)
         }
         accounts.setRank(verification.account, rank)
 
-        discord.syncRoles(actor.member)
+        discord.syncRoles(interaction.member!!)
         messenger.publish(
             VerificationMessage(
                 verification.account, verification.uuid, verification.usid, code, true))
-        actor.respond("You have been verified!")
+        reply.sendMessage("You have been verified!").await()
     }
 
     data class Verification(

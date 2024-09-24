@@ -27,6 +27,7 @@ import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
+import com.xpdustry.imperium.discord.commands.MapSearchCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
 import com.xpdustry.imperium.discord.commands.PingCommand
 import com.xpdustry.imperium.discord.commands.PlayerCommand
@@ -73,7 +74,9 @@ fun main() {
             PlayerCommand::class,
             AccountCommand::class,
             WhitelistCommand::class,
-            RestListener::class)
+            RestListener::class,
+            MapSearchCommand::class,
+        )
         .forEach(application::register)
     application.init()
 

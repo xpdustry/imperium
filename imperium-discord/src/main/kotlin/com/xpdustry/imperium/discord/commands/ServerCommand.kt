@@ -27,14 +27,14 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.network.Discovery
-import com.xpdustry.imperium.discord.command.InteractionSender
-import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.misc.Embed
+import com.xpdustry.imperium.discord.misc.await
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.Locale
 import net.dv8tion.jda.api.entities.MessageEmbed
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
@@ -43,36 +43,37 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val messenger = instances.get<Messenger>()
 
     @ImperiumCommand(["server", "list"])
-    @NonEphemeral
-    suspend fun onServerList(actor: InteractionSender.Slash) =
-        actor.respond(
-            Embed {
-                title = "Server List"
-                description =
-                    discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
-            })
+    suspend fun onServerList(interaction: SlashCommandInteraction) =
+        interaction
+            .replyEmbeds(
+                Embed {
+                    title = "Server List"
+                    description =
+                        discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
+                })
+            .await()
 
     @ImperiumCommand(["player", "joins"])
-    @NonEphemeral
-    suspend fun onServerPlayerJoin(actor: InteractionSender.Slash, server: String) {
+    suspend fun onServerPlayerJoin(interaction: SlashCommandInteraction, server: String) {
+        val reply = interaction.deferReply(false).await()
         val joins = tracker.getPlayerJoins(server)
         if (joins == null) {
-            actor.respond("Server not found.")
+            reply.sendMessage("Server not found.").await()
             return
         }
-        actor.respond(createPlayerListEmbed(joins, "Join"))
+        reply.sendMessageEmbeds(createPlayerListEmbed(joins, "Join")).await()
     }
 
     @ImperiumCommand(["player", "online"])
-    @NonEphemeral
-    suspend fun onServerPlayerOnline(actor: InteractionSender.Slash, server: String? = null) {
+    suspend fun onServerPlayerOnline(interaction: SlashCommandInteraction, server: String? = null) {
+        val reply = interaction.deferReply(false).await()
         if (server != null) {
             val online = tracker.getOnlinePlayers(server)
             if (online == null) {
-                actor.respond("Server not found.")
+                reply.sendMessage("Server not found.").await()
                 return
             }
-            actor.respond(createPlayerListEmbed(online, "Online", time = false))
+            reply.sendMessageEmbeds(createPlayerListEmbed(online, "Online", time = false)).await()
         } else {
             val embeds = mutableListOf<MessageEmbed>()
             for ((key, value) in discovery.servers) {
@@ -84,28 +85,28 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     }
                 }
             }
-            actor.respond { addEmbeds(embeds) }
+            reply.sendMessageEmbeds(embeds).await()
         }
     }
 
     @ImperiumCommand(["server", "restart"], Rank.ADMIN)
-    @NonEphemeral
     suspend fun onServerRestart(
-        actor: InteractionSender.Slash,
+        interaction: SlashCommandInteraction,
         server: String,
         immediate: Boolean = false
     ) {
+        val reply = interaction.deferReply(false).await()
         if (server == "discord") {
-            actor.respond("Restarting discord bot.")
+            reply.sendMessage("Restarting discord bot.").await()
             application.exit(ExitStatus.RESTART)
             return
         } else {
             if (discovery.servers[server] == null) {
-                actor.respond("Server not found.")
+                reply.sendMessage("Server not found.").await()
                 return
             }
             messenger.publish(RestartMessage(server, immediate))
-            actor.respond("Sent restart request to server **$server**.")
+            reply.sendMessage("Sent restart request to server **$server**.").await()
         }
     }
 
@@ -114,30 +115,28 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         name: String,
         time: Boolean = true,
         server: String? = null
-    ): MessageEmbed {
-        return Embed {
-            title = "Player $name List"
-            if (server != null) {
-                title += " in $server"
+    ) = Embed {
+        title = "Player $name List"
+        if (server != null) {
+            title += " in $server"
+        }
+        description = buildString {
+            append("```\n")
+            if (list.isEmpty()) {
+                append("No players found.\n")
             }
-            description = buildString {
-                append("```\n")
-                if (list.isEmpty()) {
-                    append("No players found.\n")
-                }
-                for (entry in list) {
-                    if (time) {
-                        append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
-                        append(" ")
-                    }
-                    append("#")
-                    append(entry.snowflake)
+            for (entry in list) {
+                if (time) {
+                    append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
                     append(" ")
-                    append(entry.player.name)
-                    append("\n")
                 }
-                append("```")
+                append("#")
+                append(entry.snowflake)
+                append(" ")
+                append(entry.player.name)
+                append("\n")
             }
+            append("```")
         }
     }
 

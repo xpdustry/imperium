@@ -21,93 +21,111 @@ import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
-import com.xpdustry.imperium.discord.command.annotation.NonEphemeral
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
+import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
 import kotlin.reflect.full.callSuspend
+import kotlin.reflect.full.createType
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
-import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent
+import kotlin.reflect.jvm.jvmErasure
+import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteractionCreateEvent
+import net.dv8tion.jda.api.interactions.Interaction
+import net.dv8tion.jda.api.interactions.components.ComponentInteraction
 
-class ButtonCommandRegistry(private val discord: DiscordService) :
+// TODO Add support for different kinds of ack
+class MenuCommandRegistry(private val discord: DiscordService) :
     AnnotationScanner, ImperiumApplication.Listener {
     private val handlers = mutableMapOf<String, ButtonHandler>()
 
     override fun onImperiumInit() {
-        discord.jda.addSuspendingEventListener<ButtonInteractionEvent> { event ->
+        discord.jda.addSuspendingEventListener<GenericComponentInteractionCreateEvent> { event ->
             val handler = handlers[event.componentId]
             if (handler == null) {
                 event.deferReply(true).await().sendMessage("This button is no longer valid").await()
                 return@addSuspendingEventListener
             }
 
-            val sender = InteractionSender.Button(event)
-            val updater = event.deferReply(handler.ephemeral).await()
+            @Suppress("UNCHECKED_CAST")
+            val expected = handler.function.parameters[1].type.classifier as KClass<out Interaction>
+            if (!isSupportedInteraction(event.interaction::class)) {
+                logger.error(
+                    "Unexpected interaction type for {}, expected {}, got {}",
+                    event.componentId,
+                    expected,
+                    event.interaction::class)
+                event
+                    .deferReply(true)
+                    .await()
+                    .sendMessage("Unexpected interaction type, please report this to a moderator")
+                    .await()
+                return@addSuspendingEventListener
+            }
 
-            if (!handler.permission.test(sender)) {
-                updater
+            if (!handler.permission.test(event)) {
+                event
+                    .deferReply(true)
+                    .await()
                     .sendMessage(":warning: **You do not have permission to use this command.**")
                     .await()
                 return@addSuspendingEventListener
             }
 
             try {
-                handler.function.callSuspend(handler.container, sender)
+                handler.function.callSuspend(handler.container, event.interaction)
             } catch (e: Exception) {
                 logger.error("Error while executing button ${event.componentId}", e)
-                updater.sendMessage("An error occurred while executing this button").await()
+                try {
+                    event.deferReply().await()
+                } catch (_: Exception) {}
+                event.hook
+                    .sendMessage(
+                        "**:warning: An unexpected error occurred while executing this interaction.**")
+                    .await()
             }
         }
     }
 
     override fun scan(instance: Any) {
         for (function in instance::class.memberFunctions) {
-            val button = function.findAnnotation<ButtonCommand>() ?: continue
-            var permission = PermissionPredicate {
-                discord.isAllowed(it.interaction.user, button.rank)
-            }
+            val command = function.findAnnotation<MenuCommand>() ?: continue
+            var permission = PermissionPredicate { discord.isAllowed(it.user, command.rank) }
 
-            if (!button.name.all { it.isLetterOrDigit() || it == '-' || it == ':' }) {
+            if (!command.name.all { it.isLetterOrDigit() || it == '-' || it == ':' }) {
                 throw IllegalArgumentException("$function button name must be alphanumeric")
             }
 
             if (function.parameters.size != 2 ||
-                !isSupportedActor(function.parameters[1].type.classifier!!)) {
+                !isSupportedInteraction(function.parameters[1].type.classifier!!)) {
                 throw IllegalArgumentException(
                     "$function button must have exactly one parameter of type InteractionActor")
             }
 
-            if (button.name in handlers) {
+            if (command.name in handlers) {
                 throw IllegalArgumentException(
-                    "$function button ${button.name} is already registered")
+                    "$function button ${command.name} is already registered")
             }
 
             val allow = function.findAnnotation<AlsoAllow>()
             if (allow != null) {
                 val previous = permission
                 permission = PermissionPredicate {
-                    previous.test(it) or discord.isAllowed(it.interaction.user, allow.permission)
+                    previous.test(it) or discord.isAllowed(it.user, allow.permission)
                 }
             }
 
             function.isAccessible = true
-            handlers[button.name] =
-                ButtonHandler(
-                    instance,
-                    permission,
-                    function,
-                    !function.hasAnnotation<NonEphemeral>(),
-                )
+            handlers[command.name] = ButtonHandler(instance, permission, function)
         }
     }
 
-    private fun isSupportedActor(classifier: KClassifier) =
-        classifier == InteractionSender::class || classifier == InteractionSender.Button::class
+    private fun isSupportedInteraction(classifier: KClassifier) =
+        classifier.createType().jvmErasure.isSubclassOf(ComponentInteraction::class)
 
     companion object {
         private val logger by LoggerDelegate()
@@ -117,6 +135,5 @@ class ButtonCommandRegistry(private val discord: DiscordService) :
         val container: Any,
         val permission: PermissionPredicate,
         val function: KFunction<*>,
-        val ephemeral: Boolean,
     )
 }
