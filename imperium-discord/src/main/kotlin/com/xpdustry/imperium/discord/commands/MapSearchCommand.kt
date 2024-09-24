@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.commands
 import com.github.benmanes.caffeine.cache.RemovalCause
 import com.github.benmanes.caffeine.cache.Scheduler
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMap
@@ -36,7 +37,7 @@ import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.ActionComponent
 import net.dv8tion.jda.api.interactions.components.ActionRow
@@ -55,15 +56,15 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     private val maps = instances.get<MindustryMapManager>()
     private val states =
         buildCache<Long, MapSearchState> {
-            expireAfterWrite(10.minutes.toJavaDuration())
-            expireAfterAccess(10.minutes.toJavaDuration())
+            expireAfterWrite(1.minutes.toJavaDuration())
+            expireAfterAccess(1.minutes.toJavaDuration())
             scheduler(Scheduler.systemScheduler())
             removalListener<Long, MapSearchState> { key, value, cause ->
                 if (key == null ||
                     value == null ||
                     !(cause == RemovalCause.EXPLICIT || cause == RemovalCause.EXPIRED))
                     return@removalListener
-                runBlocking { disableMessageComponents(key, value.channel) }
+                ImperiumScope.MAIN.launch { disableMessageComponents(key, value.channel) }
             }
         }
 
