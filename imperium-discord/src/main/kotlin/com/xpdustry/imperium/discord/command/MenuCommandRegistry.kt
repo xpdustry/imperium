@@ -81,7 +81,7 @@ class MenuCommandRegistry(private val discord: DiscordService) :
             } catch (e: Exception) {
                 logger.error("Error while executing button ${event.componentId}", e)
                 try {
-                    event.deferReply().await()
+                    event.deferReply(true).await()
                 } catch (_: Exception) {}
                 event.hook
                     .sendMessage(

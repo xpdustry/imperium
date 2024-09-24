@@ -158,7 +158,7 @@ class SlashCommandRegistry(
             } catch (e: Exception) {
                 LOGGER.error("Error while executing command ${node.fullName}", e)
                 try {
-                    event.deferReply().await()
+                    event.deferReply(true).await()
                 } catch (_: Exception) {}
                 event.hook
                     .sendMessage(
