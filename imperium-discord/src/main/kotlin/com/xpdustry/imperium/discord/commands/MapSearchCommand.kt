@@ -132,15 +132,13 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
         val edit = interaction.deferEdit().await()
         state = update(state)
         val result = getResultFromState(state)
-        state =
-            state.copy(
-                page = state.page.coerceAtMost(ceil(result.size.toFloat() / PAGE_SIZE).toInt() - 1))
+        state = state.copy(page = state.page.coerceAtMost(result.pages))
         states.put(interaction.message.idLong, state)
         edit.editOriginal(MessageEditData.fromCreateData(createMessage(result, state))).await()
     }
 
     private fun createMessage(result: List<MindustryMap>, state: MapSearchState) = MessageCreate {
-        val pages = ceil(result.size.toFloat() / PAGE_SIZE).toInt() - 1
+        val pages = result.pages
         val listing = result.drop(state.page * PAGE_SIZE).take(PAGE_SIZE)
 
         embeds += Embed {
@@ -208,6 +206,9 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
             is ActionComponent -> asDisabled()
             else -> error("Unsupported component type: ${this::class}")
         }
+
+    private val List<MindustryMap>.pages: Int
+        get() = (ceil(size.toFloat() / PAGE_SIZE).toInt() - 1).coerceAtLeast(0)
 
     data class MapSearchState(
         val query: String?,
