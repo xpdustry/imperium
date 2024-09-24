@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.command
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -44,6 +45,7 @@ import kotlin.reflect.full.callSuspendBy
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.User as DiscordUser
@@ -258,6 +260,11 @@ class SlashCommandRegistry(
         runBlocking {
             if (discordConfig.globalCommands) {
                 discord.jda.updateCommands().addCommands(compiled).await()
+                discord.getMainServer().retrieveCommands().await().map {
+                    ImperiumScope.MAIN.launch {
+                        discord.getMainServer().deleteCommandById(it.idLong).await()
+                    }
+                }
             } else {
                 discord.getMainServer().updateCommands().addCommands(compiled).await()
             }
