@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.rest
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.Discovery
@@ -46,6 +47,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val tracker = instances.get<PlayerTracker>()
     private val config =
         instances.get<ImperiumConfig>().webserver ?: error("Webserver configuration is missing")
+    private val codec = instances.get<IdentifierCodec>()
 
     private lateinit var ktor: ApplicationEngine
 
@@ -81,7 +83,8 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     active = data.state != Discovery.Data.Mindustry.State.STOPPED,
                     players =
                         tracker.getOnlinePlayers(name)?.map { player ->
-                            ServerEntry.Player(player.player.displayName, player.snowflake)
+                            ServerEntry.Player(
+                                player.player.displayName, codec.encode(player.playerId))
                         } ?: emptyList())
             }
 
@@ -104,6 +107,6 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val active: Boolean,
         val players: List<Player>,
     ) {
-        @Serializable data class Player(val name: String, val id: Long)
+        @Serializable data class Player(val name: String, val id: String)
     }
 }

@@ -39,9 +39,6 @@ import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
-import com.xpdustry.imperium.common.snowflake.Snowflake
-import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
-import com.xpdustry.imperium.common.snowflake.timestamp
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -59,7 +56,6 @@ import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsert
@@ -68,7 +64,7 @@ interface AccountManager {
 
     suspend fun findByUsername(username: String): Account?
 
-    suspend fun findBySnowflake(snowflake: Snowflake): Account?
+    suspend fun findById(id: Int): Account?
 
     suspend fun findByDiscord(discord: Long): Account?
 
@@ -76,9 +72,9 @@ interface AccountManager {
 
     suspend fun existsByIdentity(identity: Identity.Mindustry): Boolean
 
-    suspend fun existsBySnowflake(snowflake: Snowflake): Boolean
+    suspend fun existsById(id: Int): Boolean
 
-    suspend fun updateDiscord(account: Snowflake, discord: Snowflake): AccountResult
+    suspend fun updateDiscord(account: Int, discord: Long): AccountResult
 
     suspend fun register(username: String, password: CharArray): AccountResult
 
@@ -107,27 +103,25 @@ interface AccountManager {
 
     // TODO Move the following methods in a account stat manager
     suspend fun progress(
-        account: Snowflake,
+        account: Int,
         achievement: Account.Achievement,
         value: Int = 1
     ): AccountResult
 
     suspend fun getAchievements(
-        snowflake: Snowflake
+        account: Int,
     ): Map<Account.Achievement, Account.Achievement.Progression>
 
-    suspend fun incrementGames(snowflake: Snowflake): Boolean
+    suspend fun incrementGames(account: Int): Boolean
 
-    suspend fun incrementPlaytime(snowflake: Snowflake, duration: Duration): Boolean
+    suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean
 
-    suspend fun setRank(snowflake: Snowflake, rank: Rank)
+    suspend fun setRank(account: Int, rank: Rank)
 }
 
 @Serializable
-data class AchievementCompletedMessage(
-    val account: Snowflake,
-    val achievement: Account.Achievement
-) : Message
+data class AchievementCompletedMessage(val account: Int, val achievement: Account.Achievement) :
+    Message
 
 sealed interface AccountResult {
 
@@ -148,7 +142,6 @@ sealed interface AccountResult {
 
 class SimpleAccountManager(
     private val provider: SQLProvider,
-    private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
     private val config: ImperiumConfig
 ) : AccountManager, ImperiumApplication.Listener {
@@ -170,7 +163,6 @@ class SimpleAccountManager(
                     GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS)
                 }
                 AccountTable.insert {
-                    it[id] = generator.generate()
                     it[username] = "test"
                     it[passwordHash] = password.hash
                     it[passwordSalt] = password.salt
@@ -190,12 +182,9 @@ class SimpleAccountManager(
                 ?.toAccount()
         }
 
-    override suspend fun findBySnowflake(snowflake: Snowflake): Account? =
+    override suspend fun findById(id: Int): Account? =
         provider.newSuspendTransaction {
-            AccountTable.selectAll()
-                .where { AccountTable.id eq snowflake }
-                .firstOrNull()
-                ?.toAccount()
+            AccountTable.selectAll().where { AccountTable.id eq id }.firstOrNull()?.toAccount()
         }
 
     override suspend fun findByDiscord(discord: Long): Account? =
@@ -228,10 +217,10 @@ class SimpleAccountManager(
             }
         }
 
-    override suspend fun existsBySnowflake(snowflake: Snowflake): Boolean =
-        provider.newSuspendTransaction { AccountTable.exists { AccountTable.id eq snowflake } }
+    override suspend fun existsById(id: Int): Boolean =
+        provider.newSuspendTransaction { AccountTable.exists { AccountTable.id eq id } }
 
-    override suspend fun updateDiscord(account: Snowflake, discord: Snowflake): AccountResult =
+    override suspend fun updateDiscord(account: Int, discord: Long): AccountResult =
         provider.newSuspendTransaction {
             val rows =
                 AccountTable.update({ AccountTable.id eq account }) {
@@ -266,7 +255,6 @@ class SimpleAccountManager(
 
             val hashPwd = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
             AccountTable.insert {
-                it[id] = generator.generate()
                 it[AccountTable.username] = username
                 it[passwordHash] = hashPwd.hash
                 it[passwordSalt] = hashPwd.salt
@@ -310,7 +298,6 @@ class SimpleAccountManager(
             val newPasswordHash = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
             val newAccount =
                 AccountTable.insertAndGetId {
-                    it[id] = generator.generate()
                     it[username] = newUsername
                     it[passwordHash] = newPasswordHash.hash
                     it[passwordSalt] = newPasswordHash.salt
@@ -446,11 +433,11 @@ class SimpleAccountManager(
         }
 
     override suspend fun progress(
-        account: Snowflake,
+        account: Int,
         achievement: Account.Achievement,
         value: Int
     ): AccountResult {
-        if (!existsBySnowflake(account)) {
+        if (!existsById(account)) {
             return AccountResult.NotFound
         }
         val (result, completed) =
@@ -488,48 +475,48 @@ class SimpleAccountManager(
     }
 
     override suspend fun getAchievements(
-        snowflake: Snowflake
+        account: Int
     ): Map<Account.Achievement, Account.Achievement.Progression> =
         provider.newSuspendTransaction {
             AccountAchievementTable.select(
                     AccountAchievementTable.achievement,
                     AccountAchievementTable.progress,
                     AccountAchievementTable.completed)
-                .where { AccountAchievementTable.account eq snowflake }
+                .where { AccountAchievementTable.account eq account }
                 .associate {
                     it[AccountAchievementTable.achievement] to it.toAchievementProgression()
                 }
         }
 
-    override suspend fun incrementGames(snowflake: Snowflake): Boolean =
+    override suspend fun incrementGames(account: Int): Boolean =
         provider.newSuspendTransaction {
-            AccountTable.update({ AccountTable.id eq snowflake }) { it[games] = games.plus(1) } != 0
+            AccountTable.update({ AccountTable.id eq account }) { it[games] = games.plus(1) } != 0
         }
 
-    override suspend fun incrementPlaytime(snowflake: Snowflake, duration: Duration): Boolean =
+    override suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean =
         provider.newSuspendTransaction {
-            AccountTable.update({ AccountTable.id eq snowflake }) {
+            AccountTable.update({ AccountTable.id eq account }) {
                 it[playtime] = playtime.plus(duration.toJavaDuration())
             } != 0
         }
 
-    override suspend fun setRank(snowflake: Snowflake, rank: Rank) {
+    override suspend fun setRank(account: Int, rank: Rank) {
         val changed =
             provider.newSuspendTransaction {
                 val current =
                     AccountTable.select(AccountTable.rank)
-                        .where { AccountTable.id eq snowflake }
+                        .where { AccountTable.id eq account }
                         .firstOrNull()
                         ?.get(AccountTable.rank)
                 if (current == rank) {
                     return@newSuspendTransaction false
                 }
-                AccountTable.update({ AccountTable.id eq snowflake }) {
+                AccountTable.update({ AccountTable.id eq account }) {
                     it[AccountTable.rank] = rank
                 } != 0
             }
         if (changed) {
-            messenger.publish(RankChangeEvent(snowflake), local = true)
+            messenger.publish(RankChangeEvent(account), local = true)
         }
     }
 
@@ -541,12 +528,12 @@ class SimpleAccountManager(
 
     private fun ResultRow.toAccount() =
         Account(
-            snowflake = this[AccountTable.id].value,
+            id = this[AccountTable.id].value,
             username = this[AccountTable.username],
             discord = this[AccountTable.discord],
             games = this[AccountTable.games],
             playtime = this[AccountTable.playtime].toKotlinDuration(),
-            creation = this[AccountTable.id].value.timestamp,
+            creation = this[AccountTable.creation],
             legacy = this[AccountTable.legacy],
             rank = this[AccountTable.rank])
 

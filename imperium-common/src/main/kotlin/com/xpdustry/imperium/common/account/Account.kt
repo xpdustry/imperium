@@ -17,12 +17,11 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import java.time.Instant
 import kotlin.time.Duration
 
 data class Account(
-    val snowflake: Snowflake,
+    val id: Int,
     val username: String,
     val discord: Long?,
     val games: Int,

@@ -24,13 +24,14 @@ import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.MindustryMapTable
+import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.permission.Permission
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.discord.command.MenuCommand
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
@@ -60,6 +61,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
     private val renderer = instances.get<TimeRenderer>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @Suppress("DuplicatedCode")
     @ImperiumCommand(["map", "preview"])
@@ -133,7 +135,12 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         }
 
         val bytes = map.proxy.download().await().use(InputStream::readBytes)
-        val (meta, preview) = content.getMapMetadataWithPreview(bytes.inputStream()).getOrThrow()
+        val result = content.getMapMetadataWithPreview(bytes.inputStream())
+        if (result.isFailure) {
+            reply.sendMessage("Invalid map file: " + result.exceptionOrNull()!!.message).await()
+            return
+        }
+        val (meta, preview) = result.getOrThrow()
 
         if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
             reply
@@ -167,10 +174,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                             if (notes != null) {
                                 field("Notes", notes, false)
                             }
-                            val updating =
-                                maps.findMapByName(meta.name.stripMindustryColors())?.snowflake
+                            val updating = maps.findMapByName(meta.name.stripMindustryColors())?.id
                             if (updating != null) {
-                                field("Updating Map", "`$updating`", false)
+                                field("Updating Map", "`${codec.encode(updating)}`", false)
                             }
                             image = "attachment://preview.png"
                         }
@@ -216,9 +222,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
             attachment.proxy.download().await().use { content.getMapMetadata(it).getOrThrow() }
 
         val map = maps.findMapByName(meta.name.stripMindustryColors())
-        val snowflake: Snowflake
+        val id: Int
         if (map == null) {
-            snowflake =
+            id =
                 maps.createMap(
                     name = meta.name.stripMindustryColors(),
                     description = meta.description?.stripMindustryColors(),
@@ -227,9 +233,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                     height = meta.height,
                     stream = { attachment.proxy.download().join() })
         } else {
-            snowflake = map.snowflake
+            id = map.id
             maps.updateMap(
-                snowflake = map.snowflake,
+                id = map.id,
                 description = meta.description?.stripMindustryColors(),
                 author = meta.author?.stripMindustryColors(),
                 width = meta.width,
@@ -237,23 +243,23 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                 stream = { attachment.proxy.download().join() })
         }
 
-        updateSubmissionEmbed(interaction, Color.GREEN, "uploaded", snowflake)
-        reply.sendMessage("Map submission uploaded! The map id is `$snowflake`.").await()
+        updateSubmissionEmbed(interaction, Color.GREEN, "uploaded", id)
+        reply.sendMessage("Map submission uploaded! The map id is `${codec.encode(id)}`.").await()
     }
 
     private suspend fun updateSubmissionEmbed(
         interaction: ButtonInteraction,
         color: Color,
         verb: String,
-        snowflake: Snowflake? = null
+        id: Int? = null
     ) {
         interaction.message
             .editMessageEmbeds(
                 Embed(interaction.message.embeds.first()) {
                     this@Embed.color = color.rgb
                     field("Reviewer", interaction.member!!.asMention, false)
-                    if (snowflake != null) {
-                        field("Identifier", "$snowflake", false)
+                    if (id != null) {
+                        field("Identifier", codec.encode(id), false)
                     }
                     image = "attachment://preview2.png"
                 })
@@ -290,22 +296,22 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     }
 
     @ImperiumCommand(["map", "info"])
-    suspend fun onMapInfo(interaction: SlashCommandInteraction, id: Snowflake) {
+    suspend fun onMapInfo(interaction: SlashCommandInteraction, id: String) {
         val reply = interaction.deferReply(false).await()
-        val map = maps.findMapBySnowflake(id)
+        val map = codec.tryDecode(id)?.let { maps.findMapById(it) }
         if (map == null) {
             reply.sendMessage("Unknown map id").await()
             return
         }
 
-        val stats = maps.getMapStats(id)!!
+        val stats = maps.getMapStats(map.id)!!
         reply
             .sendMessage(
                 MessageCreate {
                     files +=
                         FileUpload.fromStreamSupplier("preview.png") {
                             runBlocking {
-                                maps.getMapInputStream(map.snowflake)!!.use {
+                                maps.getMapInputStream(map.id)!!.use {
                                     this@MapCommand.content
                                         .getMapMetadataWithPreview(it)
                                         .getOrThrow()
@@ -319,7 +325,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                         color = MINDUSTRY_ACCENT_COLOR.rgb
                         title = map.name
                         field("Author", map.author ?: "Unknown", false)
-                        field("Identifier", "${map.snowflake}", false)
+                        field("Identifier", codec.encode(map.id), false)
                         field("Description", map.description ?: "Unknown", false)
                         field("Size", "${map.width} x ${map.height}", false)
                         field("Games", stats.games.toString(), false)
@@ -344,9 +350,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
 
     // TODO Add a way to navigate the games
     @ImperiumCommand(["map", "game", "info"])
-    suspend fun onMapGameInfo(interaction: SlashCommandInteraction, id: Snowflake) {
+    suspend fun onMapGameInfo(interaction: SlashCommandInteraction, id: String) {
         val reply = interaction.deferReply(false).await()
-        val game = maps.findMapGameBySnowflake(id)
+        val game = codec.tryDecode(id)?.let { maps.findMapGameBySnowflake(it) }
         if (game == null) {
             reply.sendMessage("Unknown game id").await()
             return
@@ -355,7 +361,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
             .sendMessageEmbeds(
                 Embed {
                     color = MINDUSTRY_ACCENT_COLOR.rgb
-                    title = "Game ${game.snowflake}"
+                    title = "Game ${codec.encode(game.id)}"
                     field("Date", renderer.renderInstant(game.start))
                     field("Playtime", renderer.renderDuration(game.playtime))
                     field("Units Created", game.unitsCreated.toString())
@@ -384,8 +390,11 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     @MenuCommand(MAP_DOWNLOAD_BUTTON)
     suspend fun onMapDownload(interaction: ButtonInteraction) {
         val reply = interaction.deferReply(true).await()
-        val snowflake = interaction.message.embeds.first().getFieldValue("Identifier")?.toLong()
-        val stream = snowflake?.let { maps.getMapInputStream(it) }
+        val id =
+            interaction.message.embeds.first().getFieldValue("Identifier")?.let {
+                codec.tryDecode(it)
+            }
+        val stream = id?.let { maps.getMapInputStream(it) }
         if (stream === null) {
             reply.sendMessage("The map is no longer available").await()
             return
@@ -394,7 +403,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
             .sendMessage(
                 MessageCreate {
                     content = "Here you go:"
-                    files += FileUpload.fromStreamSupplier("$snowflake.msav") { stream }
+                    files += FileUpload.fromStreamSupplier("${codec.encode(id)}.msav") { stream }
                 })
             .await()
     }
@@ -403,11 +412,11 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     @AlsoAllow(Permission.MANAGE_MAP)
     suspend fun onMapGamemodeAdd(
         interaction: SlashCommandInteraction,
-        id: Snowflake,
+        id: String,
         gamemode: MindustryGamemode
     ) {
         val reply = interaction.deferReply(true).await()
-        val map = maps.findMapBySnowflake(id)
+        val map = codec.tryDecode(id)?.let { maps.findMapById(it) }
         if (map == null) {
             reply.sendMessage("Unknown map id").await()
         } else if (gamemode in map.gamemodes) {
@@ -416,7 +425,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                     "This map is already in the **${gamemode.name.lowercase()}** server pool.")
                 .await()
         } else {
-            maps.setMapGamemodes(id, map.gamemodes + gamemode)
+            maps.setMapGamemodes(map.id, map.gamemodes + gamemode)
             reply
                 .sendMessage("This map is now in the **${gamemode.name.lowercase()}** server pool.")
                 .await()
@@ -427,11 +436,11 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     @AlsoAllow(Permission.MANAGE_MAP)
     suspend fun onMapGamemodeRemove(
         interaction: SlashCommandInteraction,
-        id: Snowflake,
+        id: String,
         gamemode: MindustryGamemode
     ) {
         val reply = interaction.deferReply(true).await()
-        val map = maps.findMapBySnowflake(id)
+        val map = codec.tryDecode(id)?.let { maps.findMapById(it) }
         if (map == null) {
             reply.sendMessage("Unknown map id").await()
         } else if (gamemode !in map.gamemodes) {
@@ -439,7 +448,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                 .sendMessage("This map is not in the **${gamemode.name.lowercase()}** server pool.")
                 .await()
         } else {
-            maps.setMapGamemodes(id, map.gamemodes - gamemode)
+            maps.setMapGamemodes(map.id, map.gamemodes - gamemode)
             reply
                 .sendMessage(
                     "This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
@@ -449,9 +458,14 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
 
     @ImperiumCommand(["map", "delete"], Rank.ADMIN)
     @AlsoAllow(Permission.MANAGE_MAP)
-    suspend fun onMapDelete(interaction: SlashCommandInteraction, id: Snowflake) {
+    suspend fun onMapDelete(interaction: SlashCommandInteraction, id: String) {
         val reply = interaction.deferReply(true).await()
-        if (maps.deleteMapBySnowflake(id)) {
+        val parsed = codec.tryDecode(id)
+        if (parsed == null) {
+            reply.sendMessage("Invalid map id").await()
+            return
+        }
+        if (maps.deleteMapById(parsed)) {
             reply.sendMessage("Map deleted!").await()
         } else {
             reply.sendMessage("Unknown map id").await()
@@ -463,9 +477,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
 
     companion object {
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")
-        private const val MAP_REJECT_BUTTON = "map-submission-reject:1"
-        private const val MAP_UPLOAD_BUTTON = "map-submission-upload:1"
-        private const val MAP_DOWNLOAD_BUTTON = "map-download:1"
+        private const val MAP_REJECT_BUTTON = "map-submission-reject:2"
+        private const val MAP_UPLOAD_BUTTON = "map-submission-upload:2"
+        private const val MAP_DOWNLOAD_BUTTON = "map-download:2"
         private const val MAX_MAP_SIDE_SIZE = 3072
     }
 }

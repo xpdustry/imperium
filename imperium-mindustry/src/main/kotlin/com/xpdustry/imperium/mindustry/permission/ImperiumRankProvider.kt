@@ -73,7 +73,7 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
         rank.put(MUUID.from(player), account?.rank ?: Rank.EVERYONE)
         achievements.put(
             MUUID.from(player),
-            (account?.let { accounts.getAchievements(it.snowflake) } ?: emptyMap())
+            (account?.let { accounts.getAchievements(it.id) } ?: emptyMap())
                 .filterValues { it.completed }
                 .keys)
     }

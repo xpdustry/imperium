@@ -20,10 +20,11 @@ package com.xpdustry.imperium.discord.commands
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
-import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.misc.Embed
@@ -35,28 +36,29 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
     private val discord = instances.get<DiscordService>()
     private val renderer = instances.get<TimeRenderer>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["player", "info"])
     suspend fun onPlayerInfoCommand(interaction: SlashCommandInteraction, player: String) {
         val reply = interaction.deferReply(true).await()
-        // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER WHEN CLOUD 2
+        // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER
         var user = users.findByUuid(player)
-        if (user == null && player.toLongOrNull() != null) {
-            user = users.findBySnowflake(player.toLong())
+        if (user == null) {
+            user = codec.tryDecode(player)?.let { users.findById(it) }
         }
         if (user == null) {
             reply.sendMessage("Player not found.").await()
             return
         }
-        val details = users.findNamesAndAddressesBySnowflake(user.snowflake)
+        val details = users.findNamesAndAddressesById(user.id)
         reply
             .sendMessageEmbeds(
                 Embed {
                     title = "Player Info"
-                    field("ID", "`${user.snowflake}`")
+                    field("ID", "`${codec.encode(user.id)}`")
                     field("Last Name", "`${user.lastName}`")
                     field("Names", details.names.joinToString(transform = { "`$it`" }))
-                    field("First Join", renderer.renderInstant(user.snowflake.timestamp))
+                    field("First Join", renderer.renderInstant(user.firstJoin))
                     field("Last Join", renderer.renderInstant(user.lastJoin))
                     field("Times Joined", user.timesJoined.toString())
                     if (discord.isAllowed(interaction.user, Rank.ADMIN)) {
@@ -89,7 +91,7 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 "No players found."
             } else {
                 users.joinToString(separator = "\n") {
-                    "- ${it.lastName.stripMindustryColors()} / `${it.snowflake}`"
+                    "- ${it.lastName.stripMindustryColors()} / `${codec.encode(it.id)}`"
                 }
             }
         if (hasMore) {

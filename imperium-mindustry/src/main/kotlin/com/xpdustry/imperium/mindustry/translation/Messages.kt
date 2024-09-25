@@ -34,6 +34,7 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
 import com.xpdustry.distributor.api.component.style.ComponentColor.from
 import com.xpdustry.distributor.api.component.style.TextStyle
 import com.xpdustry.distributor.api.translation.TranslationArguments
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.time.truncatedTo
@@ -67,7 +68,7 @@ fun punishment_message_simple(type: Punishment.Type, reason: String): Component 
         newline(),
         translatable("imperium.messages.punishment.type.${type.name.lowercase()}.details", WHITE))
 
-fun punishment_message(punishment: Punishment): Component =
+fun punishment_message(punishment: Punishment, codec: IdentifierCodec): Component =
     components(
         SCARLET,
         punishment_message_simple(punishment.type, punishment.reason),
@@ -95,7 +96,7 @@ fun punishment_message(punishment: Punishment): Component =
         newline(),
         translatable(
             "imperium.messages.punishment.message.footer",
-            TranslationArguments.array(text(punishment.snowflake.toString(), LIGHT_GRAY)),
+            TranslationArguments.array(text(codec.encode(punishment.id), LIGHT_GRAY)),
             GRAY))
 
 fun warning(kind: String, vararg arguments: String): Component =

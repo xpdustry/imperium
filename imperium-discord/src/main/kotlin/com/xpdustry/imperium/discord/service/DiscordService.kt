@@ -23,7 +23,6 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.misc.snowflake
 import kotlin.time.Duration.Companion.seconds
@@ -48,7 +47,7 @@ interface DiscordService {
 
     suspend fun isAllowed(user: User, permission: Permission): Boolean
 
-    suspend fun syncRoles(snowflake: Snowflake)
+    suspend fun syncRoles(id: Int)
 
     suspend fun syncRoles(member: Member)
 }
@@ -99,16 +98,16 @@ class SimpleDiscordService(
 
     override suspend fun syncRoles(member: Member) {
         val account = accounts.findByDiscord(member.idLong) ?: return
-        syncRoles(account.snowflake)
+        syncRoles(account.id)
     }
 
-    override suspend fun syncRoles(snowflake: Snowflake) {
-        val account = accounts.findBySnowflake(snowflake)
+    override suspend fun syncRoles(id: Int) {
+        val account = accounts.findById(id)
         val discord = account?.discord ?: return
         val member = getMainServer().getMemberById(discord) ?: return
         val current = member.roles.associateBy(Role::getIdLong)
 
-        for ((achievement, progression) in accounts.getAchievements(snowflake)) {
+        for ((achievement, progression) in accounts.getAchievements(id)) {
             val roleId = config.achievements2roles[achievement] ?: continue
             val role = getMainServer().getRoleById(roleId) ?: continue
             if (progression.completed) {

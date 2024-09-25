@@ -32,7 +32,7 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import com.xpdustry.imperium.mindustry.misc.snowflake
+import com.xpdustry.imperium.mindustry.misc.id
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
@@ -95,15 +95,15 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
-        val file = cache.resolve("${map.snowflake}_${map.lastUpdate.toEpochMilli()}.msav")
+        val file = cache.resolve("${map.id}_${map.lastUpdate.toEpochMilli()}.msav")
         if (file.notExists()) {
-            logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map.snowflake)
+            logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map.id)
             file.outputStream().use { output ->
-                maps.getMapInputStream(map.snowflake)!!.use { input -> input.copyTo(output) }
+                maps.getMapInputStream(map.id)!!.use { input -> input.copyTo(output) }
             }
         }
-        logger.debug("Loaded map {} (id={}) from server pool.", map.name, map.snowflake)
-        return MapIO.createMap(Fi(file.toFile()), true).also { it.snowflake = map.snowflake }
+        logger.debug("Loaded map {} (id={}) from server pool.", map.name, map.id)
+        return MapIO.createMap(Fi(file.toFile()), true).also { it.id = map.id }
     }
 
     companion object {

@@ -34,6 +34,8 @@ import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
+import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.database.ImperiumBase36Char6Codec
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
@@ -50,8 +52,6 @@ import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleAddressWhitelist
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
-import com.xpdustry.imperium.common.snowflake.SimpleSnowflakeGenerator
-import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.LocalStorageBucket
 import com.xpdustry.imperium.common.storage.MinioStorageBucket
 import com.xpdustry.imperium.common.storage.StorageBucket
@@ -107,13 +107,13 @@ fun MutableInstanceManager.registerCommonModule() {
         }
     }
 
-    provider<AccountManager> { SimpleAccountManager(get(), get(), get(), get()) }
+    provider<AccountManager> { SimpleAccountManager(get(), get(), get()) }
 
-    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get(), get()) }
+    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get()) }
 
-    provider<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get(), get()) }
+    provider<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 
-    provider<UserManager> { SimpleUserManager(get(), get(), get()) }
+    provider<UserManager> { SimpleUserManager(get(), get()) }
 
     provider<OkHttpClient> {
         OkHttpClient.Builder()
@@ -133,7 +133,7 @@ fun MutableInstanceManager.registerCommonModule() {
             .build()
     }
 
-    provider<SnowflakeGenerator> { SimpleSnowflakeGenerator(get()) }
+    provider<IdentifierCodec> { ImperiumBase36Char6Codec }
 
     provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Unknown } }
 

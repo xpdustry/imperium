@@ -22,8 +22,6 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.snowflake.Snowflake
-import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.user.UserAddressTable
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.user.UserTable
@@ -36,29 +34,29 @@ import org.jetbrains.exposed.sql.JoinType
 import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.or
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 
 interface PunishmentManager {
 
-    suspend fun findBySnowflake(snowflake: Snowflake): Punishment?
+    suspend fun findById(id: Int): Punishment?
 
     suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment>
 
-    suspend fun findAllByUser(snowflake: Snowflake): List<Punishment>
+    suspend fun findAllByUser(id: Int): List<Punishment>
 
     suspend fun punish(
         author: Identity,
-        user: Snowflake,
+        user: Int,
         reason: String,
         type: Punishment.Type,
         duration: Duration,
         metadata: Punishment.Metadata = Punishment.Metadata.None
-    ): Snowflake
+    ): Int
 
-    suspend fun pardon(author: Identity, punishment: Snowflake, reason: String): PardonResult
+    suspend fun pardon(author: Identity, punishment: Int, reason: String): PardonResult
 }
 
 enum class PardonResult {
@@ -71,7 +69,7 @@ enum class PardonResult {
 data class PunishmentMessage(
     val author: Identity,
     val type: Type,
-    val snowflake: Snowflake,
+    val identifier: Int,
     val server: String,
     val metadata: Punishment.Metadata
 ) : Message {
@@ -84,7 +82,6 @@ data class PunishmentMessage(
 
 class SimplePunishmentManager(
     private val provider: SQLProvider,
-    private val generator: SnowflakeGenerator,
     private val messenger: Messenger,
     private val users: UserManager,
     private val config: ImperiumConfig
@@ -94,10 +91,10 @@ class SimplePunishmentManager(
         provider.newTransaction { SchemaUtils.create(PunishmentTable) }
     }
 
-    override suspend fun findBySnowflake(snowflake: Snowflake): Punishment? =
+    override suspend fun findById(id: Int): Punishment? =
         provider.newSuspendTransaction {
             PunishmentTable.selectAll()
-                .where { PunishmentTable.id eq snowflake }
+                .where { PunishmentTable.id eq id }
                 .firstOrNull()
                 ?.toPunishment()
         }
@@ -105,8 +102,8 @@ class SimplePunishmentManager(
     override suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment> =
         provider.newSuspendTransaction {
             var query = Op.build { UserAddressTable.address eq identity.address.address }
-            users.findByUuid(identity.uuid)?.snowflake?.let { snowflake ->
-                query = query.or(Op.build { (PunishmentTable.target eq snowflake) })
+            users.findByUuid(identity.uuid)?.id?.let { id ->
+                query = query.or(Op.build { (PunishmentTable.target eq id) })
             }
             PunishmentTable.join(
                     UserAddressTable,
@@ -118,67 +115,63 @@ class SimplePunishmentManager(
                 .map { it.toPunishment() }
         }
 
-    override suspend fun findAllByUser(snowflake: Snowflake): List<Punishment> =
+    override suspend fun findAllByUser(id: Int): List<Punishment> =
         provider.newSuspendTransaction {
             (PunishmentTable leftJoin UserTable)
                 .selectAll()
-                .where { UserTable.id eq snowflake }
+                .where { UserTable.id eq id }
                 .map { it.toPunishment() }
         }
 
     override suspend fun punish(
         author: Identity,
-        user: Snowflake,
+        user: Int,
         reason: String,
         type: Punishment.Type,
         duration: Duration,
         metadata: Punishment.Metadata
-    ): Snowflake {
+    ): Int {
         val latest =
             findAllByUser(user)
                 .filter { !it.expired && it.type == type }
                 .maxByOrNull { it.duration }
-        val snowflake: Snowflake
+        val identifier: Int
         if (latest != null) {
             provider.newSuspendTransaction {
-                PunishmentTable.update({ PunishmentTable.id eq latest.snowflake }) {
+                PunishmentTable.update({ PunishmentTable.id eq latest.id }) {
                     it[PunishmentTable.duration] =
                         if (duration.isInfinite()) null else duration.toJavaDuration()
                     it[PunishmentTable.reason] = reason
                 }
             }
-            snowflake = latest.snowflake
+            identifier = latest.id
         } else {
-            snowflake = generator.generate()
-            provider.newSuspendTransaction {
-                PunishmentTable.insert {
-                    it[PunishmentTable.id] = snowflake
-                    it[target] = user
-                    it[PunishmentTable.reason] = reason
-                    it[PunishmentTable.type] = type
-                    it[PunishmentTable.duration] =
-                        if (duration.isInfinite()) null else duration.toJavaDuration()
-                    it[server] = config.server.name
+            identifier =
+                provider.newSuspendTransaction {
+                    PunishmentTable.insertAndGetId {
+                            it[target] = user
+                            it[PunishmentTable.reason] = reason
+                            it[PunishmentTable.type] = type
+                            it[PunishmentTable.duration] =
+                                if (duration.isInfinite()) null else duration.toJavaDuration()
+                            it[server] = config.server.name
+                        }
+                        .value
                 }
-            }
         }
         messenger.publish(
             PunishmentMessage(
                 author,
                 if (latest == null) PunishmentMessage.Type.CREATE
                 else PunishmentMessage.Type.MODIFY,
-                snowflake,
+                identifier,
                 config.server.name,
                 metadata),
             local = true)
-        return snowflake
+        return identifier
     }
 
-    override suspend fun pardon(
-        author: Identity,
-        punishment: Snowflake,
-        reason: String
-    ): PardonResult =
+    override suspend fun pardon(author: Identity, punishment: Int, reason: String): PardonResult =
         provider
             .newSuspendTransaction {
                 val data =
@@ -217,12 +210,13 @@ class SimplePunishmentManager(
                     this[PunishmentTable.pardonTimestamp]!!, this[PunishmentTable.pardonReason]!!)
             }
         return Punishment(
-            snowflake = this[PunishmentTable.id].value,
+            id = this[PunishmentTable.id].value,
             target = this[PunishmentTable.target].value,
             reason = this[PunishmentTable.reason],
             type = this[PunishmentTable.type],
             duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
             pardon = pardon,
-            server = this[PunishmentTable.server])
+            server = this[PunishmentTable.server],
+            creation = this[PunishmentTable.creation])
     }
 }

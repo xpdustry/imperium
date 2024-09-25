@@ -164,7 +164,7 @@ class VoteKickCommand(instances: InstanceManager) :
         }
         punishments.punish(
             config.server.identity,
-            users.getByIdentity(session.objective.target.identity).snowflake,
+            users.getByIdentity(session.objective.target.identity).id,
             "Votekick: ${session.objective.reason}",
             Punishment.Type.BAN,
             NetServer.kickDuration.seconds,

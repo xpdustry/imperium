@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.security
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -48,11 +49,12 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val users = instances.get<UserManager>()
     private val messenger = instances.get<Messenger>()
     private val renderer = instances.get<TimeRenderer>()
+    private val codec = instances.get<IdentifierCodec>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PunishmentMessage> { (author, type, snowflake, server, metadata) ->
-            val punishment = punishments.findBySnowflake(snowflake)!!
-            val user = punishment.target.let { users.findBySnowflake(it) }!!
+        messenger.consumer<PunishmentMessage> { (author, type, id, server, metadata) ->
+            val punishment = punishments.findById(id)!!
+            val user = punishment.target.let { users.findById(it) }!!
             (getNotificationChannel() ?: return@consumer)
                 .sendMessageEmbeds(
                     Embed {
@@ -77,7 +79,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             PunishmentMessage.Type.CREATE -> {
                                 color = Color.RED.rgb
                                 title = "Punishment"
-                                field("Target", user.toLastNameWithSnowflake())
+                                field("Target", user.toLastNameWithId())
                                 field("Type", punishment.type.toString())
                                 field("Duration", renderer.renderDuration(punishment.duration))
                                 if (server != imperiumConfig.server.name) field("Server", server)
@@ -90,7 +92,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                                             "Votekick starter",
                                             users
                                                 .findByUuid(metadata.starter.toCRC32Muuid())
-                                                .toLastNameWithSnowflake())
+                                                .toLastNameWithId())
                                         field("Yes votes", renderPlayerList(metadata.yes))
                                     }
                                 }
@@ -98,7 +100,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             PunishmentMessage.Type.MODIFY -> {
                                 color = Color.ORANGE.rgb
                                 title = "Punishment Edit"
-                                field("Target", user.toLastNameWithSnowflake())
+                                field("Target", user.toLastNameWithId())
                                 field("Type", punishment.type.toString())
                                 field("Duration", renderer.renderDuration(punishment.duration))
                                 field("Reason", punishment.reason, false)
@@ -112,7 +114,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             }
                         }
 
-                        footer("${punishment.snowflake}")
+                        footer(codec.encode(punishment.id))
                     })
                 .await()
         }
@@ -123,7 +125,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             appendLine("`none`")
         } else {
             for (player in players) {
-                appendLine("- ${users.findByUuid(player.toCRC32Muuid()).toLastNameWithSnowflake()}")
+                appendLine("- ${users.findByUuid(player.toCRC32Muuid()).toLastNameWithId()}")
             }
         }
     }
@@ -137,8 +139,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         return channel
     }
 
-    private fun User?.toLastNameWithSnowflake() =
-        if (this == null) "unknown" else "$lastName / `$snowflake`"
+    private fun User?.toLastNameWithId() =
+        if (this == null) "unknown" else "$lastName / `${codec.encode(id)}`"
 
     companion object {
         private val LOGGER by LoggerDelegate()

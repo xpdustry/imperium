@@ -64,14 +64,14 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         val builder = StringBuilder("[accent]History of player [white]").append(player.plainName())
         builder
             .append(" [lightgray](#")
-            .append(users.findByUuid(player.uuid())?.snowflake ?: "unknown")
+            .append(users.findByUuid(player.uuid())?.id ?: "unknown")
             .append(")")
         builder.append(":")
         for (entry in entries) {
             builder
                 .append("\n[accent] > ")
                 .append(
-                    renderEntry(entry, name = false, id = false, position = true, indent = 3),
+                    renderEntry(entry, name = false, renderId = false, position = true, indent = 3),
                 )
         }
 
@@ -134,14 +134,14 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         name: Boolean,
         position: Boolean,
         indent: Int,
-        id: Boolean = true,
+        renderId: Boolean = true,
     ): String {
         val builder = StringBuilder("[white]")
         if (name) {
             builder.append(getName(entry.author))
-            if (id && entry.author.uuid != null) {
-                val snowflake = users.findByUuid(entry.author.uuid)?.snowflake ?: "unknown"
-                builder.append(" [lightgray](#").append(snowflake).append(")")
+            if (renderId && entry.author.uuid != null) {
+                val id = users.findByUuid(entry.author.uuid)?.id ?: "unknown"
+                builder.append(" [lightgray](#").append(id).append(")")
             }
             builder.append("[white]: ")
         }

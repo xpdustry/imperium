@@ -17,18 +17,19 @@
  */
 package com.xpdustry.imperium.common.user
 
-import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
-object UserTable : SnowflakeIdTable("user") {
+object UserTable : IntIdTable("user") {
     val uuid = long("uuid").uniqueIndex()
     val lastName = varchar("last_name", 64)
     val lastAddress = binary("last_address", 16)
     val timesJoined = integer("times_joined").default(0)
     val lastJoin = timestamp("last_join").defaultExpression(CurrentTimestamp)
+    val firstJoin = timestamp("first_join").defaultExpression(CurrentTimestamp)
 }
 
 object UserNameTable : Table("user_name") {

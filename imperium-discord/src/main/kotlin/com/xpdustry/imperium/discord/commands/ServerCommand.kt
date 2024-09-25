@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.control.RestartMessage
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -42,6 +43,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val tracker = instances.get<PlayerTracker>()
     private val application = instances.get<ImperiumApplication>()
     private val messenger = instances.get<Messenger>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["server", "list"])
     suspend fun onServerList(interaction: SlashCommandInteraction) =
@@ -138,7 +140,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     append(" ")
                 }
                 append("#")
-                append(entry.snowflake)
+                append(codec.encode(entry.playerId))
                 append(" ")
                 append(entry.player.name)
                 append("\n")

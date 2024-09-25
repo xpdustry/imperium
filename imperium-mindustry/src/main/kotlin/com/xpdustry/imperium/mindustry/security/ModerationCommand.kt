@@ -22,6 +22,8 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.Punishment
@@ -41,6 +43,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val config = instances.get<ImperiumConfig>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["admin"], Rank.OVERSEER)
     @ClientSide
@@ -96,25 +99,21 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     ) {
         val id =
             punishments.punish(
-                sender.identity,
-                users.getByIdentity(player.identity).snowflake,
-                reason,
-                type,
-                duration)
-        sender.reply("$verb user $player ($id).")
+                sender.identity, users.getByIdentity(player.identity).id, reason, type, duration)
+        sender.reply("$verb user $player (${codec.encode(id)}).")
     }
 
     @ImperiumCommand(["pardon"], Rank.MODERATOR)
     @ClientSide
     @ServerSide
     suspend fun onPardonCommand(sender: CommandSender, punishment: String, @Greedy reason: String) {
-        val snowflake = punishment.toLongOrNull()
-        if (snowflake == null) {
+        val id = codec.tryDecode(punishment)
+        if (id == null) {
             sender.error("Invalid Punishment ID.")
             return
         }
 
-        val entry = punishments.findBySnowflake(snowflake)
+        val entry = punishments.findById(id)
         if (entry == null) {
             sender.error("Punishment not found.")
             return
@@ -125,7 +124,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
             return
         }
 
-        punishments.pardon(sender.identity, snowflake, reason)
+        punishments.pardon(sender.identity, id, reason)
         sender.reply("Pardoned user.")
     }
 

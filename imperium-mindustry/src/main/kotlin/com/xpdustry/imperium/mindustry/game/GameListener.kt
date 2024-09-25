@@ -26,9 +26,9 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
+import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.playtime
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.misc.snowflake
 import com.xpdustry.imperium.mindustry.misc.start
 import java.time.Instant
 import kotlin.time.Duration.Companion.ZERO
@@ -97,11 +97,11 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val stats = Vars.state.stats
         val waves = Vars.state.wave
         val start = Vars.state.map.start ?: Instant.now()
-        val snowflake = Vars.state.map.snowflake ?: return
+        val id = Vars.state.map.id ?: return
         if (playtime < 1.minutes) return
         ImperiumScope.MAIN.launch {
             maps.addMapGame(
-                map = snowflake,
+                map = id,
                 start = start,
                 playtime = playtime,
                 unitsCreated = stats.unitsCreated,

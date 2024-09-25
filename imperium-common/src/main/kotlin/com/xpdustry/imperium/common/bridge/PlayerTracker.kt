@@ -34,7 +34,7 @@ interface PlayerTracker {
     @Serializable
     data class Entry(
         val player: Identity.Mindustry,
-        val snowflake: Long,
+        val playerId: Int,
         val timestamp: SerializableJInstant = Instant.now()
     )
 }

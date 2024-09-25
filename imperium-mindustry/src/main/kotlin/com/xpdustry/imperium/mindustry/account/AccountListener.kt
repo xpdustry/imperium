@@ -32,7 +32,6 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -61,12 +60,13 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     private val users = instances.get<UserManager>()
     private val playtime = ConcurrentHashMap<Player, Long>()
     private val messenger = instances.get<Messenger>()
-    private val grantedSessionAchievements = ConcurrentHashMap<Snowflake, Long>()
+    private val grantedSessionAchievements = ConcurrentHashMap<Int, Long>()
 
     override fun onImperiumInit() {
+        // v1 being the previous snowflake id system
         grantedSessionAchievements +=
-            Json.decodeFromString<Map<Snowflake, Long>>(
-                Core.settings.getString("imperium-granted-session-achievements", "{}"))
+            Json.decodeFromString<Map<Int, Long>>(
+                Core.settings.getString("imperium-granted-session-achievements-v2", "{}"))
 
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
@@ -79,7 +79,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         messenger.consumer<AchievementCompletedMessage> { message ->
             for (player in Entities.getPlayersAsync()) {
                 val account = accounts.findByIdentity(player.identity)
-                if (account != null && account.snowflake == message.account) {
+                if (account != null && account.id == message.account) {
                     Call.warningToast(
                         player.con,
                         Iconc.infoCircle.code,
@@ -105,7 +105,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
             runMindustryThread {
                 Core.settings.put(
                     "imperium-granted-session-achievements",
-                    Json.encodeToString<Map<Snowflake, Long>>(grantedSessionAchievements))
+                    Json.encodeToString<Map<Int, Long>>(grantedSessionAchievements))
             }
         }
 
@@ -123,7 +123,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         Entities.getPlayers().forEach { player ->
             ImperiumScope.MAIN.launch {
                 val account = accounts.findByIdentity(player.identity) ?: return@launch
-                accounts.incrementGames(account.snowflake)
+                accounts.incrementGames(account.id)
             }
         }
     }
@@ -136,7 +136,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
             val account = accounts.findByIdentity(event.player.identity)
             if (account != null) {
                 val playtime = (now - (playerPlaytime ?: now)).milliseconds
-                accounts.incrementPlaytime(account.snowflake, playtime)
+                accounts.incrementPlaytime(account.id, playtime)
                 checkPlaytimeAchievements(account, playtime)
             }
             if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
@@ -147,22 +147,22 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
 
     private suspend fun checkPlaytimeAchievements(account: Account, playtime: Duration) {
         if (playtime >= 8.hours) {
-            accounts.progress(account.snowflake, Account.Achievement.GAMER)
+            accounts.progress(account.id, Account.Achievement.GAMER)
         }
-        if (playtime >= 30.minutes && !grantedSessionAchievements.containsKey(account.snowflake)) {
-            accounts.progress(account.snowflake, Account.Achievement.ACTIVE)
-            accounts.progress(account.snowflake, Account.Achievement.HYPER)
-            grantedSessionAchievements[account.snowflake] = System.currentTimeMillis()
+        if (playtime >= 30.minutes && !grantedSessionAchievements.containsKey(account.id)) {
+            accounts.progress(account.id, Account.Achievement.ACTIVE)
+            accounts.progress(account.id, Account.Achievement.HYPER)
+            grantedSessionAchievements[account.id] = System.currentTimeMillis()
         }
         val total = playtime + account.playtime
         if (total >= 1.days) {
-            accounts.progress(account.snowflake, Account.Achievement.DAY)
+            accounts.progress(account.id, Account.Achievement.DAY)
         }
         if (total >= 7.days) {
-            accounts.progress(account.snowflake, Account.Achievement.WEEK)
+            accounts.progress(account.id, Account.Achievement.WEEK)
         }
         if (total >= 30.days) {
-            accounts.progress(account.snowflake, Account.Achievement.MONTH)
+            accounts.progress(account.id, Account.Achievement.MONTH)
         }
     }
 }

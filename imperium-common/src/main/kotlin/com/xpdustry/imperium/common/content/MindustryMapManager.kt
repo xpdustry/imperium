@@ -22,8 +22,6 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.exists
-import com.xpdustry.imperium.common.snowflake.Snowflake
-import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
 import java.time.Instant
@@ -32,8 +30,6 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
-import org.jetbrains.exposed.sql.ColumnSet
-import org.jetbrains.exposed.sql.Join
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SortOrder
@@ -43,32 +39,27 @@ import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsert
 
 interface MindustryMapManager {
 
-    suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap?
+    suspend fun findMapById(id: Int): MindustryMap?
 
     suspend fun findMapByName(name: String): MindustryMap?
 
     suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap>
 
-    suspend fun findRatingByMapAndUser(map: Snowflake, user: Snowflake): MindustryMap.Rating?
+    suspend fun findRatingByMapAndUser(map: Int, user: Int): MindustryMap.Rating?
 
-    suspend fun saveRating(
-        map: Snowflake,
-        user: Snowflake,
-        score: Int,
-        difficulty: MindustryMap.Difficulty
-    )
+    suspend fun saveRating(map: Int, user: Int, score: Int, difficulty: MindustryMap.Difficulty)
 
     suspend fun findAllMaps(): List<MindustryMap>
 
-    suspend fun deleteMapBySnowflake(snowflake: Snowflake): Boolean
+    suspend fun deleteMapById(id: Int): Boolean
 
     suspend fun createMap(
         name: String,
@@ -77,10 +68,10 @@ interface MindustryMapManager {
         width: Int,
         height: Int,
         stream: Supplier<InputStream>
-    ): Snowflake
+    ): Int
 
     suspend fun updateMap(
-        snowflake: Snowflake,
+        id: Int,
         description: String?,
         author: String?,
         width: Int,
@@ -90,7 +81,7 @@ interface MindustryMapManager {
 
     // TODO This is horrible, pass a Params class instead
     suspend fun addMapGame(
-        map: Snowflake,
+        map: Int,
         start: Instant,
         playtime: Duration,
         unitsCreated: Int,
@@ -102,20 +93,19 @@ interface MindustryMapManager {
         winner: UByte
     )
 
-    suspend fun findMapGameBySnowflake(game: Snowflake): MindustryMap.Game?
+    suspend fun findMapGameBySnowflake(game: Int): MindustryMap.Game?
 
-    suspend fun getMapStats(map: Snowflake): MindustryMap.Stats?
+    suspend fun getMapStats(map: Int): MindustryMap.Stats?
 
-    suspend fun getMapInputStream(map: Snowflake): InputStream?
+    suspend fun getMapInputStream(map: Int): InputStream?
 
     suspend fun searchMapByName(query: String): List<MindustryMap>
 
-    suspend fun setMapGamemodes(map: Snowflake, gamemodes: Set<MindustryGamemode>): Boolean
+    suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean
 }
 
 class SimpleMindustryMapManager(
     private val provider: SQLProvider,
-    private val generator: SnowflakeGenerator,
     private val config: ImperiumConfig,
     private val messenger: Messenger,
     private val storage: StorageBucket
@@ -131,17 +121,17 @@ class SimpleMindustryMapManager(
         }
     }
 
-    override suspend fun findMapBySnowflake(snowflake: Snowflake): MindustryMap? =
+    override suspend fun findMapById(id: Int): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAllWithoutFile()
-                .where { MindustryMapTable.id eq snowflake }
+            MindustryMapTable.selectAll()
+                .where { MindustryMapTable.id eq id }
                 .firstOrNull()
                 ?.toMindustryMap()
         }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAllWithoutFile()
+            MindustryMapTable.selectAll()
                 .where { MindustryMapTable.name eq name }
                 .firstOrNull()
                 ?.toMindustryMap()
@@ -150,15 +140,12 @@ class SimpleMindustryMapManager(
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
         provider.newSuspendTransaction {
             (MindustryMapTable leftJoin MindustryMapGamemodeTable)
-                .selectAllWithoutFile()
+                .selectAll()
                 .where { (MindustryMapGamemodeTable.gamemode eq gamemode) }
                 .map { it.toMindustryMap() }
         }
 
-    override suspend fun findRatingByMapAndUser(
-        map: Snowflake,
-        user: Snowflake
-    ): MindustryMap.Rating? =
+    override suspend fun findRatingByMapAndUser(map: Int, user: Int): MindustryMap.Rating? =
         provider.newSuspendTransaction {
             MindustryMapRatingTable.selectAll()
                 .where {
@@ -169,8 +156,8 @@ class SimpleMindustryMapManager(
         }
 
     override suspend fun saveRating(
-        map: Snowflake,
-        user: Snowflake,
+        map: Int,
+        user: Int,
         score: Int,
         difficulty: MindustryMap.Difficulty
     ) {
@@ -185,13 +172,11 @@ class SimpleMindustryMapManager(
     }
 
     override suspend fun findAllMaps(): List<MindustryMap> =
-        provider.newSuspendTransaction {
-            MindustryMapTable.selectAllWithoutFile().map { it.toMindustryMap() }
-        }
+        provider.newSuspendTransaction { MindustryMapTable.selectAll().map { it.toMindustryMap() } }
 
-    override suspend fun deleteMapBySnowflake(snowflake: Snowflake): Boolean =
+    override suspend fun deleteMapById(id: Int): Boolean =
         provider.newSuspendTransaction {
-            MindustryMapTable.deleteWhere { MindustryMapTable.id eq snowflake } > 0
+            MindustryMapTable.deleteWhere { MindustryMapTable.id eq id } > 0
         }
 
     override suspend fun createMap(
@@ -201,24 +186,22 @@ class SimpleMindustryMapManager(
         width: Int,
         height: Int,
         stream: Supplier<InputStream>
-    ): Snowflake =
+    ): Int =
         provider.newSuspendTransaction {
-            val snowflake = generator.generate()
-            MindustryMapTable.insert {
-                it[id] = snowflake
-                it[MindustryMapTable.name] = name
-                it[MindustryMapTable.description] = description
-                it[MindustryMapTable.author] = author
-                it[MindustryMapTable.width] = width
-                it[MindustryMapTable.height] = height
-                it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
-            }
-            // stream.get().use { storage.getObject("maps", "$snowflake.msav").putData(it) }
-            snowflake
+            val id =
+                MindustryMapTable.insertAndGetId {
+                    it[MindustryMapTable.name] = name
+                    it[MindustryMapTable.description] = description
+                    it[MindustryMapTable.author] = author
+                    it[MindustryMapTable.width] = width
+                    it[MindustryMapTable.height] = height
+                }
+            stream.get().use { storage.getObject("maps", "$id.msav").putData(it) }
+            id.value
         }
 
     override suspend fun updateMap(
-        snowflake: Snowflake,
+        id: Int,
         description: String?,
         author: String?,
         width: Int,
@@ -227,17 +210,16 @@ class SimpleMindustryMapManager(
     ): Boolean =
         provider.newSuspendTransaction {
             val rows =
-                MindustryMapTable.update({ MindustryMapTable.id eq snowflake }) {
+                MindustryMapTable.update({ MindustryMapTable.id eq id }) {
                     it[MindustryMapTable.description] = description
                     it[MindustryMapTable.author] = author
                     it[MindustryMapTable.width] = width
                     it[MindustryMapTable.height] = height
                     it[lastUpdate] = Instant.now()
-                    it[file] = ExposedBlob(stream.get().use(InputStream::readAllBytes))
                 }
-            // stream.get().use { storage.getObject("maps", "$snowflake.msav").putData(it) }
+            stream.get().use { storage.getObject("maps", "$id.msav").putData(it) }
             if (rows != 0) {
-                messenger.publish(MapReloadMessage(getMapGamemodes(snowflake)))
+                messenger.publish(MapReloadMessage(getMapGamemodes(id)))
                 return@newSuspendTransaction true
             } else {
                 return@newSuspendTransaction false
@@ -245,7 +227,7 @@ class SimpleMindustryMapManager(
         }
 
     override suspend fun addMapGame(
-        map: Snowflake,
+        map: Int,
         start: Instant,
         playtime: Duration,
         unitsCreated: Int,
@@ -257,9 +239,7 @@ class SimpleMindustryMapManager(
         winner: UByte
     ): Unit =
         provider.newSuspendTransaction {
-            val snowflake = generator.generate()
             MindustryMapGameTable.insert {
-                it[MindustryMapGameTable.id] = snowflake
                 it[MindustryMapGameTable.map] = map
                 it[server] = config.server.name
                 it[MindustryMapGameTable.start] = start
@@ -274,7 +254,7 @@ class SimpleMindustryMapManager(
             }
         }
 
-    override suspend fun findMapGameBySnowflake(game: Snowflake): MindustryMap.Game? =
+    override suspend fun findMapGameBySnowflake(game: Int): MindustryMap.Game? =
         provider.newSuspendTransaction {
             MindustryMapGameTable.selectAll()
                 .where { MindustryMapGameTable.id eq game }
@@ -282,7 +262,7 @@ class SimpleMindustryMapManager(
                 ?.toMindustryMapGame()
         }
 
-    override suspend fun getMapStats(map: Snowflake): MindustryMap.Stats? =
+    override suspend fun getMapStats(map: Int): MindustryMap.Stats? =
         provider.newSuspendTransaction {
             if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
                 return@newSuspendTransaction null
@@ -324,28 +304,18 @@ class SimpleMindustryMapManager(
             MindustryMap.Stats(score, difficulty, games, playtime, record)
         }
 
-    override suspend fun getMapInputStream(map: Snowflake): InputStream? =
-        provider.newSuspendTransaction {
-            /* storage.getObject("maps", "$map.msav").takeIf { it.exists }?.getData()
-            ?: */ MindustryMapTable.select(MindustryMapTable.file)
-                .where { MindustryMapTable.id eq map }
-                .firstOrNull()
-                ?.get(MindustryMapTable.file)
-                ?.inputStream
-        }
+    override suspend fun getMapInputStream(map: Int): InputStream? =
+        storage.getObject("maps", "$map.msav").takeIf { it.exists }?.getData()
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAllWithoutFile()
+            MindustryMapTable.selectAll()
                 .where { MindustryMapTable.name like "%$query%" }
                 .map { it.toMindustryMap() }
         }
 
-    override suspend fun setMapGamemodes(
-        map: Snowflake,
-        gamemodes: Set<MindustryGamemode>
-    ): Boolean {
-        val previous = findMapBySnowflake(map)?.gamemodes ?: return false
+    override suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean {
+        val previous = findMapById(map)?.gamemodes ?: return false
         provider.newSuspendTransaction {
             MindustryMapGamemodeTable.deleteWhere { MindustryMapGamemodeTable.map eq map }
             MindustryMapGamemodeTable.batchUpsert(gamemodes) {
@@ -357,10 +327,7 @@ class SimpleMindustryMapManager(
         return true
     }
 
-    private fun ColumnSet.selectAllWithoutFile() =
-        select((if (this is Join) table.columns else columns) - MindustryMapTable.file)
-
-    private suspend fun getMapGamemodes(map: Snowflake): Set<MindustryGamemode> =
+    private suspend fun getMapGamemodes(map: Int): Set<MindustryGamemode> =
         provider.newSuspendTransaction {
             MindustryMapGamemodeTable.select(MindustryMapGamemodeTable.gamemode)
                 .where { MindustryMapGamemodeTable.map eq map }
@@ -369,7 +336,7 @@ class SimpleMindustryMapManager(
 
     private suspend fun ResultRow.toMindustryMap() =
         MindustryMap(
-            snowflake = this[MindustryMapTable.id].value,
+            id = this[MindustryMapTable.id].value,
             name = this[MindustryMapTable.name],
             description = this[MindustryMapTable.description],
             author = this[MindustryMapTable.author],
@@ -386,7 +353,7 @@ class SimpleMindustryMapManager(
 
     private fun ResultRow.toMindustryMapGame() =
         MindustryMap.Game(
-            snowflake = this[MindustryMapGameTable.id].value,
+            id = this[MindustryMapGameTable.id].value,
             map = this[MindustryMapGameTable.map].value,
             server = this[MindustryMapGameTable.server],
             start = this[MindustryMapGameTable.start],

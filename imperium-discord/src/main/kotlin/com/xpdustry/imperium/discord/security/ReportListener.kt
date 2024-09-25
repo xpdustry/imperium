@@ -20,6 +20,7 @@ package com.xpdustry.imperium.discord.security
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -48,6 +49,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val messenger = instances.get<Messenger>()
     private val config = instances.get<DiscordConfig>()
     private val users = instances.get<UserManager>()
+    private val codec = instances.get<IdentifierCodec>()
 
     // TODO Add freeze when ids are migrated
     override fun onImperiumInit() {
@@ -63,13 +65,13 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                                 field {
                                     name = "Sender"
                                     value =
-                                        "${report.sender.name} / `${users.getByIdentity(report.sender).snowflake}`"
+                                        "${report.sender.name} / `${codec.encode(users.getByIdentity(report.sender).id)}`"
                                 }
 
                                 field {
                                     name = "Target"
                                     value =
-                                        "${report.target.name} / `${users.getByIdentity(report.target).snowflake}`"
+                                        "${report.target.name} / `${codec.encode(users.getByIdentity(report.target).id)}`"
                                 }
 
                                 field {

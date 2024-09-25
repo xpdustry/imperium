@@ -108,7 +108,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                     val punishment =
                         punishments.punish(
                             config.server.identity,
-                            user.snowflake,
+                            user.id,
                             "Placing NSFW image",
                             Punishment.Type.BAN,
                             30.days)

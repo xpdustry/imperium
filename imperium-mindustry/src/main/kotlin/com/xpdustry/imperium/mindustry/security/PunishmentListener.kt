@@ -27,6 +27,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -40,7 +41,6 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
-import com.xpdustry.imperium.common.snowflake.timestamp
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -82,16 +82,17 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val badWords = instances.get<BadWordDetector>()
     private val badWordsCounter = SimpleRateLimiter<MUUID>(3, 10.minutes)
     private val config = instances.get<ImperiumConfig>()
+    private val codec = instances.get<IdentifierCodec>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->
-            val punishment = punishments.findBySnowflake(message.snowflake) ?: return@consumer
-            val punished = users.findBySnowflake(punishment.target) ?: return@consumer
-            val data = users.findNamesAndAddressesBySnowflake(punishment.target)
+            val punishment = punishments.findById(message.identifier) ?: return@consumer
+            val punished = users.findById(punishment.target) ?: return@consumer
+            val data = users.findNamesAndAddressesById(punishment.target)
             val targets =
                 Entities.getPlayersAsync().filter { player ->
                     val user = users.getByIdentity(player.identity)
-                    user.snowflake == punished.snowflake ||
+                    user.id == punished.id ||
                         user.uuid == punished.uuid ||
                         player.ip().toInetAddress() in data.addresses
                 }
@@ -102,7 +103,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                     Events.fire(PlayerIpBanEvent(punished.lastAddress.hostAddress))
                     targets.forEach { target ->
                         Events.fire(PlayerBanEvent(target, target.uuid()))
-                        target.con.kick(punishment_message(punishment), Duration.ZERO)
+                        target.con.kick(punishment_message(punishment, codec), Duration.ZERO)
                         logger.info(
                             "{} ({}) has been banned for '{}'",
                             target.plainName(),
@@ -123,7 +124,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 targets.forEach { target ->
                     refreshPunishments(target)
                     if (message.type == PunishmentMessage.Type.CREATE) {
-                        target.sendMessageRateLimited(punishment_message(punishment))
+                        target.sendMessageRateLimited(punishment_message(punishment, codec))
                     }
                 }
             }
@@ -136,7 +137,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 }
             if (freeze != null) {
                 if (!isFooNetworking(action.block, action.tile)) {
-                    action.player.sendMessageRateLimited(punishment_message(freeze))
+                    action.player.sendMessageRateLimited(punishment_message(freeze, codec))
                 }
                 return@addActionFilter false
             }
@@ -158,7 +159,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             if ((action.type == Administration.ActionType.configure && action.config is String) ||
                 (action.type == Administration.ActionType.placeBlock &&
                     (action.block is MessageBlock || action.block is LogicBlock))) {
-                action.player.sendMessageRateLimited(punishment_message(mute))
+                action.player.sendMessageRateLimited(punishment_message(mute, codec))
                 return@addActionFilter false
             }
 
@@ -174,7 +175,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
             if (muted != null) {
                 if (ctx.target == ctx.sender) {
-                    ctx.sender.asAudience.sendMessage(punishment_message(muted))
+                    ctx.sender.asAudience.sendMessage(punishment_message(muted, codec))
                 }
                 return@register ""
             }
@@ -191,7 +192,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                     } else {
                         punishments.punish(
                             config.server.identity,
-                            users.getByIdentity(ctx.sender.identity).snowflake,
+                            users.getByIdentity(ctx.sender.identity).id,
                             "Bad words: $words",
                             Punishment.Type.MUTE,
                             1.hours)
@@ -209,11 +210,11 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         Identity.Mindustry("unknown", ctx.uuid, ctx.usid, ctx.address))
                     .filter { !it.expired && it.type == Punishment.Type.BAN }
                     .toList()
-                    .maxByOrNull { it.snowflake.timestamp }
+                    .maxByOrNull { it.creation }
             if (punishment == null) {
                 GatekeeperResult.Success
             } else {
-                GatekeeperResult.Failure(punishment_message(punishment))
+                GatekeeperResult.Failure(punishment_message(punishment, codec))
             }
         }
     }

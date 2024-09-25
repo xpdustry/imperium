@@ -42,11 +42,9 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
             discord.syncRoles(it.member)
         }
 
-        messenger.consumer<RankChangeEvent> { (snowflake) -> discord.syncRoles(snowflake) }
+        messenger.consumer<RankChangeEvent> { (id) -> discord.syncRoles(id) }
 
-        messenger.consumer<AchievementCompletedMessage> { (snowflake, _) ->
-            discord.syncRoles(snowflake)
-        }
+        messenger.consumer<AchievementCompletedMessage> { (id, _) -> discord.syncRoles(id) }
     }
 
     @ImperiumCommand(["sync-roles"])
@@ -57,7 +55,7 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
             reply.sendMessage("You are not linked to a cn account.").await()
             return
         }
-        discord.syncRoles(account.snowflake)
+        discord.syncRoles(account.id)
         reply
             .sendMessage(
                 "Your discord roles have been synchronized with your account rank and achievements.")

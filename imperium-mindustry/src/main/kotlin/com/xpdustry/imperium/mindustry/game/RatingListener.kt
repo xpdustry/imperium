@@ -27,9 +27,9 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.misc.snowflake
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
@@ -69,12 +69,9 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                     MenuOption("Cancel", Action.close()),
                     MenuOption("Submit") { v ->
                         ImperiumScope.MAIN.launch {
-                            val user = users.getByIdentity(view.viewer.identity).snowflake
+                            val user = users.getByIdentity(view.viewer.identity).id
                             maps.saveRating(
-                                Vars.state.map.snowflake!!,
-                                user,
-                                v.state[SCORE]!!,
-                                v.state[DIFFICULTY]!!)
+                                Vars.state.map.id!!, user, v.state[SCORE]!!, v.state[DIFFICULTY]!!)
                             runMindustryThread {
                                 v.back()
                                 Call.infoMessage(
@@ -88,9 +85,9 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["rate"])
     @ClientSide
     suspend fun onRateCommand(sender: CommandSender) {
-        val user = users.getByIdentity(sender.player.identity).snowflake
-        val map = Vars.state.map.snowflake
-        if (map == null || maps.findMapBySnowflake(map) == null) {
+        val user = users.getByIdentity(sender.player.identity).id
+        val map = Vars.state.map.id
+        if (map == null || maps.findMapById(map) == null) {
             runMindustryThread { sender.error("This map can't be rated.") }
         } else {
             val rating = maps.findRatingByMapAndUser(map, user)

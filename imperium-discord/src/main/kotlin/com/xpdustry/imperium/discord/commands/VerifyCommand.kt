@@ -33,7 +33,6 @@ import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import kotlin.time.Duration.Companion.minutes
@@ -87,7 +86,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        var rank = accounts.findBySnowflake(verification.account)!!.rank
+        var rank = accounts.findById(verification.account)!!.rank
         for (role in interaction.member!!.roles) {
             rank = maxOf(rank, config.roles2ranks[role.idLong] ?: Rank.VERIFIED)
         }
@@ -101,7 +100,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     data class Verification(
-        val account: Snowflake,
+        val account: Int,
         val uuid: MindustryUUID,
         val usid: MindustryUSID,
     )
