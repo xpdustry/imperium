@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.database
 
-
 interface IdentifierCodec {
     fun encode(identifier: Int): String
 
@@ -53,7 +52,9 @@ object ImperiumC6B36Codec : IdentifierCodec {
     override fun decode(identifier: String): Int {
         val number = identifier.lowercase().toInt(36)
         require(number >= 0) { "encoded identifier must be non-negative" }
-        require(number <= (MAX_VALUE or (MAX_VALUE - 1))) { "encoded identifier is bigger than 2^30" }
+        require(number <= (MAX_VALUE or (MAX_VALUE - 1))) {
+            "encoded identifier is bigger than 2^30"
+        }
         val scrambled = number and (MAX_VALUE - 1)
         return ((scrambled.toLong() * PRIME_MULTIPLICATIVE_INVERSE) % MAX_VALUE).toInt()
     }
