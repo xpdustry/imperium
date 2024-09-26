@@ -35,3 +35,8 @@ dependencies {
     api(libs.prettytime)
     api(libs.time4j.core)
 }
+
+// We love OOMs :^)
+tasks.withType<Test> {
+    maxHeapSize = "4g"
+}

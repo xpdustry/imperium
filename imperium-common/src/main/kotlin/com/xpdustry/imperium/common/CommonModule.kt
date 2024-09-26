@@ -35,7 +35,7 @@ import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.database.ImperiumBase36Char6Codec
+import com.xpdustry.imperium.common.database.ImperiumC6B36Codec
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
@@ -133,7 +133,7 @@ fun MutableInstanceManager.registerCommonModule() {
             .build()
     }
 
-    provider<IdentifierCodec> { ImperiumBase36Char6Codec }
+    provider<IdentifierCodec> { ImperiumC6B36Codec }
 
     provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Unknown } }
 
