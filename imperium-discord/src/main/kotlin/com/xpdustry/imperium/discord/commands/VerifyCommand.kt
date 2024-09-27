@@ -69,15 +69,6 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val bound = accounts.findByDiscord(interaction.user.idLong)
-        if (bound != null) {
-            reply
-                .sendMessage(
-                    "Your discord account is already bound to the cn account ${bound.username}.")
-                .await()
-            return
-        }
-
         when (accounts.updateDiscord(verification.account, interaction.user.idLong)) {
             is AccountResult.Success -> Unit
             else -> {
