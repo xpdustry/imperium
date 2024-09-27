@@ -33,7 +33,6 @@ class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listene
     @ImperiumCommand(["whitelist", "add"], Rank.ADMIN)
     suspend fun onWhitelistAddCommand(interaction: SlashCommandInteraction, address: String) {
         val reply = interaction.deferReply(true).await()
-        // TODO Add InetAddress parser, with option to prevent the use of loopback addresses
         val ip = address.toInetAddressOrNull()
         if (ip == null) {
             reply.sendMessage("The ip address is not valid.").await()

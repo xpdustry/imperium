@@ -64,4 +64,9 @@ data class MindustryMap(
         val buildingsDestroyed: Int,
         val winner: UByte
     )
+
+    companion object {
+        const val MAX_MAP_FILE_SIZE = 4 * 1024 * 1024
+        const val MAX_MAP_SIDE_SIZE = 3072
+    }
 }

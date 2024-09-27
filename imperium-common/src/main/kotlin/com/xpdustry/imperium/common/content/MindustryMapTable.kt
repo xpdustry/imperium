@@ -27,8 +27,6 @@ import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 object MindustryMapTable : IntIdTable("mindustry_map") {
-    const val MAX_MAP_FILE_SIZE = 4 * 1024 * 1024
-
     val name = varchar("name", 64)
     val description = text("description").nullable()
     val author = varchar("author", 64).nullable()

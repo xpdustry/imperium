@@ -22,8 +22,8 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.content.MindustryMapTable
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.image.inputStream
@@ -64,56 +64,6 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     private val codec = instances.get<IdentifierCodec>()
 
     @Suppress("DuplicatedCode")
-    @ImperiumCommand(["map", "preview"])
-    suspend fun onMapPreviewCommand(interaction: SlashCommandInteraction, map: Message.Attachment) {
-        val reply = interaction.deferReply(false).await()
-        if (!map.fileName.endsWith(".msav")) {
-            reply.sendMessage("Invalid map file!").await()
-            return
-        }
-
-        if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
-            reply
-                .sendMessage(
-                    "The map file is bigger than 1mb, please submit reasonably sized maps.")
-                .await()
-            return
-        }
-
-        val bytes = map.proxy.download().await().use(InputStream::readBytes)
-        val (meta, preview) = content.getMapMetadataWithPreview(bytes.inputStream()).getOrThrow()
-
-        @Suppress("DuplicatedCode")
-        if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
-            reply
-                .sendMessage(
-                    "The map is bigger than $MAX_MAP_SIDE_SIZE blocks, please submit reasonably sized maps.")
-                .await()
-            return
-        }
-
-        reply
-            .sendMessage(
-                MessageCreate {
-                    files += FileUpload.fromStreamSupplier(map.fileName, bytes::inputStream)
-                    files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
-                    embeds += Embed {
-                        color = MINDUSTRY_ACCENT_COLOR.rgb
-                        title = "Map Submission"
-                        image = "attachment://preview.png"
-                        field("Name", meta.name.stripMindustryColors(), false)
-                        field("Author", meta.author?.stripMindustryColors() ?: "Unknown", false)
-                        field(
-                            "Description",
-                            meta.description?.stripMindustryColors() ?: "Unknown",
-                            false)
-                        field("Size", "${preview.width} x ${preview.height}", false)
-                    }
-                })
-            .await()
-    }
-
-    @Suppress("DuplicatedCode")
     @ImperiumCommand(["map", "submit"])
     suspend fun onMapSubmitCommand(
         interaction: SlashCommandInteraction,
@@ -126,7 +76,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
             return
         }
 
-        if (map.size > MindustryMapTable.MAX_MAP_FILE_SIZE) {
+        if (map.size > MindustryMap.MAX_MAP_FILE_SIZE) {
             reply
                 .sendMessage(
                     "The map file is bigger than 1mb, please submit reasonably sized maps.")
@@ -142,10 +92,11 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         }
         val (meta, preview) = result.getOrThrow()
 
-        if (meta.width > MAX_MAP_SIDE_SIZE || meta.height > MAX_MAP_SIDE_SIZE) {
+        if (meta.width > MindustryMap.MAX_MAP_SIDE_SIZE ||
+            meta.height > MindustryMap.MAX_MAP_SIDE_SIZE) {
             reply
                 .sendMessage(
-                    "The map is bigger than $MAX_MAP_SIDE_SIZE blocks, please submit reasonably sized maps.")
+                    "The map is bigger than ${MindustryMap.MAX_MAP_SIDE_SIZE} blocks, please submit reasonably sized maps.")
                 .await()
             return
         }
@@ -480,6 +431,5 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         private const val MAP_REJECT_BUTTON = "map-submission-reject:2"
         private const val MAP_UPLOAD_BUTTON = "map-submission-upload:2"
         private const val MAP_DOWNLOAD_BUTTON = "map-download:2"
-        private const val MAX_MAP_SIDE_SIZE = 3072
     }
 }

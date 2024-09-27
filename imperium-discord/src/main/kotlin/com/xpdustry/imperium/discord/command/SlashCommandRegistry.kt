@@ -71,7 +71,7 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 class SlashCommandRegistry(
     private val discord: DiscordService,
     private val config: ImperiumConfig,
-    private val discordConfig: DiscordConfig
+    private val discordConfig: DiscordConfig,
 ) : AnnotationScanner, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()

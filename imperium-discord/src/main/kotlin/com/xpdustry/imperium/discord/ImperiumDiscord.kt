@@ -31,10 +31,10 @@ import com.xpdustry.imperium.discord.commands.MapSearchCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
 import com.xpdustry.imperium.discord.commands.PingCommand
 import com.xpdustry.imperium.discord.commands.PlayerCommand
-import com.xpdustry.imperium.discord.commands.SchematicCommand
 import com.xpdustry.imperium.discord.commands.ServerCommand
 import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.commands.WhitelistCommand
+import com.xpdustry.imperium.discord.content.MindustryContentListener
 import com.xpdustry.imperium.discord.rest.RestListener
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
@@ -66,7 +66,6 @@ fun main() {
             ServerCommand::class,
             ReportListener::class,
             MapCommand::class,
-            SchematicCommand::class,
             VerifyCommand::class,
             ModerationCommand::class,
             PunishmentListener::class,
@@ -76,6 +75,7 @@ fun main() {
             WhitelistCommand::class,
             RestListener::class,
             MapSearchCommand::class,
+            MindustryContentListener::class,
         )
         .forEach(application::register)
     application.init()
