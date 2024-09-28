@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.MenuCommandRegistry
+import com.xpdustry.imperium.discord.command.ModalCommandRegistry
 import com.xpdustry.imperium.discord.command.SlashCommandRegistry
 import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
@@ -42,7 +43,9 @@ fun MutableInstanceManager.registerDiscordModule() {
 
     provider<AnnotationScanner>("slash") { SlashCommandRegistry(get(), get(), get()) }
 
-    provider<AnnotationScanner>("button") { MenuCommandRegistry(get()) }
+    provider<AnnotationScanner>("menu") { MenuCommandRegistry(get()) }
+
+    provider<AnnotationScanner>("modal") { ModalCommandRegistry(get()) }
 
     provider<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
 

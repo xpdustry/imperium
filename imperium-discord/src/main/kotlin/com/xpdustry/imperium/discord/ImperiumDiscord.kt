@@ -80,15 +80,21 @@ fun main() {
         .forEach(application::register)
     application.init()
 
-    val commands = application.instances.get<AnnotationScanner>("slash")
-    val buttons = application.instances.get<AnnotationScanner>("button")
+    val scanners =
+        listOf(
+            application.instances.get<AnnotationScanner>("slash"),
+            application.instances.get<AnnotationScanner>("menu"),
+            application.instances.get<AnnotationScanner>("modal"))
+
     for (listener in application.listeners) {
-        commands.scan(listener)
-        buttons.scan(listener)
+        for (scanner in scanners) {
+            scanner.scan(listener)
+        }
     }
 
-    commands.process()
-    buttons.process()
+    for (scanner in scanners) {
+        scanner.process()
+    }
 
     LOGGER.info("Imperium loaded.")
 }

@@ -17,8 +17,6 @@
  */
 package com.xpdustry.imperium.discord.command
 
-import com.xpdustry.imperium.common.account.Rank
-
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class MenuCommand(val name: String, val rank: Rank = Rank.EVERYONE)
+annotation class ModalCommand(val name: String)
