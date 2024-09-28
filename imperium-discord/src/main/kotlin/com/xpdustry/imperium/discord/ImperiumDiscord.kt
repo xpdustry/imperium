@@ -28,6 +28,7 @@ import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.MapSearchCommand
+import com.xpdustry.imperium.discord.commands.MapSubmitCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
 import com.xpdustry.imperium.discord.commands.PingCommand
 import com.xpdustry.imperium.discord.commands.PlayerCommand
@@ -75,6 +76,7 @@ fun main() {
             WhitelistCommand::class,
             RestListener::class,
             MapSearchCommand::class,
+            MapSubmitCommand::class,
             MindustryContentListener::class,
         )
         .forEach(application::register)
