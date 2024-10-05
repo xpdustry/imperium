@@ -46,6 +46,7 @@ import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -102,15 +103,26 @@ interface AccountManager {
     suspend fun logout(identity: Identity.Mindustry, all: Boolean = false): AccountResult
 
     // TODO Move the following methods in a account stat manager
-    suspend fun progress(
+    suspend fun setAchievementCompletion(
         account: Int,
         achievement: Account.Achievement,
-        value: Int = 1
+        completed: Boolean
+    ): AccountResult
+
+    suspend fun setAchievementProgression(
+        account: Int,
+        achievement: Account.Achievement,
+        data: JsonObject,
     ): AccountResult
 
     suspend fun getAchievements(
-        account: Int,
+        account: Int
     ): Map<Account.Achievement, Account.Achievement.Progression>
+
+    suspend fun getAchievement(
+        account: Int,
+        achievement: Account.Achievement
+    ): Account.Achievement.Progression
 
     suspend fun incrementGames(account: Int): Boolean
 
@@ -148,7 +160,7 @@ class SimpleAccountManager(
 
     override fun onImperiumInit() {
         provider.newTransaction {
-            SchemaUtils.create(
+            SchemaUtils.createMissingTablesAndColumns(
                 AccountTable,
                 AccountSessionTable,
                 AccountAchievementTable,
@@ -432,46 +444,59 @@ class SimpleAccountManager(
             AccountResult.Success
         }
 
-    override suspend fun progress(
+    override suspend fun setAchievementCompletion(
         account: Int,
         achievement: Account.Achievement,
-        value: Int
+        completed: Boolean
     ): AccountResult {
         if (!existsById(account)) {
             return AccountResult.NotFound
         }
-        val (result, completed) =
+
+        val wasCompleted =
             provider.newSuspendTransaction {
-                val progression =
-                    AccountAchievementTable.select(
-                            AccountAchievementTable.progress, AccountAchievementTable.completed)
-                        .where {
-                            (AccountAchievementTable.account eq account) and
-                                (AccountAchievementTable.achievement eq achievement)
-                        }
-                        .firstOrNull()
-                        ?.toAchievementProgression() ?: Account.Achievement.Progression.ZERO
-
-                if (progression.completed) {
-                    return@newSuspendTransaction AccountResult.Success to false
-                }
-
-                val completed = progression.progress + value >= achievement.goal
-                AccountAchievementTable.upsert {
-                    it[AccountAchievementTable.account] = account
-                    it[AccountAchievementTable.achievement] = achievement
-                    it[AccountAchievementTable.completed] = completed
-                    it[progress] = progress.plus(value)
-                }
-
-                AccountResult.Success to completed
+                AccountAchievementTable.select(AccountAchievementTable.completed)
+                    .where {
+                        (AccountAchievementTable.account eq account) and
+                            (AccountAchievementTable.achievement eq achievement)
+                    }
+                    .firstOrNull()
+                    ?.get(AccountAchievementTable.completed) ?: false
             }
 
-        if (completed) {
+        provider.newSuspendTransaction {
+            AccountAchievementTable.upsert {
+                it[AccountAchievementTable.account] = account
+                it[AccountAchievementTable.achievement] = achievement
+                it[AccountAchievementTable.completed] = completed
+            }
+        }
+
+        if (!wasCompleted && completed) {
             messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
         }
 
-        return result
+        return AccountResult.Success
+    }
+
+    override suspend fun setAchievementProgression(
+        account: Int,
+        achievement: Account.Achievement,
+        data: JsonObject
+    ): AccountResult {
+        if (!existsById(account)) {
+            return AccountResult.NotFound
+        }
+
+        provider.newSuspendTransaction {
+            AccountAchievementTable.upsert {
+                it[AccountAchievementTable.account] = account
+                it[AccountAchievementTable.achievement] = achievement
+                it[AccountAchievementTable.data] = data
+            }
+        }
+
+        return AccountResult.Success
     }
 
     override suspend fun getAchievements(
@@ -480,12 +505,27 @@ class SimpleAccountManager(
         provider.newSuspendTransaction {
             AccountAchievementTable.select(
                     AccountAchievementTable.achievement,
-                    AccountAchievementTable.progress,
+                    AccountAchievementTable.data,
                     AccountAchievementTable.completed)
                 .where { AccountAchievementTable.account eq account }
                 .associate {
                     it[AccountAchievementTable.achievement] to it.toAchievementProgression()
                 }
+        }
+
+    override suspend fun getAchievement(
+        account: Int,
+        achievement: Account.Achievement
+    ): Account.Achievement.Progression =
+        provider.newSuspendTransaction {
+            AccountAchievementTable.select(
+                    AccountAchievementTable.data, AccountAchievementTable.completed)
+                .where {
+                    (AccountAchievementTable.account eq account) and
+                        (AccountAchievementTable.achievement eq achievement)
+                }
+                .firstOrNull()
+                ?.toAchievementProgression() ?: Account.Achievement.Progression.ZERO
         }
 
     override suspend fun incrementGames(account: Int): Boolean =
@@ -539,7 +579,7 @@ class SimpleAccountManager(
 
     private fun ResultRow.toAchievementProgression() =
         Account.Achievement.Progression(
-            progress = this[AccountAchievementTable.progress],
+            data = this[AccountAchievementTable.data],
             completed = this[AccountAchievementTable.completed])
 
     companion object {
