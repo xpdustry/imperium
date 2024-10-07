@@ -35,9 +35,6 @@ import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.future.await
 import mindustry.Vars
 import mindustry.game.Schematic
-import mindustry.type.ItemStack
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.Emote
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.ChannelType
@@ -181,15 +178,17 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                     }
                     .getOrThrow()
             val cost = StringBuilder()
-                for (stack in schem.requirements()) {
-                    // Uses bots uploaded emojis in the developer portal otherwise defaults to discord's built in :question: emote
-                    // Requires you to upload the emotes. Format "itemname" eg: "blastcompound" vs "blast-compound"
-                    val emotes = bot.getEmotesByName(stack.item.name.replace("-", ""), true)
-                    val result = if (emotes.isNotEmpty()) emotes[0] else null
+            for (stack in schem.requirements()) {
+                // Uses bots uploaded emojis in the developer portal otherwise defaults to discord's
+                // built in :question: emote
+                // Requires you to upload the emotes. Format "itemname" eg: "blastcompound" vs
+                // "blast-compound"
+                val emotes = bot.getEmotesByName(stack.item.name.replace("-", ""), true)
+                val result = if (emotes.isNotEmpty()) emotes[0] else null
 
-                    cost.append(result?.asMention ?: ":question:")
-                    cost.append(stack.amount).append(" ")
-                }
+                cost.append(result?.asMention ?: ":question:")
+                cost.append(stack.amount).append(" ")
+            }
 
             channel
                 .sendMessage(
