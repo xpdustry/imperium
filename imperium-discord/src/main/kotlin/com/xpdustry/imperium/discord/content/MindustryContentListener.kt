@@ -179,13 +179,12 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                     .getOrThrow()
             val cost = StringBuilder()
             for (stack in schematic.requirements()) {
-                // Uses the server's emotes for the item otherwise defaults to discord :question:
-                // emote
-                // Requires you to upload emotes with the item name eg: "blastcompound"
-                val emotes = guild.getEmotesByName(stack.item.name.replace("-", ""), true)
-                val result = if (emotes.isNotEmpty()) emotes[0] else null
+                // Requires you to upload emotes with all the item names eg: "blastcompound"
+                val emotes = member.guild.getEmotesByName(stack.item.name.replace("-", ""), true)
+                val emote = emotes.getOrNull(0) as Emote?
+                val result = if (emote != null) emote.asMention else ":question:"
 
-                cost.append(result?.asMention() ?: ":question:")
+                cost.append(result)
                 cost.append(stack.amount).append(" ")
             }
 
