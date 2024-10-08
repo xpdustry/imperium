@@ -36,6 +36,7 @@ import kotlinx.coroutines.future.await
 import mindustry.Vars
 import mindustry.game.Schematic
 import net.dv8tion.jda.api.entities.Emote
+import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.ChannelType
