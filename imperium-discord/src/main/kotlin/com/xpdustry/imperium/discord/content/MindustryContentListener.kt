@@ -180,15 +180,13 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                     }
                     .getOrThrow()
             val cost = StringBuilder()
-            for (stack in schem.requirements()) {
-                // Uses bots uploaded emojis in the developer portal otherwise defaults to discord's
-                // built in :question: emote
-                // Requires you to upload the emotes. Format "itemname" eg: "blastcompound" vs
-                // "blast-compound"
-                val emotes = bot.getEmotesByName(stack.item.name.replace("-", ""), true)
+            for (stack in schematic.requirements()) {
+                // Uses the server's emotes for the item otherwise defaults to discord :question: emote
+                // Requires you to upload emotes with the item name eg: "blastcompound"
+                val emotes = guild.getEmotesByName(stack.item.name.replace("-", ""), true)
                 val result = if (emotes.isNotEmpty()) emotes[0] else null
 
-                cost.append(result?.asMention ?: ":question:")
+                cost.append(result?.asMention() ?: ":question:")
                 cost.append(stack.amount).append(" ")
             }
 
