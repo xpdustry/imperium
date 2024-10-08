@@ -46,7 +46,6 @@ import net.dv8tion.jda.api.utils.FileUpload
 class MindustryContentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val content = instances.get<MindustryContentHandler>()
-    private val guild: Guild? = null
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->
