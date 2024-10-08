@@ -35,8 +35,6 @@ import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.future.await
 import mindustry.Vars
 import mindustry.game.Schematic
-import net.dv8tion.jda.api.JDA
-import net.dv8tion.jda.api.entities.Emote
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.ChannelType
@@ -181,7 +179,8 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                     .getOrThrow()
             val cost = StringBuilder()
             for (stack in schematic.requirements()) {
-                // Uses the server's emotes for the item otherwise defaults to discord :question: emote
+                // Uses the server's emotes for the item otherwise defaults to discord :question:
+                // emote
                 // Requires you to upload emotes with the item name eg: "blastcompound"
                 val emotes = guild.getEmotesByName(stack.item.name.replace("-", ""), true)
                 val result = if (emotes.isNotEmpty()) emotes[0] else null
