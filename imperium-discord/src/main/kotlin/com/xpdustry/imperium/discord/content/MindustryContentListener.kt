@@ -35,7 +35,7 @@ import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.future.await
 import mindustry.Vars
 import mindustry.game.Schematic
-import net.dv8tion.jda.api.entities.emoji.Emoji
+import net.dv8tion.jda.api.entities.emoji.CustomEmoji
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.ChannelType
@@ -46,6 +46,7 @@ import net.dv8tion.jda.api.utils.FileUpload
 class MindustryContentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val content = instances.get<MindustryContentHandler>()
+    private val guild: Guild? = null
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->
@@ -181,9 +182,9 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
             val cost = StringBuilder()
             for (stack in schematic.requirements()) {
                 // Requires you to upload emotes with all the item names eg: "blastcompound"
-                val emotes = member.guild.getEmotesByName(stack.item.name.replace("-", ""), true)
-                val emote = emotes.getOrNull(0) as Emote?
-                val result = if (emote != null) emote.asMention else ":question:"
+                val emotes = member.guild.getEmojisByName(stack.item.name.replace("-", ""), true)
+                val emote = emotes.getOrNull(0) as? CustomEmoji
+                val result = if (emote != null) emote.getAsMention() else ":question:"
 
                 cost.append(result)
                 cost.append(stack.amount).append(" ")
