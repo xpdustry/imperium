@@ -30,7 +30,6 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.snowflake.SnowflakeGenerator
 import java.net.InetAddress
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
@@ -43,6 +42,7 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.insertIgnore
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
@@ -52,13 +52,13 @@ interface UserManager {
 
     suspend fun getByIdentity(identity: Identity.Mindustry): User
 
-    suspend fun findBySnowflake(snowflake: Long): User?
+    suspend fun findById(id: Int): User?
 
     suspend fun findByUuid(uuid: MindustryUUID): User?
 
     suspend fun findByLastAddress(address: InetAddress): List<User>
 
-    suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses
+    suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses
 
     suspend fun searchUserByName(query: String): List<User>
 
@@ -73,11 +73,8 @@ interface UserManager {
     suspend fun setSettings(identity: Identity.Mindustry, settings: Map<User.Setting, Boolean>)
 }
 
-class SimpleUserManager(
-    private val provider: SQLProvider,
-    private val generator: SnowflakeGenerator,
-    private val messenger: Messenger
-) : UserManager, ImperiumApplication.Listener {
+class SimpleUserManager(private val provider: SQLProvider, private val messenger: Messenger) :
+    UserManager, ImperiumApplication.Listener {
     private val userCreateMutex = Mutex()
     private val settingsCache =
         buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>> {
@@ -105,37 +102,39 @@ class SimpleUserManager(
                     return@newSuspendTransaction user
                 }
 
-                val snowflake = generator.generate()
-
-                UserTable.insert {
-                    it[id] = snowflake
-                    it[uuid] = identity.uuid.toLongMuuid()
-                    it[lastName] = identity.name.stripMindustryColors()
-                    it[lastAddress] = identity.address.address
-                }
+                val now = Instant.now()
+                val identifier =
+                    UserTable.insertAndGetId {
+                            it[uuid] = identity.uuid.toLongMuuid()
+                            it[lastName] = identity.name.stripMindustryColors()
+                            it[lastAddress] = identity.address.address
+                            it[firstJoin] = now
+                        }
+                        .value
 
                 UserNameTable.insert {
-                    it[UserNameTable.user] = snowflake
+                    it[UserNameTable.user] = identifier
                     it[name] = identity.name.stripMindustryColors()
                 }
 
                 UserAddressTable.insert {
-                    it[UserAddressTable.user] = snowflake
+                    it[UserAddressTable.user] = identifier
                     it[address] = identity.address.address
                 }
 
                 User(
-                    snowflake = snowflake,
+                    id = identifier,
                     uuid = identity.uuid,
                     lastName = identity.name.stripMindustryColors(),
                     lastAddress = identity.address,
-                    lastJoin = Instant.EPOCH)
+                    lastJoin = Instant.EPOCH,
+                    firstJoin = now)
             }
         }
 
-    override suspend fun findBySnowflake(snowflake: Long): User? =
+    override suspend fun findById(id: Int): User? =
         provider.newSuspendTransaction {
-            UserTable.selectAll().where { UserTable.id eq snowflake }.firstOrNull()?.toUser()
+            UserTable.selectAll().where { UserTable.id eq id }.firstOrNull()?.toUser()
         }
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? {
@@ -155,15 +154,15 @@ class SimpleUserManager(
                 .map { it.toUser() }
         }
 
-    override suspend fun findNamesAndAddressesBySnowflake(snowflake: Long): User.NamesAndAddresses =
+    override suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses =
         provider.newSuspendTransaction {
             val names =
                 UserNameTable.selectAll()
-                    .where { UserNameTable.user eq snowflake }
+                    .where { UserNameTable.user eq id }
                     .mapTo(mutableSetOf()) { it[UserNameTable.name] }
             val addresses =
                 UserAddressTable.selectAll()
-                    .where { UserAddressTable.user eq snowflake }
+                    .where { UserAddressTable.user eq id }
                     .mapTo(mutableSetOf()) {
                         InetAddress.getByAddress(it[UserAddressTable.address])
                     }
@@ -183,7 +182,7 @@ class SimpleUserManager(
         provider.newSuspendTransaction {
             val user = getByIdentity(identity)
 
-            UserTable.update({ UserTable.id eq user.snowflake }) {
+            UserTable.update({ UserTable.id eq user.id }) {
                 it[lastName] = identity.name.stripMindustryColors()
                 it[lastAddress] = identity.address.address
                 it[timesJoined] = timesJoined.plus(1)
@@ -191,12 +190,12 @@ class SimpleUserManager(
             }
 
             UserNameTable.insertIgnore {
-                it[UserNameTable.user] = user.snowflake
+                it[UserNameTable.user] = user.id
                 it[name] = identity.name.stripMindustryColors()
             }
 
             UserAddressTable.insertIgnore {
-                it[UserAddressTable.user] = user.snowflake
+                it[UserAddressTable.user] = user.id
                 it[address] = identity.address.address
             }
         }
@@ -225,7 +224,7 @@ class SimpleUserManager(
         provider.newSuspendTransaction {
             val user = getByIdentity(identity)
             UserSettingTable.upsert {
-                it[UserSettingTable.user] = user.snowflake
+                it[UserSettingTable.user] = user.id
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
@@ -239,7 +238,7 @@ class SimpleUserManager(
         provider.newSuspendTransaction {
             val user = getByIdentity(identity)
             UserSettingTable.batchUpsert(settings.entries) { (setting, value) ->
-                this[UserSettingTable.user] = user.snowflake
+                this[UserSettingTable.user] = user.id
                 this[UserSettingTable.setting] = setting
                 this[UserSettingTable.value] = value
             }
@@ -248,12 +247,13 @@ class SimpleUserManager(
 
     private fun ResultRow.toUser() =
         User(
-            snowflake = this[UserTable.id].value,
+            id = this[UserTable.id].value,
             uuid = this[UserTable.uuid].toCRC32Muuid(),
             lastName = this[UserTable.lastName],
             lastAddress = InetAddress.getByAddress(this[UserTable.lastAddress]),
             timesJoined = this[UserTable.timesJoined],
-            lastJoin = this[UserTable.lastJoin])
+            lastJoin = this[UserTable.lastJoin],
+            firstJoin = this[UserTable.firstJoin])
 
     private suspend fun invalidateSettings(uuid: MindustryUUID, send: Boolean) {
         settingsCache.synchronous().invalidate(uuid)

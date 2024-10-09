@@ -22,7 +22,9 @@ import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.control.RestartMessage
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -41,6 +43,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val tracker = instances.get<PlayerTracker>()
     private val application = instances.get<ImperiumApplication>()
     private val messenger = instances.get<Messenger>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["server", "list"])
     suspend fun onServerList(interaction: SlashCommandInteraction) =
@@ -54,7 +57,10 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .await()
 
     @ImperiumCommand(["player", "joins"])
-    suspend fun onServerPlayerJoin(interaction: SlashCommandInteraction, server: String) {
+    suspend fun onServerPlayerJoin(
+        interaction: SlashCommandInteraction,
+        @Lowercase server: String
+    ) {
         val reply = interaction.deferReply(false).await()
         val joins = tracker.getPlayerJoins(server)
         if (joins == null) {
@@ -65,7 +71,10 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @ImperiumCommand(["player", "online"])
-    suspend fun onServerPlayerOnline(interaction: SlashCommandInteraction, server: String? = null) {
+    suspend fun onServerPlayerOnline(
+        interaction: SlashCommandInteraction,
+        @Lowercase server: String? = null
+    ) {
         val reply = interaction.deferReply(false).await()
         if (server != null) {
             val online = tracker.getOnlinePlayers(server)
@@ -92,7 +101,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["server", "restart"], Rank.ADMIN)
     suspend fun onServerRestart(
         interaction: SlashCommandInteraction,
-        server: String,
+        @Lowercase server: String,
         immediate: Boolean = false
     ) {
         val reply = interaction.deferReply(false).await()
@@ -131,7 +140,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     append(" ")
                 }
                 append("#")
-                append(entry.snowflake)
+                append(codec.encode(entry.playerId))
                 append(" ")
                 append(entry.player.name)
                 append("\n")

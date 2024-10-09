@@ -36,7 +36,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
-import com.xpdustry.imperium.mindustry.misc.snowflake
+import com.xpdustry.imperium.mindustry.misc.id
 import java.awt.Polygon
 import java.nio.file.Path
 import kotlin.experimental.or
@@ -377,7 +377,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     private fun getCurrentMapName() =
-        Vars.state.map.snowflake ?: Vars.state.map.name() ?: error("The current map has no name.")
+        Vars.state.map.id ?: Vars.state.map.name() ?: error("The current map has no name.")
 
     @Serializable
     data class Portal(

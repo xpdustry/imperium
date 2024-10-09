@@ -18,17 +18,17 @@
 package com.xpdustry.imperium.common.user
 
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import java.net.InetAddress
 import java.time.Instant
 
 data class User(
-    val snowflake: Snowflake,
+    val id: Int,
     val uuid: MindustryUUID,
     val lastName: String,
     val lastAddress: InetAddress,
     val timesJoined: Int = 0,
     val lastJoin: Instant,
+    val firstJoin: Instant,
 ) {
     data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>) {
         companion object {

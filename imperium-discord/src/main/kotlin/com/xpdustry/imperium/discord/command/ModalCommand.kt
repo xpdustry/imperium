@@ -15,13 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security
+package com.xpdustry.imperium.discord.command
 
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.Table
-
-object AddressWhitelistTable : Table("address_whitelist") {
-    val address: Column<ByteArray> = binary("address", 16)
-    val reason = varchar("reason", 256).default("Unknown")
-    override val primaryKey = PrimaryKey(address)
-}
+@Target(AnnotationTarget.FUNCTION)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ModalCommand(val name: String)

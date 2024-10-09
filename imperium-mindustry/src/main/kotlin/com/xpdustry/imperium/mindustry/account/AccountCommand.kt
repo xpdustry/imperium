@@ -33,7 +33,6 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
@@ -81,9 +80,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val migrateInterface = createMigrateInterface(instances.get(), manager)
     private val changePasswordInterface = createPasswordChangeInterface(instances.get(), manager)
     private val verifications =
-        CacheBuilder.newBuilder()
-            .expireAfterWrite(10.minutes.toJavaDuration())
-            .build<Snowflake, Int>()
+        CacheBuilder.newBuilder().expireAfterWrite(10.minutes.toJavaDuration()).build<Int, Int>()
 
     @ImperiumCommand(["login"])
     @ClientSide
@@ -156,9 +153,8 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
         code = Random.nextInt(1000..9999)
         messenger.publish(
-            VerificationMessage(
-                account.snowflake, sender.player.uuid(), sender.player.usid(), code))
-        verifications.put(account.snowflake, code)
+            VerificationMessage(account.id, sender.player.uuid(), sender.player.usid(), code))
+        verifications.put(account.id, code)
 
         sender.reply(
             """

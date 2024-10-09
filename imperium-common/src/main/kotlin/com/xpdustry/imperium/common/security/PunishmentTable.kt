@@ -17,13 +17,14 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
 import com.xpdustry.imperium.common.user.UserTable
+import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
 
-object PunishmentTable : SnowflakeIdTable("punishment") {
+object PunishmentTable : IntIdTable("punishment") {
     val target = reference("target", UserTable, onDelete = ReferenceOption.CASCADE)
     val reason = varchar("reason", 256)
     val type = enumerationByName<Punishment.Type>("type", 32)
@@ -31,4 +32,5 @@ object PunishmentTable : SnowflakeIdTable("punishment") {
     val pardonTimestamp = timestamp("pardon_timestamp").nullable()
     val pardonReason = varchar("pardon_reason", 256).nullable()
     val server = varchar("server", 32)
+    val creation = timestamp("creation").defaultExpression(CurrentTimestamp)
 }

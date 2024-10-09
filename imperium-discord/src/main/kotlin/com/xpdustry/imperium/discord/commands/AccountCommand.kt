@@ -21,6 +21,8 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.discord.misc.await
@@ -28,6 +30,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["account", "rank", "set"], Rank.OWNER)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
@@ -36,23 +39,18 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             reply.sendMessage("Nuh huh").await()
             return
         }
-        if (target.toLongOrNull() == null) {
-            reply.sendMessage("Invalid target.").await()
-            return
+        var id: Int? = null
+        val parsed = codec.tryDecode(target)
+        if (parsed != null && accounts.existsById(parsed)) {
+            id = parsed
+        } else if (target.toLongOrNull() != null) {
+            id = accounts.findByDiscord(target.toLong())?.id
         }
-        val snowflake =
-            if (accounts.existsBySnowflake(target.toLong())) {
-                target.toLong()
-            } else {
-                accounts.findByDiscord(target.toLong())?.snowflake
-            }
-
-        if (snowflake == null) {
+        if (id == null) {
             reply.sendMessage("Account not found.").await()
             return
         }
-
-        accounts.setRank(snowflake, rank)
+        accounts.setRank(id, rank)
         reply.sendMessage("Set rank to $rank.").await()
     }
 }

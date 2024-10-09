@@ -17,31 +17,31 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import java.time.Instant
 import kotlin.time.Duration
+import kotlinx.serialization.json.JsonObject
 
 data class Account(
-    val snowflake: Snowflake,
+    val id: Int,
     val username: String,
     val discord: Long?,
     val games: Int,
     val playtime: Duration,
     val creation: Instant,
     val legacy: Boolean,
-    val rank: Rank
+    val rank: Rank,
 ) {
-    enum class Achievement(val goal: Int = 1, val secret: Boolean = false) {
-        ACTIVE(7, true),
-        HYPER(30, true),
+    enum class Achievement(val secret: Boolean = false) {
+        ACTIVE(true),
+        HYPER(true),
         GAMER,
         DAY,
         WEEK,
         MONTH;
 
-        data class Progression(var progress: Int = 0, var completed: Boolean = false) {
+        data class Progression(val data: JsonObject, var completed: Boolean = false) {
             companion object {
-                val ZERO = Progression()
+                val ZERO = Progression(JsonObject(emptyMap()))
             }
         }
     }

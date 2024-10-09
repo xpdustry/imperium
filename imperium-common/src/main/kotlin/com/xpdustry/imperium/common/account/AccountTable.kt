@@ -17,23 +17,27 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.snowflake.SnowflakeIdTable
 import java.time.Duration
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
+import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
+import org.jetbrains.exposed.sql.json.json
 
-object AccountTable : SnowflakeIdTable("account") {
+object AccountTable : IntIdTable("account") {
     val username = varchar("username", 32).uniqueIndex()
     val passwordHash = binary("password_hash", 64)
     val passwordSalt = binary("password_salt", 64)
-    val discord = long("discord").nullable().uniqueIndex().default(null)
+    val discord = long("discord").nullable().default(null)
     val games = integer("games").default(0)
     val playtime = duration("playtime").default(Duration.ZERO)
     val legacy = bool("legacy").default(false)
     val rank = enumerationByName<Rank>("rank", 32).default(Rank.EVERYONE)
+    val creation = timestamp("creation").defaultExpression(CurrentTimestamp)
 }
 
 object AccountSessionTable : Table("account_user_session") {
@@ -46,12 +50,16 @@ object AccountSessionTable : Table("account_user_session") {
 object AccountAchievementTable : Table("account_achievement") {
     val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
     val achievement = enumerationByName<Account.Achievement>("achievement", 32)
-    val progress = integer("progress").default(0)
+    // TODO
+    //   Provides a new instance of JsonObject clientside,
+    //   but the default is not set database-side
+    //   invest in key-val table for account dynamic data
+    val data = json("data", Json, JsonObject.serializer()).clientDefault { JsonObject(emptyMap()) }
     val completed = bool("completed").default(false)
     override val primaryKey = PrimaryKey(account, achievement)
 }
 
-object LegacyAccountTable : IntIdTable("account_legacy") {
+object LegacyAccountTable : IntIdTable("legacy_account") {
     val usernameHash = binary("username_hash", 32).uniqueIndex()
     val passwordHash = binary("password_hash", 32)
     val passwordSalt = binary("password_salt", 16)
@@ -60,7 +68,7 @@ object LegacyAccountTable : IntIdTable("account_legacy") {
     val rank = enumerationByName<Rank>("rank", 32)
 }
 
-object LegacyAccountAchievementTable : Table("account_legacy_achievement") {
+object LegacyAccountAchievementTable : Table("legacy_account_achievement") {
     val account =
         reference("legacy_account_id", LegacyAccountTable, onDelete = ReferenceOption.CASCADE)
     val achievement = enumerationByName<Account.Achievement>("achievement", 32)

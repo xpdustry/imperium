@@ -37,6 +37,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.EventListener
+import net.dv8tion.jda.api.interactions.components.ActionComponent
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.ItemComponent
 import net.dv8tion.jda.api.interactions.components.LayoutComponent
@@ -63,6 +64,22 @@ inline val Member.snowflake: UserSnowflake
 
 inline val Member.identity: Identity
     get() = Identity.Discord(effectiveName, idLong)
+
+suspend fun Message.disableComponents() {
+    editMessageComponents(components.map { it.disableComponent() }).await()
+}
+
+private fun LayoutComponent.disableComponent(): ActionRow =
+    when (this) {
+        is ActionRow -> ActionRow.of(components.map { it.disableComponent() })
+        else -> error("Unsupported component type: ${this::class}")
+    }
+
+private fun ItemComponent.disableComponent(): ItemComponent =
+    when (this) {
+        is ActionComponent -> asDisabled()
+        else -> error("Unsupported component type: ${this::class}")
+    }
 
 suspend inline fun <T : Any> RestAction<T>.await(): T = submit().await()
 

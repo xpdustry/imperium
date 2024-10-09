@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -67,6 +68,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val accounts = instances.get<AccountManager>()
+    private val codec = instances.get<IdentifierCodec>()
     private lateinit var adminActionInterface: Interface
 
     override fun onImperiumInit() {
@@ -83,7 +85,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     val target = users.getByIdentity(view.state[PUNISHMENT_TARGET]!!)
                     punishments.punish(
                         view.viewer.identity,
-                        target.snowflake,
+                        target.id,
                         view.state[PUNISHMENT_REASON]!!,
                         view.state[PUNISHMENT_TYPE]!!,
                         view.state[PUNISHMENT_DURATION]!!,
@@ -255,14 +257,14 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             }
             val canSeeInfo =
                 (accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE) >= Rank.ADMIN
-            val historic = users.findNamesAndAddressesBySnowflake(user.snowflake)
+            val historic = users.findNamesAndAddressesById(user.id)
             Call.traceInfo(
                 requester.con,
                 target,
                 TraceInfo(
                     if (canSeeInfo) target.con.address
                     else "Don't have permission to view addresses.",
-                    if (canSeeInfo) target.uuid() else user.snowflake.toString(),
+                    if (canSeeInfo) target.uuid() else codec.encode(user.id),
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,

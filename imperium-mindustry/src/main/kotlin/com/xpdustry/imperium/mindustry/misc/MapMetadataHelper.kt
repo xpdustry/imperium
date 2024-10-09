@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.mindustry.misc
 
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import java.io.DataInput
 import java.io.DataOutput
 import java.time.Instant
@@ -27,6 +26,7 @@ import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
@@ -35,11 +35,11 @@ import mindustry.Vars
 import mindustry.io.SaveFileReader.CustomChunk
 import mindustry.maps.Map
 
-private const val MAP_SNOWFLAKE = "imperium-map-snowflake"
-var Map.snowflake: Snowflake?
-    get() = tags.get(MAP_SNOWFLAKE)?.toLongOrNull()
+private const val MAP_IDENTIFIER = "imperium-map-identifier"
+var Map.id: Int?
+    get() = tags.get(MAP_IDENTIFIER)?.toIntOrNull()
     set(value) {
-        tags.put(MAP_SNOWFLAKE, value.toString())
+        tags.put(MAP_IDENTIFIER, value.toString())
     }
 
 private const val MAP_START = "imperium-map-start"
@@ -62,7 +62,7 @@ object ImperiumMetadataChunkReader : CustomChunk {
 
     override fun write(stream: DataOutput) {
         val json = buildJsonObject {
-            Vars.state.map.snowflake?.let { put(MAP_SNOWFLAKE, it) }
+            Vars.state.map.id?.let { put(MAP_IDENTIFIER, it) }
             Vars.state.map.start?.toEpochMilli()?.let { put(MAP_START, it) }
             put(MAP_PLAYTIME, Vars.state.map.playtime.inWholeSeconds.toString())
         }
@@ -72,7 +72,7 @@ object ImperiumMetadataChunkReader : CustomChunk {
 
     override fun read(stream: DataInput) {
         val json = Json.parseToJsonElement(stream.readUTF()).jsonObject
-        Vars.state.map.snowflake = json[MAP_SNOWFLAKE]?.jsonPrimitive?.long
+        Vars.state.map.id = json[MAP_IDENTIFIER]?.jsonPrimitive?.int
         Vars.state.map.start = json[MAP_START]?.jsonPrimitive?.long?.let(Instant::ofEpochMilli)
         Vars.state.map.playtime = json[MAP_PLAYTIME]?.jsonPrimitive?.long?.seconds ?: ZERO
         logger.debug("Read imperium metadata: {}", json.toString())

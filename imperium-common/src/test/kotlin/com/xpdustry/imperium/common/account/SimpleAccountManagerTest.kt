@@ -100,7 +100,7 @@ class SimpleAccountManagerTest {
         val username = randomUsername()
         val discord = Random.nextLong()
 
-        assertEquals(AccountResult.NotFound, manager.updateDiscord(10L, discord))
+        assertEquals(AccountResult.NotFound, manager.updateDiscord(10, discord))
 
         assertEquals(AccountResult.Success, manager.register(username, TEST_PASSWORD_1))
 
@@ -109,7 +109,7 @@ class SimpleAccountManagerTest {
 
         assertEquals(
             AccountResult.Success,
-            manager.updateDiscord(account.snowflake, discord),
+            manager.updateDiscord(account.id, discord),
         )
 
         val result = manager.findByDiscord(discord)

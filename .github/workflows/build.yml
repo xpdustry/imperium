@@ -48,13 +48,13 @@ jobs:
       - name: Upload Mindustry artifact to Actions
         uses: actions/upload-artifact@v4
         with:
-          name: imperium-mindustry.jar
+          name: imperium-mindustry
           path: "${{ env.MINDUSTRY_ARTIFACT_PATH }}"
           if-no-files-found: error
 
       - name: Upload Discord artifacts to Actions
         uses: actions/upload-artifact@v4
         with:
-          name: imperium-discord.jar
+          name: imperium-discord
           path: "${{ env.DISCORD_ARTIFACT_PATH }}"
           if-no-files-found: error

@@ -38,7 +38,7 @@ class MindustryPlayerTracker(
 ) : RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
     private val joins = LimitedList<PlayerTracker.Entry>(30)
-    private val online = mutableMapOf<Long, PlayerTracker.Entry>()
+    private val online = mutableMapOf<Int, PlayerTracker.Entry>()
 
     override fun onImperiumInit() {
         messenger.function<PlayerListRequest, PlayerListResponse> {
@@ -56,16 +56,13 @@ class MindustryPlayerTracker(
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
         ImperiumScope.MAIN.launch {
-            val snowflake = users.getByIdentity(event.player.identity).snowflake
-            val entry = PlayerTracker.Entry(event.player.identity, snowflake)
+            val id = users.getByIdentity(event.player.identity).id
+            val entry = PlayerTracker.Entry(event.player.identity, id)
             joins.add(entry)
-            online[snowflake] = entry
+            online[id] = entry
         }
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
-        ImperiumScope.MAIN.launch {
-            val snowflake = users.getByIdentity(event.player.identity).snowflake
-            val entry = online.remove(snowflake)!!
-        }
+        ImperiumScope.MAIN.launch { online.remove(users.getByIdentity(event.player.identity).id)!! }
 }

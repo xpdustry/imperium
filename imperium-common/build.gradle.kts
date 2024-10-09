@@ -10,7 +10,6 @@ dependencies {
     api(libs.deepl)
     api(libs.password4j)
     api(libs.rabbitmq.client)
-    api(libs.snowflake.id)
     api(libs.okhttp)
     api(libs.caffeine)
     api(libs.minio)
@@ -35,4 +34,9 @@ dependencies {
 
     api(libs.prettytime)
     api(libs.time4j.core)
+}
+
+// We love OOMs :^)
+tasks.withType<Test> {
+    maxHeapSize = "4g"
 }

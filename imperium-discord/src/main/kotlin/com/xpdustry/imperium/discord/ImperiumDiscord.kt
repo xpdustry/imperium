@@ -28,13 +28,14 @@ import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.MapSearchCommand
+import com.xpdustry.imperium.discord.commands.MapSubmitCommand
 import com.xpdustry.imperium.discord.commands.ModerationCommand
 import com.xpdustry.imperium.discord.commands.PingCommand
 import com.xpdustry.imperium.discord.commands.PlayerCommand
-import com.xpdustry.imperium.discord.commands.SchematicCommand
 import com.xpdustry.imperium.discord.commands.ServerCommand
 import com.xpdustry.imperium.discord.commands.VerifyCommand
 import com.xpdustry.imperium.discord.commands.WhitelistCommand
+import com.xpdustry.imperium.discord.content.MindustryContentListener
 import com.xpdustry.imperium.discord.rest.RestListener
 import com.xpdustry.imperium.discord.security.PunishmentListener
 import com.xpdustry.imperium.discord.security.ReportListener
@@ -66,7 +67,6 @@ fun main() {
             ServerCommand::class,
             ReportListener::class,
             MapCommand::class,
-            SchematicCommand::class,
             VerifyCommand::class,
             ModerationCommand::class,
             PunishmentListener::class,
@@ -76,19 +76,27 @@ fun main() {
             WhitelistCommand::class,
             RestListener::class,
             MapSearchCommand::class,
+            MapSubmitCommand::class,
+            MindustryContentListener::class,
         )
         .forEach(application::register)
     application.init()
 
-    val commands = application.instances.get<AnnotationScanner>("slash")
-    val buttons = application.instances.get<AnnotationScanner>("button")
+    val scanners =
+        listOf(
+            application.instances.get<AnnotationScanner>("slash"),
+            application.instances.get<AnnotationScanner>("menu"),
+            application.instances.get<AnnotationScanner>("modal"))
+
     for (listener in application.listeners) {
-        commands.scan(listener)
-        buttons.scan(listener)
+        for (scanner in scanners) {
+            scanner.scan(listener)
+        }
     }
 
-    commands.process()
-    buttons.process()
+    for (scanner in scanners) {
+        scanner.process()
+    }
 
     LOGGER.info("Imperium loaded.")
 }

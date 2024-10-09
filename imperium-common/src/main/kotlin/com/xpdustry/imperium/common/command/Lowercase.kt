@@ -15,13 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.snowflake
+package com.xpdustry.imperium.common.command
 
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.sql.Column
-
-abstract class SnowflakeIdTable(name: String = "") : IdTable<Long>(name) {
-    final override val id: Column<EntityID<Long>> = long("id").entityId()
-    final override val primaryKey = PrimaryKey(id)
-}
+@Target(AnnotationTarget.VALUE_PARAMETER)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class Lowercase

@@ -21,5 +21,4 @@ import com.xpdustry.imperium.common.account.Rank
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-@MustBeDocumented
 annotation class MenuCommand(val name: String, val rank: Rank = Rank.EVERYONE)

@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.common.account
 
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.snowflake.Snowflake
 import kotlinx.serialization.Serializable
 
 enum class Rank {
@@ -33,4 +32,4 @@ enum class Rank {
 }
 
 // TODO Change to generic account change event ?
-@Serializable data class RankChangeEvent(val account: Snowflake) : Message
+@Serializable data class RankChangeEvent(val account: Int) : Message

@@ -73,7 +73,6 @@ import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.withContext
 import mindustry.Vars
@@ -614,7 +613,6 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Discord
         return Color(rgba).argb8888()
     }
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     companion object {
         private val logger by LoggerDelegate()
         private val SCHEMATIC_PREVIEW_SCOPE =
