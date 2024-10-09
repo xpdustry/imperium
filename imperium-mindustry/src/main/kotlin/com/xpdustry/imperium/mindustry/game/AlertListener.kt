@@ -49,12 +49,12 @@ class AlertListener : ImperiumApplication.Listener {
     @EventHandler
     fun onSandboxBlockDelete(event: EventType.BlockBuildBeginEvent) {
         val building = event.tile.build
-        if (event.breaking &&
+        if (event.breaking && !event.unit.isPlayer &&
             building is ConstructBuild &&
             (building.current.buildVisibility == BuildVisibility.sandboxOnly) &&
             building.current != "thruster" &&
             !Vars.state.rules.infiniteResources) {
-            notifySandboxBlockDestory(event.tile.block(), event.tile.x.toInt(), event.tile.y.toInt())
+            notifySandboxBlockDestory(event.unit.player.name(), event.tile.block(), event.tile.x.toInt(), event.tile.y.toInt())
         }
     }
 
@@ -115,7 +115,7 @@ class AlertListener : ImperiumApplication.Listener {
                 .getTeam(event.unit.player.team())
                 .sendMessage(
                     announcement_dangerous_block_build(
-                        event.unit.player.plainName(),
+                        event.unit.player.name(),
                         block,
                         event.tile.x.toInt(),
                         event.tile.y.toInt()))
