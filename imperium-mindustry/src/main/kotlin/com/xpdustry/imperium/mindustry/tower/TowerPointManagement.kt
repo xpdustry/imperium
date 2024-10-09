@@ -22,24 +22,14 @@ import arc.graphics.Color
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
-import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.mindustry.misc.asList
-import mindustry.Vars
-import mindustry.content.Fx
-import mindustry.content.StatusEffects
+import java.util.Timer
+import kotlin.concurrent.schedule
 import mindustry.game.EventType
-import mindustry.gen.Call
-import mindustry.net.Administration
 import mindustry.type.UnitType
 import mindustry.type.unit.MissileUnitType
-import mindustry.world.blocks.units.Reconstructor
 
-class TowerItemManagement() {
-    val points = 0
-    val unitPoints = mapOf(
+class PointManager(var points: Int = 200) {
+    private val unitPoints = mapOf(
         "dagger" to 1,
         "nova" to 1,
         "crawler" to 1,
@@ -99,13 +89,26 @@ class TowerItemManagement() {
     private fun getUnitTier(unitType: String): Int? {
         return unitPoints[unitType] ?: null
     }
-    
+
+    private fun onPassiveGain(points: Int) {
+        return points += 20
+    }
+
+    @EventHandler
     private fun onUnitDestroyEvent(event: EventType.UnitDestroyEvent) {
         if (event.unit().team() != Vars.state.rules.waveTeam && event.unit() !is MissileUnitType) {
-          val point = getUnitTier(unit.type.name)
-          if (point != null) {
-            points += point
-            // FINISHME
+        val increment = getUnitTier(unit.type.name)
+        if (point != null) {
+            points += increment
+            }
         }
     }
+
+    fun pointManager() {
+        Timer().schedule(0, 1000) { onPassiveGain()}
+    }
+    fun getPoints() {
+        return points
+    }
+
 }

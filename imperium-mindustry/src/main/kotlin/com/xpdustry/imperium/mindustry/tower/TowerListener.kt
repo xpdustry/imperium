@@ -81,7 +81,7 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
         // Dont be punished for killing crawlers
         UnitTypes.crawler.weapons.get(0).shootOnDeath = false
         // Need to do this so we can control its target
-        for (i in 0 until 5) {
+        for (i in 0 until UnitTypes.navanax.weapons.size) {
             val weapon = UnitTypes.navanax.weapons.get(i)
             if (weapon.name == "plasma-laser-mount") {
                 weapon.controllable = true;
