@@ -59,15 +59,18 @@ class AlertListener : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onBlastGeneratorDamage(event: EventType.blastGenerator) { // Event is not called when reactorsExplodes is false
+    fun onBlastGeneratorDamage(
+        event: EventType.blastGenerator
+    ) { // Event is not called when reactorsExplodes is false
         for (x in 0 until Vars.map.width) {
             for (y in 0 until Vars.map.height) {
                 val tile = Vars.world.tile(x, y)
                 val build = tile.build ?: continue
-    
+
                 if (build == "combustion-generator" || build == "steam-generator") {
                     if (build.items.first() == Items.blastCompound) {
-                        if (lastNotif < notifDelay) return // The event is called alot so we need a delay
+                        if (lastNotif < notifDelay)
+                            return // The event is called alot so we need a delay
                         notifyBlastGeneratorDamage(build, tile.x.toInt(), tile.y.toInt())
                     }
                 }
