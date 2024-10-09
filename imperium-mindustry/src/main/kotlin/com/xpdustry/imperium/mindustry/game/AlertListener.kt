@@ -54,7 +54,7 @@ class AlertListener : ImperiumApplication.Listener {
             (building.current.buildVisibility == BuildVisibility.sandboxOnly) &&
             building.current != "thruster" &&
             !Vars.state.rules.infiniteResources) {
-            notifySandboxBlockDestory(build.current, event.tile.x.toInt(), event.tile.y.toInt())
+            notifySandboxBlockDestory(event.tile.block(), event.tile.x.toInt(), event.tile.y.toInt())
         }
     }
 
@@ -70,8 +70,8 @@ class AlertListener : ImperiumApplication.Listener {
                 if (build == "combustion-generator" || build == "steam-generator") {
                     if (build.items.first() == Items.blastCompound) {
                         if (lastNotif < notifDelay)
-                            return // The event is called alot so we need a delay
-                        notifyBlastGeneratorDamage(build, tile.x.toInt(), tile.y.toInt())
+                            continue // The event is called alot so we need a delay
+                        notifyBlastGeneratorDamage(tile.block(), tile.x.toInt(), tile.y.toInt())
                     }
                 }
             }
@@ -122,7 +122,7 @@ class AlertListener : ImperiumApplication.Listener {
         }
     }
 
-    private fun notifyBlastGeneratorDamage(block: Any, x: Int, y: Int) {
+    private fun notifyBlastGeneratorDamage(block: Block, x: Int, y: Int) {
         lastNotif = System.currentTimeMillis()
         notifyDelay = System.currentTimeMillis() + 5000
         DistributorProvider.get()
@@ -131,7 +131,7 @@ class AlertListener : ImperiumApplication.Listener {
             .sendMessage(announcement_blast_generator_damage(block, x, y))
     }
 
-    private fun notifyPowerVoidDestroyed(block: Any, x: Int, y: Int) {
+    private fun notifySandboxBlockDestory(block: Block, x: Int, y: Int) {
         DistributorProvider.get()
             .audienceProvider
             .players
