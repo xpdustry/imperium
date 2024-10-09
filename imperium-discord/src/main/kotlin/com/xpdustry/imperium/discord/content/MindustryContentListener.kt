@@ -181,12 +181,10 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
             val cost = StringBuilder()
             for (stack in schematic.requirements()) {
                 // Requires you to upload emotes with all the item names eg: "blastcompound"
-                val emotes = member.guild.getEmojisByName(stack.item.name.replace("-", ""), true)
-                val emote = emotes.getOrNull(0) as? CustomEmoji
-                val result = if (emote != null) emote.getAsMention() else ":question:"
+                val emotes = member.guild.getEmojisByName(stack.item.name.replace("-", ""), true).getOrNull(0) as? CustomEmoji
+                val result = if (emotes != null) emotes.getAsMention() else ":question:"
 
-                cost.append(result)
-                cost.append(stack.amount).append(" ")
+                cost.append(result).append(stack.amount).append(" ")
             }
 
             channel
