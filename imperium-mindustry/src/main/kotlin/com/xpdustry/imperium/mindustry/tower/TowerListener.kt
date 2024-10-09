@@ -84,8 +84,8 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
         for (i in 0 until UnitTypes.navanax.weapons.size) {
             val weapon = UnitTypes.navanax.weapons.get(i)
             if (weapon.name == "plasma-laser-mount") {
-                weapon.controllable = true;
-                weapon.autoTarget = false;
+                weapon.controllable = true
+                weapon.autoTarget = false
             }
         }
     }
