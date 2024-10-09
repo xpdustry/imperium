@@ -208,6 +208,18 @@ fun announcement_ban(target: String, reason: String, duration: Duration): Compon
             text(target, ORANGE), text(reason, ORANGE), duration(duration, ORANGE)),
         SCARLET)
 
+fun announcement_blast_generator_damage(block: Block, x: Int, y: Int): Component =
+    translatable(
+        "imperium.announcement.blast-generator-damage",
+        TranslationArguments.array(text(block, ORANGE), text(x.toString(), ORANGE), text(y,toString(), ORANGE)), 
+        SCARLET)
+
+fun announcement_sandbox_block_destroy(block: Block, x: Int, y: Int): Component =
+    translatable(
+        "imperium.announcement.sandbox-block-destroyed",
+        TranslationArguments.array(text(block, ORANGE), text(x.toString(), ORANGE), text(y.toString(), ORANGE)),
+        SCARLET)
+
 fun announcement_power_void_destroyed(x: Int, y: Int): Component =
     translatable(
         "imperium.announcement.power-void-destroyed",
