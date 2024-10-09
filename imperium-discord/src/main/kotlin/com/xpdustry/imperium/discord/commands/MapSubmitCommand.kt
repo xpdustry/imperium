@@ -39,6 +39,7 @@ import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
+import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import java.io.InputStream
@@ -215,7 +216,7 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
                 stream = { attachment.proxy.download().join() })
         }
 
-        updateSubmissionEmbed(interaction, Color.GREEN, "uploaded", id)
+        updateSubmissionEmbed(interaction, Color.GREEN, "accepted", id)
         reply.sendMessage("Map submission uploaded! The map id is `${codec.encode(id)}`.").await()
     }
 
@@ -223,7 +224,7 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
         interaction: ButtonInteraction,
         color: Color,
         verb: String,
-        id: Int? = null
+        id: Int? = null,
     ) {
         interaction.message
             .editMessageEmbeds(
@@ -249,18 +250,25 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
                 })
             .await()
 
-        discord
-            .getMainServer()
-            .getMemberById(
-                MENTION_TAG_REGEX.find(
-                        interaction.message.embeds.first().getFieldValue("Submitter")!!)!!
-                    .groups[1]!!
-                    .value
-                    .toLong())
-            ?.user
-            ?.openPrivateChannel()
-            ?.await()
-            ?.sendMessageEmbeds(
+        val member =
+            discord
+                .getMainServer()
+                .getMemberById(
+                    MENTION_TAG_REGEX.find(
+                            interaction.message.embeds.first().getFieldValue("Submitter")!!)!!
+                        .groups[1]!!
+                        .value
+                        .toLong()) ?: return
+
+        // TODO Band-aid fix for contributor, cleanup this damn role system
+        discord.getMainServer().getRolesByName("Contributor", true).singleOrNull()?.let {
+            discord.getMainServer().addRoleToMember(member, it).awaitVoid()
+        }
+
+        member.user
+            .openPrivateChannel()
+            .await()
+            .sendMessageEmbeds(
                 Embed {
                     this@Embed.color = color.rgb
                     description =
