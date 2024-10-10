@@ -140,6 +140,7 @@ sealed interface WebhookConfig {
     data class Discord(val discordWebhookUrl: URL) : WebhookConfig
 }
 
+// TODO Cleanup roles (ranks, permission, special) listing and lookup
 data class DiscordConfig(
     val token: Secret,
     val categories: Categories,
