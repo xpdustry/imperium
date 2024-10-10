@@ -25,11 +25,11 @@ import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_
 import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
 import com.xpdustry.imperium.mindustry.translation.announcement_sandbox_block_destroy
 import mindustry.Vars
-import mindustry.content.Block
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.game.EventType
 import mindustry.gen.Building
+import mindustry.world.Block
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.blocks.power.NuclearReactor
