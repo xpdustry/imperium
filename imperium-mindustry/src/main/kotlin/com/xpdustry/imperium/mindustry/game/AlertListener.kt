@@ -25,6 +25,7 @@ import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_
 import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
 import com.xpdustry.imperium.mindustry.translation.announcement_sandbox_block_destroy
 import mindustry.Vars
+import mindustry.content.Block
 import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.game.EventType
