@@ -19,12 +19,18 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.mindustry.translation.announcement_blast_generator_damage
 import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_build
 import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
+import com.xpdustry.imperium.mindustry.translation.announcement_sandbox_block_destroy
 import mindustry.Vars
+import mindustry.content.Blocks
+import mindustry.content.Items
 import mindustry.game.EventType
 import mindustry.gen.Building
+import mindustry.world.Block
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.blocks.power.NuclearReactor
@@ -32,9 +38,11 @@ import mindustry.world.blocks.production.Incinerator
 import mindustry.world.blocks.sandbox.PowerVoid
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.StorageBlock
+import mindustry.world.meta.BuildVisibility
 
-// TODO Add ConsumeGenerator warning when explosive items are inside
 class AlertListener : ImperiumApplication.Listener {
+    var lastNotif = System.currentTimeMillis()
+    var notifDelay: Long = 0
 
     @EventHandler
     fun onPowerVoidDestroy(event: EventType.BlockDestroyEvent) {
@@ -44,13 +52,38 @@ class AlertListener : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onPowerVoidDelete(event: EventType.BlockBuildBeginEvent) {
+    fun onSandboxBlockDelete(event: EventType.BlockBuildBeginEvent) {
         val building = event.tile.build
         if (event.breaking &&
+            !event.unit.isPlayer &&
             building is ConstructBuild &&
-            building.current is PowerVoid &&
+            (building.current.buildVisibility == BuildVisibility.sandboxOnly) &&
+            building.current != Blocks.thruster &&
             !Vars.state.rules.infiniteResources) {
-            notifyPowerVoidDestroyed(event.tile.x.toInt(), event.tile.y.toInt())
+            notifySandboxBlockDestory(
+                event.unit.player.name(),
+                event.tile.block(),
+                event.tile.x.toInt(),
+                event.tile.y.toInt())
+        }
+    }
+
+    @TriggerHandler(
+        EventType.Trigger.blastGenerator) // Event is not called when reactorsExplodes is false
+    fun onBlastGeneratorDamage() {
+        for (x in 0..Vars.world.width()) {
+            for (y in 0..Vars.world.height()) {
+                val block = Vars.world.tile(x, y).block() ?: continue
+                val build = Vars.world.tile(x, y).build ?: continue
+
+                if (block == Blocks.combustionGenerator || block == Blocks.steamGenerator) {
+                    if (build.items.first() == Items.blastCompound) {
+                        if (lastNotif < notifDelay)
+                            continue // The event is called alot so we need a delay
+                        notifyBlastGeneratorDamage(block, x.toInt(), y.toInt())
+                    }
+                }
+            }
         }
     }
 
@@ -91,11 +124,27 @@ class AlertListener : ImperiumApplication.Listener {
                 .getTeam(event.unit.player.team())
                 .sendMessage(
                     announcement_dangerous_block_build(
-                        event.unit.player.plainName(),
+                        event.unit.player.name(),
                         block,
                         event.tile.x.toInt(),
                         event.tile.y.toInt()))
         }
+    }
+
+    private fun notifyBlastGeneratorDamage(block: Block, x: Int, y: Int) {
+        lastNotif = System.currentTimeMillis()
+        notifDelay = System.currentTimeMillis() + 5000
+        DistributorProvider.get()
+            .audienceProvider
+            .players
+            .sendMessage(announcement_blast_generator_damage(block, x, y))
+    }
+
+    private fun notifySandboxBlockDestory(player: String, block: Block, x: Int, y: Int) {
+        DistributorProvider.get()
+            .audienceProvider
+            .players
+            .sendMessage(announcement_sandbox_block_destroy(player, block, x, y))
     }
 
     private fun notifyPowerVoidDestroyed(x: Int, y: Int) {
