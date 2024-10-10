@@ -67,8 +67,9 @@ class AlertListener : ImperiumApplication.Listener {
         }
     }
 
-    @TriggerHandler(EventType.Trigger.blastGenerator) // Event is not called when reactorsExplodes is false
-    fun onBlastGeneratorDamage() { 
+    @TriggerHandler(
+        EventType.Trigger.blastGenerator) // Event is not called when reactorsExplodes is false
+    fun onBlastGeneratorDamage() {
         for (x in 0..Vars.world.width()) {
             for (y in 0..Vars.world.height()) {
                 val block = Vars.world.tile(x, y).block() ?: continue
