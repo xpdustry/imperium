@@ -31,7 +31,7 @@ import mindustry.gen.Building
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.blocks.power.NuclearReactor
-import·mindustry.world.blocks.production.Incinerator
+import mindustry.world.blocks.production.Incinerator
 import mindustry.world.blocks.sandbox.PowerVoid
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.StorageBlock
