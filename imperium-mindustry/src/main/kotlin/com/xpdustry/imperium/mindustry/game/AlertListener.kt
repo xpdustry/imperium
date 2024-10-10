@@ -19,6 +19,7 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.mindustry.translation.announcement_blast_generator_damage
 import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_build
