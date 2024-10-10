@@ -25,6 +25,7 @@ import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_
 import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
 import com.xpdustry.imperium.mindustry.translation.announcement_sandbox_block_destroy
 import mindustry.Vars
+import mindustry.content.Blocks
 import mindustry.content.Items
 import mindustry.game.EventType
 import mindustry.gen.Building
@@ -37,7 +38,6 @@ import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.StorageBlock
 import mindustry.world.meta.BuildVisibility
 
-// TODO Add ConsumeGenerator warning when explosive items are inside
 class AlertListener : ImperiumApplication.Listener {
     var lastNotif = System.currentTimeMillis()
     var notifDelay: Long = 0
@@ -56,7 +56,7 @@ class AlertListener : ImperiumApplication.Listener {
             !event.unit.isPlayer &&
             building is ConstructBuild &&
             (building.current.buildVisibility == BuildVisibility.sandboxOnly) &&
-            building.current.name != "thruster" &&
+            building.current != Blocks.thruster &&
             !Vars.state.rules.infiniteResources) {
             notifySandboxBlockDestory(
                 event.unit.player.name(),
@@ -68,18 +68,18 @@ class AlertListener : ImperiumApplication.Listener {
 
     @EventHandler
     fun onBlastGeneratorDamage(
-        event: EventType.blastGenerator
+        event: EventType.Trigger.blastGenerator
     ) { // Event is not called when reactorsExplodes is false
-        for (x in 0 until Vars.world.width) {
-            for (y in 0 until Vars.world.height) {
-                val tile = Vars.world.tile(x, y)
-                val build = tile.build ?: continue
+        for (x in 0..Vars.world.width()) {
+            for (y in 0..Vars.world.height()) {
+                val block = Vars.world.tile(x, y).block() ?: continue
+                val build = Vars.world.tile(x, y).build ?: continue
 
-                if (build.name == "combustion-generator" || build == "steam-generator") {
+                if (block == Blocks.combustionGenerator || block == Blocks.steamGenerator) {
                     if (build.items.first() == Items.blastCompound) {
                         if (lastNotif < notifDelay)
                             continue // The event is called alot so we need a delay
-                        notifyBlastGeneratorDamage(tile.block(), tile.x.toInt(), tile.y.toInt())
+                        notifyBlastGeneratorDamage(block, x.toInt(), y.toInt())
                     }
                 }
             }
@@ -130,7 +130,7 @@ class AlertListener : ImperiumApplication.Listener {
         }
     }
 
-    private fun notifyBlastGeneratorDamage(block: Any, x: Int, y: Int) {
+    private fun notifyBlastGeneratorDamage(block: Block, x: Int, y: Int) {
         lastNotif = System.currentTimeMillis()
         notifDelay = System.currentTimeMillis() + 5000
         DistributorProvider.get()
@@ -139,7 +139,7 @@ class AlertListener : ImperiumApplication.Listener {
             .sendMessage(announcement_blast_generator_damage(block, x, y))
     }
 
-    private fun notifySandboxBlockDestory(player: String, block: Any, x: Int, y: Int) {
+    private fun notifySandboxBlockDestory(player: String, block: Block, x: Int, y: Int) {
         DistributorProvider.get()
             .audienceProvider
             .players
