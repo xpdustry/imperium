@@ -212,7 +212,7 @@ fun announcement_blast_generator_damage(block: Block, x: Int, y: Int): Component
     translatable(
         "imperium.announcement.blast-generator-damage",
         TranslationArguments.array(
-            text(block, ORANGE), text(x.toString(), ORANGE), text(y.toString(), ORANGE)),
+            translatable(block, ORANGE), text(x.toString(), ORANGE), text(y.toString(), ORANGE)),
         SCARLET)
 
 fun announcement_sandbox_block_destroy(player: String, block: Block, x: Int, y: Int): Component =
@@ -220,7 +220,7 @@ fun announcement_sandbox_block_destroy(player: String, block: Block, x: Int, y: 
         "imperium.announcement.sandbox-block-destroyed",
         TranslationArguments.array(
             text(player, WHITE),
-            text(block, ORANGE),
+            translatable(block, ORANGE),
             text(x.toString(), ORANGE),
             text(y.toString(), ORANGE)),
         SCARLET)
