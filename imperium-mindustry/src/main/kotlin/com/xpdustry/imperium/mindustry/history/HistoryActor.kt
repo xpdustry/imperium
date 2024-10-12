@@ -18,18 +18,13 @@
 package com.xpdustry.imperium.mindustry.history
 
 import com.xpdustry.imperium.common.misc.MindustryUUID
+import mindustry.game.Team
+import mindustry.gen.Player
+import mindustry.gen.Unit as MindustryUnit
+import mindustry.type.UnitType
 
-interface BlockHistory {
-    fun getHistory(x: Int, y: Int): List<HistoryEntry>
+data class HistoryActor(val player: MindustryUUID?, val team: Team, val unit: UnitType) {
+    constructor(unit: MindustryUnit) : this(unit.player?.uuid(), unit.team(), unit.type)
 
-    fun getHistory(uuid: MindustryUUID): List<HistoryEntry>
-
-    fun getLatestPlace(x: Int, y: Int): HistoryEntry? =
-        getHistory(x, y)
-            .toMutableList()
-            .dropLastWhile {
-                it.type == HistoryEntry.Type.ROTATE || it.type == HistoryEntry.Type.CONFIGURE
-            }
-            .lastOrNull()
-            ?.takeIf { it.type == HistoryEntry.Type.PLACE }
+    constructor(player: Player) : this(player.uuid(), player.team(), player.unit().type)
 }

@@ -15,9 +15,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history.factory
+package com.xpdustry.imperium.mindustry.history.config
 
-import com.xpdustry.imperium.mindustry.history.HistoryConfig
 import com.xpdustry.imperium.mindustry.history.HistoryEntry
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.asList
@@ -28,47 +27,40 @@ import java.nio.charset.StandardCharsets
 import java.util.zip.InflaterInputStream
 import mindustry.world.blocks.logic.LogicBlock
 
-object LogicProcessorConfigurationFactory :
-    LinkableBlockConfigurationFactory<LogicBlock.LogicBuild>() {
+object LogicProcessorConfigProvider : LinkableBlockConfigProvider<LogicBlock.LogicBuild>() {
     private const val MAX_INSTRUCTIONS_SIZE = 1024 * 500
 
-    override fun create(
-        building: LogicBlock.LogicBuild,
-        type: HistoryEntry.Type,
-        config: Any?
-    ): HistoryConfig? {
-        if (type === HistoryEntry.Type.PLACING ||
-            type === HistoryEntry.Type.PLACE ||
-            type === HistoryEntry.Type.BREAKING ||
-            type === HistoryEntry.Type.BREAK) {
-            return getConfiguration(building)
+    override fun create(building: LogicBlock.LogicBuild, type: HistoryEntry.Type, config: Any?) =
+        if (type == HistoryEntry.Type.PLACING ||
+            type == HistoryEntry.Type.PLACE ||
+            type == HistoryEntry.Type.BREAKING ||
+            type == HistoryEntry.Type.BREAK) {
+            getConfiguration(building)
         } else if (config is ByteArray) {
-            return readCode(config)?.let { HistoryConfig.Text(it, HistoryConfig.Text.Type.CODE) }
+            readCode(config)?.let { BlockConfig.Text(it) }
+        } else {
+            super.create(building, type, config)
         }
-        return super.create(building, type, config)
-    }
 
     override fun isLinkValid(building: LogicBlock.LogicBuild, x: Int, y: Int): Boolean {
         val link = building.links.find { it.x == x && it.y == y }
         return link != null && link.active
     }
 
-    private fun getConfiguration(building: LogicBlock.LogicBuild): HistoryConfig? {
-        val configurations = mutableListOf<HistoryConfig>()
+    private fun getConfiguration(building: LogicBlock.LogicBuild): BlockConfig? {
+        val configurations = mutableListOf<BlockConfig>()
         val links =
             building.links
                 .asList()
                 .filter { it.active }
-                .map { link ->
-                    ImmutablePoint(link.x - building.tileX(), link.y - building.tileY())
-                }
+                .map { ImmutablePoint(it.x - building.tileX(), it.y - building.tileY()) }
                 .toList()
 
         if (links.isNotEmpty()) {
-            configurations += HistoryConfig.Link(links, true)
+            configurations += BlockConfig.Link(links, true)
         }
         if (building.code.isNotBlank()) {
-            configurations += HistoryConfig.Text(building.code, HistoryConfig.Text.Type.CODE)
+            configurations += BlockConfig.Text(building.code)
         }
 
         return if (configurations.isEmpty()) {
@@ -76,7 +68,7 @@ object LogicProcessorConfigurationFactory :
         } else if (configurations.size == 1) {
             configurations[0]
         } else {
-            HistoryConfig.Composite(configurations)
+            BlockConfig.Composite(configurations)
         }
     }
 

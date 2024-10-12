@@ -27,6 +27,7 @@ import com.xpdustry.distributor.api.component.TextComponent.newline
 import com.xpdustry.distributor.api.component.TextComponent.space
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
+import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.component.style.ComponentColor.ACCENT
 import com.xpdustry.distributor.api.component.style.ComponentColor.CYAN
 import com.xpdustry.distributor.api.component.style.ComponentColor.GREEN
@@ -49,12 +50,12 @@ import mindustry.gen.Iconc
 import mindustry.net.Administration.Config
 import mindustry.world.Block
 
-private val SCARLET = from(Color.scarlet)
-private val ORANGE = from(Color.orange)
-private val GRAY = from(Color.gray)
-private val LIGHT_GRAY = from(Color.lightGray)
-private val BLURPLE = from(com.xpdustry.imperium.common.misc.BLURPLE)
-private val ROYAL = from(Color.royal)
+val SCARLET: ComponentColor = from(Color.scarlet)
+val ORANGE: ComponentColor = from(Color.orange)
+val GRAY: ComponentColor = from(Color.gray)
+val LIGHT_GRAY: ComponentColor = from(Color.lightGray)
+val BLURPLE: ComponentColor = from(com.xpdustry.imperium.common.misc.BLURPLE)
+val ROYAL: ComponentColor = from(Color.royal)
 
 fun punishment_type_verb(type: Punishment.Type): Component =
     translatable("imperium.messages.punishment.type.${type.name.lowercase()}.verb", ORANGE)

@@ -15,42 +15,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history.factory
+package com.xpdustry.imperium.mindustry.history.config
 
-import com.xpdustry.imperium.mindustry.history.HistoryConfig
 import com.xpdustry.imperium.mindustry.history.HistoryEntry
-import com.xpdustry.imperium.mindustry.misc.asMap
 import mindustry.ctype.UnlockableContent
 import mindustry.gen.Building
 
-object CommonConfigurationFactory : HistoryConfig.Factory<Building> {
-    override fun create(building: Building, type: HistoryEntry.Type, config: Any?): HistoryConfig? {
+object BaseBlockConfigProvider : BlockConfig.Provider<Building> {
+    override fun create(building: Building, type: HistoryEntry.Type, config: Any?): BlockConfig? {
         if (isContentConfigurableBlockOnly(building)) {
             if (config == null) {
-                return HistoryConfig.Content(null)
+                return BlockConfig.Reset
             } else if (config is UnlockableContent) {
-                return HistoryConfig.Content(config)
+                return BlockConfig.Content(config)
             }
         } else if (isEnablingBlockOnly(building)) {
             if (config is Boolean) {
-                return HistoryConfig.Enable(config)
+                return BlockConfig.Enable(config)
             }
         }
         return null
     }
 
-    private fun isContentConfigurableBlockOnly(building: Building): Boolean {
-        for (configuration in building.block().configurations.keys()) {
-            if (!(UnlockableContent::class.java.isAssignableFrom(configuration) ||
-                configuration == Void.TYPE)) {
-                return false
-            }
+    private fun isContentConfigurableBlockOnly(building: Building) =
+        building.block().configurations.keys().all {
+            UnlockableContent::class.java.isAssignableFrom(it) || it == Void.TYPE
         }
-        return true
-    }
 
-    private fun isEnablingBlockOnly(building: Building): Boolean {
-        val keys = building.block().configurations.asMap().keys
-        return keys.size == 1 && keys.contains(Boolean::class.java)
-    }
+    private fun isEnablingBlockOnly(building: Building) =
+        building.block().configurations.let { it.size == 1 && it.containsKey(Boolean::class.java) }
 }

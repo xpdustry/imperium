@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.command
 
+import arc.util.CommandHandler
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.command.DescriptionFacade
@@ -66,16 +67,18 @@ import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
 
-class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: ImperiumConfig) :
-    PluginAnnotationProcessor<Void> {
-    private val clientCommandManager = createArcCommandManager(plugin)
-    private val serverCommandManager = createArcCommandManager(plugin)
+class CommandAnnotationScanner(
+    private val plugin: MindustryPlugin,
+    private val config: ImperiumConfig
+) : PluginAnnotationProcessor<Void> {
+    private lateinit var clientCommandManager: MindustryCommandManager<CommandSender>
+    private lateinit var serverCommandManager: MindustryCommandManager<CommandSender>
     private var initialized = false
 
     override fun process(instance: Any): Optional<Void> {
         if (!initialized) {
-            clientCommandManager.initialize(Vars.netServer.clientCommands)
-            serverCommandManager.initialize(ServerControl.instance.handler)
+            clientCommandManager = createArcCommandManager(Vars.netServer.clientCommands)
+            serverCommandManager = createArcCommandManager(ServerControl.instance.handler)
             initialized = true
         }
         for (function in instance::class.declaredMemberFunctions) {
@@ -271,9 +274,9 @@ class CommandAnnotationScanner(plugin: MindustryPlugin, private val config: Impe
         return parts[0] to parts.drop(1).toTypedArray()
     }
 
-    private fun createArcCommandManager(plugin: MindustryPlugin) =
+    private fun createArcCommandManager(handler: CommandHandler) =
         MindustryCommandManager(
-                plugin, ExecutionCoordinator.asyncCoordinator(), SenderMapper.identity())
+                plugin, handler, ExecutionCoordinator.asyncCoordinator(), SenderMapper.identity())
             .apply {
                 descriptionMapper {
                     DescriptionFacade.translated(it.textDescription(), config.language)

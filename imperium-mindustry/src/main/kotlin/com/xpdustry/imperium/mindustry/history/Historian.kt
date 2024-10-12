@@ -23,17 +23,19 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
-import com.xpdustry.imperium.mindustry.history.factory.CANVAS_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.CommonConfigurationFactory
-import com.xpdustry.imperium.mindustry.history.factory.ITEM_BRIDGE_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.LIGHT_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.LogicProcessorConfigurationFactory
-import com.xpdustry.imperium.mindustry.history.factory.MASS_DRIVER_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.MESSAGE_BLOCK_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.PAYLOAD_DRIVER_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.POWER_NODE_CONFIGURATION_FACTORY
-import com.xpdustry.imperium.mindustry.history.factory.UNIT_FACTORY_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.BaseBlockConfigProvider
+import com.xpdustry.imperium.mindustry.history.config.BlockConfig
+import com.xpdustry.imperium.mindustry.history.config.CANVAS_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.ITEM_BRIDGE_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.LIGHT_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.LogicProcessorConfigProvider
+import com.xpdustry.imperium.mindustry.history.config.MASS_DRIVER_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.MESSAGE_BLOCK_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.PAYLOAD_DRIVER_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.POWER_NODE_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.history.config.UNIT_FACTORY_CONFIGURATION_FACTORY
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.superclasses
@@ -51,30 +53,34 @@ import mindustry.world.blocks.power.LightBlock
 import mindustry.world.blocks.power.PowerNode
 import mindustry.world.blocks.units.UnitFactory
 
-class SimpleBlockHistory(private val config: MindustryConfig) :
-    BlockHistory, ImperiumApplication.Listener {
+interface Historian {
+    fun getHistory(x: Int, y: Int): List<HistoryEntry>
+
+    fun getHistory(uuid: MindustryUUID): List<HistoryEntry>
+}
+
+class SimpleHistorian(private val config: MindustryConfig) :
+    Historian, ImperiumApplication.Listener {
+
     private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
     private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()
-    private val factories = mutableMapOf<KClass<out Building>, HistoryConfig.Factory<*>>()
+    private val providers = mutableMapOf<KClass<out Building>, BlockConfig.Provider<*>>()
 
     override fun onImperiumInit() {
-        setConfigurationFactory<CanvasBlock.CanvasBuild>(CANVAS_CONFIGURATION_FACTORY)
-        setConfigurationFactory<Building>(CommonConfigurationFactory)
-        setConfigurationFactory<ItemBridge.ItemBridgeBuild>(ITEM_BRIDGE_CONFIGURATION_FACTORY)
-        setConfigurationFactory<LightBlock.LightBuild>(LIGHT_CONFIGURATION_FACTORY)
-        setConfigurationFactory<LogicBlock.LogicBuild>(LogicProcessorConfigurationFactory)
-        setConfigurationFactory<MassDriver.MassDriverBuild>(MASS_DRIVER_CONFIGURATION_FACTORY)
-        setConfigurationFactory<MessageBlock.MessageBuild>(MESSAGE_BLOCK_CONFIGURATION_FACTORY)
-        setConfigurationFactory<PayloadMassDriver.PayloadDriverBuild>(
-            PAYLOAD_DRIVER_CONFIGURATION_FACTORY)
-        setConfigurationFactory<PowerNode.PowerNodeBuild>(POWER_NODE_CONFIGURATION_FACTORY)
-        setConfigurationFactory<UnitFactory.UnitFactoryBuild>(UNIT_FACTORY_CONFIGURATION_FACTORY)
+        setProvider<CanvasBlock.CanvasBuild>(CANVAS_CONFIGURATION_FACTORY)
+        setProvider<Building>(BaseBlockConfigProvider)
+        setProvider<ItemBridge.ItemBridgeBuild>(ITEM_BRIDGE_CONFIGURATION_FACTORY)
+        setProvider<LightBlock.LightBuild>(LIGHT_CONFIGURATION_FACTORY)
+        setProvider<LogicBlock.LogicBuild>(LogicProcessorConfigProvider)
+        setProvider<MassDriver.MassDriverBuild>(MASS_DRIVER_CONFIGURATION_FACTORY)
+        setProvider<MessageBlock.MessageBuild>(MESSAGE_BLOCK_CONFIGURATION_FACTORY)
+        setProvider<PayloadMassDriver.PayloadDriverBuild>(PAYLOAD_DRIVER_CONFIGURATION_FACTORY)
+        setProvider<PowerNode.PowerNodeBuild>(POWER_NODE_CONFIGURATION_FACTORY)
+        setProvider<UnitFactory.UnitFactoryBuild>(UNIT_FACTORY_CONFIGURATION_FACTORY)
     }
 
-    private inline fun <reified B : Building> setConfigurationFactory(
-        factory: HistoryConfig.Factory<B>
-    ) {
-        factories[B::class] = factory
+    private inline fun <reified B : Building> setProvider(provider: BlockConfig.Provider<B>) {
+        providers[B::class] = provider
     }
 
     override fun getHistory(x: Int, y: Int): List<HistoryEntry> {
@@ -156,19 +162,19 @@ class SimpleBlockHistory(private val config: MindustryConfig) :
         building: B,
         type: HistoryEntry.Type,
         config: Any?,
-    ): HistoryConfig? {
+    ): BlockConfig? {
         if (building.block().configurations.isEmpty) {
             return null
         }
         var clazz: KClass<*> = building::class
         while (Building::class.isSuperclassOf(clazz)) {
-            val factory: HistoryConfig.Factory<B>? = factories[clazz] as HistoryConfig.Factory<B>?
-            if (factory != null) {
-                return factory.create(building, type, config)
+            val provider: BlockConfig.Provider<B>? = providers[clazz] as BlockConfig.Provider<B>?
+            if (provider != null) {
+                return provider.create(building, type, config)
             }
             clazz = clazz.superclasses.first()
         }
-        return if (config == null) HistoryConfig.Simple(null) else HistoryConfig.Simple(config)
+        return null
     }
 
     private fun addEntry(
@@ -179,7 +185,7 @@ class SimpleBlockHistory(private val config: MindustryConfig) :
         config: Any?,
     ) {
         val configuration = getConfiguration(building, type, config)
-        val author = HistoryAuthor(unit)
+        val author = HistoryActor(unit)
         building.tile.getLinkedTiles {
             addEntry(
                 HistoryEntry(
@@ -209,18 +215,17 @@ class SimpleBlockHistory(private val config: MindustryConfig) :
             entries.removeLast()
         }
         entries.add(entry)
-        if (entry.author.uuid != null && !entry.virtual) {
+        if (entry.actor.player != null && !entry.virtual) {
             players
-                .computeIfAbsent(entry.author.uuid) {
+                .computeIfAbsent(entry.actor.player) {
                     LimitedList(config.history.playerEntriesLimit)
                 }
                 .add(entry)
         }
     }
 
-    private fun haveSameConfiguration(entryA: HistoryEntry, entryB: HistoryEntry): Boolean {
-        return entryA.block == entryB.block &&
-            entryA.configuration == entryB.configuration &&
+    private fun haveSameConfiguration(entryA: HistoryEntry, entryB: HistoryEntry) =
+        entryA.block == entryB.block &&
+            entryA.config == entryB.config &&
             entryA.type === entryB.type
-    }
 }
