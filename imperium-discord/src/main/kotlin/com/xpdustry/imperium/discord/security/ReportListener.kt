@@ -42,6 +42,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
+import net.dv8tion.jda.api.utils.FileUpload
 
 // TODO Sanitize player names... Mmmh... Sanitize strings in general with an extension function?
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -89,6 +90,16 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                                     Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
                                         .withEmoji(ImperiumEmojis.CROSS_MARK),
                                 )
+
+                            if (report.reason == ReportMessage.Reason.GRIEFING ||
+                                report.reason == ReportMessage.Reason.SABOTAGE ||
+                                report.reason == ReportMessage.Reason.SPAMMING) {
+                                // TODO Ugly shit but it works for now
+                                files +=
+                                    FileUpload.fromStreamSupplier("history.txt") {
+                                        report.history.byteInputStream()
+                                    }
+                            }
                         })
                     .await()
 

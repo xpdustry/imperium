@@ -26,7 +26,8 @@ data class ReportMessage(
     val sender: Identity.Mindustry,
     val target: Identity.Mindustry,
     val reason: Reason,
-    val details: String? = null,
+    val details: String?,
+    val history: String
 ) : Message {
     enum class Reason {
         GRIEFING,
