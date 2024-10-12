@@ -70,7 +70,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         player: Player,
         @Range(min = "1", max = "50") limit: Int = 10
     ) {
-        val entries = runMindustryThread { normalize(historian.getHistory(player.uuid()), limit) }
+        val entries = runMindustryThread { historian.getHistory(player.uuid()).normalize(limit) }
         if (entries.none()) {
             sender.error(translatable("imperium.history.none"))
         } else {
@@ -88,7 +88,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         @Range(min = "1", max = "50") limit: Int = 10,
     ) {
         val entries = runMindustryThread {
-            normalize(historian.getHistory(x.toInt(), y.toInt()), limit)
+            historian.getHistory(x.toInt(), y.toInt()).normalize(limit)
         }
         if (entries.none()) {
             sender.error(translatable("imperium.history.none"))
@@ -96,18 +96,4 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             sender.reply(historyRenderer.render(entries, x.toInt(), y.toInt()))
         }
     }
-
-    private fun normalize(entries: List<HistoryEntry>, limit: Int) =
-        entries
-            .asReversed()
-            .asSequence()
-            .withIndex()
-            .filter {
-                it.index == 0 ||
-                    (it.value.type != HistoryEntry.Type.BREAKING &&
-                        it.value.type != HistoryEntry.Type.PLACING)
-            }
-            .map { it.value }
-            .take(limit)
-            .toList()
 }

@@ -59,6 +59,19 @@ interface Historian {
     fun getHistory(uuid: MindustryUUID): List<HistoryEntry>
 }
 
+fun List<HistoryEntry>.normalize(limit: Int) =
+    asReversed()
+        .asSequence()
+        .withIndex()
+        .filter {
+            it.index == 0 ||
+                (it.value.type != HistoryEntry.Type.BREAKING &&
+                    it.value.type != HistoryEntry.Type.PLACING)
+        }
+        .map { it.value }
+        .take(limit)
+        .toList()
+
 class SimpleHistorian(private val config: MindustryConfig) :
     Historian, ImperiumApplication.Listener {
 
@@ -84,11 +97,11 @@ class SimpleHistorian(private val config: MindustryConfig) :
     }
 
     override fun getHistory(x: Int, y: Int): List<HistoryEntry> {
-        return positions[Point2.pack(x, y)] ?: emptyList()
+        return positions[Point2.pack(x, y)]?.toList() ?: emptyList()
     }
 
     override fun getHistory(uuid: String): List<HistoryEntry> {
-        return players[uuid] ?: emptyList()
+        return players[uuid]?.toList() ?: emptyList()
     }
 
     @EventHandler(priority = Priority.HIGH)
