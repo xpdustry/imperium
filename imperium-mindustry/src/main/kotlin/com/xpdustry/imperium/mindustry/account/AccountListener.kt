@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
-import arc.Core
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
@@ -46,11 +45,6 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.intOrNull
-import kotlinx.serialization.json.jsonPrimitive
-import kotlinx.serialization.json.longOrNull
-import kotlinx.serialization.json.put
 import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Iconc
@@ -64,9 +58,6 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
-        Core.settings.remove("imperium-granted-session-achievements")
-        Core.settings.remove("imperium-granted-session-achievements-v2")
-
         // Small hack to make sure a player session is refreshed when it joins the server,
         // instead of blocking the process in a PlayerConnectionConfirmed event listener
         pipeline.register("account", Priority.LOWEST) {
@@ -138,19 +129,19 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
 
     private suspend fun checkPlaytimeAchievements(account: Account, playtime: Duration) {
         if (playtime >= 8.hours) {
-            accounts.setAchievementCompletion(account.id, Account.Achievement.GAMER, true)
+            accounts.setAchievement(account.id, Account.Achievement.GAMER, true)
         }
         checkDailyLoginAchievement(account, playtime, Account.Achievement.ACTIVE)
         checkDailyLoginAchievement(account, playtime, Account.Achievement.HYPER)
         val total = playtime + account.playtime
         if (total >= 1.days) {
-            accounts.setAchievementCompletion(account.id, Account.Achievement.DAY, true)
+            accounts.setAchievement(account.id, Account.Achievement.DAY, true)
         }
         if (total >= 7.days) {
-            accounts.setAchievementCompletion(account.id, Account.Achievement.WEEK, true)
+            accounts.setAchievement(account.id, Account.Achievement.WEEK, true)
         }
         if (total >= 30.days) {
-            accounts.setAchievementCompletion(account.id, Account.Achievement.MONTH, true)
+            accounts.setAchievement(account.id, Account.Achievement.MONTH, true)
         }
     }
 
@@ -161,11 +152,13 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     ) {
         require(
             achievement == Account.Achievement.ACTIVE || achievement == Account.Achievement.HYPER)
-        val progression = accounts.getAchievement(account.id, achievement)
-        if (playtime < 30.minutes || progression.completed) return
+        val completed = accounts.getAchievement(account.id, achievement)
+        if (playtime < 30.minutes || completed) return
         val now = System.currentTimeMillis()
-        var last = progression.data["last_grant"]?.jsonPrimitive?.longOrNull ?: now
-        var increment = progression.data["increment"]?.jsonPrimitive?.intOrNull ?: 0
+        var last =
+            accounts.getMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT)?.toLongOrNull() ?: now
+        var increment =
+            accounts.getMetadata(account.id, PLAYTIME_ACHIEVEMENT_INCREMENT)?.toIntOrNull() ?: 0
         val elapsed = (now - last).coerceAtLeast(0).milliseconds
         if (elapsed < 1.days) {
             return
@@ -183,15 +176,15 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                 else -> error("Invalid achievement")
             }
         if (increment >= goal) {
-            accounts.setAchievementCompletion(account.id, achievement, true)
+            accounts.setAchievement(account.id, achievement, true)
         } else {
-            accounts.setAchievementProgression(
-                account.id,
-                achievement,
-                buildJsonObject {
-                    put("last_grant", last)
-                    put("increment", increment)
-                })
+            accounts.setMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT, last.toString())
+            accounts.setMetadata(account.id, PLAYTIME_ACHIEVEMENT_INCREMENT, increment.toString())
         }
+    }
+
+    companion object {
+        private const val PLAYTIME_ACHIEVEMENT_LAST_GRANT = "playtime_achievement_last_grant"
+        private const val PLAYTIME_ACHIEVEMENT_INCREMENT = "playtime_achievement_increment"
     }
 }

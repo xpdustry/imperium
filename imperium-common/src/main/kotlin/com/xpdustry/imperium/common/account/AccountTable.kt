@@ -18,15 +18,12 @@
 package com.xpdustry.imperium.common.account
 
 import java.time.Duration
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.duration
 import org.jetbrains.exposed.sql.javatime.timestamp
-import org.jetbrains.exposed.sql.json.json
 
 object AccountTable : IntIdTable("account") {
     val username = varchar("username", 32).uniqueIndex()
@@ -50,13 +47,15 @@ object AccountSessionTable : Table("account_user_session") {
 object AccountAchievementTable : Table("account_achievement") {
     val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
     val achievement = enumerationByName<Account.Achievement>("achievement", 32)
-    // TODO
-    //   Provides a new instance of JsonObject clientside,
-    //   but the default is not set database-side
-    //   invest in key-val table for account dynamic data
-    val data = json("data", Json, JsonObject.serializer()).clientDefault { JsonObject(emptyMap()) }
     val completed = bool("completed").default(false)
     override val primaryKey = PrimaryKey(account, achievement)
+}
+
+object AccountMetadataTable : Table("account_metadata") {
+    val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
+    val key = varchar("key", 32)
+    val value = varchar("value", 64)
+    override val primaryKey = PrimaryKey(account, key)
 }
 
 object LegacyAccountTable : IntIdTable("legacy_account") {
