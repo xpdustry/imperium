@@ -19,7 +19,6 @@ package com.xpdustry.imperium.mindustry.history
 
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -69,14 +68,11 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         sender: CommandSender,
         player: Player,
         @Range(min = "1", max = "50") limit: Int = 10
-    ) {
-        val entries = runMindustryThread { historian.getHistory(player.uuid()).normalize(limit) }
-        if (entries.none()) {
-            sender.error(translatable("imperium.history.none"))
-        } else {
-            sender.reply(historyRenderer.render(entries, HistoryActor(player)))
-        }
-    }
+    ) =
+        sender.reply(
+            historyRenderer.render(
+                runMindustryThread { historian.getHistory(player.uuid()).normalize(limit) },
+                HistoryActor(player)))
 
     @ImperiumCommand(["history", "tile"])
     @ClientSide
@@ -86,14 +82,10 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         @Range(min = "1") x: Short,
         @Range(min = "1") y: Short,
         @Range(min = "1", max = "50") limit: Int = 10,
-    ) {
-        val entries = runMindustryThread {
-            historian.getHistory(x.toInt(), y.toInt()).normalize(limit)
-        }
-        if (entries.none()) {
-            sender.error(translatable("imperium.history.none"))
-        } else {
-            sender.reply(historyRenderer.render(entries, x.toInt(), y.toInt()))
-        }
-    }
+    ) =
+        sender.reply(
+            historyRenderer.render(
+                runMindustryThread { historian.getHistory(x.toInt(), y.toInt()).normalize(limit) },
+                x.toInt(),
+                y.toInt()))
 }

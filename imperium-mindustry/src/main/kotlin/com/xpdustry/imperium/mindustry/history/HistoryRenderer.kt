@@ -88,9 +88,13 @@ class SimpleHistoryRenderer(
         components()
             .append(header)
             .apply {
-                entries
-                    .flatMap { entry -> render0(entry).map { entry to it } }
-                    .forEach { (entry, component) ->
+                val pairs =
+                    entries.flatMap { entry -> render0(entry).map { entry to it } }.iterator()
+                if (pairs.hasNext()) {
+                    append(translatable("imperium.history.none"))
+                } else {
+                    do {
+                        val (entry, component) = pairs.next()
                         append(text(" > ", ACCENT))
                         if (name) {
                             append(getDisplayName(entry.actor), text(":"), space())
@@ -107,8 +111,11 @@ class SimpleHistoryRenderer(
                         }
                         append(space())
                         append(text(timeRenderer.renderRelativeInstant(entry.timestamp), GRAY))
-                        append(newline())
-                    }
+                        if (pairs.hasNext()) {
+                            append(newline())
+                        }
+                    } while (pairs.hasNext())
+                }
             }
             .build()
 
