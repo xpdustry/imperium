@@ -15,26 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security
+package com.xpdustry.imperium.common.history
 
 import com.xpdustry.imperium.common.message.Message
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class ReportMessage(
-    val serverName: String,
-    val sender: Identity.Mindustry,
-    val target: Identity.Mindustry,
-    val reason: Reason,
-    val details: String?
-) : Message {
-    enum class Reason {
-        GRIEFING,
-        TOXICITY,
-        CHEATING,
-        SPAMMING,
-        SABOTAGE,
-        NSFW,
-        OTHER,
-    }
-}
+@Serializable data class HistoryRequestMessage(val server: String, val player: Int) : Message
+
+@Serializable data class HistoryResponseMessage(val history: String) : Message

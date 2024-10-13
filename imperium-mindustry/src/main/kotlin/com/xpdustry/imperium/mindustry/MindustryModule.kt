@@ -48,7 +48,7 @@ import java.util.concurrent.Executor
 import java.util.function.Supplier
 
 internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlugin) {
-    provider<Historian> { SimpleHistorian(get()) }
+    provider<Historian> { SimpleHistorian(get(), get(), get(), get(), get()) }
 
     provider<MindustryPlugin> { plugin }
 

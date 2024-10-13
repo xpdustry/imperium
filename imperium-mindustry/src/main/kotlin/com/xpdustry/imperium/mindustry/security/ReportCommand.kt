@@ -18,8 +18,6 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
-import com.xpdustry.distributor.api.key.KeyContainer
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -33,10 +31,6 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.history.Historian
-import com.xpdustry.imperium.mindustry.history.HistoryActor
-import com.xpdustry.imperium.mindustry.history.HistoryRenderer
-import com.xpdustry.imperium.mindustry.history.normalize
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
@@ -61,8 +55,6 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             instances.get<MindustryPlugin>(),
             instances.get<Messenger>(),
             instances.get<ImperiumConfig>(),
-            instances.get<Historian>(),
-            instances.get<HistoryRenderer>(),
         )
 
     @ImperiumCommand(["report"])
@@ -85,8 +77,6 @@ fun createReportInterface(
     plugin: MindustryPlugin,
     messenger: Messenger,
     config: ImperiumConfig,
-    historian: Historian,
-    renderer: HistoryRenderer
 ): Interface {
     val reportConfirmInterface = MenuInterface.create(plugin)
     reportConfirmInterface.addTransformer { view, pane ->
@@ -96,14 +86,7 @@ fun createReportInterface(
         pane.options.addRow(
             MenuOption("[green]Yes") { _ ->
                 view.closeAll()
-                val entries = historian.getHistory(view.state[REPORT_PLAYER]!!.uuid()).normalize(30)
                 ImperiumScope.MAIN.launch {
-                    // TODO Invest in a markdown string builder using commonmark
-                    val history =
-                        ComponentStringBuilder.plain(KeyContainer.empty())
-                            .append(
-                                renderer.render(entries, HistoryActor(view.state[REPORT_PLAYER]!!)))
-                            .toString()
                     val sent =
                         messenger.publish(
                             ReportMessage(
@@ -111,9 +94,7 @@ fun createReportInterface(
                                 view.viewer.identity,
                                 view.state[REPORT_PLAYER]!!.identity,
                                 view.state[REPORT_REASON]!!,
-                                view.state[REPORT_DETAIL],
-                                history,
-                            ),
+                                view.state[REPORT_DETAIL]),
                         )
                     if (sent) {
                         view.viewer.sendMessage(

@@ -149,7 +149,8 @@ data class DiscordConfig(
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
     val mindustryVersion: String = "145",
-    val globalCommands: Boolean = false
+    val globalCommands: Boolean = false,
+    val alertsRole: Long? = null,
 ) {
     val roles2ranks: Map<Long, Rank> =
         ranks2roles.entries.associate { (key, value) -> value to key }

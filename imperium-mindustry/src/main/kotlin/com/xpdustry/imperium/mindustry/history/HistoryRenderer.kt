@@ -90,7 +90,8 @@ class SimpleHistoryRenderer(
             .apply {
                 val pairs =
                     entries.flatMap { entry -> render0(entry).map { entry to it } }.iterator()
-                if (pairs.hasNext()) {
+                if (!pairs.hasNext()) {
+                    append(text(" > ", ACCENT))
                     append(translatable("imperium.history.none"))
                 } else {
                     do {
