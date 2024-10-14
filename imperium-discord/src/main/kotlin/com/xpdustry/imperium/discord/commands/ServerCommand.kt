@@ -119,6 +119,12 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
+    @ImperiumCommand(["exit"], Rank.OWNER)
+    suspend fun onExit(interaction: SlashCommandInteraction) {
+        interaction.reply("Exiting...").await()
+        application.exit(ExitStatus.EXIT)
+    }
+
     private fun createPlayerListEmbed(
         list: List<PlayerTracker.Entry>,
         name: String,
