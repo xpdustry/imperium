@@ -67,7 +67,8 @@ class SimpleDiscordService(
                     GatewayIntent.GUILD_MEMBERS,
                     GatewayIntent.GUILD_MESSAGES,
                     GatewayIntent.GUILD_MESSAGE_REACTIONS,
-                    GatewayIntent.DIRECT_MESSAGES)
+                    GatewayIntent.DIRECT_MESSAGES,
+                    GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
                 .setToken(config.token.value)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .build()

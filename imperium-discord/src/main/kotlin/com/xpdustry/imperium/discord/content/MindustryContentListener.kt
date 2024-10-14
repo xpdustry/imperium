@@ -34,6 +34,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.future.await
 import mindustry.Vars
+import mindustry.ctype.MappableContent
 import mindustry.game.Schematic
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
@@ -177,6 +178,16 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                         return
                     }
                     .getOrThrow()
+            val requirements = buildString {
+                val iterator = schematic.requirements().iterator()
+                while (iterator.hasNext()) {
+                    val stack = iterator.next()
+                    append(stack.item.asEmoji())
+                    append(' ')
+                    append(stack.amount)
+                    if (iterator.hasNext()) append(' ')
+                }
+            }
             channel
                 .sendMessage(
                     MessageCreate {
@@ -189,6 +200,7 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                             author(member)
                             color = MINDUSTRY_ACCENT_COLOR.rgb
                             title = schematic.name().stripMindustryColors()
+                            field("Requirements", requirements, false)
                             description = schematic.description().stripMindustryColors()
                             image = "attachment://preview.png"
                         }
@@ -225,6 +237,9 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
             channel.deleteMessageById(message.idLong).awaitVoid()
         }
     }
+
+    private fun MappableContent.asEmoji() =
+        discord.getMainServer().getEmojisByName(name.replace("-", ""), true).firstOrNull()?.asMention ?: ":question:"
 
     companion object {
         private const val SCHEMATIC_MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
