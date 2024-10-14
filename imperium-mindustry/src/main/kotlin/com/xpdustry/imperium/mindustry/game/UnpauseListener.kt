@@ -21,14 +21,15 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.onEvent
-import kotlinx.coroutines.delay
 import mindustry.Vars
 import mindustry.core.GameState
 import mindustry.game.EventType.PlayerJoin
+import mindustry.game.EventType.StateChangeEvent
 import mindustry.gen.Call
 
-class UnpauseCommand : ImperiumApplication.Listener {
+class UnpauseListener : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         onEvent<PlayerJoin> {
@@ -37,18 +38,22 @@ class UnpauseCommand : ImperiumApplication.Listener {
                     "[lightgray]The server is paused, type [orange]/unpause[lightgray] to unpause the server")
             }
         }
+
+        onEvent<StateChangeEvent> {
+            if (it.from == GameState.State.paused && it.to == GameState.State.playing) {
+                Call.sendMessage("[lightgray]The server has been unpaused")
+            }
+        }
     }
 
     @ImperiumCommand(["unpause"])
     @ClientSide
-    suspend fun onUnpauseCommand(sender: CommandSender) {
-        if (Vars.state.isPaused) {
-            Vars.state.set(GameState.State.playing)
-            delay(1500) // TODO Is it necessary ?
-            Call.sendMessage(
-                "${sender.player.name}[white] unpaused the server using [orange]/unpause")
-        } else {
-            sender.player.sendMessage("The server is already unpaused")
+    @ServerSide
+    fun onUnpauseCommand(sender: CommandSender) {
+        when (Vars.state.state!!) {
+            GameState.State.playing -> sender.error("The server is already unpaused")
+            GameState.State.paused -> Vars.state.set(GameState.State.playing)
+            GameState.State.menu -> sender.error("The server is not running")
         }
     }
 }

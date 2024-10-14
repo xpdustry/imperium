@@ -32,8 +32,10 @@ import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
 import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.game.SimpleClientDetector
-import com.xpdustry.imperium.mindustry.history.BlockHistory
-import com.xpdustry.imperium.mindustry.history.SimpleBlockHistory
+import com.xpdustry.imperium.mindustry.history.Historian
+import com.xpdustry.imperium.mindustry.history.HistoryRenderer
+import com.xpdustry.imperium.mindustry.history.SimpleHistorian
+import com.xpdustry.imperium.mindustry.history.SimpleHistoryRenderer
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
@@ -46,7 +48,7 @@ import java.util.concurrent.Executor
 import java.util.function.Supplier
 
 internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlugin) {
-    provider<BlockHistory> { SimpleBlockHistory(get()) }
+    provider<Historian> { SimpleHistorian(get(), get(), get(), get(), get()) }
 
     provider<MindustryPlugin> { plugin }
 
@@ -74,4 +76,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<ClientDetector> { SimpleClientDetector(get()) }
 
     provider<BadWordDetector> { SimpleBadWordDetector(get()) }
+
+    provider<HistoryRenderer> { SimpleHistoryRenderer(get(), get(), get()) }
 }

@@ -46,7 +46,6 @@ import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonObject
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -103,32 +102,25 @@ interface AccountManager {
     suspend fun logout(identity: Identity.Mindustry, all: Boolean = false): AccountResult
 
     // TODO Move the following methods in a account stat manager
-    suspend fun setAchievementCompletion(
+    suspend fun setAchievement(
         account: Int,
         achievement: Account.Achievement,
         completed: Boolean
     ): AccountResult
 
-    suspend fun setAchievementProgression(
-        account: Int,
-        achievement: Account.Achievement,
-        data: JsonObject,
-    ): AccountResult
+    suspend fun getAchievements(account: Int): Map<Account.Achievement, Boolean>
 
-    suspend fun getAchievements(
-        account: Int
-    ): Map<Account.Achievement, Account.Achievement.Progression>
-
-    suspend fun getAchievement(
-        account: Int,
-        achievement: Account.Achievement
-    ): Account.Achievement.Progression
+    suspend fun getAchievement(account: Int, achievement: Account.Achievement): Boolean
 
     suspend fun incrementGames(account: Int): Boolean
 
     suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean
 
     suspend fun setRank(account: Int, rank: Rank)
+
+    suspend fun getMetadata(account: Int, key: String): String?
+
+    suspend fun setMetadata(account: Int, key: String, value: String)
 }
 
 @Serializable
@@ -160,10 +152,11 @@ class SimpleAccountManager(
 
     override fun onImperiumInit() {
         provider.newTransaction {
-            SchemaUtils.createMissingTablesAndColumns(
+            SchemaUtils.create(
                 AccountTable,
                 AccountSessionTable,
                 AccountAchievementTable,
+                AccountMetadataTable,
                 LegacyAccountTable,
                 LegacyAccountAchievementTable)
 
@@ -444,7 +437,7 @@ class SimpleAccountManager(
             AccountResult.Success
         }
 
-    override suspend fun setAchievementCompletion(
+    override suspend fun setAchievement(
         account: Int,
         achievement: Account.Achievement,
         completed: Boolean
@@ -479,53 +472,25 @@ class SimpleAccountManager(
         return AccountResult.Success
     }
 
-    override suspend fun setAchievementProgression(
-        account: Int,
-        achievement: Account.Achievement,
-        data: JsonObject
-    ): AccountResult {
-        if (!existsById(account)) {
-            return AccountResult.NotFound
-        }
-
-        provider.newSuspendTransaction {
-            AccountAchievementTable.upsert {
-                it[AccountAchievementTable.account] = account
-                it[AccountAchievementTable.achievement] = achievement
-                it[AccountAchievementTable.data] = data
-            }
-        }
-
-        return AccountResult.Success
-    }
-
-    override suspend fun getAchievements(
-        account: Int
-    ): Map<Account.Achievement, Account.Achievement.Progression> =
+    override suspend fun getAchievements(account: Int): Map<Account.Achievement, Boolean> =
         provider.newSuspendTransaction {
             AccountAchievementTable.select(
-                    AccountAchievementTable.achievement,
-                    AccountAchievementTable.data,
-                    AccountAchievementTable.completed)
+                    AccountAchievementTable.achievement, AccountAchievementTable.completed)
                 .where { AccountAchievementTable.account eq account }
                 .associate {
-                    it[AccountAchievementTable.achievement] to it.toAchievementProgression()
+                    it[AccountAchievementTable.achievement] to it[AccountAchievementTable.completed]
                 }
         }
 
-    override suspend fun getAchievement(
-        account: Int,
-        achievement: Account.Achievement
-    ): Account.Achievement.Progression =
+    override suspend fun getAchievement(account: Int, achievement: Account.Achievement): Boolean =
         provider.newSuspendTransaction {
-            AccountAchievementTable.select(
-                    AccountAchievementTable.data, AccountAchievementTable.completed)
+            AccountAchievementTable.select(AccountAchievementTable.completed)
                 .where {
                     (AccountAchievementTable.account eq account) and
                         (AccountAchievementTable.achievement eq achievement)
                 }
                 .firstOrNull()
-                ?.toAchievementProgression() ?: Account.Achievement.Progression.ZERO
+                ?.get(AccountAchievementTable.completed) ?: false
         }
 
     override suspend fun incrementGames(account: Int): Boolean =
@@ -560,6 +525,27 @@ class SimpleAccountManager(
         }
     }
 
+    override suspend fun getMetadata(account: Int, key: String): String? {
+        return provider.newSuspendTransaction {
+            AccountMetadataTable.select(AccountMetadataTable.value)
+                .where {
+                    (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key)
+                }
+                .firstOrNull()
+                ?.get(AccountMetadataTable.value)
+        }
+    }
+
+    override suspend fun setMetadata(account: Int, key: String, value: String) {
+        provider.newSuspendTransaction {
+            AccountMetadataTable.upsert {
+                it[AccountMetadataTable.account] = account
+                it[AccountMetadataTable.key] = key
+                it[AccountMetadataTable.value] = value
+            }
+        }
+    }
+
     @VisibleForTesting
     internal suspend fun createSessionHash(identity: Identity.Mindustry): ByteArray =
         Argon2HashFunction.create(
@@ -576,11 +562,6 @@ class SimpleAccountManager(
             creation = this[AccountTable.creation],
             legacy = this[AccountTable.legacy],
             rank = this[AccountTable.rank])
-
-    private fun ResultRow.toAchievementProgression() =
-        Account.Achievement.Progression(
-            data = this[AccountAchievementTable.data],
-            completed = this[AccountAchievementTable.completed])
 
     companion object {
         private val LOGGER by LoggerDelegate()

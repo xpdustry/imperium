@@ -58,7 +58,7 @@ import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
-import com.xpdustry.imperium.mindustry.game.UnpauseCommand
+import com.xpdustry.imperium.mindustry.game.UnpauseListener
 import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
@@ -180,7 +180,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TeamCommand::class,
                 FormationListener::class,
                 RestartListener::class,
-                UnpauseCommand::class)
+                UnpauseListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode

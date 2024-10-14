@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
+import com.xpdustry.imperium.mindustry.history.config.BlockConfig
 import java.time.Instant
 import mindustry.world.Block
 
@@ -25,11 +26,11 @@ data class HistoryEntry(
     val y: Int,
     val buildX: Int,
     val buildY: Int,
-    val author: HistoryAuthor,
+    val actor: HistoryActor,
     val block: Block,
     val type: Type,
     val rotation: Int,
-    val configuration: HistoryConfig? = null,
+    val config: BlockConfig? = null,
     val virtual: Boolean = false,
     val timestamp: Instant = Instant.now(),
 ) {

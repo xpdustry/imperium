@@ -74,7 +74,7 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
         achievements.put(
             MUUID.from(player),
             (account?.let { accounts.getAchievements(it.id) } ?: emptyMap())
-                .filterValues { it.completed }
+                .filterValues { it }
                 .keys)
     }
 }

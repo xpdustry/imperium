@@ -43,6 +43,7 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Iconc
+import mindustry.server.ServerControl
 
 private val logger = logger("ROOT")
 
@@ -107,12 +108,16 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {
-        val message =
+        var message =
             if (Vars.state.rules.waves) {
                 "Game over! Reached wave ${Vars.state.wave} with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             } else {
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
+        val next = Vars.maps.getNextMap(ServerControl.instance.lastMode, Vars.state.map)
+        if (next != null) {
+            message += " Next map: ${next.name().stripMindustryColors()}."
+        }
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryServerMessage(imperiumConfig.server.identity, message, chat = false))

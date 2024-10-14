@@ -15,20 +15,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.history
+package com.xpdustry.imperium.common.history
 
-import com.xpdustry.imperium.common.misc.MindustryUUID
-import mindustry.game.Team
-import mindustry.gen.Unit
-import mindustry.type.UnitType
+import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
 
-class HistoryAuthor
-private constructor(
-    val uuid: MindustryUUID?,
-    val team: Team,
-    val unit: UnitType,
-) {
-    constructor(
-        unit: Unit
-    ) : this(if (unit.isPlayer) unit.player.uuid() else null, unit.team, unit.type())
-}
+@Serializable data class HistoryRequestMessage(val server: String, val player: Int) : Message
+
+@Serializable data class HistoryResponseMessage(val history: String) : Message

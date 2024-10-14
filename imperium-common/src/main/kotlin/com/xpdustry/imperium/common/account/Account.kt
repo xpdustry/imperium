@@ -19,7 +19,6 @@ package com.xpdustry.imperium.common.account
 
 import java.time.Instant
 import kotlin.time.Duration
-import kotlinx.serialization.json.JsonObject
 
 data class Account(
     val id: Int,
@@ -34,15 +33,9 @@ data class Account(
     enum class Achievement(val secret: Boolean = false) {
         ACTIVE(true),
         HYPER(true),
-        GAMER,
+        GAMER(true),
         DAY,
         WEEK,
-        MONTH;
-
-        data class Progression(val data: JsonObject, var completed: Boolean = false) {
-            companion object {
-                val ZERO = Progression(JsonObject(emptyMap()))
-            }
-        }
+        MONTH
     }
 }

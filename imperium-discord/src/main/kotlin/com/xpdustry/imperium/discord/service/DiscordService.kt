@@ -108,10 +108,10 @@ class SimpleDiscordService(
         val member = getMainServer().getMemberById(discord) ?: return
         val current = member.roles.associateBy(Role::getIdLong)
 
-        for ((achievement, progression) in accounts.getAchievements(id)) {
+        for ((achievement, completed) in accounts.getAchievements(id)) {
             val roleId = config.achievements2roles[achievement] ?: continue
             val role = getMainServer().getRoleById(roleId) ?: continue
-            if (progression.completed) {
+            if (completed) {
                 if (roleId in current.keys) continue
                 getMainServer().addRoleToMember(member.snowflake, role).awaitVoid()
                 logger.debug(

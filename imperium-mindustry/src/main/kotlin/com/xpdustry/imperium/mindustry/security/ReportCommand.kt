@@ -18,7 +18,12 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.menu.ListTransformer
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -31,129 +36,136 @@ import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.NavigateAction
+import com.xpdustry.imperium.mindustry.misc.NavigationTransformer
+import com.xpdustry.imperium.mindustry.misc.asAudience
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.identity
-import com.xpdustry.imperium.mindustry.misc.showInfoMessage
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.action.Action
-import com.xpdustry.imperium.mindustry.ui.action.BiAction
-import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
-import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
-import com.xpdustry.imperium.mindustry.ui.state.stateKey
+import com.xpdustry.imperium.mindustry.misc.key
+import com.xpdustry.imperium.mindustry.translation.gui_back
+import com.xpdustry.imperium.mindustry.translation.gui_report_content_confirm
+import com.xpdustry.imperium.mindustry.translation.gui_report_content_player
+import com.xpdustry.imperium.mindustry.translation.gui_report_content_reason
+import com.xpdustry.imperium.mindustry.translation.gui_report_failure
+import com.xpdustry.imperium.mindustry.translation.gui_report_no_players
+import com.xpdustry.imperium.mindustry.translation.gui_report_rate_limit
+import com.xpdustry.imperium.mindustry.translation.gui_report_success
+import com.xpdustry.imperium.mindustry.translation.gui_report_title
+import com.xpdustry.imperium.mindustry.translation.yes
 import java.net.InetAddress
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val reportInterface = MenuManager.create(instances.get())
+    private val config = instances.get<ImperiumConfig>()
+    private val messenger = instances.get<Messenger>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
-    private val reportInterface =
-        createReportInterface(
-            instances.get<MindustryPlugin>(),
-            instances.get<Messenger>(),
-            instances.get<ImperiumConfig>(),
-        )
+
+    init {
+        reportInterface.addTransformer(
+            NavigationTransformer(
+                REPORT_PAGE,
+                ReportPage.PLAYER,
+                ListTransformer<Player>()
+                    .setProvider { ctx ->
+                        Entities.getPlayers()
+                            .asSequence()
+                            .filter { it != ctx.viewer }
+                            .sortedBy { it.info.plainLastName() }
+                            .toList()
+                    }
+                    .setRenderer { player -> text(player.info.plainLastName()) }
+                    .setHeight(10)
+                    .setChoiceAction(
+                        BiAction.with(REPORT_PLAYER)
+                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.REASON))))))
+
+        reportInterface.addTransformer(
+            NavigationTransformer(
+                REPORT_PAGE,
+                ReportPage.REASON,
+                ListTransformer<ReportMessage.Reason>()
+                    .setProvider { ReportMessage.Reason.entries }
+                    .setRenderer { reason -> text(reason.name.lowercase().capitalize()) }
+                    .setHeight(Int.MAX_VALUE)
+                    .setRenderNavigation(false)
+                    .setChoiceAction(
+                        BiAction.with(REPORT_REASON)
+                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.CONFIRM))))))
+
+        reportInterface.addTransformer { (pane, state) ->
+            val page = state[REPORT_PAGE]!!
+            pane.title = gui_report_title(page.ordinal + 1, ReportPage.entries.size)
+            pane.content =
+                when (page) {
+                    ReportPage.PLAYER -> gui_report_content_player()
+                    ReportPage.REASON -> gui_report_content_reason()
+                    ReportPage.CONFIRM ->
+                        gui_report_content_confirm(state[REPORT_PLAYER]!!, state[REPORT_REASON]!!)
+                }
+            val back =
+                when (page) {
+                    ReportPage.PLAYER -> Action.back()
+                    ReportPage.REASON -> NavigateAction(REPORT_PAGE, ReportPage.PLAYER)
+                    ReportPage.CONFIRM -> NavigateAction(REPORT_PAGE, ReportPage.REASON)
+                }
+            pane.grid.addRow(MenuOption.of(gui_back(), back))
+        }
+
+        reportInterface.addTransformer(
+            NavigationTransformer(REPORT_PAGE, ReportPage.CONFIRM) { (pane) ->
+                pane.grid.addOption(
+                    MenuOption.of(
+                        yes(),
+                        Action.hideAll().then {
+                            ImperiumScope.MAIN.launch {
+                                val sent =
+                                    messenger.publish(
+                                        ReportMessage(
+                                            config.server.name,
+                                            it.viewer.identity,
+                                            it.state[REPORT_PLAYER]!!.identity,
+                                            it.state[REPORT_REASON]!!))
+                                val audience = it.viewer.asAudience
+                                if (sent) {
+                                    limiter.increment(it.viewer.ip().toInetAddress())
+                                    audience.sendAnnouncement(gui_report_success())
+                                } else {
+                                    audience.sendAnnouncement(gui_report_failure())
+                                }
+                            }
+                        }))
+            })
+    }
 
     @ImperiumCommand(["report"])
     @ClientSide
     fun onPlayerReport(sender: CommandSender) {
-        if (!limiter.incrementAndCheck(sender.player.ip().toInetAddress())) {
-            sender.player.showInfoMessage(
-                "[red]You are limited to one report per minute. Please try again later.")
-            return
+        if (Entities.getPlayers().size == 1) {
+            sender.error(gui_report_no_players())
+        } else if (!limiter.check(sender.player.ip().toInetAddress())) {
+            sender.error(gui_report_rate_limit())
+        } else {
+            reportInterface
+                .create(sender.player)
+                .apply { state[REPORT_PAGE] = ReportPage.PLAYER }
+                .show()
         }
-        reportInterface.open(sender.player)
+    }
+
+    companion object {
+        private val REPORT_PAGE = key<ReportPage>("report_window")
+        private val REPORT_PLAYER = key<Player>("report_player")
+        private val REPORT_REASON = key<ReportMessage.Reason>("report_reason")
     }
 }
 
-private val REPORT_PLAYER = stateKey<Player>("report_player")
-private val REPORT_REASON = stateKey<ReportMessage.Reason>("report_reason")
-private val REPORT_DETAIL = stateKey<String>("report_detail")
-
-fun createReportInterface(
-    plugin: MindustryPlugin,
-    messenger: Messenger,
-    config: ImperiumConfig
-): Interface {
-    val reportConfirmInterface = MenuInterface.create(plugin)
-    reportConfirmInterface.addTransformer { view, pane ->
-        pane.title = "Report (4/4)"
-        pane.content =
-            "Are you sure you want to report [accent]${view.state[REPORT_PLAYER]!!.plainName()}[] for [accent]${view.state[REPORT_REASON]!!.name.lowercase().capitalize()}[]?"
-        pane.options.addRow(
-            MenuOption("[green]Yes") { _ ->
-                view.closeAll()
-                ImperiumScope.MAIN.launch {
-                    val sent =
-                        messenger.publish(
-                            ReportMessage(
-                                config.server.name,
-                                view.viewer.identity,
-                                view.state[REPORT_PLAYER]!!.identity,
-                                view.state[REPORT_REASON]!!,
-                                view.state[REPORT_DETAIL],
-                            ),
-                        )
-                    if (sent) {
-                        view.viewer.sendMessage(
-                            "[green]Your report has been sent, thank you for your contribution.")
-                    } else {
-                        view.viewer.sendMessage(
-                            "[scarlet]An error occurred while sending your report, please try again later.")
-                    }
-                }
-            },
-            MenuOption("[orange]No") { it.back(2) },
-            MenuOption("[red]Abort") { it.closeAll() },
-        )
-    }
-
-    val reportDetailInterface = TextInputInterface.create(plugin)
-    reportDetailInterface.addTransformer { _, pane ->
-        pane.title = "Report (3/4)"
-        pane.description =
-            "Enter the details of your report, \nclick on cancel if you don't have any."
-        pane.inputAction = BiAction { view, input ->
-            view.close()
-            view.state[REPORT_DETAIL] = input
-            reportConfirmInterface.open(view)
-        }
-        pane.exitAction = Action { view ->
-            view.close()
-            view.state.remove(REPORT_DETAIL)
-            reportConfirmInterface.open(view)
-        }
-    }
-
-    val reportReasonInterface = MenuInterface.create(plugin)
-    reportReasonInterface.addTransformer { _, pane ->
-        pane.title = "Report (2/4)"
-        pane.content = "Select the reason of your report"
-        for (reason in ReportMessage.Reason.entries) {
-            pane.options.addRow(
-                MenuOption(reason.name.lowercase().capitalize()) { view ->
-                    view.close()
-                    view.state[REPORT_REASON] = reason
-                    reportDetailInterface.open(view)
-                },
-            )
-        }
-        pane.options.addRow(MenuOption("[red]Cancel", View::back))
-    }
-
-    val playerListInterface = MenuInterface.create(plugin)
-    playerListInterface.addTransformer { _, pane ->
-        pane.title = "Report (1/4)"
-        pane.content = "Select the player you want to report"
-    }
-    playerListInterface.addTransformer(
-        createPlayerListTransformer { view, player ->
-            view.close()
-            view.state[REPORT_PLAYER] = player
-            reportReasonInterface.open(view)
-        })
-
-    return playerListInterface
+enum class ReportPage {
+    PLAYER,
+    REASON,
+    CONFIRM,
 }

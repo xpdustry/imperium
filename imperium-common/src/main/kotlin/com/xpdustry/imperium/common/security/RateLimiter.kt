@@ -22,6 +22,10 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 
 interface RateLimiter<K : Any> {
+    fun check(key: K): Boolean
+
+    fun increment(key: K)
+
     fun incrementAndCheck(key: K): Boolean
 }
 
@@ -34,6 +38,13 @@ class SimpleRateLimiter<K : Any>(private val limit: Int, period: Duration) : Rat
 
     private val cache =
         CacheBuilder.newBuilder().expireAfterWrite(period.toJavaDuration()).build<K, Int>()
+
+    override fun check(key: K) = (cache.getIfPresent(key) ?: 0) < limit
+
+    override fun increment(key: K) {
+        val attempts = cache.getIfPresent(key) ?: 0
+        cache.put(key, attempts + 1)
+    }
 
     override fun incrementAndCheck(key: K): Boolean {
         val attempts = cache.getIfPresent(key) ?: 0
