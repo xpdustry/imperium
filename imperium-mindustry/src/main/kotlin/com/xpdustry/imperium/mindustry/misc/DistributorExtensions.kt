@@ -22,9 +22,10 @@ import arc.struct.ObjectSet
 import arc.struct.Seq
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.collection.MindustryCollections
+import com.xpdustry.distributor.api.event.EventSubscription
 import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.Pane
-import com.xpdustry.distributor.api.gui.WindowManager
+import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.transform.Transformer
 import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.key.MutableKeyContainer
@@ -32,7 +33,6 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.distributor.api.util.TypeToken
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
-import java.net.URI
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.reflect.jvm.javaType
@@ -43,7 +43,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
 import mindustry.Vars
 import mindustry.entities.EntityGroup
-import mindustry.gen.Call
 import mindustry.gen.Entityc
 import mindustry.gen.Player
 
@@ -80,16 +79,15 @@ operator fun <P : Pane> Transformer.Context<P>.component3(): Player = viewer
 inline fun <reified T> key(name: String): Key<T> =
     Key.of("imperium", name, TypeToken.of(typeOf<T>().javaType) as TypeToken<T>)
 
-@Suppress("FunctionName")
-fun OpenURIAction(uri: URI) = Action { Call.openURI(it.viewer.con(), uri.toString()) }
-
-@Suppress("FunctionName")
-fun ShowAction(manager: WindowManager) = Action { manager.create(it).show() }
+fun <P : Pane> Transformer<P>.then(transformer: Transformer<P>) = Transformer {
+    this@then.transform(it)
+    transformer.transform(it)
+}
 
 inline fun <reified E : Any> onEvent(
     priority: Priority = Priority.NORMAL,
     crossinline listener: (E) -> Unit
-) =
+): EventSubscription =
     DistributorProvider.get().eventBus.subscribe(
         E::class.java,
         priority,
@@ -101,8 +99,23 @@ inline fun <E : Enum<E>> onEvent(
     enum: E,
     priority: Priority = Priority.NORMAL,
     crossinline listener: () -> Unit
-) =
+): EventSubscription =
     DistributorProvider.get().eventBus.subscribe(
         enum, priority, Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
             listener()
         }
+
+@Suppress("FunctionName")
+fun <E : Enum<E>> NavigateAction(key: Key<E>, target: E): Action =
+    Action.with(key, target).then(Window::show)
+
+@Suppress("FunctionName")
+fun <E : Enum<E>, P : Pane> NavigationTransformer(
+    key: Key<E>,
+    page: E,
+    transformer: Transformer<P>
+) = Transformer {
+    if (it.state[key] == page) {
+        transformer.transform(it)
+    }
+}

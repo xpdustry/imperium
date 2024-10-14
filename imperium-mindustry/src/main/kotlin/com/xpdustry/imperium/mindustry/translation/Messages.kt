@@ -38,6 +38,7 @@ import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.duration
@@ -47,6 +48,7 @@ import java.time.temporal.ChronoUnit
 import kotlin.time.Duration
 import mindustry.game.Team
 import mindustry.gen.Iconc
+import mindustry.gen.Player
 import mindustry.net.Administration.Config
 import mindustry.world.Block
 
@@ -184,9 +186,30 @@ fun gui_rules_content(): Component =
         }
         .build()
 
+fun gui_report_title(page: Int, pages: Int): Component =
+    translatable("imperium.gui.report.title", TranslationArguments.array(page, pages))
+
+fun gui_report_content_player(): Component = translatable("imperium.gui.report.content.player")
+
+fun gui_report_content_reason(): Component = translatable("imperium.gui.report.content.reason")
+
+fun gui_report_content_confirm(player: Player, reason: ReportMessage.Reason): Component =
+    translatable(
+        "imperium.gui.report.content.confirm",
+        TranslationArguments.array(
+            text(player.info.plainLastName(), ACCENT), report_reason(reason)))
+
+fun gui_report_success(): Component = translatable("imperium.gui.report.success")
+
+fun gui_report_failure(): Component = translatable("imperium.gui.report.failure", SCARLET)
+
+fun gui_report_no_players(): Component = translatable("imperium.gui.report.no-players", SCARLET)
+
+fun gui_report_rate_limit(): Component = translatable("imperium.gui.report.rate-limit", SCARLET)
+
 fun gui_close(): Component = translatable("imperium.gui.close")
 
-fun gui_back(): Component = translatable("imperium.gui.back")
+fun gui_back(): Component = translatable("imperium.gui.back", LIGHT_GRAY)
 
 fun user_setting_description(setting: User.Setting): Component =
     translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
@@ -249,3 +272,10 @@ fun server_restart_game_over(reason: String): Component =
         space(),
         translatable("imperium.restart.trigger.game-over"),
     )
+
+fun report_reason(reason: ReportMessage.Reason): Component =
+    translatable("imperium.report.reason.${reason.name.lowercase()}", ACCENT)
+
+fun yes(): Component = translatable("imperium.yes", GREEN)
+
+fun no(): Component = translatable("imperium.no", SCARLET)

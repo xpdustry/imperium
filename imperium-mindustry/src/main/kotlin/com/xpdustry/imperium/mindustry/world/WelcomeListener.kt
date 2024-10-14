@@ -33,8 +33,6 @@ import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.misc.OpenURIAction
-import com.xpdustry.imperium.mindustry.misc.ShowAction
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gui_close
@@ -65,10 +63,11 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
         welcomeInterface.addTransformer { (pane) ->
             pane.title = gui_welcome_title()
             pane.content = gui_welcome_content()
-            pane.grid.addRow(MenuOption.of(gui_welcome_button_rules(), ShowAction(rulesInterface)))
+            pane.grid.addRow(MenuOption.of(gui_welcome_button_rules(), Action.show(rulesInterface)))
             pane.grid.addRow(
                 MenuOption.of(
-                    gui_welcome_button_discord(), OpenURIAction(DISCORD_INVITATION_LINK.toURI())))
+                    gui_welcome_button_discord(),
+                    Action.audience { it.openURI(DISCORD_INVITATION_LINK.toURI()) }))
             pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
         }
     }

@@ -96,8 +96,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
 
                             field {
                                 name = "Reason"
-                                value =
-                                    "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})"
+                                value = report.reason.name.lowercase().capitalize()
                                 inline = false
                             }
                         }
