@@ -239,7 +239,11 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
     }
 
     private fun MappableContent.asEmoji() =
-        discord.getMainServer().getEmojisByName(name.replace("-", ""), true).firstOrNull()?.asMention ?: ":question:"
+        discord
+            .getMainServer()
+            .getEmojisByName(name.replace("-", ""), true)
+            .firstOrNull()
+            ?.asMention ?: ":question:"
 
     companion object {
         private const val SCHEMATIC_MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
