@@ -42,6 +42,7 @@ import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
+import com.xpdustry.imperium.mindustry.account.AchievementCommand
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
@@ -180,7 +181,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TeamCommand::class,
                 FormationListener::class,
                 RestartListener::class,
-                UnpauseListener::class)
+                UnpauseListener::class,
+                AchievementCommand::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode

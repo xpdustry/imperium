@@ -35,6 +35,7 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
 import com.xpdustry.distributor.api.component.style.ComponentColor.from
 import com.xpdustry.distributor.api.component.style.TextStyle
 import com.xpdustry.distributor.api.translation.TranslationArguments
+import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
@@ -253,6 +254,23 @@ fun command_team_success(team: Team): Component =
         "imperium.command.team.success",
         TranslationArguments.array(translatable(team, from(team.color))))
 
+fun command_achievements(achievements: List<Account.Achievement>): Component =
+    if (achievements.isEmpty()) {
+        error("No achievements")
+    } else if (achievements.size == 1) {
+        components(text(">>> ", CYAN), achievement_description(achievements[0], WHITE))
+    } else {
+        components()
+            .append(translatable("imperium.command.achievements.header", ACCENT))
+            .apply {
+                achievements
+                    .asSequence()
+                    .sortedWith(compareBy(Enum<Account.Achievement>::name))
+                    .forEach { append(newline(), text("> ", CYAN), achievement_name(it, WHITE)) }
+            }
+            .build()
+    }
+
 fun gatekeeper_failure(kind: String, details: String = "none"): Component =
     translatable("imperium.gatekeeper.failure.$kind", TranslationArguments.array(details), SCARLET)
 
@@ -279,3 +297,9 @@ fun report_reason(reason: ReportMessage.Reason): Component =
 fun yes(): Component = translatable("imperium.yes", GREEN)
 
 fun no(): Component = translatable("imperium.no", SCARLET)
+
+fun achievement_name(achievement: Account.Achievement, color: ComponentColor): Component =
+    translatable("imperium.achievement.${achievement.name.lowercase()}.name", color)
+
+fun achievement_description(achievement: Account.Achievement, color: ComponentColor): Component =
+    translatable("imperium.achievement.${achievement.name.lowercase()}.description", color)
