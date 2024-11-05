@@ -9,7 +9,7 @@ import com.xpdustry.toxopid.task.MindustryExec
 plugins {
     id("imperium.base-conventions")
     id("imperium.publishing-conventions")
-    id("com.github.johnrengelman.shadow")
+    id("com.gradleup.shadow")
     id("com.xpdustry.toxopid")
 }
 
