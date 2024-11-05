@@ -186,16 +186,20 @@ class SimpleHistoryRenderer(
                         }
                         .setParameters(
                             array(
-                                buildList {
-                                    add(translatable(entry.block, ACCENT))
-                                    for ((i, point) in config.positions.withIndex()) {
-                                        add(
-                                            point
-                                                .copy(x = point.x + entry.x, y = point.y + entry.y)
-                                                .toComponent())
-                                        if (i < config.positions.size - 1) add(text(", "))
+                                translatable(entry.block, ACCENT),
+                                components()
+                                    .apply {
+                                        for ((i, point) in config.positions.withIndex()) {
+                                            append(
+                                                point
+                                                    .copy(
+                                                        x = point.x + entry.x,
+                                                        y = point.y + entry.y)
+                                                    .toComponent())
+                                            if (i < config.positions.size - 1) append(text(", "))
+                                        }
                                     }
-                                }),
+                                    .build()),
                         )
                         .build(),
                 )
