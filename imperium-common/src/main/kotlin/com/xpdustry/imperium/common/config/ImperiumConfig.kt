@@ -184,7 +184,8 @@ data class MindustryConfig(
     data class History(
         val tileEntriesLimit: Int = 20,
         val playerEntriesLimit: Int = 200,
-        val doubleClickDelay: Duration = 200.milliseconds
+        val doubleClickDelay: Duration = 200.milliseconds,
+        val heatMapRadius: Int = 15,
     )
 
     data class World(

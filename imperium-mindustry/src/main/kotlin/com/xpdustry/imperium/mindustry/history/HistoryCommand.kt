@@ -17,8 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.history
 
+import arc.graphics.Color
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -29,11 +32,16 @@ import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import java.time.Duration
+import java.time.Instant
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
+import mindustry.Vars
 import mindustry.game.EventType
+import mindustry.gen.Call
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Range
 
@@ -43,6 +51,36 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val users = instances.get<UserManager>()
     private val config = instances.get<MindustryConfig>()
     private val historyRenderer = instances.get<HistoryRenderer>()
+    private val heatmapViewers = PlayerMap<Boolean>(instances.get())
+
+    @TaskHandler(interval = 1L, delay = 1L, unit = MindustryTimeUnit.SECONDS)
+    internal fun onHeatmapViewUpdate() {
+        if (!Vars.state.isPlaying) return
+        for (player in Entities.getPlayers()) {
+            if (heatmapViewers[player] == true) {
+                for (ox in (-config.history.heatMapRadius)..config.history.heatMapRadius) {
+                    for (oy in (-config.history.heatMapRadius)..config.history.heatMapRadius) {
+                        val x = player.tileX() + ox
+                        val y = player.tileY() + oy
+                        val entry = historian.getHistory(x, y).lastOrNull() ?: continue
+                        val minutes =
+                            Duration.between(entry.timestamp, Instant.now())
+                                .toMinutes()
+                                .toInt()
+                                .coerceAtMost(30)
+                        val progress = minutes / 30F
+                        val color = Color.orange.cpy().lerp(Color.blue, progress)
+                        Call.label(
+                            player.con(),
+                            "[#$color][[ $minutes ]",
+                            1F,
+                            x.toFloat() * Vars.tilesize,
+                            y.toFloat() * Vars.tilesize)
+                    }
+                }
+            }
+        }
+    }
 
     @EventHandler
     internal fun onPlayerTapEvent(event: EventType.TapEvent) =
@@ -88,4 +126,12 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 runMindustryThread { historian.getHistory(x.toInt(), y.toInt()).normalize(limit) },
                 x.toInt(),
                 y.toInt()))
+
+    @ImperiumCommand(["history", "heatmap"])
+    @ClientSide
+    fun onHeatmapHistoryCommand(sender: CommandSender) {
+        val viewing = !(heatmapViewers[sender.player] ?: false)
+        heatmapViewers[sender.player] = viewing
+        sender.reply("Heatmap is now ${if (viewing) "enabled" else "disabled"}")
+    }
 }
