@@ -23,6 +23,7 @@ import arc.graphics.Color
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
+import com.xpdustry.distributor.api.component.NumberComponent.number
 import com.xpdustry.distributor.api.component.TextComponent.newline
 import com.xpdustry.distributor.api.component.TextComponent.space
 import com.xpdustry.distributor.api.component.TextComponent.text
@@ -36,6 +37,7 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.from
 import com.xpdustry.distributor.api.component.style.TextStyle
 import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
@@ -59,6 +61,7 @@ val GRAY: ComponentColor = from(Color.gray)
 val LIGHT_GRAY: ComponentColor = from(Color.lightGray)
 val BLURPLE: ComponentColor = from(com.xpdustry.imperium.common.misc.BLURPLE)
 val ROYAL: ComponentColor = from(Color.royal)
+val LIME: ComponentColor = from(Color.lime)
 
 fun punishment_type_verb(type: Punishment.Type): Component =
     translatable("imperium.messages.punishment.type.${type.name.lowercase()}.verb", ORANGE)
@@ -208,9 +211,50 @@ fun gui_report_no_players(): Component = translatable("imperium.gui.report.no-pl
 
 fun gui_report_rate_limit(): Component = translatable("imperium.gui.report.rate-limit", SCARLET)
 
+fun gui_rate_map_title(): Component = translatable("imperium.gui.rate-map.title")
+
+fun gui_rate_map_content_score_title(): Component =
+    translatable("imperium.gui.rate-map.content.score.title")
+
+fun gui_rate_map_content_score(score: Int, selected: Boolean): Component =
+    components()
+        .apply { if (selected) append(text("> ")) }
+        .append(number(score))
+        .apply { if (selected) append(text(" <")) }
+        .build()
+
+fun gui_rate_map_content_difficulty_title(): Component =
+    translatable("imperium.gui.rate-map.content.difficulty.title")
+
+fun gui_rate_map_content_difficulty(
+    difficulty: MindustryMap.Difficulty,
+    selected: Boolean
+): Component =
+    components()
+        .setTextStyle(
+            TextStyle.of(
+                when (difficulty) {
+                    MindustryMap.Difficulty.EASY -> LIME
+                    MindustryMap.Difficulty.NORMAL -> ACCENT
+                    MindustryMap.Difficulty.HARD -> ORANGE
+                    MindustryMap.Difficulty.EXPERT -> SCARLET
+                }))
+        .apply { if (selected) append(text("> ")) }
+        .append(difficulty_name(difficulty))
+        .apply { if (selected) append(text(" <")) }
+        .build()
+
+fun gui_rate_map_success(): Component = translatable("imperium.gui.rate-map.success")
+
+fun gui_rate_map_failure(): Component = translatable("imperium.gui.rate-map.failure", SCARLET)
+
+fun gui_error(): Component = translatable("imperium.gui.error", SCARLET)
+
 fun gui_close(): Component = translatable("imperium.gui.close")
 
 fun gui_back(): Component = translatable("imperium.gui.back", LIGHT_GRAY)
+
+fun gui_submit(): Component = translatable("imperium.gui.submit", ACCENT)
 
 fun user_setting_description(setting: User.Setting): Component =
     translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
@@ -303,3 +347,6 @@ fun achievement_name(achievement: Account.Achievement, color: ComponentColor): C
 
 fun achievement_description(achievement: Account.Achievement, color: ComponentColor): Component =
     translatable("imperium.achievement.${achievement.name.lowercase()}.description", color)
+
+fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =
+    translatable("imperium.difficulty.${difficulty.name.lowercase()}.name")
