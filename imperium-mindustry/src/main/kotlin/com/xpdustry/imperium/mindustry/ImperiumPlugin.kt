@@ -56,6 +56,7 @@ import com.xpdustry.imperium.mindustry.control.RestartListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
+import com.xpdustry.imperium.mindustry.game.LogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
@@ -182,7 +183,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 FormationListener::class,
                 RestartListener::class,
                 UnpauseListener::class,
-                AchievementCommand::class)
+                AchievementCommand::class,
+                LogicListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode
