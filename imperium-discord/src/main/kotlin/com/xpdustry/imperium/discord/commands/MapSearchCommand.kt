@@ -73,10 +73,9 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     }
 
     @ImperiumCommand(["map", "search"])
-    suspend fun onMapSearchCommand(interaction: SlashCommandInteraction, query: String? = null) {
+    suspend fun onMapSearchCommand(interaction: SlashCommandInteraction, name: String? = null) {
         val state =
-            MapSearchState(
-                query, 0, emptySet(), interaction.user.idLong, interaction.channel.idLong)
+            MapSearchState(name, 0, emptySet(), interaction.user.idLong, interaction.channel.idLong)
         val result = getResultFromState(state)
         val message =
             interaction.deferReply().await().sendMessage(createMessage(result, state)).await()
