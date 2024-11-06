@@ -293,6 +293,13 @@ fun announcement_dangerous_block_build(player: String, block: Block, x: Int, y: 
             text(y.toString(), ORANGE)),
         SCARLET)
 
+fun announcement_impending_explosion_alert(block: Block, x: Int, y: Int): Component =
+    translatable(
+        "imperium.announcement.impending-explosion-alert",
+        TranslationArguments.array(
+            translatable(block, ORANGE), number(x, ORANGE), number(y, ORANGE)),
+        SCARLET)
+
 fun command_team_success(team: Team): Component =
     translatable(
         "imperium.command.team.success",

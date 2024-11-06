@@ -201,7 +201,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             PluginAnnotationProcessor.compose(
                 CommandAnnotationScanner(this, application.instances.get()),
                 PluginAnnotationProcessor.tasks(this),
-                PluginAnnotationProcessor.events(this))
+                PluginAnnotationProcessor.events(this),
+                PluginAnnotationProcessor.triggers(this))
 
         application.listeners.forEach(processor::process)
 

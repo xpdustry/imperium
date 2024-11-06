@@ -195,6 +195,7 @@ data class MindustryConfig(
         val coreDamageAlertDelay: Duration = 10.seconds,
         val displayCoreId: Boolean = true,
         val displayResourceTracker: Boolean = true,
+        val explosiveDamageAlertDelay: Duration = 15.seconds,
     )
 
     data class Security(
