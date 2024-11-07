@@ -30,16 +30,22 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_build
 import com.xpdustry.imperium.mindustry.translation.announcement_impending_explosion_alert
-import com.xpdustry.imperium.mindustry.translation.announcement_power_void_destroyed
+import com.xpdustry.imperium.mindustry.translation.announcement_important_block_destroyed
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Building
+import mindustry.world.Block
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.blocks.power.ConsumeGenerator
 import mindustry.world.blocks.power.ConsumeGenerator.ConsumeGeneratorBuild
 import mindustry.world.blocks.power.NuclearReactor
 import mindustry.world.blocks.production.Incinerator
+import mindustry.world.blocks.sandbox.ItemSource
+import mindustry.world.blocks.sandbox.ItemVoid
+import mindustry.world.blocks.sandbox.LiquidSource
+import mindustry.world.blocks.sandbox.LiquidVoid
+import mindustry.world.blocks.sandbox.PowerSource
 import mindustry.world.blocks.sandbox.PowerVoid
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.StorageBlock
@@ -91,25 +97,34 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onPowerVoidDestroy(event: EventType.BlockDestroyEvent) {
-        if (event.tile.block() is PowerVoid && !Vars.state.rules.infiniteResources) {
-            notifyPowerVoidDestroyed(event.tile.x.toInt(), event.tile.y.toInt())
+    fun onSandboxBlockDestroy(event: EventType.BlockDestroyEvent) {
+        if (Vars.state.rules.infiniteResources) return
+        if (event.tile.block().isSandboxBlock) {
+            DistributorProvider.get()
+                .audienceProvider
+                .players
+                .sendMessage(
+                    announcement_important_block_destroyed(
+                        event.tile.block(), event.tile.x.toInt(), event.tile.y.toInt()))
         }
     }
 
     @EventHandler
-    fun onPowerVoidDelete(event: EventType.BlockBuildBeginEvent) {
+    fun onSandboxBlockDelete(event: EventType.BlockBuildBeginEvent) {
+        if (Vars.state.rules.infiniteResources) return
         val building = event.tile.build
-        if (event.breaking &&
-            building is ConstructBuild &&
-            building.current is PowerVoid &&
-            !Vars.state.rules.infiniteResources) {
-            notifyPowerVoidDestroyed(event.tile.x.toInt(), event.tile.y.toInt())
+        if (event.breaking && building is ConstructBuild && building.current.isSandboxBlock) {
+            DistributorProvider.get()
+                .audienceProvider
+                .players
+                .sendMessage(
+                    announcement_important_block_destroyed(
+                        building.current, event.tile.x.toInt(), event.tile.y.toInt()))
         }
     }
 
     @EventHandler
-    fun onDangerousBlockBuildEvent(event: EventType.BlockBuildBeginEvent) {
+    fun onDangerousBlockBuild(event: EventType.BlockBuildBeginEvent) {
         if (Vars.state.rules.infiniteResources ||
             event.breaking ||
             event.unit == null ||
@@ -128,9 +143,9 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val x = ((event.tile.x + block.sizeOffset) - SEARCH_RADIUS) * Vars.tilesize * 1F
-        val y = ((event.tile.y + block.sizeOffset) - SEARCH_RADIUS) * Vars.tilesize * 1F
-        val size = ((SEARCH_RADIUS * 2) + block.size) * Vars.tilesize * 1F
+        val x = ((event.tile.x + block.sizeOffset) - CORE_SEARCH_RADIUS) * Vars.tilesize * 1F
+        val y = ((event.tile.y + block.sizeOffset) - CORE_SEARCH_RADIUS) * Vars.tilesize * 1F
+        val size = ((CORE_SEARCH_RADIUS * 2) + block.size) * Vars.tilesize * 1F
 
         var found = false
         event.unit.player.team().data().buildingTree.intersect(x, y, size, size) { build ->
@@ -152,17 +167,19 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    private fun notifyPowerVoidDestroyed(x: Int, y: Int) {
-        DistributorProvider.get()
-            .audienceProvider
-            .players
-            .sendMessage(announcement_power_void_destroyed(x, y))
-    }
-
     private val Building.isCoreBuilding: Boolean
         get() = block() is CoreBlock || (this is StorageBlock.StorageBuild && linkedCore != null)
 
+    private val Block.isSandboxBlock: Boolean
+        get() =
+            this is ItemSource ||
+                this is ItemVoid ||
+                this is LiquidSource ||
+                this is LiquidVoid ||
+                this is PowerSource ||
+                this is PowerVoid
+
     companion object {
-        private const val SEARCH_RADIUS = 5
+        private const val CORE_SEARCH_RADIUS = 5
     }
 }

@@ -277,10 +277,11 @@ fun announcement_ban(target: String, reason: String, duration: Duration): Compon
             text(target, ORANGE), text(reason, ORANGE), duration(duration, ORANGE)),
         SCARLET)
 
-fun announcement_power_void_destroyed(x: Int, y: Int): Component =
+fun announcement_important_block_destroyed(block: Block, x: Int, y: Int): Component =
     translatable(
-        "imperium.announcement.power-void-destroyed",
-        TranslationArguments.array(number(x, ORANGE), number(y, ORANGE)),
+        "imperium.announcement.important-block-destroyed",
+        TranslationArguments.array(
+            translatable(block, ORANGE), number(x, ORANGE), number(y, ORANGE)),
         SCARLET)
 
 fun announcement_dangerous_block_build(player: String, block: Block, x: Int, y: Int): Component =
