@@ -84,6 +84,7 @@ import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.ResourceHudListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
+import com.xpdustry.imperium.mindustry.world.SaveCommand
 import com.xpdustry.imperium.mindustry.world.SpawnCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
@@ -184,7 +185,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 RestartListener::class,
                 UnpauseListener::class,
                 AchievementCommand::class,
-                LogicListener::class)
+                LogicListener::class,
+                SaveCommand::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode
