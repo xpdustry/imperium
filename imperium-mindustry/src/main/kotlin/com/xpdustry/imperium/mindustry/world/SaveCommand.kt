@@ -72,26 +72,25 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     init {
         menu.addTransformer(
             NavigationTransformer(
-                    SAVE_PAGE,
-                    SavePage.LIST,
-                    ListTransformer<Path>()
-                        .setRenderer(::renderSaveName)
-                        .setProvider { getSaveFiles() }
-                        .setFillEmptySpace(true)
-                        .setChoiceAction(
-                            BiAction.compose(
-                                BiAction.with(SAVE_FILE),
-                                BiAction.from(
-                                    Action.with(SAVE_PAGE, SavePage.VIEW).then(Window::show))))
-                .then { (pane, _) ->
-                    pane.grid.addOption(
-                        2,
-                        pane.grid.options.size - 1,
-                        MenuOption.of(
-                            text(Iconc.add),
-                            Action.with(SAVE_PAGE, SavePage.CREATE).then(Action.show(text))))
-                })
-        )
+                SAVE_PAGE,
+                SavePage.LIST,
+                ListTransformer<Path>()
+                    .setRenderer(::renderSaveName)
+                    .setProvider { getSaveFiles() }
+                    .setFillEmptySpace(true)
+                    .setChoiceAction(
+                        BiAction.compose(
+                            BiAction.with(SAVE_FILE),
+                            BiAction.from(
+                                Action.with(SAVE_PAGE, SavePage.VIEW).then(Window::show))))
+                    .then { (pane, _) ->
+                        pane.grid.addOption(
+                            2,
+                            pane.grid.options.size - 1,
+                            MenuOption.of(
+                                text(Iconc.add),
+                                Action.with(SAVE_PAGE, SavePage.CREATE).then(Action.show(text))))
+                    }))
 
         menu.addTransformer(
             NavigationTransformer(SAVE_PAGE, SavePage.VIEW) { (pane, state) ->

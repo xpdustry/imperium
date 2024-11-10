@@ -231,14 +231,6 @@ fun gui_rate_map_content_difficulty(
     selected: Boolean
 ): Component =
     components()
-        .setTextStyle(
-            TextStyle.of(
-                when (difficulty) {
-                    MindustryMap.Difficulty.EASY -> LIME
-                    MindustryMap.Difficulty.NORMAL -> ACCENT
-                    MindustryMap.Difficulty.HARD -> ORANGE
-                    MindustryMap.Difficulty.EXPERT -> SCARLET
-                }))
         .apply { if (selected) append(text("> ")) }
         .append(difficulty_name(difficulty))
         .apply { if (selected) append(text(" <")) }
@@ -357,4 +349,14 @@ fun achievement_description(achievement: Account.Achievement, color: ComponentCo
     translatable("imperium.achievement.${achievement.name.lowercase()}.description", color)
 
 fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =
-    translatable("imperium.difficulty.${difficulty.name.lowercase()}.name")
+    translatable(
+        "imperium.difficulty.${difficulty.name.lowercase()}.name",
+        when (difficulty) {
+            MindustryMap.Difficulty.EASY -> LIME
+            MindustryMap.Difficulty.NORMAL -> ACCENT
+            MindustryMap.Difficulty.HARD -> ORANGE
+            MindustryMap.Difficulty.EXPERT -> SCARLET
+        })
+
+fun selected(component: Component, selected: Boolean): Component =
+    if (selected) components(text("> "), component, text(" <")) else component
