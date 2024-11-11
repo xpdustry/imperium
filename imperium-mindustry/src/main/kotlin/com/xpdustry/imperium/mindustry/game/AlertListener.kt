@@ -55,7 +55,9 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {
-            if (it.type == ActionType.breakBlock && it.block.isSourceBlock) {
+            if (it.type == ActionType.breakBlock &&
+                it.block.isSourceBlock &&
+                !Vars.state.rules.infiniteResources) {
                 DistributorProvider.get()
                     .audienceProvider
                     .getTeam(it.player.team())
