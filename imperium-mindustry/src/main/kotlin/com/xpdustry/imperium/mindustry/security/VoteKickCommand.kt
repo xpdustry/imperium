@@ -35,6 +35,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -96,6 +97,15 @@ class VoteKickCommand(instances: InstanceManager) :
         manager.sessions.values
             .filter { it.objective.target == event.player }
             .forEach(VoteManager.Session<Context>::success)
+    }
+
+    @EventHandler
+    internal fun onPlayerLogin(event: PlayerLoginEvent) {
+        if (event.account.rank >= Rank.OVERSEER) {
+            manager.sessions.values
+                .filter { it.objective.target == event.player }
+                .forEach { it.failure(event.player) }
+        }
     }
 
     @ImperiumCommand(["vote", "y"])
