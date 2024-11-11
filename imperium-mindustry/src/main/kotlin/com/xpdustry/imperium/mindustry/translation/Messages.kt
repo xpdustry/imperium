@@ -216,25 +216,8 @@ fun gui_rate_map_title(): Component = translatable("imperium.gui.rate-map.title"
 fun gui_rate_map_content_score_title(): Component =
     translatable("imperium.gui.rate-map.content.score.title")
 
-fun gui_rate_map_content_score(score: Int, selected: Boolean): Component =
-    components()
-        .apply { if (selected) append(text("> ")) }
-        .append(number(score))
-        .apply { if (selected) append(text(" <")) }
-        .build()
-
 fun gui_rate_map_content_difficulty_title(): Component =
     translatable("imperium.gui.rate-map.content.difficulty.title")
-
-fun gui_rate_map_content_difficulty(
-    difficulty: MindustryMap.Difficulty,
-    selected: Boolean
-): Component =
-    components()
-        .apply { if (selected) append(text("> ")) }
-        .append(difficulty_name(difficulty))
-        .apply { if (selected) append(text(" <")) }
-        .build()
 
 fun gui_rate_map_success(): Component = translatable("imperium.gui.rate-map.success")
 

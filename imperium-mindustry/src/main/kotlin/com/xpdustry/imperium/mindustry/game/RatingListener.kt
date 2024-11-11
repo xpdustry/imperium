@@ -17,13 +17,18 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.component.NumberComponent.number
 import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -32,28 +37,36 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.HideAllAndAnnounceAction
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.translation.difficulty_name
 import com.xpdustry.imperium.mindustry.translation.gui_close
-import com.xpdustry.imperium.mindustry.translation.gui_rate_map_content_difficulty
 import com.xpdustry.imperium.mindustry.translation.gui_rate_map_content_difficulty_title
-import com.xpdustry.imperium.mindustry.translation.gui_rate_map_content_score
 import com.xpdustry.imperium.mindustry.translation.gui_rate_map_content_score_title
 import com.xpdustry.imperium.mindustry.translation.gui_rate_map_failure
 import com.xpdustry.imperium.mindustry.translation.gui_rate_map_success
 import com.xpdustry.imperium.mindustry.translation.gui_rate_map_title
 import com.xpdustry.imperium.mindustry.translation.gui_submit
+import com.xpdustry.imperium.mindustry.translation.selected
+import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.launch
 import mindustry.Vars
+import mindustry.game.EventType
+import mindustry.gen.Player
 
 class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
     private val maps = instances.get<MindustryMapManager>()
-    private val ratingInterface =
+    private val delays = PlayerMap<Long>(instances.get())
+    private val menu =
         MenuManager.create(instances.get()).apply {
             addTransformer { (pane, state) ->
                 pane.title = gui_rate_map_title()
@@ -63,7 +76,7 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 (1..5).forEach { score ->
                     pane.grid.addOption(
                         MenuOption.of(
-                            gui_rate_map_content_score(score, state[SCORE] == score),
+                            selected(number(score), state[SCORE] == score),
                             Action.with(SCORE, score).then(Window::show)))
                 }
 
@@ -72,8 +85,7 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 MindustryMap.Difficulty.entries.forEach { difficulty ->
                     pane.grid.addRow(
                         MenuOption.of(
-                            gui_rate_map_content_difficulty(
-                                difficulty, state[DIFFICULTY] == difficulty),
+                            selected(difficulty_name(difficulty), state[DIFFICULTY] == difficulty),
                             Action.with(DIFFICULTY, difficulty).then(Window::show)))
                 }
 
@@ -93,17 +105,46 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
             }
         }
 
+    @EventHandler
+    fun onPlayerJoin(event: EventType.PlayerJoin) {
+        delays[event.player] = System.currentTimeMillis()
+    }
+
+    @EventHandler
+    fun onReset(event: MenuToPlayEvent) {
+        delays.clear()
+        val now = System.currentTimeMillis()
+        Entities.getPlayers().forEach { player -> delays[player] = now }
+    }
+
+    @TaskHandler(delay = 1L, interval = 1L, unit = MindustryTimeUnit.MINUTES)
+    fun onRateMapCheck() {
+        val now = System.currentTimeMillis()
+        delays.entries.toList().forEach { (player, time) ->
+            if (now - time > 10.minutes.inWholeMilliseconds) {
+                delays.remove(player)
+                ImperiumScope.MAIN.launch { tryOpenRatingMenu(player, true) }
+            }
+        }
+    }
+
     @ImperiumCommand(["rate"])
     @ClientSide
     suspend fun onRateCommand(sender: CommandSender) {
-        val user = users.getByIdentity(sender.player.identity).id
+        tryOpenRatingMenu(sender.player, false)
+    }
+
+    private suspend fun tryOpenRatingMenu(player: Player, automatic: Boolean) {
+        val user = users.getByIdentity(player.identity).id
         val map = Vars.state.map.id
         if (map == null || maps.findMapById(map) == null) {
-            runMindustryThread { sender.error(gui_rate_map_failure()) }
+            if (automatic) return
+            runMindustryThread { player.asAudience.sendMessage(gui_rate_map_failure()) }
         } else {
             val rating = maps.findRatingByMapAndUser(map, user)
+            if (automatic && rating != null) return
             runMindustryThread {
-                val window = ratingInterface.create(sender.player)
+                val window = menu.create(player)
                 window.state[SCORE] = rating?.score ?: 3
                 window.state[DIFFICULTY] = rating?.difficulty ?: MindustryMap.Difficulty.NORMAL
                 window.show()
