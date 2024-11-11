@@ -41,8 +41,10 @@ import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
 import com.xpdustry.imperium.mindustry.security.BadWordDetector
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
+import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
 import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
+import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.function.Supplier
@@ -78,4 +80,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<BadWordDetector> { SimpleBadWordDetector(get()) }
 
     provider<HistoryRenderer> { SimpleHistoryRenderer(get(), get(), get()) }
+
+    provider<MarkedPlayerManager> { SimpleMarkedPlayerManager(plugin) }
 }

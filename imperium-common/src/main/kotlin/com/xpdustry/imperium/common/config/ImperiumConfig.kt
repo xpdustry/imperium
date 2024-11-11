@@ -201,6 +201,7 @@ data class MindustryConfig(
     data class Security(
         val gatekeeper: Boolean = true,
         val imageProcessingDelay: Duration = 3.seconds,
+        val griefingThreshold: Float = 80F,
     )
 
     data class Templates(

@@ -51,7 +51,7 @@ import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import java.net.InetAddress
 import java.util.Collections
-import kotlin.math.roundToInt
+import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -80,6 +80,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val votekickInterface = createVotekickInterface()
     private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
+    private val marks = instances.get<MarkedPlayerManager>()
     private val recentBans =
         Collections.newSetFromMap(
             buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
@@ -222,16 +223,22 @@ class VoteKickCommand(instances: InstanceManager) :
             !Vars.state.rules.pvp || it.team() == session.objective.team
         }
 
-    override fun getRequiredVotes(players: Int): Int =
-        if (players < 4) {
-            2
+    override fun getRequiredVotes(session: VoteManager.Session<Context>, players: Int): Int {
+        var required = if (players < 4) {
+            2F
         } else if (players < 5) {
-            3
+            3F
         } else if (players < 21) {
-            (players / 2F).roundToInt()
+            (players / 2F)
         } else {
-            10
+            10F
         }
+        if (marks.isMarked(session.objective.target)) {
+            required /= 2F
+        }
+        return ceil(required).toInt()
+    }
+
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
         "[red]VK[]: Vote started to kick ${session.objective.target.name}[] out of the server. /vote y/n in order to vote. \nReason: ${session.objective.reason}."
