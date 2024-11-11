@@ -67,8 +67,9 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
     @EventHandler
     fun onSuspiciousUnitDeath(event: EventType.UnitDestroyEvent) {
         val (player, _) = control.entries.firstOrNull { (_, id) -> id == event.unit.id() } ?: return
+        if (marks.isMarked(player) || isNew[player] == false) return
         val limiter =
-            deaths[player] ?: SimpleRateLimiter(if (Vars.state.rules.pvp) 20 else 10, 1.minutes)
+            deaths[player] ?: SimpleRateLimiter(if (Vars.state.rules.pvp) 10 else 5, 1.minutes)
         deaths[player] = limiter
         if (limiter.incrementAndCheck(Unit)) return
         Call.sendMessage(

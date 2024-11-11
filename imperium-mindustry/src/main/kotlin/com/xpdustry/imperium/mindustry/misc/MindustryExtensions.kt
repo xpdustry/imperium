@@ -25,7 +25,17 @@ import mindustry.Vars
 import mindustry.core.GameState
 import mindustry.core.Version
 import mindustry.game.Gamemode
+import mindustry.gen.Building
 import mindustry.net.Administration
+import mindustry.world.Block
+import mindustry.world.blocks.sandbox.ItemSource
+import mindustry.world.blocks.sandbox.ItemVoid
+import mindustry.world.blocks.sandbox.LiquidSource
+import mindustry.world.blocks.sandbox.LiquidVoid
+import mindustry.world.blocks.sandbox.PowerSource
+import mindustry.world.blocks.sandbox.PowerVoid
+import mindustry.world.blocks.storage.CoreBlock
+import mindustry.world.blocks.storage.StorageBlock
 
 fun getMindustryServerInfo(): Discovery.Data.Mindustry =
     Discovery.Data.Mindustry(
@@ -79,3 +89,12 @@ private fun getVersionType(): MindustryVersion.Type =
                     else -> MindustryVersion.Type.CUSTOM
                 }
         }
+
+val Building.isCoreBuilding: Boolean
+    get() = block() is CoreBlock || (this is StorageBlock.StorageBuild && linkedCore != null)
+
+val Block.isSourceBlock: Boolean
+    get() = this is ItemSource || this is LiquidSource || this is PowerSource
+
+val Block.isVoidBlock: Boolean
+    get() = this is ItemVoid || this is LiquidVoid || this is PowerVoid

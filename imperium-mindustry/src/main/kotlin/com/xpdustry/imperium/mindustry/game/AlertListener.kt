@@ -28,27 +28,21 @@ import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
+import com.xpdustry.imperium.mindustry.misc.isCoreBuilding
+import com.xpdustry.imperium.mindustry.misc.isSourceBlock
 import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_build
 import com.xpdustry.imperium.mindustry.translation.announcement_impending_explosion_alert
+import com.xpdustry.imperium.mindustry.translation.announcement_important_block_destroy_attempt
 import com.xpdustry.imperium.mindustry.translation.announcement_important_block_destroyed
 import mindustry.Vars
 import mindustry.game.EventType
-import mindustry.gen.Building
-import mindustry.world.Block
+import mindustry.net.Administration.ActionType
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.blocks.power.ConsumeGenerator
 import mindustry.world.blocks.power.ConsumeGenerator.ConsumeGeneratorBuild
 import mindustry.world.blocks.power.NuclearReactor
 import mindustry.world.blocks.production.Incinerator
-import mindustry.world.blocks.sandbox.ItemSource
-import mindustry.world.blocks.sandbox.ItemVoid
-import mindustry.world.blocks.sandbox.LiquidSource
-import mindustry.world.blocks.sandbox.LiquidVoid
-import mindustry.world.blocks.sandbox.PowerSource
-import mindustry.world.blocks.sandbox.PowerVoid
-import mindustry.world.blocks.storage.CoreBlock
-import mindustry.world.blocks.storage.StorageBlock
 import mindustry.world.consumers.ConsumeItemExplode
 
 class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -58,6 +52,21 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val generators = IntSet()
     private val generatorsRateLimiter =
         SimpleRateLimiter<Int>(1, instances.get<MindustryConfig>().world.explosiveDamageAlertDelay)
+
+    override fun onImperiumInit() {
+        Vars.netServer.admins.addActionFilter {
+            if (it.type == ActionType.breakBlock && it.block.isSourceBlock) {
+                DistributorProvider.get()
+                    .audienceProvider
+                    .getTeam(it.player.team())
+                    .sendMessage(
+                        announcement_important_block_destroy_attempt(
+                            it.player, it.block, it.tile.x.toInt(), it.tile.y.toInt()))
+                return@addActionFilter false
+            }
+            true
+        }
+    }
 
     @EventHandler
     fun onExplosiveGeneratorPreChange(event: EventType.TilePreChangeEvent) {
@@ -88,7 +97,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     generatorsRateLimiter.incrementAndCheck(pos)) {
                     DistributorProvider.get()
                         .audienceProvider
-                        .players
+                        .getTeam(building.team())
                         .sendMessage(announcement_impending_explosion_alert(block, x, y))
                     break
                 }
@@ -97,12 +106,12 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onSandboxBlockDestroy(event: EventType.BlockDestroyEvent) {
+    fun onSourceBlockDestroy(event: EventType.BlockDestroyEvent) {
         if (Vars.state.rules.infiniteResources) return
-        if (event.tile.block().isSandboxBlock) {
+        if (event.tile.block().isSourceBlock) {
             DistributorProvider.get()
                 .audienceProvider
-                .players
+                .getTeam(event.tile.team())
                 .sendMessage(
                     announcement_important_block_destroyed(
                         event.tile.block(), event.tile.x.toInt(), event.tile.y.toInt()))
@@ -110,13 +119,13 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onSandboxBlockDelete(event: EventType.BlockBuildBeginEvent) {
+    fun onSourceBlockDelete(event: EventType.BlockBuildBeginEvent) {
         if (Vars.state.rules.infiniteResources) return
         val building = event.tile.build
-        if (event.breaking && building is ConstructBuild && building.current.isSandboxBlock) {
+        if (event.breaking && building is ConstructBuild && building.current.isSourceBlock) {
             DistributorProvider.get()
                 .audienceProvider
-                .players
+                .getTeam(building.team())
                 .sendMessage(
                     announcement_important_block_destroyed(
                         building.current, event.tile.x.toInt(), event.tile.y.toInt()))
@@ -166,18 +175,6 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                         event.tile.y.toInt()))
         }
     }
-
-    private val Building.isCoreBuilding: Boolean
-        get() = block() is CoreBlock || (this is StorageBlock.StorageBuild && linkedCore != null)
-
-    private val Block.isSandboxBlock: Boolean
-        get() =
-            this is ItemSource ||
-                this is ItemVoid ||
-                this is LiquidSource ||
-                this is LiquidVoid ||
-                this is PowerSource ||
-                this is PowerVoid
 
     companion object {
         private const val CORE_SEARCH_RADIUS = 5

@@ -252,6 +252,21 @@ fun announcement_ban(target: String, reason: String, duration: Duration): Compon
             text(target, ORANGE), text(reason, ORANGE), duration(duration, ORANGE)),
         SCARLET)
 
+fun announcement_important_block_destroy_attempt(
+    player: Player,
+    block: Block,
+    x: Int,
+    y: Int
+): Component =
+    translatable(
+        "imperium.announcement.important-block-destroy-attempt",
+        TranslationArguments.array(
+            text(player.plainName(), ORANGE),
+            translatable(block, ORANGE),
+            number(x, ORANGE),
+            number(y, ORANGE)),
+        SCARLET)
+
 fun announcement_important_block_destroyed(block: Block, x: Int, y: Int): Component =
     translatable(
         "imperium.announcement.important-block-destroyed",
