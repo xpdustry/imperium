@@ -67,10 +67,12 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
     @EventHandler
     fun onSuspiciousUnitDeath(event: EventType.UnitDestroyEvent) {
         val (player, _) = control.entries.firstOrNull { (_, id) -> id == event.unit.id() } ?: return
-        val limiter = deaths[player] ?: SimpleRateLimiter(if (Vars.state.rules.pvp) 20 else 10, 1.minutes)
+        val limiter =
+            deaths[player] ?: SimpleRateLimiter(if (Vars.state.rules.pvp) 20 else 10, 1.minutes)
         deaths[player] = limiter
         if (limiter.incrementAndCheck(Unit)) return
-        Call.sendMessage("[scarlet]${player.name}[white] has been marked as a potential griefer for killing too many units. Votekick requirements have been halved for them.")
+        Call.sendMessage(
+            "[scarlet]${player.name}[white] has been marked as a potential griefer for killing too many units. Votekick requirements have been halved for them.")
         marks.mark(player)
     }
 

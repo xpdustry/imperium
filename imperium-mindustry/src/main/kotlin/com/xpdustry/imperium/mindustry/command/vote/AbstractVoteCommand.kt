@@ -115,7 +115,8 @@ abstract class AbstractVoteCommand<O>(
     protected open fun getParticipants(session: VoteManager.Session<O>): Sequence<Player> =
         Entities.getPlayers().asSequence()
 
-    protected open fun getRequiredVotes(session: VoteManager.Session<O>, players: Int): Int = (players / 2) + 1
+    protected open fun getRequiredVotes(session: VoteManager.Session<O>, players: Int): Int =
+        (players / 2) + 1
 
     private fun onVoteSessionClose(session: VoteManager.Session<O>) {
         when (session.status) {

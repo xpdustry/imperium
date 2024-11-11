@@ -224,21 +224,21 @@ class VoteKickCommand(instances: InstanceManager) :
         }
 
     override fun getRequiredVotes(session: VoteManager.Session<Context>, players: Int): Int {
-        var required = if (players < 4) {
-            2F
-        } else if (players < 5) {
-            3F
-        } else if (players < 21) {
-            (players / 2F)
-        } else {
-            10F
-        }
+        var required =
+            if (players < 4) {
+                2F
+            } else if (players < 5) {
+                3F
+            } else if (players < 21) {
+                (players / 2F)
+            } else {
+                10F
+            }
         if (marks.isMarked(session.objective.target)) {
             required /= 2F
         }
         return ceil(required).toInt()
     }
-
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Context>): String =
         "[red]VK[]: Vote started to kick ${session.objective.target.name}[] out of the server. /vote y/n in order to vote. \nReason: ${session.objective.reason}."
