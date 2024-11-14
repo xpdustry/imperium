@@ -19,25 +19,15 @@ package com.xpdustry.imperium.mindustry.misc
 
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.distributor.api.component.Component
-import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
-import com.xpdustry.distributor.api.key.DynamicKeyContainer
-import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.Identity
 import java.time.Instant
 import java.util.Locale
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
 import mindustry.Vars
 import mindustry.gen.Call
 import mindustry.gen.Player
-import mindustry.net.NetConnection
-import mindustry.net.Packets.KickReason
-import org.slf4j.event.Level
 
 val Player.identity: Identity.Mindustry
     get() =
@@ -55,71 +45,6 @@ val Player.asAudience: Audience
 
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
 
-fun NetConnection.kick(reason: KickReason, silent: Boolean = false) {
-    val duration =
-        if (reason == KickReason.kick || reason == KickReason.banned || reason == KickReason.vote)
-            30.minutes
-        else Duration.ZERO
-    kick(reason.name, reason, duration, silent)
-}
-
-fun NetConnection.kick(reason: String, duration: Duration, silent: Boolean = false) {
-    kick(reason, null, duration, silent)
-}
-
-// TODO Very ugly hack, create a sane way to get a NetConnection audience
-fun NetConnection.kick(
-    message: Component,
-    duration: Duration,
-    silent: Boolean = false,
-    locale: Locale? = null
-) {
-    val builder =
-        if (player != null) {
-            (DistributorProvider.get().audienceProvider.getPlayer(player).metadata
-                    as DynamicKeyContainer)
-                .toBuilder()
-        } else {
-            DynamicKeyContainer.builder()
-        }
-    if (locale != null) {
-        builder.putConstant(StandardKeys.LOCALE, locale)
-    }
-    kick(
-        ComponentStringBuilder.mindustry(builder.build()).append(message).toString(),
-        duration,
-        silent)
-}
-
-private fun NetConnection.kick(
-    reason: String,
-    kick: KickReason?,
-    duration: Duration,
-    silent: Boolean
-) {
-    if (kicked) return
-
-    logger
-        .atLevel(if (silent) Level.DEBUG else Level.INFO)
-        .log("Kicking connection {} / {}; Reason: {}", address, uuid, reason.replace("\n", " "))
-
-    if (duration.isPositive()) {
-        Vars.netServer.admins.handleKicked(uuid, address, duration.inWholeMilliseconds)
-    }
-
-    if (kick == null) {
-        Call.kick(this, reason)
-    } else {
-        Call.kick(this, kick)
-    }
-
-    // STEAM: Will break if the connection closes now
-    close()
-
-    Vars.netServer.admins.save()
-    kicked = true
-}
-
 suspend fun Player.tryGrantAdmin(manager: AccountManager) {
     admin = ((manager.findByIdentity(identity)?.rank ?: Rank.EVERYONE) >= Rank.OVERSEER) || admin
 }
@@ -129,5 +54,3 @@ fun Player.reloadWorldData() {
     Call.worldDataBegin(con)
     Vars.netServer.sendWorldData(this)
 }
-
-private val logger = logger("ROOT")

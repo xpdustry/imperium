@@ -33,8 +33,8 @@ import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.nohorny.NoHornyImage
-import com.xpdustry.nohorny.analyzer.ImageAnalyzer
 import com.xpdustry.nohorny.analyzer.ImageAnalyzerEvent
+import com.xpdustry.nohorny.analyzer.ImageInformation
 import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
@@ -49,33 +49,31 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val webhook = instances.get<WebhookMessageSender>()
 
     @EventHandler
-    fun onLogicAnalyzerEvent(event: ImageAnalyzerEvent) =
+    fun onLogicAnalyzer(event: ImageAnalyzerEvent) =
         ImperiumScope.MAIN.launch {
             when (event.result.rating) {
-                ImageAnalyzer.Rating.SAFE -> {
+                ImageInformation.Rating.SAFE -> {
                     logger.debug(
-                        "Cluster {} in rect ({}, {}, {}, {}) is safe",
-                        event.cluster.identifier,
-                        event.cluster.x,
-                        event.cluster.y,
-                        event.cluster.w,
-                        event.cluster.h)
+                        "Cluster in rect ({}, {}, {}, {}) is safe",
+                        event.group.x,
+                        event.group.y,
+                        event.group.w,
+                        event.group.h)
                 }
-                ImageAnalyzer.Rating.WARNING -> {
+                ImageInformation.Rating.WARNING -> {
                     logger.debug(
-                        "Cluster {} in rect ({}, {}, {}, {}) is possibly unsafe.",
-                        event.cluster.identifier,
-                        event.cluster.x,
-                        event.cluster.y,
-                        event.cluster.w,
-                        event.cluster.h)
+                        "Cluster in rect ({}, {}, {}, {}) is possibly unsafe.",
+                        event.group.x,
+                        event.group.y,
+                        event.group.w,
+                        event.group.h)
 
                     webhook.send(
                         WebhookMessage(
                             content =
                                 buildString {
                                     appendLine("**Possible NSFW image detected**")
-                                    appendLine("Located at ${event.cluster.x}, ${event.cluster.y}")
+                                    appendLine("Located at ${event.group.x}, ${event.group.y}")
                                     for ((entry, percent) in event.result.details) {
                                         appendLine(
                                             "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
@@ -83,21 +81,20 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 },
                             attachments = listOf(event.image.toUnsafeAttachment())))
                 }
-                ImageAnalyzer.Rating.UNSAFE -> {
+                ImageInformation.Rating.UNSAFE -> {
                     logger.info(
-                        "Cluster {} in rect ({}, {}, {}, {}) is unsafe. Destroying blocks.",
-                        event.cluster.identifier,
-                        event.cluster.x,
-                        event.cluster.y,
-                        event.cluster.w,
-                        event.cluster.h)
+                        "Cluster in rect ({}, {}, {}, {}) is unsafe. Destroying blocks.",
+                        event.group.x,
+                        event.group.y,
+                        event.group.w,
+                        event.group.h)
 
                     runMindustryThread {
-                        for (block in event.cluster.blocks) {
+                        for (block in event.group.blocks) {
                             Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
-                            val payload = block.payload
-                            if (payload is NoHornyImage.Display) {
-                                for (processor in payload.processors.keys) {
+                            val data = block.data
+                            if (data is NoHornyImage.Display) {
+                                for (processor in data.processors.keys) {
                                     Vars.world.tile(processor.x, processor.y)?.setNet(Blocks.air)
                                 }
                             }

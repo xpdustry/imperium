@@ -131,10 +131,12 @@ val pluginLibs = fileTree("libs") { include("*.jar") }
 tasks.runMindustryServer {
     mods.from(
         downloadKotlinRuntime,
-        downloadNoHorny,
+        // downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
         downloadSql4md,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }
 
@@ -144,9 +146,11 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     configureServer()
     mods.from(
         downloadKotlinRuntime,
-        downloadNoHorny,
+        // downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
         downloadSql4md,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }

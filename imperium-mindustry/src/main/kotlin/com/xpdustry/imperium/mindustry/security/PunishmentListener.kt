@@ -47,13 +47,12 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
-import com.xpdustry.imperium.mindustry.misc.kick
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.announcement_ban
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
 import com.xpdustry.imperium.mindustry.translation.warning
-import kotlin.time.Duration
+import java.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -103,7 +102,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                     Events.fire(PlayerIpBanEvent(punished.lastAddress.hostAddress))
                     targets.forEach { target ->
                         Events.fire(PlayerBanEvent(target, target.uuid()))
-                        target.con.kick(punishment_message(punishment, codec), Duration.ZERO)
+                        target.asAudience.kick(punishment_message(punishment, codec), Duration.ZERO)
                         logger.info(
                             "{} ({}) has been banned for '{}'",
                             target.plainName(),
