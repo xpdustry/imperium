@@ -23,6 +23,7 @@ import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -32,11 +33,11 @@ import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.game.Events
 import mindustry.game.Team
+import mindustry.gen.Call
 
 /* Make this file a hub for different event gamemodes, temporarily only contains this one */
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
     private val validTiles = mutableListOf<Pair<Int, Int>>()
     private var delayJob: Job? = null
 
@@ -86,8 +87,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
     fun registerValidTiles() {
-        for (x in 0..Vars.world.width) {
-            for (y in 0..Vars.world.height) {
+        for (x in 0..Vars.world.width()) {
+            for (y in 0..Vars.world.height()) {
                 if (checkValid(x, y)) {
                     validTiles.add(x to y)
                 }
