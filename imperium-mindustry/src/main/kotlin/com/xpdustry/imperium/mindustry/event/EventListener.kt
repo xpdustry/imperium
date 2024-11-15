@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.event
 
+import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -24,27 +25,36 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.Job
 import kotlin.random.Random
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
 import mindustry.game.Events
-import mindustry.game.EventType.PlayEvent
+import mindustry.game.EventType
 
 /* Make this file a hub for different event gamemodes, temporarily only contains this one */
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
     private val validTiles = mutableListOf<Pair<Int, Int>>()
+    private var delayJob: Job? = null
     
-    Events.on(PlayEvent::class.java) {
-        ImperiumScope.MAIN.launch {
+    @EventHandler
+    fun onDelayStart(event: EventType.MenuToPlayEvent) {
+        delayJob = ImperiumScope.MAIN.launch {
             delay(Random.nextLong(3 * 60, 13 * 60).seconds)
             while (isActive) {
                 onCrateGenerate()
                 delay(Random.nextLong(3 * 60, 13 * 60).seconds)
             }
         }
+    }
+
+    @EventHandler
+    fun onDelayRemove(event: EventType.GameOverEvent) {
+        delayJob?.cancel()
+        delayJob = null
     }
 
     fun onCrateGenerate() {
