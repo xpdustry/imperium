@@ -32,6 +32,7 @@ dependencies {
 
     api(libs.prettytime)
     api(libs.time4j.core)
+    testRuntimeOnly(libs.h2)
 }
 
 // We love OOMs :^)
