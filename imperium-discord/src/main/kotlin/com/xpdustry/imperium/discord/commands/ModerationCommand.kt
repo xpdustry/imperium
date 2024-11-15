@@ -77,8 +77,8 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     }
 
     private fun Punishment.toEmbed() = Embed {
-        title = "Punishment $id"
-        field("Target ID", target.toString(), true)
+        title = "Punishment `${codec.encode(id)}`"
+        field("Target ID", codec.encode(target), true)
         field("Type", type.toString(), true)
         field("Reason", reason, false)
         field("Creation", renderer.renderInstant(creation), true)

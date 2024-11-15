@@ -43,9 +43,6 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Iconc
-import mindustry.server.ServerControl
-
-private val logger = logger("ROOT")
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val imperiumConfig = instances.get<ImperiumConfig>()
@@ -66,7 +63,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                     target?.sendMessage(
                         "[${BLURPLE.toHexString()}]${getDiscordChatPrefix()} ${formatChatMessage(it.sender, processed)}")
                     if (target == null) {
-                        logger.info(
+                        ROOT_LOGGER.info(
                             "&fi&lcDiscord ({}): &fr&lw${processed.stripMindustryColors()}",
                             it.sender.name)
                     }
@@ -108,16 +105,21 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {
-        var message =
+        val message =
             if (Vars.state.rules.waves) {
                 "Game over! Reached wave ${Vars.state.wave} with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             } else {
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
-        val next = Vars.maps.getNextMap(ServerControl.instance.lastMode, Vars.state.map)
-        if (next != null) {
-            message += " Next map: ${next.name().stripMindustryColors()}."
+        ImperiumScope.MAIN.launch {
+            messenger.publish(
+                MindustryServerMessage(imperiumConfig.server.identity, message, chat = false))
         }
+    }
+
+    @EventHandler
+    fun onNextMap(event: EventType.PlayEvent) {
+        val message = "New game started on **\"${Vars.state.map.name().stripMindustryColors()}\"**."
         ImperiumScope.MAIN.launch {
             messenger.publish(
                 MindustryServerMessage(imperiumConfig.server.identity, message, chat = false))
@@ -131,5 +133,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     private fun getDiscordChatPrefix(): String {
         return mindustryConfig.templates.chatPrefix.replace("%prefix%", Iconc.discord.toString())
+    }
+
+    companion object {
+        private val ROOT_LOGGER = logger("ROOT")
     }
 }

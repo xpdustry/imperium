@@ -150,31 +150,35 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         playtime: Duration,
         achievement: Account.Achievement,
     ) {
-        require(
-            achievement == Account.Achievement.ACTIVE || achievement == Account.Achievement.HYPER)
-        val completed = accounts.getAchievement(account.id, achievement)
-        if (playtime < 30.minutes || completed) return
+        if (playtime < 30.minutes || accounts.getAchievement(account.id, achievement)) return
         val now = System.currentTimeMillis()
-        var last =
-            accounts.getMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT)?.toLongOrNull() ?: now
+        var last = accounts.getMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT)?.toLongOrNull()
         var increment =
             accounts.getMetadata(account.id, PLAYTIME_ACHIEVEMENT_INCREMENT)?.toIntOrNull() ?: 0
-        val elapsed = (now - last).coerceAtLeast(0).milliseconds
-        if (elapsed < 1.days) {
-            return
-        } else if (elapsed < (2.days + 12.hours)) {
+
+        if (last == null) {
             last = now
             increment++
         } else {
-            last = now
-            increment = 1
+            val elapsed = (now - last).coerceAtLeast(0).milliseconds
+            if (elapsed < 1.days) {
+                return
+            } else if (elapsed < (2.days + 12.hours)) {
+                last = now
+                increment++
+            } else {
+                last = now
+                increment = 1
+            }
         }
+
         val goal =
             when (achievement) {
                 Account.Achievement.ACTIVE -> 7
                 Account.Achievement.HYPER -> 30
                 else -> error("Invalid achievement")
             }
+
         if (increment >= goal) {
             accounts.setAchievement(account.id, achievement, true)
         } else {

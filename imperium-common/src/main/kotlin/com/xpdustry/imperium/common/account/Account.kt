@@ -30,10 +30,10 @@ data class Account(
     val legacy: Boolean,
     val rank: Rank,
 ) {
-    enum class Achievement(val secret: Boolean = false) {
-        ACTIVE(true),
-        HYPER(true),
-        GAMER(true),
+    enum class Achievement {
+        ACTIVE,
+        HYPER,
+        GAMER,
         DAY,
         WEEK,
         MONTH

@@ -42,9 +42,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.ActionRow
 import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
-import net.dv8tion.jda.api.utils.FileUpload
 
-// TODO Sanitize player names... Mmmh... Sanitize strings in general with an extension function?
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
@@ -52,58 +50,66 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val users = instances.get<UserManager>()
     private val codec = instances.get<IdentifierCodec>()
 
-    // TODO Add freeze when ids are migrated
     override fun onImperiumInit() {
         messenger.consumer<ReportMessage> { report ->
-            val message =
-                (getReportChannel() ?: return@consumer)
-                    .sendMessage(
-                        MessageCreate {
-                            embeds += Embed {
-                                color = Color.YELLOW.rgb
-                                title = "Report from ${report.serverName}"
+            (getReportChannel() ?: return@consumer)
+                .sendMessage(
+                    MessageCreate {
+                        val moderator =
+                            config.alertsRole?.let { discord.getMainServer().getRoleById(it) }
+                        if (moderator != null) {
+                            content += moderator.asMention
+                        }
 
-                                field {
-                                    name = "Sender"
-                                    value =
-                                        "${report.sender.name} / `${codec.encode(users.getByIdentity(report.sender).id)}`"
-                                }
+                        embeds += Embed {
+                            color = Color.YELLOW.rgb
 
-                                field {
-                                    name = "Target"
-                                    value =
-                                        "${report.target.name} / `${codec.encode(users.getByIdentity(report.target).id)}`"
-                                }
-
-                                field {
-                                    name = "Reason"
-                                    value =
-                                        "${report.reason.name.lowercase().capitalize()} (${report.details ?: "No detail"})"
-                                    inline = false
-                                }
+                            field {
+                                name = "Sender"
+                                value = report.sender.name
                             }
 
-                            components +=
-                                ActionRow.of(
-                                    Button.primary(REPORT_REVIEW_BUTTON, "Review")
-                                        .withEmoji(ImperiumEmojis.MAGNIFYING_GLASS),
-                                    Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
-                                        .withEmoji(ImperiumEmojis.CROSS_MARK),
-                                )
-
-                            if (report.reason == ReportMessage.Reason.GRIEFING ||
-                                report.reason == ReportMessage.Reason.SABOTAGE ||
-                                report.reason == ReportMessage.Reason.SPAMMING) {
-                                // TODO Ugly shit but it works for now
-                                files +=
-                                    FileUpload.fromStreamSupplier("history.txt") {
-                                        report.history.byteInputStream()
-                                    }
+                            field {
+                                name = "ID"
+                                value = codec.encode(users.getByIdentity(report.sender).id)
                             }
-                        })
-                    .await()
 
-            message
+                            field {}
+
+                            field {
+                                name = "Target"
+                                value = report.target.name
+                            }
+
+                            field {
+                                name = "ID"
+                                value = codec.encode(users.getByIdentity(report.target).id)
+                            }
+
+                            field {}
+
+                            field {
+                                name = "Server"
+                                value = report.serverName
+                                inline = false
+                            }
+
+                            field {
+                                name = "Reason"
+                                value = report.reason.name.lowercase().capitalize()
+                                inline = false
+                            }
+                        }
+
+                        components +=
+                            ActionRow.of(
+                                Button.primary(REPORT_REVIEW_BUTTON, "Review")
+                                    .withEmoji(ImperiumEmojis.MAGNIFYING_GLASS),
+                                Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
+                                    .withEmoji(ImperiumEmojis.CROSS_MARK),
+                            )
+                    })
+                .await()
                 .createThreadChannel("Report on ${report.target.name}")
                 .setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_3_DAYS)
                 .await()

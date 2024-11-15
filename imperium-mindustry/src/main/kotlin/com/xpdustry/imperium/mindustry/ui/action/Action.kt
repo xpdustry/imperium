@@ -38,7 +38,6 @@ fun interface Action {
         return BiAction { view: View, _: T -> accept(view) }
     }
 
-    // TODO Move some default actions to the View class
     companion object {
         fun none(): Action {
             return Action {}

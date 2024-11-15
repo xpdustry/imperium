@@ -88,9 +88,14 @@ class SimpleHistoryRenderer(
         components()
             .append(header)
             .apply {
-                entries
-                    .flatMap { entry -> render0(entry).map { entry to it } }
-                    .forEach { (entry, component) ->
+                val pairs =
+                    entries.flatMap { entry -> render0(entry).map { entry to it } }.iterator()
+                if (!pairs.hasNext()) {
+                    append(text(" > ", ACCENT))
+                    append(translatable("imperium.history.none"))
+                } else {
+                    do {
+                        val (entry, component) = pairs.next()
                         append(text(" > ", ACCENT))
                         if (name) {
                             append(getDisplayName(entry.actor), text(":"), space())
@@ -107,8 +112,11 @@ class SimpleHistoryRenderer(
                         }
                         append(space())
                         append(text(timeRenderer.renderRelativeInstant(entry.timestamp), GRAY))
-                        append(newline())
-                    }
+                        if (pairs.hasNext()) {
+                            append(newline())
+                        }
+                    } while (pairs.hasNext())
+                }
             }
             .build()
 
@@ -178,16 +186,20 @@ class SimpleHistoryRenderer(
                         }
                         .setParameters(
                             array(
-                                buildList {
-                                    add(translatable(entry.block, ACCENT))
-                                    for ((i, point) in config.positions.withIndex()) {
-                                        add(
-                                            point
-                                                .copy(x = point.x + entry.x, y = point.y + entry.y)
-                                                .toComponent())
-                                        if (i < config.positions.size - 1) add(text(", "))
+                                translatable(entry.block, ACCENT),
+                                components()
+                                    .apply {
+                                        for ((i, point) in config.positions.withIndex()) {
+                                            append(
+                                                point
+                                                    .copy(
+                                                        x = point.x + entry.x,
+                                                        y = point.y + entry.y)
+                                                    .toComponent())
+                                            if (i < config.positions.size - 1) append(text(", "))
+                                        }
                                     }
-                                }),
+                                    .build()),
                         )
                         .build(),
                 )

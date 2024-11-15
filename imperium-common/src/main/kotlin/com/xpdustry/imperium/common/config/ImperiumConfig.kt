@@ -149,7 +149,8 @@ data class DiscordConfig(
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
     val mindustryVersion: String = "145",
-    val globalCommands: Boolean = false
+    val globalCommands: Boolean = false,
+    val alertsRole: Long? = null,
 ) {
     val roles2ranks: Map<Long, Rank> =
         ranks2roles.entries.associate { (key, value) -> value to key }
@@ -183,7 +184,8 @@ data class MindustryConfig(
     data class History(
         val tileEntriesLimit: Int = 20,
         val playerEntriesLimit: Int = 200,
-        val doubleClickDelay: Duration = 200.milliseconds
+        val doubleClickDelay: Duration = 200.milliseconds,
+        val heatMapRadius: Int = 15,
     )
 
     data class World(
@@ -193,11 +195,13 @@ data class MindustryConfig(
         val coreDamageAlertDelay: Duration = 10.seconds,
         val displayCoreId: Boolean = true,
         val displayResourceTracker: Boolean = true,
+        val explosiveDamageAlertDelay: Duration = 15.seconds,
     )
 
     data class Security(
         val gatekeeper: Boolean = true,
         val imageProcessingDelay: Duration = 3.seconds,
+        val griefingThreshold: Float = 80F,
     )
 
     data class Templates(

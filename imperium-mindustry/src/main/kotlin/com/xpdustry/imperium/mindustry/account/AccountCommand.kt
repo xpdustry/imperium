@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.google.common.cache.CacheBuilder
+import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
@@ -229,6 +230,12 @@ private fun createLoginInterface(
                     is AccountResult.Success -> {
                         view.viewer.sendMessage("You have been logged in!")
                         view.viewer.tryGrantAdmin(manager)
+                        val account = manager.findByIdentity(view.viewer.identity)!!
+                        runMindustryThread {
+                            DistributorProvider.get()
+                                .eventBus
+                                .post(PlayerLoginEvent(view.viewer, account))
+                        }
                     }
                     is AccountResult.WrongPassword,
                     AccountResult.NotFound -> {

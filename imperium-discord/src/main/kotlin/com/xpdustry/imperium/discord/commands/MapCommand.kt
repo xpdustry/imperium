@@ -88,7 +88,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                         field("Games", stats.games.toString(), false)
                         field("Score", "%.2f / 5".format(stats.score), false)
                         field("Difficulty", stats.difficulty.toString().lowercase(), false)
-                        field("World Record", stats.record.toString(), false)
+                        field("World Record", stats.record?.let(codec::encode) ?: "none", false)
                         field(
                             "Gamemodes",
                             if (map.gamemodes.isEmpty()) "`none`"
