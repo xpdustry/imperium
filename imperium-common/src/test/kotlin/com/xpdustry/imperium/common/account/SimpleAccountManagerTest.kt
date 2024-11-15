@@ -37,6 +37,7 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.time.Duration
 import java.util.Base64
+import java.util.UUID
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.jetbrains.exposed.sql.batchInsert
@@ -260,7 +261,7 @@ class SimpleAccountManagerTest {
         provider<ImperiumConfig> {
             ImperiumConfig(
                 database =
-                    DatabaseConfig.SQL(host = "mem:regular", type = DatabaseConfig.SQL.Type.H2))
+                    DatabaseConfig.H2(memory = true, database = UUID.randomUUID().toString()))
         }
         provider<Messenger> { TestMessenger() }
         provider<Path>("directory") { tempDir }

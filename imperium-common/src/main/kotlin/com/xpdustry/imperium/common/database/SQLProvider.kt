@@ -20,12 +20,9 @@ package com.xpdustry.imperium.common.database
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
-import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
-import java.sql.DriverManager
-import java.sql.SQLException
 import kotlin.io.path.absolutePathString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
@@ -41,7 +38,7 @@ interface SQLProvider {
     suspend fun <T> newSuspendTransaction(block: suspend () -> T): T
 }
 
-class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val directory: Path) :
+class SimpleSQLProvider(private val config: DatabaseConfig, private val directory: Path) :
     SQLProvider, ImperiumApplication.Listener {
 
     private val parent = SupervisorJob()
@@ -52,21 +49,20 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
     override fun onImperiumInit() {
         val hikari = HikariConfig()
         hikari.poolName = "imperium-sql-pool"
-        hikari.minimumIdle = config.poolMin
-        hikari.maximumPoolSize = config.poolMax
-        hikari.driverClassName = config.type.driver
+        hikari.maximumPoolSize = 8
+        hikari.minimumIdle = 2
         hikari.addDataSourceProperty("createDatabaseIfNotExist", "true")
 
-        when (config.type) {
-            DatabaseConfig.SQL.Type.H2 -> {
-                var host = config.host
-                if (config.host.endsWith(".h2")) {
-                    host = directory.resolve(config.host).absolutePathString()
+        when (config) {
+            is DatabaseConfig.H2 -> {
+                if (config.memory) {
+                    hikari.jdbcUrl = "jdbc:h2:mem:${config.database};MODE=MYSQL"
+                } else {
+                    hikari.jdbcUrl =
+                        "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL"
                 }
-                hikari.jdbcUrl = "jdbc:h2:$host"
-                LOGGER.warn("Using H2 database, this is not recommended for production")
             }
-            DatabaseConfig.SQL.Type.MARIADB -> {
+            is DatabaseConfig.MariaDB -> {
                 hikari.jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"
                 hikari.username = config.username
                 hikari.password = config.password.value
@@ -76,7 +72,6 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
         source = HikariDataSource(hikari)
         database = Database.connect(source)
         TransactionManager.defaultDatabase = null
-        unregisterDriver(config.type.driver)
     }
 
     override fun onImperiumExit() {
@@ -89,25 +84,4 @@ class SimpleSQLProvider(private val config: DatabaseConfig.SQL, private val dire
 
     override suspend fun <T> newSuspendTransaction(block: suspend () -> T): T =
         newSuspendedTransaction(scope.coroutineContext, database) { block() }
-
-    private fun unregisterDriver(name: String) {
-        // Calling Class.forName("com.mysql.cj.jdbc.Driver") is enough to call the static
-        // initializer
-        // which makes our driver available in DriverManager. We don't want that, so unregister it
-        // after
-        // the pool has been set up.
-        val drivers = DriverManager.getDrivers()
-        while (drivers.hasMoreElements()) {
-            val driver = drivers.nextElement()
-            if (driver.javaClass.getName() == name) {
-                try {
-                    DriverManager.deregisterDriver(driver)
-                } catch (_: SQLException) {}
-            }
-        }
-    }
-
-    companion object {
-        private val LOGGER by LoggerDelegate()
-    }
 }

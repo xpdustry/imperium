@@ -48,7 +48,7 @@ data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
     val translator: TranslatorConfig = TranslatorConfig.None,
-    val database: DatabaseConfig = DatabaseConfig.SQL(),
+    val database: DatabaseConfig = DatabaseConfig.H2(),
     val messenger: MessengerConfig = MessengerConfig.None,
     val server: ServerConfig = ServerConfig("unknown"),
     val generatorId: Int = 0,
@@ -82,26 +82,15 @@ sealed interface TranslatorConfig {
 }
 
 sealed interface DatabaseConfig {
-    data class SQL(
-        val host: String = "./database.h2;MODE=MYSQL",
+    data class H2(val memory: Boolean = false, val database: String = "imperium") : DatabaseConfig
+
+    data class MariaDB(
+        val host: String = "localhost",
         val port: Short = 3306,
         val database: String = "imperium",
         val username: String = "root",
         val password: Secret = Secret("root"),
-        val poolMin: Int = 2,
-        val poolMax: Int = 8,
-        val type: Type = Type.H2
-    ) : DatabaseConfig {
-        init {
-            require(poolMin > 0) { "poolMin can't be below 1, got $poolMin" }
-            require(poolMax >= poolMin) { "poolMax can't be lower than poolMin, got $poolMax" }
-        }
-
-        enum class Type(val driver: String) {
-            MARIADB("org.mariadb.jdbc.Driver"),
-            H2("org.h2.Driver")
-        }
-    }
+    ) : DatabaseConfig
 }
 
 sealed interface MessengerConfig {

@@ -32,9 +32,9 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.nohorny.NoHornyImage
-import com.xpdustry.nohorny.analyzer.ImageAnalyzerEvent
-import com.xpdustry.nohorny.analyzer.ImageInformation
+import com.xpdustry.nohorny.image.NoHornyImage
+import com.xpdustry.nohorny.image.NoHornyInformation
+import com.xpdustry.nohorny.image.analyzer.ImageAnalyzerEvent
 import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
@@ -52,7 +52,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
     fun onLogicAnalyzer(event: ImageAnalyzerEvent) =
         ImperiumScope.MAIN.launch {
             when (event.result.rating) {
-                ImageInformation.Rating.SAFE -> {
+                NoHornyInformation.Rating.SAFE -> {
                     logger.debug(
                         "Cluster in rect ({}, {}, {}, {}) is safe",
                         event.group.x,
@@ -60,7 +60,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                         event.group.w,
                         event.group.h)
                 }
-                ImageInformation.Rating.WARNING -> {
+                NoHornyInformation.Rating.WARNING -> {
                     logger.debug(
                         "Cluster in rect ({}, {}, {}, {}) is possibly unsafe.",
                         event.group.x,
@@ -81,7 +81,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 },
                             attachments = listOf(event.image.toUnsafeAttachment())))
                 }
-                ImageInformation.Rating.UNSAFE -> {
+                NoHornyInformation.Rating.UNSAFE -> {
                     logger.info(
                         "Cluster in rect ({}, {}, {}, {}) is unsafe. Destroying blocks.",
                         event.group.x,
