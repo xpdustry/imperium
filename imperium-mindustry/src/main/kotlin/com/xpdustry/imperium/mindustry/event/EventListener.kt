@@ -25,8 +25,8 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -34,7 +34,6 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.EventType
-import mindustry.game.Events
 import mindustry.game.Team
 import mindustry.gen.Call
 
@@ -45,7 +44,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private var delayJob: Job? = null
 
     @EventHandler
-    fun onDelayStart(event: EventType.MenuToPlayEvent) {
+    fun onDelayStart(event: MenuToPlayEvent) {
         delayJob =
             ImperiumScope.MAIN.launch {
                 delay(Random.nextLong(3 * 60, 13 * 60).seconds)
@@ -66,7 +65,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val localValidTiles = validTiles.toMutableList()
         if (localValidTiles.isEmpty()) {
             return LOGGER.error("How is the entire map full??")
-            Events.fire(new GameOverEvent (Team.derelict))
+            Events.fire(EventType.GameOverEvent(Team.derelict))
             Call.sendMessage(
                 "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
         }
