@@ -66,7 +66,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val localValidTiles = validTiles.toMutableList()
         if (localValidTiles.isEmpty()) {
             return LOGGER.error("How is the entire map full??")
-            Events.fire(new GameOverEvent(Team.derelict))
+            Events.fire(new GameOverEvent (Team.derelict))
             Call.sendMessage(
                 "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
         }
