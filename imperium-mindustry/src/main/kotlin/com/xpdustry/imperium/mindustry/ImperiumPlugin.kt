@@ -52,6 +52,7 @@ import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.control.RestartListener
+import com.xpdustry.imperium.mindustry.event.EventListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
@@ -191,6 +192,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         }
         if (gamemode == MindustryGamemode.TOWER_DEFENSE) {
             application.register(TowerListener::class)
+        }
+        if (gamemode == MindustryGamemode.EVENT) {
+            application.register(EventListener::class)
         }
 
         application.init()
