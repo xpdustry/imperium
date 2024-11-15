@@ -9,11 +9,11 @@ import com.xpdustry.toxopid.task.MindustryExec
 plugins {
     id("imperium.base-conventions")
     id("imperium.publishing-conventions")
-    id("com.github.johnrengelman.shadow")
+    id("com.gradleup.shadow")
     id("com.xpdustry.toxopid")
 }
 
-val metadata = ModMetadata.fromJson(project.file("plugin.json"))
+val metadata = ModMetadata.fromJson(rootProject.file("plugin.json"))
 metadata.minGameVersion = libs.versions.mindustry.get()
 metadata.description = rootProject.description!!
 metadata.version = rootProject.version.toString()
@@ -59,11 +59,9 @@ tasks.shadowJar {
     mergeServiceFiles()
     minimize {
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
-        exclude(dependency(libs.mariadb.get()))
         exclude(dependency(libs.caffeine.get()))
         exclude(dependency(libs.prettytime.get()))
         exclude(dependency(libs.time4j.core.get()))
-        exclude(dependency(libs.h2.get()))
     }
 }
 
@@ -79,17 +77,14 @@ tasks.register("getArtifactPath") {
 
 tasks.build { dependsOn(tasks.shadowJar) }
 
-val downloadKotlinRuntime =
-    tasks.register<GithubAssetDownload>("downloadKotlinRuntime") {
-        owner.set("xpdustry")
-        repo.set("kotlin-runtime")
-        asset.set("kotlin-runtime.jar")
-        version.set(
-            libs.versions.kotlin.runtime.zip(libs.versions.kotlin.core) { runtime, core ->
-                "v$runtime-k.$core"
-            },
-        )
+val downloadKotlinRuntime by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "kotlin-runtime"
+    asset = "kotlin-runtime.jar"
+    version = libs.versions.kotlin.runtime.zip(libs.versions.kotlin.core) { runtime, core ->
+        "v$runtime-k.$core"
     }
+}
 
 val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
     owner = "xpdustry"
@@ -98,29 +93,33 @@ val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
     version = libs.versions.slf4md.map { "v$it" }
 }
 
-val downloadDistributorCommon =
-    tasks.register<GithubAssetDownload>("downloadDistributorCommon") {
-        owner.set("xpdustry")
-        repo.set("distributor")
-        asset.set("distributor-common.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
-    }
+val downloadSql4md by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "sql4md"
+    asset = "sql4md.jar"
+    version = libs.versions.sql4md.map { "v$it" }
+}
 
-val downloadDistributorPermissionRank =
-    tasks.register<GithubAssetDownload>("downloadDistributorPermissionRank") {
-        owner.set("xpdustry")
-        repo.set("distributor")
-        asset.set("distributor-permission-rank.jar")
-        version.set(libs.versions.distributor.map { "v$it" })
-    }
+val downloadDistributorCommon by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "distributor"
+    asset = "distributor-common.jar"
+    version = libs.versions.distributor.map { "v$it" }
+}
 
-val downloadNoHorny =
-    tasks.register<GithubAssetDownload>("downloadNoHorny") {
-        owner.set("xpdustry")
-        repo.set("nohorny")
-        asset.set("nohorny.jar")
-        version.set(libs.versions.nohorny.map { "v$it" })
-    }
+val downloadDistributorPermissionRank by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "distributor"
+    asset = "distributor-permission-rank.jar"
+    version = libs.versions.distributor.map { "v$it" }
+}
+
+val downloadNoHorny by tasks.register<GithubAssetDownload>("downloadNoHorny") {
+    owner = "xpdustry"
+    repo = "nohorny"
+    asset = "nohorny.jar"
+    version = libs.versions.nohorny.map { "v$it" }
+}
 
 tasks.register<MindustryExec>("runMindustryDesktop2") {
     group = Toxopid.TASK_GROUP_NAME
@@ -132,9 +131,12 @@ val pluginLibs = fileTree("libs") { include("*.jar") }
 tasks.runMindustryServer {
     mods.from(
         downloadKotlinRuntime,
-        downloadNoHorny,
+        // downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
+        downloadSql4md,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }
 
@@ -144,8 +146,11 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     configureServer()
     mods.from(
         downloadKotlinRuntime,
-        downloadNoHorny,
+        // downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
+        downloadSql4md,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }

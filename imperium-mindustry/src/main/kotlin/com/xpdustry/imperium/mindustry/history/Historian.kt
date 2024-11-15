@@ -19,11 +19,19 @@ package com.xpdustry.imperium.mindustry.history
 
 import arc.math.geom.Point2
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
+import com.xpdustry.distributor.api.key.KeyContainer
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.history.HistoryRequestMessage
+import com.xpdustry.imperium.common.history.HistoryResponseMessage
+import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.function
 import com.xpdustry.imperium.common.misc.MindustryUUID
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.history.config.BaseBlockConfigProvider
 import com.xpdustry.imperium.mindustry.history.config.BlockConfig
@@ -36,11 +44,15 @@ import com.xpdustry.imperium.mindustry.history.config.MESSAGE_BLOCK_CONFIGURATIO
 import com.xpdustry.imperium.mindustry.history.config.PAYLOAD_DRIVER_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.config.POWER_NODE_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.history.config.UNIT_FACTORY_CONFIGURATION_FACTORY
+import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.superclasses
 import mindustry.game.EventType
+import mindustry.game.Team
 import mindustry.gen.Building
+import mindustry.gen.Nulls
 import mindustry.world.Block
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.distribution.ItemBridge
@@ -72,9 +84,13 @@ fun List<HistoryEntry>.normalize(limit: Int) =
         .take(limit)
         .toList()
 
-class SimpleHistorian(private val config: MindustryConfig) :
-    Historian, ImperiumApplication.Listener {
-
+class SimpleHistorian(
+    private val imperium: ImperiumConfig,
+    private val mindustry: MindustryConfig,
+    private val users: UserManager,
+    private val renderer: HistoryRenderer,
+    private val messenger: Messenger,
+) : Historian, ImperiumApplication.Listener {
     private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
     private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()
     private val providers = mutableMapOf<KClass<out Building>, BlockConfig.Provider<*>>()
@@ -90,6 +106,24 @@ class SimpleHistorian(private val config: MindustryConfig) :
         setProvider<PayloadMassDriver.PayloadDriverBuild>(PAYLOAD_DRIVER_CONFIGURATION_FACTORY)
         setProvider<PowerNode.PowerNodeBuild>(POWER_NODE_CONFIGURATION_FACTORY)
         setProvider<UnitFactory.UnitFactoryBuild>(UNIT_FACTORY_CONFIGURATION_FACTORY)
+
+        messenger.function<HistoryRequestMessage, HistoryResponseMessage> { request ->
+            if (!request.server.equals(imperium.server.name, ignoreCase = true))
+                return@function null
+            val user = users.findById(request.player) ?: return@function null
+            val (team, unit) =
+                runMindustryThread {
+                    val player = Entities.getPlayers().firstOrNull { it.uuid() == user.uuid }
+                    (player?.team() ?: Team.sharded) to (player?.unit()?.type ?: Nulls.unit.type)
+                }
+            HistoryResponseMessage(
+                ComponentStringBuilder.plain(KeyContainer.empty())
+                    .append(
+                        renderer.render(
+                            getHistory(user.uuid).normalize(30),
+                            HistoryActor(user.uuid, team, unit)))
+                    .toString())
+        }
     }
 
     private inline fun <reified B : Building> setProvider(provider: BlockConfig.Provider<B>) {
@@ -220,7 +254,7 @@ class SimpleHistorian(private val config: MindustryConfig) :
     private fun addEntry(entry: HistoryEntry) {
         val entries =
             positions.computeIfAbsent(Point2.pack(entry.x, entry.y)) {
-                LimitedList(config.history.tileEntriesLimit)
+                LimitedList(mindustry.history.tileEntriesLimit)
             }
         val previous: HistoryEntry? = entries.peekLast()
         // Some blocks have repeating configurations, we don't want to spam the history with them
@@ -231,7 +265,7 @@ class SimpleHistorian(private val config: MindustryConfig) :
         if (entry.actor.player != null && !entry.virtual) {
             players
                 .computeIfAbsent(entry.actor.player) {
-                    LimitedList(config.history.playerEntriesLimit)
+                    LimitedList(mindustry.history.playerEntriesLimit)
                 }
                 .add(entry)
         }

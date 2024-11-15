@@ -45,7 +45,7 @@ import mindustry.net.Administration
 
 class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val maps = instances.get<MindustryMapManager>()
-    private val autoSave = Vars.saveDirectory.child("auto-save-imperium.${Vars.saveExtension}")
+    private val autoSave = Vars.saveDirectory.child("auto_imperium.${Vars.saveExtension}")
     private val logger by LoggerDelegate()
 
     override fun onImperiumInit() {

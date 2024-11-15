@@ -29,8 +29,6 @@ dependencies {
     api(libs.exposed.java.time)
     api(libs.exposed.json)
     api(libs.hikari)
-    runtimeOnly(libs.mariadb)
-    runtimeOnly(libs.h2)
 
     api(libs.prettytime)
     api(libs.time4j.core)

@@ -42,6 +42,7 @@ import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
 import com.xpdustry.imperium.mindustry.account.AccountListener
+import com.xpdustry.imperium.mindustry.account.AchievementCommand
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
@@ -54,8 +55,10 @@ import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.control.RestartListener
 import com.xpdustry.imperium.mindustry.event.EventListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
+import com.xpdustry.imperium.mindustry.game.AntiGriefListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
+import com.xpdustry.imperium.mindustry.game.LogicListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
@@ -83,6 +86,7 @@ import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.ResourceHudListener
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
+import com.xpdustry.imperium.mindustry.world.SaveCommand
 import com.xpdustry.imperium.mindustry.world.SpawnCommand
 import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
@@ -181,7 +185,11 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TeamCommand::class,
                 FormationListener::class,
                 RestartListener::class,
-                UnpauseListener::class)
+                UnpauseListener::class,
+                AchievementCommand::class,
+                LogicListener::class,
+                SaveCommand::class,
+                AntiGriefListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode
@@ -203,7 +211,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             PluginAnnotationProcessor.compose(
                 CommandAnnotationScanner(this, application.instances.get()),
                 PluginAnnotationProcessor.tasks(this),
-                PluginAnnotationProcessor.events(this))
+                PluginAnnotationProcessor.events(this),
+                PluginAnnotationProcessor.triggers(this))
 
         application.listeners.forEach(processor::process)
 

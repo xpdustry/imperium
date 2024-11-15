@@ -27,6 +27,9 @@ dependencies {
     implementation("io.ktor:ktor-server-auth-jvm")
     implementation("io.ktor:ktor-client-core-jvm")
     implementation("io.ktor:ktor-client-apache-jvm")
+
+    runtimeOnly(libs.mariadb)
+    runtimeOnly(libs.h2)
 }
 
 application {

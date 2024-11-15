@@ -11,6 +11,9 @@
 hs_err_pid*
 replay_pid*
 
+## Kotlin
+.kotlin/
+
 ## Gradle
 **/.gradle
 **/build/

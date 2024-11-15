@@ -42,9 +42,7 @@ class MindustryPlayerTracker(
 
     override fun onImperiumInit() {
         messenger.function<PlayerListRequest, PlayerListResponse> {
-            if (it.server != config.server.name) {
-                return@function null
-            }
+            if (it.server != config.server.name) return@function null
             PlayerListResponse(
                 when (it.type) {
                     PlayerListRequest.Type.JOIN -> joins

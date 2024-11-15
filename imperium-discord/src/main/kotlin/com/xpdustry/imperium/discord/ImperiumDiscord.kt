@@ -26,6 +26,7 @@ import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
 import com.xpdustry.imperium.discord.commands.AccountCommand
+import com.xpdustry.imperium.discord.commands.HistoryCommand
 import com.xpdustry.imperium.discord.commands.MapCommand
 import com.xpdustry.imperium.discord.commands.MapSearchCommand
 import com.xpdustry.imperium.discord.commands.MapSubmitCommand
@@ -78,6 +79,7 @@ fun main() {
             MapSearchCommand::class,
             MapSubmitCommand::class,
             MindustryContentListener::class,
+            HistoryCommand::class,
         )
         .forEach(application::register)
     application.init()

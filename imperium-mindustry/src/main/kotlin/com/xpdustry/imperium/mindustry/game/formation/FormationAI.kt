@@ -116,4 +116,6 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
     }
 
     override fun isBeingControlled(player: Unit) = leader == player
+
+    override fun isLogicControllable() = false
 }

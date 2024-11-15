@@ -18,10 +18,21 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.Events
+import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.menu.ListTransformer
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.content.MindustryMap
+import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -29,47 +40,117 @@ import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.asList
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
+import com.xpdustry.imperium.mindustry.misc.id
+import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
+import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
+import com.xpdustry.imperium.mindustry.translation.difficulty_name
+import com.xpdustry.imperium.mindustry.translation.gui_back
+import com.xpdustry.imperium.mindustry.translation.selected
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.maps.Map
 
 class RockTheVoteCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Map?>(instances.get(), "RTV", 1.minutes), ImperiumApplication.Listener {
+    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(instances.get(), "RTV", 1.minutes),
+    ImperiumApplication.Listener {
 
-    private val mapListInterface: Interface =
-        MenuInterface.create(plugin).apply {
-            addTransformer { _, pane ->
-                pane.title = "Choose a map"
-                pane.options.addRow(
-                    MenuOption("[yellow]Random") { view ->
-                        view.closeAll()
-                        onVoteSessionStart(view.viewer, manager.session, null)
-                    })
+    private val maps = instances.get<MindustryMapManager>()
+    private val menu =
+        MenuManager.create(plugin).apply {
+            addTransformer { (pane) ->
+                pane.title = text("Rock the vote")
+                pane.grid.addRow(MenuOption.of("Set the difficulty", Action.none()))
             }
+
             addTransformer(
-                ListTransformer(
-                    provider = { Vars.maps.customMaps().asList() },
-                    renderer = { it.name() },
-                    fill = true,
-                    onChoice = { view, map ->
-                        view.closeAll()
-                        onVoteSessionStart(view.viewer, manager.session, map)
-                    },
-                ),
-            )
+                ListTransformer<MindustryMap.Difficulty>()
+                    .setProvider { MindustryMap.Difficulty.entries }
+                    .setRenderer { ctx, difficulty ->
+                        selected(difficulty_name(difficulty), ctx.state[DIFFICULTY] == difficulty)
+                    }
+                    .setWidth(2)
+                    .setRenderNavigation(false)
+                    .setHeight(Int.MAX_VALUE)
+                    .setChoiceAction { window, difficulty ->
+                        if (window.state[DIFFICULTY] == difficulty) {
+                            window.state.remove(DIFFICULTY)
+                        } else {
+                            window.state[DIFFICULTY] = difficulty
+                        }
+                        window.show()
+                    })
+
+            addTransformer { (pane) ->
+                pane.grid.addRow(MenuOption.of("Select a map", Action.none()))
+            }
+
+            addTransformer { (pane, state) ->
+                val difficulty = state[DIFFICULTY]
+                if (difficulty == null || state[MAPS]!!.any { it.difficulty == difficulty }) {
+                    val selector =
+                        if (state[DIFFICULTY] == null) {
+                            MapSelector.Random
+                        } else {
+                            MapSelector.Difficulty(state[DIFFICULTY]!!)
+                        }
+                    pane.grid.addRow(
+                        MenuOption.of(
+                            text("Random", ComponentColor.YELLOW),
+                            Action.hideAll().then {
+                                onVoteSessionStart(it.viewer, manager.session, selector)
+                            }))
+                } else {
+                    pane.grid.addRow(MenuOption.of(text("Random", LIGHT_GRAY), Action.none()))
+                }
+            }
+
+            addTransformer(
+                ListTransformer<MapWithDifficulty>()
+                    .setProvider { ctx ->
+                        val difficulty = ctx.state[DIFFICULTY]
+                        ctx.state[MAPS]!!.filter {
+                            difficulty == null || it.difficulty == difficulty
+                        }
+                    }
+                    .setRenderer { it ->
+                        DistributorProvider.get().mindustryComponentDecoder.decode(it.map.name())
+                    }
+                    .setFillEmptySpace(true)
+                    .setChoiceAction(
+                        BiAction.from<MapWithDifficulty>(Action.hideAll()).then { window, map ->
+                            onVoteSessionStart(
+                                window.viewer, manager.session, MapSelector.Specific(map.map))
+                        }))
+
+            addTransformer { (pane) ->
+                pane.grid.addRow(MenuOption.of(gui_back(), Action.hideAll()))
+            }
         }
 
     @ImperiumCommand(["rtv"])
     @ClientSide
     fun onRtvCommand(sender: CommandSender) {
-        mapListInterface.open(sender.player)
+        val window = menu.create(sender.player)
+        val list = Vars.maps.customMaps().asList()
+        ImperiumScope.MAIN.launch {
+            val with =
+                list.map { map ->
+                    MapWithDifficulty(
+                        map,
+                        maps.getMapStats(map.id ?: -1)?.difficulty
+                            ?: MindustryMap.Difficulty.NORMAL)
+                }
+            runMindustryThread {
+                window.state[MAPS] = with
+                window.show()
+            }
+        }
     }
 
     @ImperiumCommand(["rtv", "y"])
@@ -96,13 +177,47 @@ class RockTheVoteCommand(instances: InstanceManager) :
         onPlayerForceSuccess(sender.player, manager.session)
     }
 
-    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Map?>) {
-        runMindustryThread {
-            if (session.objective != null) Vars.maps.setNextMapOverride(session.objective)
-            Events.fire(EventType.GameOverEvent(Team.derelict))
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<MapSelector>) {
+        when (val selector = session.objective) {
+            is MapSelector.Specific -> Vars.maps.setNextMapOverride(selector.map)
+            is MapSelector.Random -> Unit
+            is MapSelector.Difficulty -> {
+                val result =
+                    Vars.maps.customMaps().asList().filter { map ->
+                        val difficulty =
+                            maps.getMapStats(map.id ?: -1) ?: MindustryMap.Difficulty.NORMAL
+                        difficulty == selector.difficulty
+                    }
+                if (result.isNotEmpty()) {
+                    Vars.maps.setNextMapOverride(result.random())
+                }
+            }
         }
+        Events.fire(EventType.GameOverEvent(Team.derelict))
     }
 
-    override fun getVoteSessionDetails(session: VoteManager.Session<Map?>): String =
-        "[white]Type [accent]/rtv y[] to vote to change the map to [accent]${session.objective?.name() ?: "a random one"}[white]."
+    override fun getVoteSessionDetails(session: VoteManager.Session<MapSelector>): String =
+        "[white]Type [accent]/rtv y[] to vote to change the map to [accent]${session.objective.name()}[white]."
+
+    private fun MapSelector.name(): String =
+        when (this) {
+            is MapSelector.Specific -> map.name()
+            is MapSelector.Random -> "a random map"
+            is MapSelector.Difficulty -> "a random ${difficulty.name.lowercase()} map"
+        }
+
+    data class MapWithDifficulty(val map: Map, val difficulty: MindustryMap.Difficulty)
+
+    companion object {
+        private val DIFFICULTY = key<MindustryMap.Difficulty>("difficulty")
+        private val MAPS = key<List<MapWithDifficulty>>("maps")
+    }
+
+    sealed interface MapSelector {
+        data class Specific(val map: Map) : MapSelector
+
+        data object Random : MapSelector
+
+        data class Difficulty(val difficulty: MindustryMap.Difficulty) : MapSelector
+    }
 }

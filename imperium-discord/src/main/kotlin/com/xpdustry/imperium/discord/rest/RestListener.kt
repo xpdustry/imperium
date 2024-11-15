@@ -27,11 +27,9 @@ import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.version.MindustryVersion
 import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.call
 import io.ktor.server.application.install
-import io.ktor.server.engine.ApplicationEngine
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
-import io.ktor.server.engine.stop
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.response.respond
@@ -49,7 +47,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
         instances.get<ImperiumConfig>().webserver ?: error("Webserver configuration is missing")
     private val codec = instances.get<IdentifierCodec>()
 
-    private lateinit var ktor: ApplicationEngine
+    private lateinit var ktor: EmbeddedServer<*, *>
 
     override fun onImperiumInit() {
         ktor =

@@ -61,7 +61,6 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
     private val discord = instances.get<DiscordService>()
     private val codec = instances.get<IdentifierCodec>()
 
-    @Suppress("DuplicatedCode")
     @ImperiumCommand(["map", "submit"])
     suspend fun onMapSubmitCommand(
         interaction: SlashCommandInteraction,
@@ -121,7 +120,7 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
                     MessageCreate {
                         files +=
                             FileUpload.fromStreamSupplier(
-                                meta.name.stripMindustryColors(), bytes::inputStream)
+                                "${meta.name.stripMindustryColors()}.msav", bytes::inputStream)
                         files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
                         embeds += Embed {
                             color = MINDUSTRY_ACCENT_COLOR.rgb
