@@ -29,6 +29,8 @@ data class Vault(
     val effect: (Int, Int) -> Unit
 )
 
+private val LOGGER by LoggerDelegate()
+
 fun getVaultByRarity(rarity: Int): List<Vault> {
     return when (rarity) {
         1 -> VaultTypes.commonVault
@@ -88,10 +90,4 @@ object VaultTypes {
                 // Todo
             },
         )
-}
-
-companion
-
-object {
-    private val LOGGER by LoggerDelegate()
 }
