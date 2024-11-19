@@ -19,8 +19,8 @@ package com.xpdustry.imperium.mindustry.event
 
 import arc.math.geom.Vec2
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import mindustry.game.Team
 import mindustry.content.UnitTypes
+import mindustry.game.Team
 
 data class Vault(
     val name: String,
