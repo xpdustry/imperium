@@ -37,7 +37,6 @@ fun getVaultByRarity(rarity: Int): List<Vault> {
     }
 }
 
-
 object VaultTypes {
     val commonVault =
         listOf(

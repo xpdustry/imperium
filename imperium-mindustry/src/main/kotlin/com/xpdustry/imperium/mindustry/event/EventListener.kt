@@ -31,7 +31,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
-import com.xpdustry.imperium.mindustry.event.VaultTypes
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -154,7 +153,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     fun handleCrateRemoval(building: Building, rarity: Int, tile: Tile) {
         val crate = VaultTypes.getVaultByRarity(rarity).random()
-        crate.effect(tile.x, tile.y) 
+        crate.effect(tile.x, tile.y)
         building.rarity = null
         crates.remove(building)
         Vars.world.tile(event.tile).setNet(Blocks.air)
