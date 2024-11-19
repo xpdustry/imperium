@@ -73,9 +73,9 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["crate"], Rank.ADMIN)
     @Scope(MindustryGamemode.EVENT)
     fun onManualGenerateCommand(
-        sender: CommandSender
-        x: Int = 0
-        y: Int = 0
+        sender: CommandSender,
+        x: Int = 0,
+        y: Int = 0,
         @Flag rarity: Int? = null
     ) {
         generateCrate(x, y, rarity)
