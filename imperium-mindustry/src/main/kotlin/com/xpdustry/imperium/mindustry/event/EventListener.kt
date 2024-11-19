@@ -45,8 +45,8 @@ import mindustry.content.Blocks
 import mindustry.game.EventType.BlockBuildBeginEvent
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
-import mindustry.gen.Call
 import mindustry.gen.Building
+import mindustry.gen.Call
 import mindustry.world.Tile
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
