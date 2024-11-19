@@ -18,6 +18,9 @@
 package com.xpdustry.imperium.mindustry.event
 
 import arc.math.geom.Vec2
+import com.xpdustry.imperium.common.misc.LoggerDelegate
+import mindustry.game.Team
+import mindustry.gen.UnitTypes
 
 data class Vault(
     val name: String,
@@ -28,11 +31,11 @@ data class Vault(
 
 fun getVaultByRarity(rarity: Int): List<Vault> {
     return when (rarity) {
-        1 -> commonVault
-        2 -> uncommonVault
-        3 -> rareVault
-        4 -> epicVault
-        5 -> legendaryVault
+        1 -> VaultTypes.commonVault
+        2 -> VaultTypes.uncommonVault
+        3 -> VaultTypes.rareVault
+        4 -> VaultTypes.epicVault
+        5 -> VaultTypes.legendaryVault
         else -> emptyList()
     }
 }
@@ -85,4 +88,8 @@ object VaultTypes {
                 // Todo
             },
         )
+
+    companion object {
+        private val LOGGER by LoggerDelegate()
+    }
 }

@@ -31,6 +31,8 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
+import com.xpdustry.imperium.mindustry.event.Vault
+import com.xpdustry.imperium.mindustry.event.VaultTypes.getVaultByRarity
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -85,7 +87,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val localValidTiles = validTiles.toMutableList()
         if (localValidTiles.isEmpty()) {
             return LOGGER.error("How is the entire map full??")
-            Events.fire(EGameOverEvent(Team.derelict))
+            Events.fire(GameOverEvent(Team.derelict))
             Call.sendMessage(
                 "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
         }
@@ -158,7 +160,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         crate.effect(tile.x, tile.y)
         building.rarity = null
         crates.remove(building)
-        Vars.world.tile(event.tile).setNet(Blocks.air)
+        tile.setNet(Blocks.air)
     }
 
     fun checkValid(x: Int, y: Int): Boolean {
