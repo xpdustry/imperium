@@ -131,7 +131,7 @@ val pluginLibs = fileTree("libs") { include("*.jar") }
 tasks.runMindustryServer {
     mods.from(
         downloadKotlinRuntime,
-        // downloadNoHorny,
+        downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
         downloadSql4md,
@@ -145,8 +145,9 @@ tasks.register<MindustryExec>("runMindustryServer2") {
     group = Toxopid.TASK_GROUP_NAME
     configureServer()
     mods.from(
+        tasks.shadowJar,
         downloadKotlinRuntime,
-        // downloadNoHorny,
+        downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
         downloadSql4md,

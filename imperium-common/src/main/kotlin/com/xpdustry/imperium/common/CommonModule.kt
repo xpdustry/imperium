@@ -24,7 +24,6 @@ import com.xpdustry.imperium.common.account.SimpleAccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
-import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigProvider
 import com.xpdustry.imperium.common.config.MessengerConfig
@@ -101,11 +100,7 @@ fun MutableInstanceManager.registerCommonModule() {
         }
     }
 
-    provider<SQLProvider> {
-        when (val config = get<ImperiumConfig>().database) {
-            is DatabaseConfig.SQL -> SimpleSQLProvider(config, get("directory"))
-        }
-    }
+    provider<SQLProvider> { SimpleSQLProvider(get<ImperiumConfig>().database, get("directory")) }
 
     provider<AccountManager> { SimpleAccountManager(get(), get(), get()) }
 
