@@ -88,8 +88,8 @@ object VaultTypes {
                 // Todo
             },
         )
+}
 
-    companion object {
-        private val LOGGER by LoggerDelegate()
-    }
+companion object {
+    private val LOGGER by LoggerDelegate()
 }
