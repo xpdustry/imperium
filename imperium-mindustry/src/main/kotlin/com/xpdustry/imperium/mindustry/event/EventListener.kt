@@ -20,12 +20,19 @@ package com.xpdustry.imperium.mindustry.event
 import arc.Events
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Flag
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.event.VaultTypes
+import com.xpdustry.imperium.mindustry.event.EventExtensions //.buildingRarityMap
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -39,8 +46,6 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Call
 
-/* Make this file a hub for different event gamemodes, temporarily only contains this one */
-
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
     private val crates = mutableListOf<Building>()
@@ -48,7 +53,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private var crate: Block? = null
 
     @EventHandler
-    fun onDelayStart(event: MenuToPlayEvent) {
+    fun onDelayStart(MenuToPlayEvent) {
         delayJob =
             ImperiumScope.MAIN.launch {
                 delay(Random.nextLong(3 * 60, 13 * 60).seconds)
@@ -65,11 +70,13 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         delayJob = null
     }
 
-    @ImperiumCommand
+    @ImperiumCommand(["crate"], Rank.ADMIN)
+    @Scope(MindustryGamemode.EVENT)
     fun onManualGenerateCommand(
+        sender: CommandSender
         x: Int = 0
         y: Int = 0
-        rarity: Int = 1
+        @Flag rarity: Int? = null
     ) {
         generateCrate(x, y, rarity)
     }
@@ -113,17 +120,6 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     fun generateCrate(x: Int, y: Int, rarity: Int?) {
         if (rarity == null) { val rarity = generateRarity() }
-        if (rarity == 5) {
-            // Legendary
-        } else if (rarity == 4) {
-            // Epic
-        } else if (rarity == 3) {
-            // Rare
-        } else if (rarity == 2) {
-            // Uncommon
-        } else if (rarity == 1) {
-            // Common
-        }
 
         val tile = Vars.world.tile(x, y)
         tile.setNet(Blocks.vault, Vars.state.rules.defaultTeam, 0)
@@ -137,12 +133,48 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (building.breaking == false) return
         val building = Vars.world.tile(event.tile).build
         val team = event.team
+
         if (crates.contains(building)) {
-        building.rarity = null
-        crates.remove(building)
+            val rarity = building.rarity
+            if (rarity == 5) {
+                val crate = VaultTypes.legendaryVault.random()
+                crate.effect()
+                LOGGER.debug("Picked legendary crate {}", crate.name)
+                building.rarity = null
+                crates.remove(building)
+                Vars.world.tile(event.tile).setNet(Blocks.air)
+            } else if (rarity == 4) {
+                val crate = VaultTypes.epicVault.random()
+                crate.effect()
+                LOGGER.debug("Picked epic crate {}", crate.name)
+                building.rarity = null
+                crates.remove(building)
+                Vars.world.tile(event.tile).setNet(Blocks.air)
+            } else if (rarity == 3) {
+                val crate = VaultTypes.rareVault.random()
+                crate.effect()
+                LOGGER.debug("Picked rare crate {}", crate.name)
+                building.rarity = null
+                crates.remove(building)
+                Vars.world.tile(event.tile).setNet(Blocks.air)
+            } else if (rarity == 2) {
+                val crate = VaultTypes.uncommonVault.random()
+                crate.effect()
+                LOGGER.debug("Picked uncommon crate {}", crate.name)
+                building.rarity = null
+                crates.remove(building)
+                Vars.world.tile(event.tile).setNet(Blocks.air)
+            } else if (rarity == 1) {
+                val crate = VaultTypes.commonVault.random()
+                crate.effect()
+                LOGGER.debug("Picked common crate {}", crate.name)
+                building.rarity = null
+                crates.remove(building)
+                Vars.world.tile(event.tile).setNet(Blocks.air)
+            }
+            
         }
-        // TODO: Effect for deletion
-        // Make effects a map or smth so i can easily do what it needs?
+        
     }
 
     fun generateRarity(): Int {

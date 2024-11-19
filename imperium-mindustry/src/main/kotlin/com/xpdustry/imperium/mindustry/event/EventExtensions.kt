@@ -1,5 +1,6 @@
 package com.xpdustry.imperium.mindustry.event
 
+import com.xpdustry.imperium.common.inject.get
 import mindustry.world.block.storage.Vault
 import mindustry.world.meta.Building
 
