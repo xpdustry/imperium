@@ -28,12 +28,8 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
-import com.xpdustry.imperium.mindustry.event.VaultTypes
-import com.xpdustry.imperium.mindustry.event.EventExtensions //.buildingRarityMap
-import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -119,7 +115,9 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     fun generateCrate(x: Int, y: Int, rarity: Int?) {
-        if (rarity == null) { val rarity = generateRarity() }
+        if (rarity == null) {
+            val rarity = generateRarity()
+        }
 
         val tile = Vars.world.tile(x, y)
         tile.setNet(Blocks.vault, Vars.state.rules.defaultTeam, 0)
@@ -172,9 +170,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 crates.remove(building)
                 Vars.world.tile(event.tile).setNet(Blocks.air)
             }
-            
         }
-        
     }
 
     fun generateRarity(): Int {
