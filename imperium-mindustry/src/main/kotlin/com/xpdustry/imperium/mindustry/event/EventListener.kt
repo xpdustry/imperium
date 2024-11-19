@@ -25,13 +25,12 @@ import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
-import com.xpdustry.imperium.mindustry.event.EventExtensions
 import com.xpdustry.imperium.mindustry.event.VaultTypes
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
@@ -45,6 +44,7 @@ import mindustry.content.Blocks
 import mindustry.game.EventType.BlockBuildBeginEvent
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.world.Tile
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
@@ -132,47 +132,12 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     @EventHandler
     fun onCrateDeletion(event: BlockBuildBeginEvent) {
         if (event.breaking == false) return
-        val building = Vars.world.tile(event.tile).build
+        val building = event.tile.build
         val team = event.team
 
         if (crates.contains(building)) {
             val rarity = building.rarity
-            if (rarity == 5) {
-                val crate = VaultTypes.legendaryVault.random()
-                crate.effect()
-                LOGGER.debug("Picked legendary crate {}", crate.name)
-                building.rarity = null
-                crates.remove(building)
-                Vars.world.tile(event.tile).setNet(Blocks.air)
-            } else if (rarity == 4) {
-                val crate = VaultTypes.epicVault.random()
-                crate.effect()
-                LOGGER.debug("Picked epic crate {}", crate.name)
-                building.rarity = null
-                crates.remove(building)
-                Vars.world.tile(event.tile).setNet(Blocks.air)
-            } else if (rarity == 3) {
-                val crate = VaultTypes.rareVault.random()
-                crate.effect()
-                LOGGER.debug("Picked rare crate {}", crate.name)
-                building.rarity = null
-                crates.remove(building)
-                Vars.world.tile(event.tile).setNet(Blocks.air)
-            } else if (rarity == 2) {
-                val crate = VaultTypes.uncommonVault.random()
-                crate.effect()
-                LOGGER.debug("Picked uncommon crate {}", crate.name)
-                building.rarity = null
-                crates.remove(building)
-                Vars.world.tile(event.tile).setNet(Blocks.air)
-            } else if (rarity == 1) {
-                val crate = VaultTypes.commonVault.random()
-                crate.effect()
-                LOGGER.debug("Picked common crate {}", crate.name)
-                building.rarity = null
-                crates.remove(building)
-                Vars.world.tile(event.tile).setNet(Blocks.air)
-            }
+            handleCrateRemoval(building, rarity, event.tile)
         }
     }
 
@@ -185,6 +150,14 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
             randomValue < 50 -> 2
             else -> 1
         }
+    }
+
+    fun handleCrateRemoval(building: Building, rarity: Int, tile: Tile) {
+        val crate = VaultTypes.getVaultByRarity(rarity).random()
+        crate.effect(tile.x, tile.y) 
+        building.rarity = null
+        crates.remove(building)
+        Vars.world.tile(event.tile).setNet(Blocks.air)
     }
 
     fun checkValid(x: Int, y: Int): Boolean {

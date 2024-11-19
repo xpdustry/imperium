@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.mindustry.event
 
 import arc.math.geom.Vec2
-import mindustry.world.blocks.storage.Vault
 
 data class Vault(
     val name: String,
@@ -26,6 +25,18 @@ data class Vault(
     val positive: Boolean,
     val effect: (Int, Int) -> Unit
 )
+
+fun getVaultByRarity(rarity: Int): List<Vault> {
+    return when (rarity) {
+        1 -> commonVault
+        2 -> uncommonVault
+        3 -> rareVault
+        4 -> epicVault
+        5 -> legendaryVault
+        else -> emptyList()
+    }
+}
+
 
 object VaultTypes {
     val commonVault =
