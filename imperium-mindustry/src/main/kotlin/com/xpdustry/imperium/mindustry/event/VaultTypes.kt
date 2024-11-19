@@ -90,6 +90,8 @@ object VaultTypes {
         )
 }
 
-companion object {
+companion
+
+object {
     private val LOGGER by LoggerDelegate()
 }
