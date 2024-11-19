@@ -31,7 +31,6 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
-import com.xpdustry.imperium.mindustry.event.Vault
 import com.xpdustry.imperium.mindustry.event.VaultTypes.getVaultByRarity
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
