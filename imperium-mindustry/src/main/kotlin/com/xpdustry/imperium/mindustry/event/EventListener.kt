@@ -41,8 +41,10 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.EventType.BlockBuildBeginEvent
+import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Building
 import mindustry.world.Tile
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -83,7 +85,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val localValidTiles = validTiles.toMutableList()
         if (localValidTiles.isEmpty()) {
             return LOGGER.error("How is the entire map full??")
-            Events.fire(EventType.GameOverEvent(Team.derelict))
+            Events.fire(EGameOverEvent(Team.derelict))
             Call.sendMessage(
                 "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
         }
@@ -151,7 +153,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    fun handleCrateRemoval(building: Building, rarity: Int, tile: Tile) {
+    fun handleCrateRemoval(building: Building, rarity: Int?, tile: Tile) {
         val crate = VaultTypes.getVaultByRarity(rarity).random()
         crate.effect(tile.x, tile.y)
         building.rarity = null
