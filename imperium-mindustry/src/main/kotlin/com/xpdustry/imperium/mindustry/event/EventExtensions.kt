@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.event
 
 import com.xpdustry.imperium.common.inject.get
-import mindustry.world.meta.Building
+import mindustry.gen.Building
 
 private val buildingRarityMap = mutableMapOf<Building, Int>()
 

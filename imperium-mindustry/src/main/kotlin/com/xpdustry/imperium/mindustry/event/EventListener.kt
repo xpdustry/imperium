@@ -25,11 +25,15 @@ import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
+import com.xpdustry.imperium.mindustry.event.EventExtensions
+import com.xpdustry.imperium.mindustry.event.VaultTypes
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -38,7 +42,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
-import mindustry.game.EventType
+import mindustry.game.EventType.BlockBuildBeginEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 
@@ -46,10 +50,9 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
     private val crates = mutableListOf<Building>()
     private var delayJob: Job? = null
-    private var crate: Block? = null
 
     @EventHandler
-    fun onDelayStart(MenuToPlayEvent) {
+    fun onDelayStart(event: MenuToPlayEvent) {
         delayJob =
             ImperiumScope.MAIN.launch {
                 delay(Random.nextLong(3 * 60, 13 * 60).seconds)
@@ -61,7 +64,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onDelayRemove(event: EventType.GameOverEvent) {
+    fun onDelayRemove(event: GameOverEvent) {
         delayJob?.cancel()
         delayJob = null
     }
@@ -91,7 +94,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
             if (randomTile != null) {
                 val (x, y) = randomTile
                 if (checkValid(x, y)) {
-                    generateCrate(x, y)
+                    generateCrate(x, y, null)
                     return
                 } else {
                     localValidTiles.remove(randomTile)
@@ -127,8 +130,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @EventHandler
-    fun onCrateDeletion(event: EventTypes.BlockBuildBeginEvent) {
-        if (building.breaking == false) return
+    fun onCrateDeletion(event: BlockBuildBeginEvent) {
+        if (event.breaking == false) return
         val building = Vars.world.tile(event.tile).build
         val team = event.team
 
@@ -174,7 +177,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     fun generateRarity(): Int {
-        randomValue = Random.nextDouble(0.0, 100.0)
+        val randomValue = Random.nextDouble(0.0, 100.0)
         return when {
             randomValue < 2 -> 5
             randomValue < 10 -> 4

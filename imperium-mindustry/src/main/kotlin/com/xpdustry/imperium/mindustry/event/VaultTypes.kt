@@ -24,7 +24,7 @@ data class Vault(
     val name: String,
     val rarity: Int,
     val positive: Boolean,
-    val effects: (Int, Int) -> Unit
+    val effect: (Int, Int) -> Unit
 )
 
 object VaultTypes {
