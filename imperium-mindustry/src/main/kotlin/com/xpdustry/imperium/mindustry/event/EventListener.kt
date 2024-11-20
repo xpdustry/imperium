@@ -131,8 +131,13 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         println("\nonCrateDeletion()\n")
         if (!event.breaking) return
         val building = event.tile.build
-
-        val rarity = crates.find { it.first == building.id }!!.second
+        val crate = crates.find { it.first == building.id }
+        println("\n $crates \n") // you shouldnt be null
+        if (crate == null) {
+            LOGGER.error("Crate not found for building id: ${building.id}")
+            return
+        }
+        val rarity = crate.second
         handleCrateRemoval(building.id, rarity, event.tile, event.team)
     }
 
