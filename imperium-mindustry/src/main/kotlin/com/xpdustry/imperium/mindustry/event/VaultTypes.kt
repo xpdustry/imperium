@@ -29,8 +29,6 @@ data class Vault(
     val effect: (Int, Int) -> Unit
 )
 
-private val LOGGER by LoggerDelegate()
-
 fun getVaultByRarity(rarity: Int): List<Vault> {
     return when (rarity) {
         1 -> VaultTypes.commonVault
@@ -48,7 +46,7 @@ object VaultTypes {
             Vault("test1", 1, true) { x, y ->
                 UnitTypes.oct.spawn(Vec2(x.toFloat(), y.toFloat()), Team.get(255))
             },
-            Vault("test2", 1, false) { x, y -> LOGGER.debug("I dont want to do the rest") },
+            Vault("test2", 1, false) { x, y -> println("i dont want to finish this") },
         )
 
     val uncommonVault =
