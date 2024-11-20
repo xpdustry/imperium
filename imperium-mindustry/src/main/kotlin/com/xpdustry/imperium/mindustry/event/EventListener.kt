@@ -144,7 +144,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         println("Building: $building, after breaking returns true")
 
         println("\n\n")
-        println(crates.joinToString(seperator = "\n") {it.toString()})
+        println(crates.joinToString(separator = "\n") {it.toString()})
         println("\n\n")
         if (crates.first() == building) { 
             println("crate matches building")
