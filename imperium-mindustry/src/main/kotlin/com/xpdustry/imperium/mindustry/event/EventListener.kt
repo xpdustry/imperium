@@ -92,15 +92,13 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         while (localValidTiles.isNotEmpty()) {
-            val randomTile = localValidTiles.randomOrNull()
-            if (randomTile != null) {
-                val (x, y) = randomTile
-                if (checkValid(x, y)) {
-                    generateCrate(x, y, null)
-                    return
-                } else {
-                    localValidTiles.remove(randomTile)
-                }
+            val randomTile = localValidTiles.random()
+            val (x, y) = randomTile
+            if (checkValid(x, y)) {
+                generateCrate(x, y, null)
+                return
+            } else {
+                localValidTiles.remove(randomTile)
             }
         }
         LOGGER.error(
