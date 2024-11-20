@@ -138,7 +138,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         println("onCrateDeletion() called")
         if (event.breaking == false) return println("Block is not being broken") // testing
         val building = event.tile.build
-        println("Building: $bulding, after breaking returns true")
+        println("Building: $building, after breaking returns true")
         val team = event.team
 
         if (crates.contains(building)) {
