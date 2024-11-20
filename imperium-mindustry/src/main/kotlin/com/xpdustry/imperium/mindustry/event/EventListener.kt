@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
@@ -72,6 +73,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["crate"], Rank.ADMIN)
     @Scope(MindustryGamemode.EVENT)
+    @ClientSide
     fun onManualGenerateCommand(
         sender: CommandSender,
         x: Int = 0,
