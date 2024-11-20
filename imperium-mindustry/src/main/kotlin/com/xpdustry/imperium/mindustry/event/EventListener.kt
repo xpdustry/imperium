@@ -131,7 +131,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         crates.add(tile.build)
         println("added crate ${tile.build} to list with rarity ${tile.build.rarity}") // might cause issues?
         println("\n\n")
-        println(crates.joinToString(seperator = "\n") {it.toString()})
+        println(crates.joinToString(separator = "\n") {it.toString()})
         println("\n\n")
         Call.label("Event Vault\n Rarity: $rarity", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp
     }
