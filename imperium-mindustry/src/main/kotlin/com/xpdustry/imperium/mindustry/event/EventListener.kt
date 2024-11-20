@@ -121,8 +121,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         tile.setNet(Blocks.vault)
         crates.add(Pair(tile.build.id, newRarity))
-        Call.label(
-            "Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
+        Call.label("Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
     }
 
     @EventHandler
