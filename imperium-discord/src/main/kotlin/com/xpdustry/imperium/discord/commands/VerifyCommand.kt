@@ -77,11 +77,11 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        var rank = accounts.findById(verification.account)!!.rank
+        var rank = accounts.selectById(verification.account)!!.rank
         for (role in interaction.member!!.roles) {
             rank = maxOf(rank, config.roles2ranks[role.idLong] ?: Rank.VERIFIED)
         }
-        accounts.setRank(verification.account, rank)
+        accounts.updateRank(verification.account, rank)
 
         discord.syncRoles(interaction.member!!)
         messenger.publish(

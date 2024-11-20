@@ -50,7 +50,7 @@ class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listene
     @ImperiumCommand(["sync-roles"])
     suspend fun onSyncRolesCommand(interaction: SlashCommandInteraction) {
         val reply = interaction.deferReply(true).await()
-        val account = accounts.findByDiscord(interaction.user.idLong)
+        val account = accounts.selectByDiscord(interaction.user.idLong)
         if (account == null) {
             reply.sendMessage("You are not linked to a cn account.").await()
             return

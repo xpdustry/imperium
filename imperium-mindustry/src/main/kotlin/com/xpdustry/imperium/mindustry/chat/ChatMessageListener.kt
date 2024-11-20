@@ -19,12 +19,14 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.CommandHandler.ResponseType
 import arc.util.Time
+import com.google.common.primitives.Longs
 import com.xpdustry.distributor.api.DistributorProvider
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.SessionKey
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
@@ -53,6 +55,8 @@ import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
 import com.xpdustry.imperium.mindustry.placeholder.invalidQueryError
 import com.xpdustry.imperium.mindustry.processing.registerCaching
 import java.text.DecimalFormat
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -77,6 +81,7 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
     // Why tf this goofy ahh client breaks the chat when the sender is specified >:(
     private val detector = instances.get<ClientDetector>()
 
+    @OptIn(ExperimentalEncodingApi::class)
     override fun onImperiumInit() {
         // Intercept chat messages, so they go through the async processing pipeline
         Vars.net.handleServer(SendChatMessageCallPacket::class.java) { con, packet ->
@@ -105,13 +110,21 @@ class ChatMessageListener(instances: InstanceManager) : ImperiumApplication.List
             }
         }
 
+        // TODO Get rid of that shi
         val chaoticHourFormat = DecimalFormat("000")
         placeholderPipeline.registerCaching("subject_playtime", 10.seconds, ::getContextKey) {
             (subject, query) ->
             val playtime =
                 when (subject) {
-                    is Identity.Mindustry -> accounts.findByIdentity(subject)?.playtime
-                    is Identity.Discord -> accounts.findByDiscord(subject.id)?.playtime
+                    is Identity.Mindustry ->
+                        accounts
+                            .selectBySession(
+                                SessionKey(
+                                    Longs.fromByteArray(Base64.decode(subject.uuid)),
+                                    Longs.fromByteArray(Base64.decode(subject.usid)),
+                                    subject.address))
+                            ?.playtime
+                    is Identity.Discord -> accounts.selectByDiscord(subject.id)?.playtime
                     else -> null
                 } ?: return@registerCaching ""
             when (query) {

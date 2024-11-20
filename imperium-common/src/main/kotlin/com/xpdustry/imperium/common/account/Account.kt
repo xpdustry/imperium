@@ -29,13 +29,4 @@ data class Account(
     val creation: Instant,
     val legacy: Boolean,
     val rank: Rank,
-) {
-    enum class Achievement {
-        ACTIVE,
-        HYPER,
-        GAMER,
-        DAY,
-        WEEK,
-        MONTH
-    }
-}
+)

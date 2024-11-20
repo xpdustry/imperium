@@ -44,13 +44,13 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         if (parsed != null && accounts.existsById(parsed)) {
             id = parsed
         } else if (target.toLongOrNull() != null) {
-            id = accounts.findByDiscord(target.toLong())?.id
+            id = accounts.selectByDiscord(target.toLong())?.id
         }
         if (id == null) {
             reply.sendMessage("Account not found.").await()
             return
         }
-        accounts.setRank(id, rank)
+        accounts.updateRank(id, rank)
         reply.sendMessage("Set rank to $rank.").await()
     }
 }

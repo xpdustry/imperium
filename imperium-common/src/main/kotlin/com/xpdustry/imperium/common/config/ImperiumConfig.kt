@@ -19,7 +19,7 @@ package com.xpdustry.imperium.common.config
 
 import com.google.common.net.InetAddresses
 import com.sksamuel.hoplite.Secret
-import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
@@ -136,7 +136,7 @@ data class DiscordConfig(
     val channels: Channels,
     val ranks2roles: Map<Rank, Long> = emptyMap(),
     val permissions2roles: Map<Permission, Long> = emptyMap(),
-    val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
+    val achievements2roles: Map<Achievement, Long> = emptyMap(),
     val mindustryVersion: String = "145",
     val globalCommands: Boolean = false,
     val alertsRole: Long? = null,

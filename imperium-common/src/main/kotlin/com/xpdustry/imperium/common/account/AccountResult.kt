@@ -15,26 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security
+package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.serialization.SerializableInetAddress
-import kotlinx.serialization.Serializable
+import com.xpdustry.imperium.common.security.PasswordRequirement
+import com.xpdustry.imperium.common.security.UsernameRequirement
 
-@Deprecated("Replace with relevant data directly instead")
-@Serializable
-sealed interface Identity {
-    val name: String
+sealed interface AccountResult {
 
-    @Serializable
-    data class Mindustry(
-        override val name: String,
-        val uuid: String,
-        val usid: String,
-        val address: SerializableInetAddress,
-        val displayName: String = name
-    ) : Identity
+    data object Success : AccountResult
 
-    @Serializable data class Discord(override val name: String, val id: Long) : Identity
+    data object AlreadyRegistered : AccountResult
 
-    @Serializable data class Server(override val name: String) : Identity
+    data object NotFound : AccountResult
+
+    data object AlreadyLogged : AccountResult
+
+    data object WrongPassword : AccountResult
+
+    data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountResult
+
+    data class InvalidUsername(val missing: List<UsernameRequirement>) : AccountResult
 }

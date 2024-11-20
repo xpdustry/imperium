@@ -17,11 +17,9 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.google.common.annotations.VisibleForTesting
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.hash.Argon2HashFunction
 import com.xpdustry.imperium.common.hash.Argon2Params
 import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
 import com.xpdustry.imperium.common.hash.Hash
@@ -34,8 +32,6 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
 import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
-import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
@@ -49,6 +45,7 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
@@ -62,19 +59,45 @@ import org.jetbrains.exposed.sql.upsert
 
 interface AccountManager {
 
-    suspend fun findByUsername(username: String): Account?
+    suspend fun selectByUsername(username: String): Account?
 
-    suspend fun findById(id: Int): Account?
+    suspend fun selectById(id: Int): Account?
 
-    suspend fun findByDiscord(discord: Long): Account?
+    suspend fun selectByDiscord(discord: Long): Account?
 
-    suspend fun findByIdentity(identity: Identity.Mindustry): Account?
+    suspend fun updateDiscord(account: Int, discord: Long): Boolean
 
-    suspend fun existsByIdentity(identity: Identity.Mindustry): Boolean
+    suspend fun selectBySession(key: SessionKey): Account?
+
+    suspend fun existsBySession(key: SessionKey): Boolean
 
     suspend fun existsById(id: Int): Boolean
 
-    suspend fun updateDiscord(account: Int, discord: Long): AccountResult
+    suspend fun incrementGames(account: Int): Boolean
+
+    suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean
+
+    suspend fun updateRank(account: Int, rank: Rank)
+
+    suspend fun updatePassword(
+        account: Int,
+        oldPassword: CharArray,
+        newPassword: CharArray
+    ): AccountResult
+
+    suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean
+
+    suspend fun selectAchievements(account: Int): Map<Achievement, Boolean>
+
+    suspend fun updateAchievement(
+        account: Int,
+        achievement: Achievement,
+        completed: Boolean
+    ): Boolean
+
+    suspend fun selectMetadata(account: Int, key: String): String?
+
+    suspend fun updateMetadata(account: Int, key: String, value: String)
 
     suspend fun register(username: String, password: CharArray): AccountResult
 
@@ -84,65 +107,13 @@ interface AccountManager {
         password: CharArray
     ): AccountResult
 
-    suspend fun changePassword(
-        oldPassword: CharArray,
-        newPassword: CharArray,
-        identity: Identity.Mindustry
-    ): AccountResult
+    suspend fun login(key: SessionKey, username: String, password: CharArray): AccountResult
 
-    // TODO Move these in a account session manager
-    suspend fun login(
-        username: String,
-        password: CharArray,
-        identity: Identity.Mindustry
-    ): AccountResult
-
-    suspend fun refresh(identity: Identity.Mindustry): AccountResult
-
-    suspend fun logout(identity: Identity.Mindustry, all: Boolean = false): AccountResult
-
-    // TODO Move the following methods in a account stat manager
-    suspend fun setAchievement(
-        account: Int,
-        achievement: Account.Achievement,
-        completed: Boolean
-    ): AccountResult
-
-    suspend fun getAchievements(account: Int): Map<Account.Achievement, Boolean>
-
-    suspend fun getAchievement(account: Int, achievement: Account.Achievement): Boolean
-
-    suspend fun incrementGames(account: Int): Boolean
-
-    suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean
-
-    suspend fun setRank(account: Int, rank: Rank)
-
-    suspend fun getMetadata(account: Int, key: String): String?
-
-    suspend fun setMetadata(account: Int, key: String, value: String)
+    suspend fun logout(key: SessionKey, all: Boolean = false): Boolean
 }
 
 @Serializable
-data class AchievementCompletedMessage(val account: Int, val achievement: Account.Achievement) :
-    Message
-
-sealed interface AccountResult {
-
-    data object Success : AccountResult
-
-    data object AlreadyRegistered : AccountResult
-
-    data object NotFound : AccountResult
-
-    data object AlreadyLogged : AccountResult
-
-    data object WrongPassword : AccountResult
-
-    data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountResult
-
-    data class InvalidUsername(val missing: List<UsernameRequirement>) : AccountResult
-}
+data class AchievementCompletedMessage(val account: Int, val achievement: Achievement) : Message
 
 class SimpleAccountManager(
     private val provider: SQLProvider,
@@ -161,9 +132,8 @@ class SimpleAccountManager(
                 LegacyAccountAchievementTable)
 
             if (config.testing) {
-                if (AccountTable.exists { AccountTable.username eq "test" }) {
-                    return@newTransaction
-                }
+                LOGGER.warn(
+                    "Testing mode enabled, creating test account, with credentials {}", "test:test")
                 val password = runBlocking {
                     GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS)
                 }
@@ -173,13 +143,13 @@ class SimpleAccountManager(
                     it[passwordSalt] = password.salt
                     it[rank] = Rank.OWNER
                 }
-                LOGGER.warn(
-                    "Testing mode enabled, created test account, with credentials {}", "test:test")
             }
+
+            AccountSessionTable.deleteWhere { expiration less Instant.now() }
         }
     }
 
-    override suspend fun findByUsername(username: String): Account? =
+    override suspend fun selectByUsername(username: String): Account? =
         provider.newSuspendTransaction {
             AccountTable.selectAll()
                 .where { AccountTable.username eq username }
@@ -187,12 +157,12 @@ class SimpleAccountManager(
                 ?.toAccount()
         }
 
-    override suspend fun findById(id: Int): Account? =
+    override suspend fun selectById(id: Int): Account? =
         provider.newSuspendTransaction {
             AccountTable.selectAll().where { AccountTable.id eq id }.firstOrNull()?.toAccount()
         }
 
-    override suspend fun findByDiscord(discord: Long): Account? =
+    override suspend fun selectByDiscord(discord: Long): Account? =
         provider.newSuspendTransaction {
             AccountTable.selectAll()
                 .where { AccountTable.discord eq discord }
@@ -200,39 +170,164 @@ class SimpleAccountManager(
                 ?.toAccount()
         }
 
-    override suspend fun findByIdentity(identity: Identity.Mindustry): Account? =
+    override suspend fun updateDiscord(account: Int, discord: Long): Boolean =
         provider.newSuspendTransaction {
-            val sessionHash = createSessionHash(identity)
-            (AccountTable leftJoin AccountSessionTable)
-                .selectAll()
-                .where {
-                    (AccountSessionTable.hash eq sessionHash) and
-                        (AccountSessionTable.expiration greater Instant.now())
-                }
-                .firstOrNull()
-                ?.toAccount()
+            AccountTable.update({ AccountTable.id eq account }) {
+                it[AccountTable.discord] = discord
+            } > 0
         }
 
-    override suspend fun existsByIdentity(identity: Identity.Mindustry): Boolean =
-        provider.newSuspendTransaction {
-            val sessionHash = createSessionHash(identity)
-            AccountSessionTable.exists {
-                (AccountSessionTable.hash eq sessionHash) and
-                    (AccountSessionTable.expiration less Instant.now())
-            }
-        }
+    override suspend fun selectBySession(key: SessionKey): Account? =
+        provider.newSuspendTransaction { selectBySession0(key)?.toAccount() }
+
+    override suspend fun existsBySession(key: SessionKey): Boolean =
+        provider.newSuspendTransaction { selectBySession0(key) != null }
 
     override suspend fun existsById(id: Int): Boolean =
         provider.newSuspendTransaction { AccountTable.exists { AccountTable.id eq id } }
 
-    override suspend fun updateDiscord(account: Int, discord: Long): AccountResult =
+    override suspend fun incrementGames(account: Int): Boolean =
         provider.newSuspendTransaction {
-            val rows =
-                AccountTable.update({ AccountTable.id eq account }) {
-                    it[AccountTable.discord] = discord
-                }
-            if (rows == 0) AccountResult.NotFound else AccountResult.Success
+            AccountTable.update({ AccountTable.id eq account }) { it[games] = games.plus(1) } != 0
         }
+
+    override suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean =
+        provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq account }) {
+                it[playtime] = playtime.plus(duration.toJavaDuration())
+            } != 0
+        }
+
+    override suspend fun updateRank(account: Int, rank: Rank) {
+        val changed =
+            provider.newSuspendTransaction {
+                val current =
+                    AccountTable.select(AccountTable.rank)
+                        .where { AccountTable.id eq account }
+                        .firstOrNull()
+                        ?.get(AccountTable.rank)
+                if (current == rank) {
+                    return@newSuspendTransaction false
+                }
+                AccountTable.update({ AccountTable.id eq account }) {
+                    it[AccountTable.rank] = rank
+                } != 0
+            }
+        if (changed) {
+            messenger.publish(RankChangeEvent(account), local = true)
+        }
+    }
+
+    override suspend fun updatePassword(
+        account: Int,
+        oldPassword: CharArray,
+        newPassword: CharArray
+    ): AccountResult =
+        provider.newSuspendTransaction {
+            val result =
+                AccountTable.select(AccountTable.passwordHash, AccountTable.passwordSalt)
+                    .where { AccountTable.id eq account }
+                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
+
+            if (!GenericSaltyHashFunction.equals(
+                oldPassword,
+                Hash(
+                    result[AccountTable.passwordHash],
+                    result[AccountTable.passwordSalt],
+                    PASSWORD_PARAMS))) {
+                return@newSuspendTransaction AccountResult.WrongPassword
+            }
+
+            val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(newPassword)
+            if (missing.isNotEmpty()) {
+                return@newSuspendTransaction AccountResult.InvalidPassword(missing)
+            }
+
+            val newPasswordHash = GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS)
+            AccountTable.update({ AccountTable.id eq account }) {
+                it[passwordHash] = newPasswordHash.hash
+                it[passwordSalt] = newPasswordHash.salt
+            }
+
+            return@newSuspendTransaction AccountResult.Success
+        }
+
+    override suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean =
+        provider.newSuspendTransaction {
+            AccountAchievementTable.select(AccountAchievementTable.completed)
+                .where {
+                    (AccountAchievementTable.account eq account) and
+                        (AccountAchievementTable.achievement eq achievement)
+                }
+                .firstOrNull()
+                ?.get(AccountAchievementTable.completed) ?: false
+        }
+
+    override suspend fun selectAchievements(account: Int): Map<Achievement, Boolean> =
+        provider.newSuspendTransaction {
+            AccountAchievementTable.select(
+                    AccountAchievementTable.achievement, AccountAchievementTable.completed)
+                .where { AccountAchievementTable.account eq account }
+                .associate {
+                    it[AccountAchievementTable.achievement] to it[AccountAchievementTable.completed]
+                }
+        }
+
+    override suspend fun updateAchievement(
+        account: Int,
+        achievement: Achievement,
+        completed: Boolean
+    ): Boolean {
+        if (!existsById(account)) {
+            return false
+        }
+
+        val wasCompleted =
+            provider.newSuspendTransaction {
+                AccountAchievementTable.select(AccountAchievementTable.completed)
+                    .where {
+                        (AccountAchievementTable.account eq account) and
+                            (AccountAchievementTable.achievement eq achievement)
+                    }
+                    .firstOrNull()
+                    ?.get(AccountAchievementTable.completed) ?: false
+            }
+
+        provider.newSuspendTransaction {
+            AccountAchievementTable.upsert {
+                it[AccountAchievementTable.account] = account
+                it[AccountAchievementTable.achievement] = achievement
+                it[AccountAchievementTable.completed] = completed
+            }
+        }
+
+        if (!wasCompleted && completed) {
+            messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
+        }
+
+        return true
+    }
+
+    override suspend fun selectMetadata(account: Int, key: String): String? {
+        return provider.newSuspendTransaction {
+            AccountMetadataTable.select(AccountMetadataTable.value)
+                .where {
+                    (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key)
+                }
+                .firstOrNull()
+                ?.get(AccountMetadataTable.value)
+        }
+    }
+
+    override suspend fun updateMetadata(account: Int, key: String, value: String) {
+        provider.newSuspendTransaction {
+            AccountMetadataTable.upsert {
+                it[AccountMetadataTable.account] = account
+                it[AccountMetadataTable.key] = key
+                it[AccountMetadataTable.value] = value
+            }
+        }
+    }
 
     override suspend fun register(username: String, password: CharArray): AccountResult =
         provider.newSuspendTransaction {
@@ -329,48 +424,21 @@ class SimpleAccountManager(
             return@newSuspendTransaction AccountResult.Success
         }
 
-    override suspend fun changePassword(
-        oldPassword: CharArray,
-        newPassword: CharArray,
-        identity: Identity.Mindustry
-    ): AccountResult =
-        provider.newSuspendTransaction {
-            val sessionHash = createSessionHash(identity)
-            val account =
-                (AccountTable leftJoin AccountSessionTable)
-                    .select(AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
-                    .where { AccountSessionTable.hash eq sessionHash }
-                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
-
-            if (!GenericSaltyHashFunction.equals(
-                oldPassword,
-                Hash(
-                    account[AccountTable.passwordHash],
-                    account[AccountTable.passwordSalt],
-                    PASSWORD_PARAMS))) {
-                return@newSuspendTransaction AccountResult.WrongPassword
-            }
-
-            val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(newPassword)
-            if (missing.isNotEmpty()) {
-                return@newSuspendTransaction AccountResult.InvalidPassword(missing)
-            }
-
-            val newPasswordHash = GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS)
-            AccountTable.update({ AccountTable.id eq account[AccountTable.id] }) {
-                it[passwordHash] = newPasswordHash.hash
-                it[passwordSalt] = newPasswordHash.salt
-            }
-
-            return@newSuspendTransaction AccountResult.Success
-        }
-
     override suspend fun login(
+        key: SessionKey,
         username: String,
-        password: CharArray,
-        identity: Identity.Mindustry
+        password: CharArray
     ): AccountResult =
         provider.newSuspendTransaction {
+            if (AccountSessionTable.exists {
+                (AccountSessionTable.uuid eq key.uuid) and
+                    (AccountSessionTable.usid eq key.usid) and
+                    (AccountSessionTable.address eq key.address.address) and
+                    (AccountSessionTable.expiration greaterEq Instant.now())
+            }) {
+                return@newSuspendTransaction AccountResult.AlreadyLogged
+            }
+
             val result =
                 AccountTable.select(
                         AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
@@ -386,171 +454,44 @@ class SimpleAccountManager(
                 return@newSuspendTransaction AccountResult.NotFound
             }
 
-            val sessionHash = createSessionHash(identity)
-            if (AccountSessionTable.exists { AccountSessionTable.hash eq sessionHash }) {
-                return@newSuspendTransaction AccountResult.AlreadyLogged
-            }
-
             AccountSessionTable.insert {
                 it[account] = result[AccountTable.id]
-                it[hash] = sessionHash
-                it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION.toJavaDuration())
+                it[uuid] = key.uuid
+                it[usid] = key.usid
+                it[address] = key.address.address
+                it[expiration] = Instant.now().plus(SESSION_LIFETIME.toJavaDuration())
             }
 
             return@newSuspendTransaction AccountResult.Success
         }
 
-    override suspend fun refresh(identity: Identity.Mindustry): AccountResult =
+    override suspend fun logout(key: SessionKey, all: Boolean) =
         provider.newSuspendTransaction {
-            val sessionHash = createSessionHash(identity)
-
-            AccountSessionTable.deleteWhere {
-                (hash eq sessionHash) and (expiration less Instant.now())
-            }
-
-            val updated =
-                AccountSessionTable.update({ AccountSessionTable.hash eq sessionHash }) {
-                    it[expiration] = Instant.now().plus(SESSION_TOKEN_DURATION.toJavaDuration())
-                }
-
-            if (updated == 0) {
-                AccountResult.NotFound
+            if (!all) {
+                AccountSessionTable.deleteWhere {
+                    (uuid eq key.uuid) and (usid eq key.usid) and (address eq key.address.address)
+                } > 0
             } else {
-                AccountResult.Success
+                val sessions =
+                    AccountSessionTable.select(AccountSessionTable.account)
+                        .where { (AccountSessionTable.uuid eq key.uuid) }
+                        .map { it[AccountSessionTable.account].value }
+                return@newSuspendTransaction AccountSessionTable.deleteWhere {
+                    (account inList sessions)
+                } > 0
             }
         }
 
-    override suspend fun logout(identity: Identity.Mindustry, all: Boolean): AccountResult =
-        provider.newSuspendTransaction {
-            val sessionHash = createSessionHash(identity)
-            val session =
-                AccountSessionTable.select(AccountSessionTable.account)
-                    .where { AccountSessionTable.hash eq sessionHash }
-                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
-
-            if (all) {
-                AccountSessionTable.deleteWhere { account eq session[account] }
-            } else {
-                AccountSessionTable.deleteWhere { hash eq sessionHash }
+    private fun selectBySession0(key: SessionKey): ResultRow? =
+        (AccountTable leftJoin AccountSessionTable)
+            .selectAll()
+            .where {
+                (AccountSessionTable.uuid eq key.uuid) and
+                    (AccountSessionTable.usid eq key.usid) and
+                    (AccountSessionTable.address eq key.address.address) and
+                    (AccountSessionTable.expiration greaterEq Instant.now())
             }
-
-            AccountResult.Success
-        }
-
-    override suspend fun setAchievement(
-        account: Int,
-        achievement: Account.Achievement,
-        completed: Boolean
-    ): AccountResult {
-        if (!existsById(account)) {
-            return AccountResult.NotFound
-        }
-
-        val wasCompleted =
-            provider.newSuspendTransaction {
-                AccountAchievementTable.select(AccountAchievementTable.completed)
-                    .where {
-                        (AccountAchievementTable.account eq account) and
-                            (AccountAchievementTable.achievement eq achievement)
-                    }
-                    .firstOrNull()
-                    ?.get(AccountAchievementTable.completed) ?: false
-            }
-
-        provider.newSuspendTransaction {
-            AccountAchievementTable.upsert {
-                it[AccountAchievementTable.account] = account
-                it[AccountAchievementTable.achievement] = achievement
-                it[AccountAchievementTable.completed] = completed
-            }
-        }
-
-        if (!wasCompleted && completed) {
-            messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
-        }
-
-        return AccountResult.Success
-    }
-
-    override suspend fun getAchievements(account: Int): Map<Account.Achievement, Boolean> =
-        provider.newSuspendTransaction {
-            AccountAchievementTable.select(
-                    AccountAchievementTable.achievement, AccountAchievementTable.completed)
-                .where { AccountAchievementTable.account eq account }
-                .associate {
-                    it[AccountAchievementTable.achievement] to it[AccountAchievementTable.completed]
-                }
-        }
-
-    override suspend fun getAchievement(account: Int, achievement: Account.Achievement): Boolean =
-        provider.newSuspendTransaction {
-            AccountAchievementTable.select(AccountAchievementTable.completed)
-                .where {
-                    (AccountAchievementTable.account eq account) and
-                        (AccountAchievementTable.achievement eq achievement)
-                }
-                .firstOrNull()
-                ?.get(AccountAchievementTable.completed) ?: false
-        }
-
-    override suspend fun incrementGames(account: Int): Boolean =
-        provider.newSuspendTransaction {
-            AccountTable.update({ AccountTable.id eq account }) { it[games] = games.plus(1) } != 0
-        }
-
-    override suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean =
-        provider.newSuspendTransaction {
-            AccountTable.update({ AccountTable.id eq account }) {
-                it[playtime] = playtime.plus(duration.toJavaDuration())
-            } != 0
-        }
-
-    override suspend fun setRank(account: Int, rank: Rank) {
-        val changed =
-            provider.newSuspendTransaction {
-                val current =
-                    AccountTable.select(AccountTable.rank)
-                        .where { AccountTable.id eq account }
-                        .firstOrNull()
-                        ?.get(AccountTable.rank)
-                if (current == rank) {
-                    return@newSuspendTransaction false
-                }
-                AccountTable.update({ AccountTable.id eq account }) {
-                    it[AccountTable.rank] = rank
-                } != 0
-            }
-        if (changed) {
-            messenger.publish(RankChangeEvent(account), local = true)
-        }
-    }
-
-    override suspend fun getMetadata(account: Int, key: String): String? {
-        return provider.newSuspendTransaction {
-            AccountMetadataTable.select(AccountMetadataTable.value)
-                .where {
-                    (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key)
-                }
-                .firstOrNull()
-                ?.get(AccountMetadataTable.value)
-        }
-    }
-
-    override suspend fun setMetadata(account: Int, key: String, value: String) {
-        provider.newSuspendTransaction {
-            AccountMetadataTable.upsert {
-                it[AccountMetadataTable.account] = account
-                it[AccountMetadataTable.key] = key
-                it[AccountMetadataTable.value] = value
-            }
-        }
-    }
-
-    @VisibleForTesting
-    internal suspend fun createSessionHash(identity: Identity.Mindustry): ByteArray =
-        Argon2HashFunction.create(
-                identity.uuid.toCharArray(), SESSION_TOKEN_PARAMS, identity.usid.toByteArray())
-            .hash
+            .firstOrNull()
 
     private fun ResultRow.toAccount() =
         Account(
@@ -566,7 +507,7 @@ class SimpleAccountManager(
     companion object {
         private val LOGGER by LoggerDelegate()
 
-        private val SESSION_TOKEN_DURATION = 7.days
+        private val SESSION_LIFETIME = 30.days
 
         private val SESSION_TOKEN_PARAMS =
             Argon2Params(

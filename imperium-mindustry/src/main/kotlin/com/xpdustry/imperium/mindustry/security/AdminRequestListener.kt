@@ -33,6 +33,7 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.View
@@ -256,7 +257,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 return@launch
             }
             val canSeeInfo =
-                (accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE) >= Rank.ADMIN
+                (accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE) >=
+                    Rank.ADMIN
             val historic = users.findNamesAndAddressesById(user.id)
             Call.traceInfo(
                 requester.con,
@@ -283,7 +285,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
 
     private fun handleWaveSkip(requester: Player) =
         ImperiumScope.MAIN.launch {
-            val rank = accounts.findByIdentity(requester.identity)?.rank ?: Rank.EVERYONE
+            val rank = accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE
             if (rank >= Rank.MODERATOR) {
                 runMindustryThread {
                     Vars.logic.skipWave()
