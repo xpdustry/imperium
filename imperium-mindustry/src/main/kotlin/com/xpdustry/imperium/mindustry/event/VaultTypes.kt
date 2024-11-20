@@ -28,7 +28,7 @@ data class Vault(
     val effect: (Int, Int) -> Unit
 )
 
-fun getVaultByRarity(rarity: Int): List<Vault> {
+fun getVaultByRarity(rarity: Int?): List<Vault> {
     return when (rarity) {
         1 -> VaultTypes.commonVault
         2 -> VaultTypes.uncommonVault
