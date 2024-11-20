@@ -130,6 +130,9 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         tile.build.rarity = rarity
         crates.add(tile.build)
         println("added crate ${tile.build} to list with rarity ${tile.build.rarity}") // might cause issues?
+        println("\n\n")
+        println(crates.joinToString(seperator = "\n") {it.toString()})
+        println("\n\n")
         Call.label("Event Vault\n Rarity: $rarity", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp
     }
 
@@ -139,7 +142,13 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (event.breaking == false) return println("Block is not being broken") // testing
         val building = event.tile.build
         println("Building: $building, after breaking returns true")
-        val team = event.team
+
+        println("\n\n")
+        println(crates.joinToString(seperator = "\n") {it.toString()})
+        println("\n\n")
+        if (crates.first() == building) { 
+            println("crate matches building")
+        } else println("crate doesnt match")
 
         if (crates.contains(building)) {
             println("vault is event vault") // testing
