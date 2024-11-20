@@ -29,7 +29,6 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
@@ -44,7 +43,6 @@ import mindustry.content.Blocks
 import mindustry.game.EventType.BlockBuildBeginEvent
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
-import mindustry.gen.Building
 import mindustry.gen.Call
 import mindustry.world.Tile
 
@@ -127,7 +125,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val tile = Vars.world.tile(x, y)
         tile.setNet(Blocks.vault)
         crates.add(Pair(tile.build.id, rarity))
-        Call.label("Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp, less tmp
+        Call.label(
+            "Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp, less tmp
     }
 
     @EventHandler
@@ -136,7 +135,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (event.breaking == false) return
         val building = event.tile.build
 
-        rarity = crates.find { it.first == building.id}.second
+        rarity = crates.find { it.first == building.id }.second
         handleCrateRemoval(building.id, rarity, event.tile, event.team)
     }
 
@@ -156,7 +155,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         println("\nhandleCrateRemoval()\n")
         val crate = getVaultByRarity(rarity).random()
         crate.effect(tile.x, tile.y, team)
-        crates.removeif { it.first == id && it.second == rarity}
+        crates.removeif { it.first == id && it.second == rarity }
         tile.setNet(Blocks.air)
     }
 
