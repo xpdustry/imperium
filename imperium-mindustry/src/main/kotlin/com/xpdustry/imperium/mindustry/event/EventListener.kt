@@ -142,7 +142,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    fun generateRarity(): Int {
+    fun generateRarity(): Int? {
         val randomValue = Random.nextDouble(0.0, 100.0)
         return when {
             randomValue < 2 -> 5
@@ -155,7 +155,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     fun handleCrateRemoval(building: Building, rarity: Int?, tile: Tile) {
         val crate = getVaultByRarity(rarity).random()
-        crate.effect(tile.x, tile.y)
+        crate.effect(tile.x.toInt(), tile.y.toInt())
         building.rarity = null
         crates.remove(building)
         tile.setNet(Blocks.air)
