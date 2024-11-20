@@ -71,6 +71,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["crate"], Rank.ADMIN)
     @Scope(MindustryGamemode.EVENT)
+    @ClientSide
     fun onManualGenerateCommand(
         sender: CommandSender,
         x: Int = 0,
