@@ -129,16 +129,20 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         tile.setNet(Blocks.vault, Vars.state.rules.defaultTeam, 0)
         tile.build.rarity = rarity
         crates.add(tile.build)
-        Call.label("Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp
+        println("added crate ${tile.build} to list with rarity ${tile.build.rarity}") // might cause issues?
+        Call.label("Event Vault\n Rarity: $rarity", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp
     }
 
     @EventHandler
     fun onCrateDeletion(event: BlockBuildBeginEvent) {
-        if (event.breaking == false) return
+        println("onCrateDeletion() called")
+        if (event.breaking == false) return println("Block is not being broken") // testing
         val building = event.tile.build
+        println("Building: $bulding, after breaking returns true")
         val team = event.team
 
         if (crates.contains(building)) {
+            println("vault is event vault") // testing
             val rarity = building.rarity
             handleCrateRemoval(building, rarity, event.tile)
         }
@@ -156,6 +160,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     fun handleCrateRemoval(building: Building, rarity: Int?, tile: Tile) {
+        println("handleCrateRemoval called. Building: $building, Rarity $rarity, Tile: $tile")
         val crate = getVaultByRarity(rarity).random()
         crate.effect(tile.x.toInt(), tile.y.toInt())
         building.rarity = null
