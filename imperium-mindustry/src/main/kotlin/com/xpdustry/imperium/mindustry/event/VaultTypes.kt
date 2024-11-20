@@ -25,10 +25,10 @@ data class Vault(
     val name: String,
     val rarity: Int,
     val positive: Boolean,
-    val effect: (Int, Int) -> Unit
+    val effect: (Int, Int, Team) -> Unit
 )
 
-fun getVaultByRarity(rarity: Int?): List<Vault> {
+fun getVaultByRarity(rarity: Int): List<Vault> {
     return when (rarity) {
         1 -> VaultTypes.commonVault
         2 -> VaultTypes.uncommonVault
@@ -42,48 +42,48 @@ fun getVaultByRarity(rarity: Int?): List<Vault> {
 object VaultTypes {
     val commonVault =
         listOf(
-            Vault("test1", 1, true) { x, y ->
+            Vault("test1", 1, true) { x, y, team ->
                 UnitTypes.oct.spawn(Vec2(x.toFloat(), y.toFloat()), Team.get(255))
             },
-            Vault("test2", 1, false) { x, y -> println("i dont want to finish this") },
+            Vault("test2", 1, false) { x, y, team -> println("i dont want to finish this") },
         )
 
     val uncommonVault =
         listOf(
-            Vault("test1", 2, true) { x, y ->
+            Vault("test1", 2, true) { x, y, team ->
                 // Todo
             },
-            Vault("test2", 2, false) { x, y ->
+            Vault("test2", 2, false) { x, y, team ->
                 // Todo
             },
         )
 
     val rareVault =
         listOf(
-            Vault("test1", 3, true) { x, y ->
+            Vault("test1", 3, true) { x, y, team ->
                 // Todo
             },
-            Vault("test2", 3, false) { x, y ->
+            Vault("test2", 3, false) { x, y, team ->
                 // Todo
             },
         )
 
     val epicVault =
         listOf(
-            Vault("test1", 4, true) { x, y ->
+            Vault("test1", 4, true) { x, y, team ->
                 // Todo
             },
-            Vault("test2", 4, false) { x, y ->
+            Vault("test2", 4, false) { x, y, team ->
                 // Todo
             },
         )
 
     val legendaryVault =
         listOf(
-            Vault("test1", 5, true) { x, y ->
+            Vault("test1", 5, true) { x, y, team ->
                 // Todo
             },
-            Vault("test2", 5, false) { x, y ->
+            Vault("test2", 5, false) { x, y, team ->
                 // Todo
             },
         )

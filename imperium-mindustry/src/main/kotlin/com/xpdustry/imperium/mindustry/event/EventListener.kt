@@ -50,7 +50,7 @@ import mindustry.world.Tile
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
-    private val crates = mutableListOf<Building>()
+    private val crates = mutableListOf<Pair<Int, Int>>()
     private var delayJob: Job? = null
 
     @EventHandler
@@ -73,12 +73,11 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["crate"], Rank.ADMIN)
     @Scope(MindustryGamemode.EVENT)
-    @ClientSide
     fun onManualGenerateCommand(
         sender: CommandSender,
         x: Int = 0,
         y: Int = 0,
-        @Flag rarity: Int? = null
+        @Flag rarity: Int = 0
     ) {
         generateCrate(x, y, rarity)
     }
@@ -120,44 +119,29 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    fun generateCrate(x: Int, y: Int, rarity: Int?) {
-        if (rarity == null) {
-            val rarity = generateRarity()
+    fun generateCrate(x: Int, y: Int, rarity: Int) {
+        if (rarity == 0) {
+            rarity = generateRarity()
         }
 
         val tile = Vars.world.tile(x, y)
-        tile.setNet(Blocks.vault, Vars.state.rules.defaultTeam, 0)
-        tile.build.rarity = rarity
-        crates.add(tile.build)
-        println("added crate ${tile.build} to list with rarity ${tile.build.rarity}") // might cause issues?
-        println("\n\n")
-        println(crates.joinToString(separator = "\n") {it.toString()})
-        println("\n\n")
-        Call.label("Event Vault\n Rarity: $rarity", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp
+        tile.setNet(Blocks.vault)
+        crates.add(Pair(tile.build.id, rarity))
+        Call.label("Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp, less tmp
     }
 
     @EventHandler
     fun onCrateDeletion(event: BlockBuildBeginEvent) {
-        println("onCrateDeletion() called")
-        if (event.breaking == false) return println("Block is not being broken") // testing
+        println("\nonCrateDeletion()\n")
+        if (event.breaking == false) return
         val building = event.tile.build
-        println("Building: $building, after breaking returns true")
 
-        println("\n\n")
-        println(crates.joinToString(separator = "\n") {it.toString()})
-        println("\n\n")
-        if (crates.first() === building) { 
-            println("crate matches building")
-        } else println("crate doesnt match")
-
-        if (crates.contains(building)) {
-            println("vault is event vault") // testing
-            val rarity = building.rarity
-            handleCrateRemoval(building, rarity, event.tile)
-        }
+        rarity = crates.find { it.first == building.id}.second
+        handleCrateRemoval(building.id, rarity, event.tile, event.team)
     }
 
-    fun generateRarity(): Int? {
+    fun generateRarity(): Int {
+        println("\ngenerateRarity()\n")
         val randomValue = Random.nextDouble(0.0, 100.0)
         return when {
             randomValue < 2 -> 5
@@ -168,12 +152,11 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    fun handleCrateRemoval(building: Building, rarity: Int?, tile: Tile) {
-        println("handleCrateRemoval called. Building: $building, Rarity $rarity, Tile: $tile")
+    fun handleCrateRemoval(id: Int, rarity: Int, tile: Tile, team: Team) {
+        println("\nhandleCrateRemoval()\n")
         val crate = getVaultByRarity(rarity).random()
-        crate.effect(tile.x.toInt(), tile.y.toInt())
-        building.rarity = null
-        crates.remove(building)
+        crate.effect(tile.x, tile.y, team)
+        crates.removeif { it.first == id && it.second == rarity}
         tile.setNet(Blocks.air)
     }
 
