@@ -10,7 +10,7 @@ mindustry = "146"
 # libraries
 distributor = "4.0.0-rc.3"
 junit = "5.11.3"
-testcontainers = "1.20.3"
+testcontainers = "1.20.4"
 guava = "33.3.1-jre"
 hoplite = "2.8.2"
 deepl = "1.6.0"
