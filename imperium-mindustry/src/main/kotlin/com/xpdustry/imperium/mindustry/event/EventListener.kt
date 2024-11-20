@@ -93,7 +93,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val randomTile = localValidTiles.random()
             val (x, y) = randomTile
             if (checkValid(x, y)) {
-                generateCrate(x, y, null)
+                generateCrate(x, y, 0)
                 return
             } else {
                 localValidTiles.remove(randomTile)
@@ -116,24 +116,22 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     fun generateCrate(x: Int, y: Int, rarity: Int) {
-        if (rarity == 0) {
-            rarity = generateRarity()
-        }
-
+        val newRarity = rarity.takeIf { it != 0 } ?: generateRarity()
         val tile = Vars.world.tile(x, y)
+
         tile.setNet(Blocks.vault)
-        crates.add(Pair(tile.build.id, rarity))
+        crates.add(Pair(tile.build.id, newRarity))
         Call.label(
-            "Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat()) // tmp, less tmp
+            "Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
     }
 
     @EventHandler
     fun onCrateDeletion(event: BlockBuildBeginEvent) {
         println("\nonCrateDeletion()\n")
-        if (event.breaking == false) return
+        if (!event.breaking) return
         val building = event.tile.build
 
-        rarity = crates.find { it.first == building.id }.second
+        val rarity = crates.find { it.first == building.id }!!.second
         handleCrateRemoval(building.id, rarity, event.tile, event.team)
     }
 
@@ -152,8 +150,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun handleCrateRemoval(id: Int, rarity: Int, tile: Tile, team: Team) {
         println("\nhandleCrateRemoval()\n")
         val crate = getVaultByRarity(rarity).random()
-        crate.effect(tile.x, tile.y, team)
-        crates.removeif { it.first == id && it.second == rarity }
+        crate.effect(tile.x.toInt(), tile.y.toInt(), team)
+        crates.removeIf { it.first == id && it.second == rarity }
         tile.setNet(Blocks.air)
     }
 
