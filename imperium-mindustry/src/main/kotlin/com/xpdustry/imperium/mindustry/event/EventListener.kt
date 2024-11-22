@@ -46,8 +46,6 @@ import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.world.Tile
-import mindustry.world.blocks.ConstructBlock
-import mindustry.world.blocks.ConstructBlock.ConstructBuild
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
