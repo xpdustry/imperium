@@ -88,7 +88,7 @@ object VaultTypes {
                 // Todo
             },
         )
-    
+
     val mythicVault =
         listOf(
             Vault("test1", 6, true) { x, y, team ->

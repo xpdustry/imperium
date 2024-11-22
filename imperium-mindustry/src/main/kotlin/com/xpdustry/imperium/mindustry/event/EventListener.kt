@@ -45,9 +45,9 @@ import mindustry.game.EventType.BlockBuildBeginEvent
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.world.Tile
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
-import mindustry.world.Tile
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
@@ -134,7 +134,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (!event.breaking) return
         val building = event.tile.build
         if (building.current != Blocks.vault) return
-        val crate = crates.find { it.first == event.tile.x.toInt() && it.second == event.tile.y.toInt() }
+        val crate =
+            crates.find { it.first == event.tile.x.toInt() && it.second == event.tile.y.toInt() }
         if (crate == null) return
         val rarity = crate.third
         handleCrateRemoval(rarity, event.tile, event.team)
@@ -157,7 +158,9 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         println("\nhandleCrateRemoval()\n") // testing
         val crate = getVaultByRarity(rarity).random()
         crate.effect(tile.x.toInt(), tile.y.toInt(), team)
-        crates.removeIf { it.first == tile.x.toInt() && it.second == tile.y.toInt() && it.third == rarity }
+        crates.removeIf {
+            it.first == tile.x.toInt() && it.second == tile.y.toInt() && it.third == rarity
+        }
         tile.setNet(Blocks.air)
     }
 
