@@ -35,6 +35,7 @@ fun getVaultByRarity(rarity: Int): List<Vault> {
         3 -> VaultTypes.rareVault
         4 -> VaultTypes.epicVault
         5 -> VaultTypes.legendaryVault
+        6 -> VaultTypes.mythicVault
         else -> emptyList()
     }
 }
@@ -84,6 +85,16 @@ object VaultTypes {
                 // Todo
             },
             Vault("test2", 5, false) { x, y, team ->
+                // Todo
+            },
+        )
+    
+    val mythicVault =
+        listOf(
+            Vault("test1", 6, true) { x, y, team ->
+                // Todo
+            },
+            Vault("test2", 6, true) { x, y, team ->
                 // Todo
             },
         )

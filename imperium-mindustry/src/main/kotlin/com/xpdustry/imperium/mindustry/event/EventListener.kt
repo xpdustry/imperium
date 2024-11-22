@@ -45,11 +45,13 @@ import mindustry.game.EventType.BlockBuildBeginEvent
 import mindustry.game.EventType.GameOverEvent
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.world.blocks.ConstructBlock
+import mindustry.world.blocks.ConstructBlock.ConstructBuild
 import mindustry.world.Tile
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
-    private val crates = mutableListOf<Pair<Int, Int>>()
+    private val crates = mutableListOf<Triple<Int, Int, Int>>()
     private var delayJob: Job? = null
 
     @EventHandler
@@ -122,29 +124,27 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val tile = Vars.world.tile(x, y)
 
         tile.setNet(Blocks.vault)
-        crates.add(Pair(tile.build.id, newRarity))
+        crates.add(Triple(x, y, newRarity))
         Call.label("Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
     }
 
     @EventHandler
     fun onCrateDeletion(event: BlockBuildBeginEvent) {
-        println("\nonCrateDeletion()\n")
+        println("\nonCrateDeletion()\n") // testing
         if (!event.breaking) return
         val building = event.tile.build
-        val crate = crates.find { it.first == building.id }
-        println("\n $crates \n") // you shouldnt be null
-        if (crate == null) {
-            LOGGER.error("Crate not found for building id: ${building.id}")
-            return
-        }
-        val rarity = crate.second
-        handleCrateRemoval(building.id, rarity, event.tile, event.team)
+        if (building !is ConstructBlock.ConstructBuild && building.current != Blocks.vault) return
+        val crate = crates.find { it.first == event.tile.x.toInt() && it.second == event.tile.y.toInt() }
+        if (crate == null) return
+        val rarity = crate.third
+        handleCrateRemoval(rarity, event.tile, event.team)
     }
 
     fun generateRarity(): Int {
-        println("\ngenerateRarity()\n")
+        println("\ngenerateRarity()\n") // testing
         val randomValue = Random.nextDouble(0.0, 100.0)
         return when {
+            randomValue < 0.5 -> 6
             randomValue < 2 -> 5
             randomValue < 10 -> 4
             randomValue < 25 -> 3
@@ -153,11 +153,11 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    fun handleCrateRemoval(id: Int, rarity: Int, tile: Tile, team: Team) {
-        println("\nhandleCrateRemoval()\n")
+    fun handleCrateRemoval(rarity: Int, tile: Tile, team: Team) {
+        println("\nhandleCrateRemoval()\n") // testing
         val crate = getVaultByRarity(rarity).random()
         crate.effect(tile.x.toInt(), tile.y.toInt(), team)
-        crates.removeIf { it.first == id && it.second == rarity }
+        crates.removeIf { it.first == tile.x.toInt() && it.second == tile.y.toInt() && it.third == rarity }
         tile.setNet(Blocks.air)
     }
 
