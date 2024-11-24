@@ -137,7 +137,7 @@ class SimpleAccountManager(
                 val password = runBlocking {
                     GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS)
                 }
-                AccountTable.insert {
+                AccountTable.upsert {
                     it[username] = "test"
                     it[passwordHash] = password.hash
                     it[passwordSalt] = password.salt

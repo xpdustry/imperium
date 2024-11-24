@@ -167,7 +167,6 @@ data class MindustryConfig(
     val color: Color = Color.WHITE,
     val world: World = World(),
     val security: Security = Security(),
-    val templates: Templates = Templates(),
     val tipsDelay: Duration = 5.minutes
 ) {
     data class History(
@@ -191,14 +190,6 @@ data class MindustryConfig(
         val gatekeeper: Boolean = true,
         val imageProcessingDelay: Duration = 3.seconds,
         val griefingThreshold: Float = 80F,
-    )
-
-    data class Templates(
-        val chatPrefix: String = "<%prefix%>",
-        val chatFormat: String =
-            "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display% [accent]>[white]",
-        val playerName: String =
-            "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display%",
     )
 
     data class Hub(

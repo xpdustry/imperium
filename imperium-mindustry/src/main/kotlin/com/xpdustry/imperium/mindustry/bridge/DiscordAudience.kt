@@ -15,8 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.chat
+package com.xpdustry.imperium.mindustry.bridge
 
-import mindustry.gen.Player
+import com.xpdustry.distributor.api.audience.Audience
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.key.DynamicKeyContainer
+import com.xpdustry.distributor.api.key.KeyContainer
+import com.xpdustry.distributor.api.key.StandardKeys
+import com.xpdustry.imperium.common.misc.BLURPLE
 
-data class ProcessedPlayerChatEvent(val player: Player, val message: String)
+class DiscordAudience(val name: String, val hours: Int) : Audience {
+    override fun getMetadata(): KeyContainer =
+        DynamicKeyContainer.builder()
+            .putConstant(StandardKeys.DISPLAY_NAME, text(name))
+            .putConstant(StandardKeys.COLOR, ComponentColor.from(BLURPLE))
+            .build()
+}

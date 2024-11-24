@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.discord.bridge
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
@@ -28,12 +27,10 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
-import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.identity
 import com.xpdustry.imperium.discord.service.DiscordService
-import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
@@ -52,13 +49,11 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             val channel = (event.channel as? TextChannel) ?: return@addSuspendingEventListener
             if (channel.parentCategoryIdLong != 0L &&
                 channel.parentCategoryIdLong == config.categories.liveChat) {
-                ImperiumScope.MAIN.launch {
-                    messenger.publish(
-                        BridgeChatMessage(
-                            channel.name,
-                            event.message.member!!.identity,
-                            event.message.contentStripped))
-                }
+                messenger.publish(
+                    BridgeChatMessage(
+                        channel.name,
+                        event.message.member!!.identity,
+                        event.message.contentStripped))
             }
         }
 
@@ -67,11 +62,11 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             val text =
                 when (val action = message.action) {
                     is MindustryPlayerMessage.Action.Join ->
-                        ":green_square: **${message.player.name}** has joined the server."
+                        ":green_square: **${message.player}** has joined the server."
                     is MindustryPlayerMessage.Action.Quit ->
-                        ":red_square: **${message.player.name}** has left the server."
+                        ":red_square: **${message.player}** has left the server."
                     is MindustryPlayerMessage.Action.Chat ->
-                        ":blue_square: **${message.player.name}**: ${action.message}"
+                        ":blue_square: **${message.player}**: ${action.message}"
                 }
             channel.sendMessage(text).setAllowedMentions(emptySet()).await()
         }
@@ -80,22 +75,22 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             val channel = getLiveChatChannel(message.server) ?: return@consumer
             val text = buildString {
                 append(":purple_square: ")
-                if (message.chat) append("**${message.server.name}**: ")
+                if (message.chat) append("**${message.server}**: ")
                 append(message.message)
             }
             channel.sendMessage(text).setAllowedMentions(emptySet()).await()
         }
     }
 
-    private suspend fun getLiveChatChannel(server: Identity.Server): TextChannel? {
+    private suspend fun getLiveChatChannel(server: String): TextChannel? {
         val category = discord.getMainServer().getCategoryById(config.categories.liveChat)
         if (category == null) {
             LOGGER.error("Live chat category is not defined.")
             return null
         }
         val channel =
-            category.channels.find { it.name == server.name }
-                ?: discord.getMainServer().createTextChannel(server.name, category).await()
+            category.channels.find { it.name == server }
+                ?: discord.getMainServer().createTextChannel(server, category).await()
         if (channel !is TextChannel) {
             LOGGER.error("Channel ${channel.name} (${channel.id}) is not a text channel")
             return null
