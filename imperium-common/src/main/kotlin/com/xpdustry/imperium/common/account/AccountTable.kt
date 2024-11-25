@@ -37,16 +37,18 @@ object AccountTable : IntIdTable("account") {
     val creation = timestamp("creation").defaultExpression(CurrentTimestamp)
 }
 
-object AccountSessionTable : Table("account_user_session") {
+object AccountSessionTable : Table("account_session") {
     val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
-    val hash = binary("hash", 64).uniqueIndex()
-    val expiration = timestamp("expiration")
-    override val primaryKey = PrimaryKey(account, hash)
+    val uuid = long("uuid")
+    val usid = long("usid")
+    val address = binary("address", 16)
+    val expiration = timestamp("creation")
+    override val primaryKey = PrimaryKey(uuid, usid, address)
 }
 
 object AccountAchievementTable : Table("account_achievement") {
     val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
-    val achievement = enumerationByName<Account.Achievement>("achievement", 32)
+    val achievement = enumerationByName<Achievement>("achievement", 32)
     val completed = bool("completed").default(false)
     override val primaryKey = PrimaryKey(account, achievement)
 }
@@ -70,6 +72,6 @@ object LegacyAccountTable : IntIdTable("legacy_account") {
 object LegacyAccountAchievementTable : Table("legacy_account_achievement") {
     val account =
         reference("legacy_account_id", LegacyAccountTable, onDelete = ReferenceOption.CASCADE)
-    val achievement = enumerationByName<Account.Achievement>("achievement", 32)
+    val achievement = enumerationByName<Achievement>("achievement", 32)
     override val primaryKey = PrimaryKey(account, achievement)
 }

@@ -28,8 +28,6 @@ import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
-import com.xpdustry.imperium.mindustry.chat.ChatMessagePipeline
-import com.xpdustry.imperium.mindustry.chat.SimpleChatMessagePipeline
 import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.game.SimpleClientDetector
 import com.xpdustry.imperium.mindustry.history.Historian
@@ -37,8 +35,6 @@ import com.xpdustry.imperium.mindustry.history.HistoryRenderer
 import com.xpdustry.imperium.mindustry.history.SimpleHistorian
 import com.xpdustry.imperium.mindustry.history.SimpleHistoryRenderer
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
-import com.xpdustry.imperium.mindustry.placeholder.PlaceholderPipeline
-import com.xpdustry.imperium.mindustry.placeholder.SimplePlaceholderPipeline
 import com.xpdustry.imperium.mindustry.security.BadWordDetector
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
@@ -55,10 +51,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<MindustryPlugin> { plugin }
 
     provider<GatekeeperPipeline> { SimpleGatekeeperPipeline() }
-
-    provider<ChatMessagePipeline> { SimpleChatMessagePipeline() }
-
-    provider<PlaceholderPipeline> { SimplePlaceholderPipeline() }
 
     provider<Path>("directory") { plugin.directory }
 

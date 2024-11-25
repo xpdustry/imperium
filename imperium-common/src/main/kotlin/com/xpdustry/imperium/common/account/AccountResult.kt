@@ -15,8 +15,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.chat
+package com.xpdustry.imperium.common.account
 
-import mindustry.gen.Player
+import com.xpdustry.imperium.common.security.PasswordRequirement
+import com.xpdustry.imperium.common.security.UsernameRequirement
 
-data class ProcessedPlayerChatEvent(val player: Player, val message: String)
+sealed interface AccountResult {
+
+    data object Success : AccountResult
+
+    data object AlreadyRegistered : AccountResult
+
+    data object NotFound : AccountResult
+
+    data object AlreadyLogged : AccountResult
+
+    data object WrongPassword : AccountResult
+
+    data class InvalidPassword(val missing: List<PasswordRequirement>) : AccountResult
+
+    data class InvalidUsername(val missing: List<UsernameRequirement>) : AccountResult
+}
