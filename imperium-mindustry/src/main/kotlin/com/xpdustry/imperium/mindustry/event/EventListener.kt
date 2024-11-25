@@ -134,7 +134,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (!event.breaking) return
         val building = event.tile.build
         if (building is ConstructBlock.ConstructBuild) {
-            block = building.current
+            val block = building.current
             if (block != Blocks.vault) return
         }
         val crate =
