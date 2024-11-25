@@ -131,7 +131,10 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         println("\nonCrateDeletion()\n") // testing
         if (!event.breaking) return
         val building = event.tile.build
-        if (building.current != Blocks.vault) return
+        if (building is ConstructBlock.ConstructBuild) {
+            block = building.current
+            if (block != Blocks.vault) return
+        }
         val crate =
             crates.find { it.first == event.tile.x.toInt() && it.second == event.tile.y.toInt() }
         if (crate == null) return
