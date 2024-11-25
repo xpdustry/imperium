@@ -34,6 +34,7 @@ dependencies {
     compileOnly(libs.distributor.common)
     compileOnly(libs.distributor.permission.rank)
     compileOnly(libs.nohorny)
+    compileOnly(libs.flex)
     implementation(libs.jsoup)
     implementation(libs.ahocorasick)
 }

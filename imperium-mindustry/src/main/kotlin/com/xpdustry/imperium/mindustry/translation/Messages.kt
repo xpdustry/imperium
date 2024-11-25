@@ -36,7 +36,7 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
 import com.xpdustry.distributor.api.component.style.ComponentColor.from
 import com.xpdustry.distributor.api.component.style.TextStyle
 import com.xpdustry.distributor.api.translation.TranslationArguments
-import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
@@ -296,7 +296,7 @@ fun command_team_success(team: Team): Component =
         "imperium.command.team.success",
         TranslationArguments.array(translatable(team, from(team.color))))
 
-fun command_achievements(achievements: List<Account.Achievement>): Component =
+fun command_achievements(achievements: List<Achievement>): Component =
     if (achievements.isEmpty()) {
         error("No achievements")
     } else if (achievements.size == 1) {
@@ -305,10 +305,9 @@ fun command_achievements(achievements: List<Account.Achievement>): Component =
         components()
             .append(translatable("imperium.command.achievements.header", ACCENT))
             .apply {
-                achievements
-                    .asSequence()
-                    .sortedWith(compareBy(Enum<Account.Achievement>::name))
-                    .forEach { append(newline(), text("> ", CYAN), achievement_name(it, WHITE)) }
+                achievements.asSequence().sortedWith(compareBy(Enum<Achievement>::name)).forEach {
+                    append(newline(), text("> ", CYAN), achievement_name(it, WHITE))
+                }
             }
             .build()
     }
@@ -340,10 +339,10 @@ fun yes(): Component = translatable("imperium.yes", GREEN)
 
 fun no(): Component = translatable("imperium.no", SCARLET)
 
-fun achievement_name(achievement: Account.Achievement, color: ComponentColor): Component =
+fun achievement_name(achievement: Achievement, color: ComponentColor): Component =
     translatable("imperium.achievement.${achievement.name.lowercase()}.name", color)
 
-fun achievement_description(achievement: Account.Achievement, color: ComponentColor): Component =
+fun achievement_description(achievement: Achievement, color: ComponentColor): Component =
     translatable("imperium.achievement.${achievement.name.lowercase()}.description", color)
 
 fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =

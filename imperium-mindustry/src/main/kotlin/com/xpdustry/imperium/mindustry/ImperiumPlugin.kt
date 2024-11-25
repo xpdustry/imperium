@@ -45,8 +45,8 @@ import com.xpdustry.imperium.mindustry.account.AccountListener
 import com.xpdustry.imperium.mindustry.account.AchievementCommand
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
-import com.xpdustry.imperium.mindustry.chat.ChatMessageListener
-import com.xpdustry.imperium.mindustry.chat.ChatTranslatorListener
+import com.xpdustry.imperium.mindustry.chat.ChatCommand
+import com.xpdustry.imperium.mindustry.chat.FlexListener
 import com.xpdustry.imperium.mindustry.chat.HereCommand
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
@@ -149,10 +149,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         sequenceOf(
                 ConventionListener::class,
                 GatekeeperListener::class,
-                ChatTranslatorListener::class,
                 AccountListener::class,
                 AccountCommand::class,
-                ChatMessageListener::class,
+                ChatCommand::class,
                 HistoryCommand::class,
                 BridgeChatMessageListener::class,
                 ReportCommand::class,
@@ -189,7 +188,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AchievementCommand::class,
                 LogicListener::class,
                 SaveCommand::class,
-                AntiGriefListener::class)
+                AntiGriefListener::class,
+                FlexListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<MindustryConfig>().gamemode

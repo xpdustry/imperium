@@ -15,26 +15,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.security
+package com.xpdustry.imperium.mindustry.bridge
 
-import com.xpdustry.imperium.common.serialization.SerializableInetAddress
-import kotlinx.serialization.Serializable
+import com.xpdustry.distributor.api.audience.Audience
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.key.DynamicKeyContainer
+import com.xpdustry.distributor.api.key.KeyContainer
+import com.xpdustry.distributor.api.key.StandardKeys
+import com.xpdustry.imperium.common.misc.BLURPLE
 
-@Deprecated("Replace with relevant data directly instead")
-@Serializable
-sealed interface Identity {
-    val name: String
-
-    @Serializable
-    data class Mindustry(
-        override val name: String,
-        val uuid: String,
-        val usid: String,
-        val address: SerializableInetAddress,
-        val displayName: String = name
-    ) : Identity
-
-    @Serializable data class Discord(override val name: String, val id: Long) : Identity
-
-    @Serializable data class Server(override val name: String) : Identity
+class DiscordAudience(val name: String, val hours: Int) : Audience {
+    override fun getMetadata(): KeyContainer =
+        DynamicKeyContainer.builder()
+            .putConstant(StandardKeys.DISPLAY_NAME, text(name))
+            .putConstant(StandardKeys.COLOR, ComponentColor.from(BLURPLE))
+            .build()
 }

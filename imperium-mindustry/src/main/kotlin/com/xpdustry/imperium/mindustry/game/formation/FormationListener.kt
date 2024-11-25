@@ -19,7 +19,7 @@ package com.xpdustry.imperium.mindustry.game.formation
 
 import arc.math.geom.Vec2
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -67,7 +67,7 @@ class FormationListener : ImperiumApplication.Listener {
     }
 
     @ImperiumCommand(["group|g"])
-    @RequireAchievement(Account.Achievement.ACTIVE)
+    @RequireAchievement(Achievement.ACTIVE)
     @ClientSide
     fun onFormationCommand(sender: CommandSender) {
         if (sender.player.id() in formations) {
@@ -102,7 +102,7 @@ class FormationListener : ImperiumApplication.Listener {
     }
 
     @ImperiumCommand(["group|g", "pattern|p"])
-    @RequireAchievement(Account.Achievement.ACTIVE)
+    @RequireAchievement(Achievement.ACTIVE)
     @ClientSide
     fun onFormationPatternCommand(sender: CommandSender, pattern: FormationPatternEntry) {
         val context =

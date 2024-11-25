@@ -18,15 +18,10 @@
 package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.security.Identity
 import kotlinx.serialization.Serializable
 
 @Serializable
-class MindustryPlayerMessage(
-    val server: Identity.Server,
-    val player: Identity.Mindustry,
-    val action: Action
-) : Message {
+class MindustryPlayerMessage(val server: String, val player: String, val action: Action) : Message {
     @Serializable
     sealed interface Action {
         @Serializable data object Join : Action

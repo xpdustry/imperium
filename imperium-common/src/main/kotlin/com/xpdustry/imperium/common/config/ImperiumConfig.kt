@@ -19,7 +19,7 @@ package com.xpdustry.imperium.common.config
 
 import com.google.common.net.InetAddresses
 import com.sksamuel.hoplite.Secret
-import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
@@ -136,7 +136,7 @@ data class DiscordConfig(
     val channels: Channels,
     val ranks2roles: Map<Rank, Long> = emptyMap(),
     val permissions2roles: Map<Permission, Long> = emptyMap(),
-    val achievements2roles: Map<Account.Achievement, Long> = emptyMap(),
+    val achievements2roles: Map<Achievement, Long> = emptyMap(),
     val mindustryVersion: String = "145",
     val globalCommands: Boolean = false,
     val alertsRole: Long? = null,
@@ -167,7 +167,6 @@ data class MindustryConfig(
     val color: Color = Color.WHITE,
     val world: World = World(),
     val security: Security = Security(),
-    val templates: Templates = Templates(),
     val tipsDelay: Duration = 5.minutes
 ) {
     data class History(
@@ -191,14 +190,6 @@ data class MindustryConfig(
         val gatekeeper: Boolean = true,
         val imageProcessingDelay: Duration = 3.seconds,
         val griefingThreshold: Float = 80F,
-    )
-
-    data class Templates(
-        val chatPrefix: String = "<%prefix%>",
-        val chatFormat: String =
-            "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display% [accent]>[white]",
-        val playerName: String =
-            "[accent]<[white]%subject_playtime:chaotic%[accent]> [%subject_color:hex%]%subject_name:display%",
     )
 
     data class Hub(

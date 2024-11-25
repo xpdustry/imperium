@@ -25,28 +25,27 @@ import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.mindustry.misc.Entities
-import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
 
+// TODO use events instead of polling
 class ImperiumRankProvider(private val accounts: AccountManager) :
     RankProvider, ImperiumApplication.Listener {
 
     private val rank = buildCache<MUUID, Rank> { expireAfterWrite(20.seconds.toJavaDuration()) }
     private val achievements =
-        buildCache<MUUID, Set<Account.Achievement>> {
-            expireAfterWrite(20.seconds.toJavaDuration())
-        }
+        buildCache<MUUID, Set<Achievement>> { expireAfterWrite(20.seconds.toJavaDuration()) }
 
     @EventHandler(priority = Priority.HIGH)
     fun onPlayerJoin(event: EventType.PlayerJoin) =
@@ -69,11 +68,11 @@ class ImperiumRankProvider(private val accounts: AccountManager) :
     }
 
     private suspend fun fetchPlayerInfo(player: Player) {
-        val account = accounts.findByIdentity(player.identity)
+        val account = accounts.selectBySession(player.sessionKey)
         rank.put(MUUID.from(player), account?.rank ?: Rank.EVERYONE)
         achievements.put(
             MUUID.from(player),
-            (account?.let { accounts.getAchievements(it.id) } ?: emptyMap())
+            (account?.let { accounts.selectAchievements(it.id) } ?: emptyMap())
                 .filterValues { it }
                 .keys)
     }

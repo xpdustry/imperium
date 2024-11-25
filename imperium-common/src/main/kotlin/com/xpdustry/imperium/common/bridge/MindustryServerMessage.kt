@@ -18,12 +18,8 @@
 package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.security.Identity
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MindustryServerMessage(
-    val server: Identity.Server,
-    val message: String,
-    val chat: Boolean
-) : Message
+data class MindustryServerMessage(val server: String, val message: String, val chat: Boolean) :
+    Message

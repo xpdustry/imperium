@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -30,8 +30,7 @@ class AchievementCommand : ImperiumApplication.Listener {
     @ImperiumCommand(["achievements"])
     @ClientSide
     @ServerSide
-    fun onAchievementsCommand(sender: CommandSender, achievement: Account.Achievement? = null) {
-        sender.reply(
-            command_achievements(achievement?.let(::listOf) ?: Account.Achievement.entries))
+    fun onAchievementsCommand(sender: CommandSender, achievement: Achievement? = null) {
+        sender.reply(command_achievements(achievement?.let(::listOf) ?: Achievement.entries))
     }
 }

@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.command.annotation
 
-import com.xpdustry.imperium.common.account.Account
+import com.xpdustry.imperium.common.account.Achievement
 
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RequireAchievement(val achievement: Account.Achievement)
+annotation class RequireAchievement(val achievement: Achievement)

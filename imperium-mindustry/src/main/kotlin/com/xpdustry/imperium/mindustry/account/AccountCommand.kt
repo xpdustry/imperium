@@ -36,8 +36,8 @@ import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
-import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
 import com.xpdustry.imperium.mindustry.ui.Interface
@@ -87,7 +87,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ClientSide
     suspend fun onLoginCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
-            val account = manager.findByIdentity(sender.player.identity)
+            val account = manager.selectBySession(sender.player.sessionKey)
             if (account == null) {
                 runMindustryThread { loginInterface.open(sender.player) }
             } else {
@@ -111,10 +111,10 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ClientSide
     suspend fun onLogoutCommand(sender: CommandSender) =
         withContext(PlayerCoroutineExceptionHandler(sender.player)) {
-            if (manager.findByIdentity(sender.player.identity) == null) {
+            if (manager.selectBySession(sender.player.sessionKey) == null) {
                 sender.player.sendMessage("You are not logged in!")
             } else {
-                manager.logout(sender.player.identity)
+                manager.logout(sender.player.sessionKey)
                 sender.player.admin = false
                 sender.player.sendMessage("You have been logged out!")
             }
@@ -129,7 +129,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["verify", "discord"])
     @ClientSide
     suspend fun onVerifyCommand(sender: CommandSender) {
-        val account = manager.findByIdentity(sender.player.identity)
+        val account = manager.selectBySession(sender.player.sessionKey)
         if (account == null) {
             sender.error("You are not logged in!")
             return
@@ -226,11 +226,11 @@ private fun createLoginInterface(
             ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
                 when (val result =
                     manager.login(
-                        view.state[USERNAME]!!, value.toCharArray(), view.viewer.identity)) {
+                        view.viewer.sessionKey, view.state[USERNAME]!!, value.toCharArray())) {
                     is AccountResult.Success -> {
                         view.viewer.sendMessage("You have been logged in!")
                         view.viewer.tryGrantAdmin(manager)
-                        val account = manager.findByIdentity(view.viewer.identity)!!
+                        val account = manager.selectBySession(view.viewer.sessionKey)!!
                         runMindustryThread {
                             DistributorProvider.get()
                                 .eventBus
@@ -401,11 +401,12 @@ private fun createPasswordChangeInterface(
                 return@BiAction
             }
             ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
+                val account = manager.selectBySession(view.viewer.sessionKey)!!
                 when (val result =
-                    manager.changePassword(
+                    manager.updatePassword(
+                        account.id,
                         view.state[OLD_PASSWORD]!!.toCharArray(),
-                        value.toCharArray(),
-                        view.viewer.identity)) {
+                        value.toCharArray())) {
                     is AccountResult.Success -> {
                         view.viewer.sendMessage("Your password have been changed!")
                     }

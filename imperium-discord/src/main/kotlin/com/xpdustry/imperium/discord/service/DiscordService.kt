@@ -81,7 +81,7 @@ class SimpleDiscordService(
         if (rank == Rank.EVERYONE) {
             return true
         }
-        if ((accounts.findByDiscord(user.idLong)?.rank ?: Rank.EVERYONE) >= rank) {
+        if ((accounts.selectByDiscord(user.idLong)?.rank ?: Rank.EVERYONE) >= rank) {
             return true
         }
 
@@ -98,17 +98,17 @@ class SimpleDiscordService(
         } ?: false
 
     override suspend fun syncRoles(member: Member) {
-        val account = accounts.findByDiscord(member.idLong) ?: return
+        val account = accounts.selectByDiscord(member.idLong) ?: return
         syncRoles(account.id)
     }
 
     override suspend fun syncRoles(id: Int) {
-        val account = accounts.findById(id)
+        val account = accounts.selectById(id)
         val discord = account?.discord ?: return
         val member = getMainServer().getMemberById(discord) ?: return
         val current = member.roles.associateBy(Role::getIdLong)
 
-        for ((achievement, completed) in accounts.getAchievements(id)) {
+        for ((achievement, completed) in accounts.selectAchievements(id)) {
             val roleId = config.achievements2roles[achievement] ?: continue
             val role = getMainServer().getRoleById(roleId) ?: continue
             if (completed) {
