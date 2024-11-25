@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
-import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -37,7 +37,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
-    private val config = instances.get<DiscordConfig>()
+    private val config = instances.get<ImperiumConfig>()
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->
@@ -48,7 +48,7 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             }
             val channel = (event.channel as? TextChannel) ?: return@addSuspendingEventListener
             if (channel.parentCategoryIdLong != 0L &&
-                channel.parentCategoryIdLong == config.categories.liveChat) {
+                channel.parentCategoryIdLong == config.discord.categories.liveChat) {
                 messenger.publish(
                     BridgeChatMessage(
                         channel.name,
@@ -83,7 +83,7 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
     }
 
     private suspend fun getLiveChatChannel(server: String): TextChannel? {
-        val category = discord.getMainServer().getCategoryById(config.categories.liveChat)
+        val category = discord.getMainServer().getCategoryById(config.discord.categories.liveChat)
         if (category == null) {
             LOGGER.error("Live chat category is not defined.")
             return null

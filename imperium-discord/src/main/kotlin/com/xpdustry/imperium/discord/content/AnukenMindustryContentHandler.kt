@@ -43,7 +43,7 @@ import arc.util.serialization.Base64Coder
 import com.google.common.cache.CacheBuilder
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.awt.Graphics2D
 import java.awt.geom.AffineTransform
@@ -99,7 +99,7 @@ import mindustry.world.blocks.legacy.LegacyBlock
 
 // The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a
 // multithreaded environment.
-class AnukenMindustryContentHandler(directory: Path, private val config: DiscordConfig) :
+class AnukenMindustryContentHandler(directory: Path, private val config: ImperiumConfig) :
     MindustryContentHandler, ImperiumApplication.Listener {
     private var currentSchematicGraphics: Graphics2D? = null
     private var currentSchematicImage: BufferedImage? = null
@@ -224,7 +224,8 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Discord
 
     private fun downloadAssets() {
         val versionFile = directory.resolve("VERSION.txt")
-        if (Files.exists(versionFile) && versionFile.readText() == config.mindustryVersion) {
+        if (Files.exists(versionFile) &&
+            versionFile.readText() == config.discord.mindustryVersion) {
             return
         }
 
@@ -245,7 +246,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Discord
         downloadZipDirectory(
             http,
             URI.create(
-                "https://github.com/Anuken/Mindustry/releases/download/v${config.mindustryVersion}/Mindustry.jar"),
+                "https://github.com/Anuken/Mindustry/releases/download/v${config.discord.mindustryVersion}/Mindustry.jar"),
             "sprites",
             "sprites",
         )
@@ -253,14 +254,14 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Discord
         downloadZipDirectory(
             http,
             URI.create(
-                "https://github.com/Anuken/Mindustry/archive/refs/tags/v${config.mindustryVersion}.zip"),
-            "Mindustry-${config.mindustryVersion}/core/assets-raw/sprites",
+                "https://github.com/Anuken/Mindustry/archive/refs/tags/v${config.discord.mindustryVersion}.zip"),
+            "Mindustry-${config.discord.mindustryVersion}/core/assets-raw/sprites",
             "raw-sprites",
         )
 
         MindustryImagePacker(directory).pack()
 
-        versionFile.writeText(config.mindustryVersion)
+        versionFile.writeText(config.discord.mindustryVersion)
     }
 
     private fun downloadZipDirectory(

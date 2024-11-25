@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
-import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
@@ -55,7 +55,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
 class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<DiscordConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val maps = instances.get<MindustryMapManager>()
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
@@ -111,7 +111,7 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
         }
 
         val channel =
-            discord.getMainServer().getTextChannelById(config.channels.maps)
+            discord.getMainServer().getTextChannelById(config.discord.channels.maps)
                 ?: throw IllegalStateException("Map submission channel not found")
 
         val message =

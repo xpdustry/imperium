@@ -24,12 +24,12 @@ import com.xpdustry.distributor.api.permission.rank.RankNode
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 
-class ImperiumRankPermissionSource(private val config: MindustryConfig) : RankPermissionSource {
+class ImperiumRankPermissionSource(private val config: ImperiumConfig) : RankPermissionSource {
     override fun getRankPermissions(node: RankNode): PermissionTree {
         val tree = MutablePermissionTree.create()
-        tree.setPermission("imperium.gamemode.${config.gamemode.name.lowercase()}", true)
+        tree.setPermission("imperium.gamemode.${config.mindustry.gamemode.name.lowercase()}", true)
         if (node is EnumRankNode<*> && node.value is Rank) {
             (node.value as Rank).getRanksBelow().forEach { rank ->
                 tree.setPermission("imperium.rank.${rank.name.lowercase()}", true)

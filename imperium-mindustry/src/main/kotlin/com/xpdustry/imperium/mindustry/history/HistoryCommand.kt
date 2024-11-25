@@ -25,7 +25,7 @@ import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.User
@@ -49,7 +49,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val historian = instances.get<Historian>()
     private val taps = PlayerMap<Long>(instances.get())
     private val users = instances.get<UserManager>()
-    private val config = instances.get<MindustryConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val historyRenderer = instances.get<HistoryRenderer>()
     private val heatmapViewers = PlayerMap<Boolean>(instances.get())
 
@@ -58,8 +58,12 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         if (!Vars.state.isPlaying) return
         for (player in Entities.getPlayers()) {
             if (heatmapViewers[player] == true) {
-                for (ox in (-config.history.heatMapRadius)..config.history.heatMapRadius) {
-                    for (oy in (-config.history.heatMapRadius)..config.history.heatMapRadius) {
+                for (ox in
+                    (-config.mindustry.history.heatMapRadius)..config.mindustry.history
+                            .heatMapRadius) {
+                    for (oy in
+                        (-config.mindustry.history.heatMapRadius)..config.mindustry.history
+                                .heatMapRadius) {
                         val x = player.tileX() + ox
                         val y = player.tileY() + oy
                         val entry = historian.getHistory(x, y).lastOrNull() ?: continue
@@ -89,7 +93,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                 val last = taps[event.player]
                 if (last != null &&
                     (System.currentTimeMillis() - last).milliseconds <
-                        config.history.doubleClickDelay) {
+                        config.mindustry.history.doubleClickDelay) {
                     taps.remove(event.player)
                     onTileHistoryCommand(
                         CommandSender.player(event.player), event.tile.x, event.tile.y)

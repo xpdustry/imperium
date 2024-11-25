@@ -19,7 +19,7 @@ package com.xpdustry.imperium.discord.security
 
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -46,7 +46,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
-    private val config = instances.get<DiscordConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
     private val codec = instances.get<IdentifierCodec>()
 
@@ -56,7 +56,9 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 .sendMessage(
                     MessageCreate {
                         val moderator =
-                            config.alertsRole?.let { discord.getMainServer().getRoleById(it) }
+                            config.discord.alertsRole?.let {
+                                discord.getMainServer().getRoleById(it)
+                            }
                         if (moderator != null) {
                             content += moderator.asMention
                         }
@@ -117,7 +119,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     }
 
     private fun getReportChannel(): TextChannel? {
-        val channel = discord.getMainServer().getTextChannelById(config.channels.reports)
+        val channel = discord.getMainServer().getTextChannelById(config.discord.channels.reports)
         if (channel == null) {
             LOGGER.error("The report channel is not defined found.")
         }

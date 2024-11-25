@@ -18,11 +18,10 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
@@ -40,7 +39,7 @@ import kotlin.time.toJavaDuration
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<DiscordConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
@@ -69,17 +68,15 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        when (accounts.updateDiscord(verification.account, interaction.user.idLong)) {
-            is AccountResult.Success -> Unit
-            else -> {
-                reply.sendMessage("An unexpected error occurred while verifying you.").await()
-                logger.error("Failed to update user discord ${interaction.user.effectiveName}")
-            }
+        if (!accounts.updateDiscord(verification.account, interaction.user.idLong)) {
+            reply.sendMessage("An unexpected error occurred while verifying you.").await()
+            logger.error("Failed to update user discord ${interaction.user.effectiveName}")
+            return
         }
 
         var rank = accounts.selectById(verification.account)!!.rank
         for (role in interaction.member!!.roles) {
-            rank = maxOf(rank, config.roles2ranks[role.idLong] ?: Rank.VERIFIED)
+            rank = maxOf(rank, config.discord.roles2ranks[role.idLong] ?: Rank.VERIFIED)
         }
         accounts.updateRank(verification.account, rank)
 

@@ -20,8 +20,6 @@ package com.xpdustry.imperium.mindustry
 import arc.Core
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
-import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
@@ -53,11 +51,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<GatekeeperPipeline> { SimpleGatekeeperPipeline() }
 
     provider<Path>("directory") { plugin.directory }
-
-    provider<MindustryConfig> {
-        get<ImperiumConfig>().mindustry
-            ?: error("The current server configuration is not Mindustry")
-    }
 
     provider<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
 

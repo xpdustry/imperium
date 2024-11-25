@@ -21,7 +21,7 @@ import arc.files.Fi
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
@@ -43,7 +43,7 @@ import mindustry.io.MapIO
 import mindustry.maps.Map
 
 class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<MindustryConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val maps = instances.get<MindustryMapManager>()
     private val cache = instances.get<Path>("directory").resolve("map-pool")
     private val messenger = instances.get<Messenger>()
@@ -52,7 +52,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (cache.notExists()) cache.createDirectory()
 
         messenger.consumer<MapReloadMessage> {
-            if (config.gamemode in it.gamemodes || it.gamemodes.isEmpty()) reloadMaps()
+            if (config.mindustry.gamemode in it.gamemodes || it.gamemodes.isEmpty()) reloadMaps()
         }
 
         reloadMaps()
@@ -70,7 +70,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         val pool =
             runBlocking(ImperiumScope.IO.coroutineContext) {
-                maps.findAllMapsByGamemode(config.gamemode).mapNotNull {
+                maps.findAllMapsByGamemode(config.mindustry.gamemode).mapNotNull {
                     try {
                         downloadMapFromPool(it)
                     } catch (e: Exception) {
