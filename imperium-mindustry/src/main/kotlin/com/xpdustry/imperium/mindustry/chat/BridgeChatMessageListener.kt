@@ -24,6 +24,8 @@ import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.message.FlexPlayerChatEvent
 import com.xpdustry.flex.message.MessageContext
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
@@ -36,6 +38,7 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
+import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -45,6 +48,7 @@ import mindustry.game.EventType
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val messenger = instances.get<Messenger>()
+    private val accounts = instances.get<AccountManager>()
 
     override fun onImperiumInit() {
         messenger.consumer<BridgeChatMessage> {
@@ -63,13 +67,18 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
             if (forServer.isNotBlank()) {
                 ROOT_LOGGER.info(
-                    "&fi&lcDiscord ({}): &fr&lw${forServer.stripMindustryColors()}", it.sender.name)
+                    "&fi&lcDiscord ({}&fi&lc): &fr&lw${forServer.stripMindustryColors()}",
+                    it.senderName)
             }
 
+            val account = accounts.selectByDiscord(it.discord)
             FlexAPI.get()
                 .messages
                 .broadcast(
-                    Audience.empty(),
+                    DiscordAudience(
+                        it.serverName,
+                        account?.rank ?: Rank.EVERYONE,
+                        account?.playtime?.inWholeHours?.toInt()),
                     DistributorProvider.get().audienceProvider.players,
                     it.message)
                 .await()

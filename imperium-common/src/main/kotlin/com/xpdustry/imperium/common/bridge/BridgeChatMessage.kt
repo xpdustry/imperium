@@ -18,9 +18,12 @@
 package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.security.Identity
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class BridgeChatMessage(val serverName: String, val sender: Identity, val message: String) :
-    Message
+data class BridgeChatMessage(
+    val serverName: String,
+    val senderName: String,
+    val discord: Long,
+    val message: String
+) : Message

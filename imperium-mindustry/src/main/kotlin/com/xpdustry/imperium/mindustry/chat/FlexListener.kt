@@ -23,6 +23,7 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.placeholder.template.Template
+import com.xpdustry.flex.placeholder.template.TemplateFilter
 import com.xpdustry.flex.placeholder.template.TemplateManager
 import com.xpdustry.flex.placeholder.template.TemplateStep
 import com.xpdustry.imperium.common.account.AccountManager
@@ -30,6 +31,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.mindustry.translation.SCARLET
@@ -45,7 +47,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
     override fun onImperiumInit() {
         FlexAPI.get()
             .placeholders
-            .register("imperium_hours", ImperiumHourProcessor(plugin, accounts))
+            .register("imperium", ImperiumPlaceholderProcessor(plugin, accounts))
 
         FlexAPI.get()
             .templates
@@ -54,7 +56,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Template(
                     listOf(
                         TemplateStep(
-                            "[accent]<[white]%imperium_hours%[accent]> [%audience:color%]%audience:name%"))),
+                            "[%imperium:rank_color%]<[white]%imperium:hours%[]> [%audience:color%]%audience:name%"))),
             )
 
         FlexAPI.get()
@@ -63,6 +65,9 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 TemplateManager.CHAT_TEMPLATE_NAME,
                 Template(
                     listOf(
+                        TemplateStep(
+                            filter = TemplateFilter.placeholder("imperium:is_discord"),
+                            text = "[${BLURPLE.toHexString()}]<D> "),
                         TemplateStep(
                             "%template:${TemplateManager.NAME_TEMPLATE_NAME}% [accent]>[white] %argument:flex_message%"))),
             )
@@ -84,7 +89,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Template(
                     listOf(
                         TemplateStep(
-                            "[${config.mindustry!!.color.toHexString()}]<${Iconc.infoCircle}>${config.server.name} [accent]>[white] %argument:flex_message%"))),
+                            "[${config.mindustry.color.toHexString()}]<${Iconc.infoCircle}> ${config.server.name} [accent]>[white] %argument:flex_message%"))),
             )
 
         FlexAPI.get()

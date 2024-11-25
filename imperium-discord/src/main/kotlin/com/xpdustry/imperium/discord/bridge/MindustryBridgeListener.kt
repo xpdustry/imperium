@@ -29,7 +29,6 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
-import com.xpdustry.imperium.discord.misc.identity
 import com.xpdustry.imperium.discord.service.DiscordService
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
@@ -52,7 +51,8 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
                 messenger.publish(
                     BridgeChatMessage(
                         channel.name,
-                        event.message.member!!.identity,
+                        event.message.member?.nickname ?: event.message.author.name,
+                        event.message.idLong,
                         event.message.contentStripped))
             }
         }

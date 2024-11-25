@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
+import arc.graphics.Color
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.MindustryVersion
@@ -98,3 +99,5 @@ val Block.isSourceBlock: Boolean
 
 val Block.isVoidBlock: Boolean
     get() = this is ItemVoid || this is LiquidVoid || this is PowerVoid
+
+fun Color.toHexString(): String = String.format("#%06x", rgb888())
