@@ -35,7 +35,7 @@ jda = "5.2.1"
 cloud-core = "2.0.0"
 cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
-minio = "8.5.13"
+minio = "8.5.14"
 flex = "1.0.0-SNAPSHOT"
 
 # gradle plugins
