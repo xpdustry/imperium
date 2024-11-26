@@ -21,14 +21,16 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.history.HistoryRequestMessage
+import com.xpdustry.imperium.common.history.HistoryResponseMessage
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.request
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.security.ReportMessage
-import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.command.MenuCommand
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
@@ -37,6 +39,7 @@ import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.disableComponents
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
+import kotlin.time.Duration.Companion.seconds
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.ActionRow
@@ -47,74 +50,81 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
     private val discord = instances.get<DiscordService>()
     private val messenger = instances.get<Messenger>()
     private val config = instances.get<ImperiumConfig>()
-    private val users = instances.get<UserManager>()
     private val codec = instances.get<IdentifierCodec>()
 
     override fun onImperiumInit() {
         messenger.consumer<ReportMessage> { report ->
-            (getReportChannel() ?: return@consumer)
-                .sendMessage(
-                    MessageCreate {
-                        val moderator =
-                            config.discord.alertsRole?.let {
-                                discord.getMainServer().getRoleById(it)
-                            }
-                        if (moderator != null) {
-                            content += moderator.asMention
-                        }
-
-                        embeds += Embed {
-                            color = Color.YELLOW.rgb
-
-                            field {
-                                name = "Sender"
-                                value = report.sender.name
+            val thread =
+                (getReportChannel() ?: return@consumer)
+                    .sendMessage(
+                        MessageCreate {
+                            val moderator =
+                                config.discord.alertsRole?.let {
+                                    discord.getMainServer().getRoleById(it)
+                                }
+                            if (moderator != null) {
+                                content += moderator.asMention
                             }
 
-                            field {
-                                name = "ID"
-                                value = codec.encode(users.getByIdentity(report.sender).id)
+                            embeds += Embed {
+                                color = Color.YELLOW.rgb
+
+                                field {
+                                    name = "Sender"
+                                    value = report.senderName
+                                }
+
+                                field {
+                                    name = "ID"
+                                    value = codec.encode(report.senderId)
+                                }
+
+                                field {}
+
+                                field {
+                                    name = "Target"
+                                    value = report.targetName
+                                }
+
+                                field {
+                                    name = "ID"
+                                    value = codec.encode(report.targetId)
+                                }
+
+                                field {}
+
+                                field {
+                                    name = "Server"
+                                    value = report.serverName
+                                    inline = false
+                                }
+
+                                field {
+                                    name = "Reason"
+                                    value = report.reason.name.lowercase().capitalize()
+                                    inline = false
+                                }
                             }
 
-                            field {}
-
-                            field {
-                                name = "Target"
-                                value = report.target.name
-                            }
-
-                            field {
-                                name = "ID"
-                                value = codec.encode(users.getByIdentity(report.target).id)
-                            }
-
-                            field {}
-
-                            field {
-                                name = "Server"
-                                value = report.serverName
-                                inline = false
-                            }
-
-                            field {
-                                name = "Reason"
-                                value = report.reason.name.lowercase().capitalize()
-                                inline = false
-                            }
-                        }
-
-                        components +=
-                            ActionRow.of(
-                                Button.primary(REPORT_REVIEW_BUTTON, "Review")
-                                    .withEmoji(ImperiumEmojis.MAGNIFYING_GLASS),
-                                Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
-                                    .withEmoji(ImperiumEmojis.CROSS_MARK),
-                            )
-                    })
-                .await()
-                .createThreadChannel("Report on ${report.target.name}")
-                .setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_3_DAYS)
-                .await()
+                            components +=
+                                ActionRow.of(
+                                    Button.primary(REPORT_REVIEW_BUTTON, "Review")
+                                        .withEmoji(ImperiumEmojis.MAGNIFYING_GLASS),
+                                    Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
+                                        .withEmoji(ImperiumEmojis.CROSS_MARK),
+                                )
+                        })
+                    .await()
+                    .createThreadChannel("Report on ${report.targetName}")
+                    .setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_3_DAYS)
+                    .await()
+            messenger
+                .request<HistoryResponseMessage>(
+                    HistoryRequestMessage(report.serverName, report.targetId), timeout = 5.seconds)
+                ?.history
+                ?.lineSequence()
+                ?.chunked(10)
+                ?.forEach { thread.sendMessage("```\n${it.joinToString("\n")}\n```").await() }
         }
     }
 

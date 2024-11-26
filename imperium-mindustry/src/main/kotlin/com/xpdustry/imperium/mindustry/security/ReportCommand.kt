@@ -25,7 +25,6 @@ import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -35,15 +34,17 @@ import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.NavigateAction
 import com.xpdustry.imperium.mindustry.misc.NavigationTransformer
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
-import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gui_back
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_confirm
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_player
@@ -56,7 +57,6 @@ import com.xpdustry.imperium.mindustry.translation.gui_report_title
 import com.xpdustry.imperium.mindustry.translation.yes
 import java.net.InetAddress
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -64,6 +64,7 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val messenger = instances.get<Messenger>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
+    private val users = instances.get<UserManager>()
 
     init {
         reportInterface.addTransformer(
@@ -121,24 +122,32 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 pane.grid.addOption(
                     MenuOption.of(
                         yes(),
-                        Action.hideAll().then {
-                            ImperiumScope.MAIN.launch {
-                                val sent =
-                                    messenger.publish(
-                                        ReportMessage(
-                                            config.server.name,
-                                            it.viewer.identity,
-                                            it.state[REPORT_PLAYER]!!.identity,
-                                            it.state[REPORT_REASON]!!))
-                                val audience = it.viewer.asAudience
-                                if (sent) {
-                                    limiter.increment(it.viewer.ip().toInetAddress())
-                                    audience.sendAnnouncement(gui_report_success())
-                                } else {
-                                    audience.sendAnnouncement(gui_report_failure())
-                                }
-                            }
-                        }))
+                        Action.hideAll()
+                            .then(
+                                CoroutineAction(
+                                    success = { window, sent ->
+                                        if (sent) {
+                                            limiter.increment(window.viewer.ip().toInetAddress())
+                                            window.viewer.asAudience.sendAnnouncement(
+                                                gui_report_success())
+                                        } else {
+                                            window.viewer.asAudience.sendAnnouncement(
+                                                gui_report_failure())
+                                        }
+                                    }) {
+                                        val sender = runMindustryThread { it.viewer.info }
+                                        val target = runMindustryThread {
+                                            it.state[REPORT_PLAYER]!!.info
+                                        }
+                                        messenger.publish(
+                                            ReportMessage(
+                                                config.server.name,
+                                                sender.plainLastName(),
+                                                users.findByUuid(sender.id)!!.id,
+                                                target.plainLastName(),
+                                                users.findByUuid(target.id)!!.id,
+                                                it.state[REPORT_REASON]!!))
+                                    })))
             })
     }
 
