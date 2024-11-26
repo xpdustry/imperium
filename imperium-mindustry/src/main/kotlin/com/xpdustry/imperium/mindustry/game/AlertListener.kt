@@ -56,15 +56,21 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {
-            if (it.type == ActionType.breakBlock &&
-                it.block.isSourceBlock &&
+            if (((it.type == ActionType.breakBlock && it.block.isSourceBlock) ||
+                (it.type == ActionType.placeBlock && it.tile.block()?.isSourceBlock == true)) &&
                 !Vars.state.rules.infiniteResources) {
+                val block =
+                    when (it.type) {
+                        ActionType.breakBlock -> it.block
+                        ActionType.placeBlock -> it.tile.block()!!
+                        else -> error("That ain't right")
+                    }
                 DistributorProvider.get()
                     .audienceProvider
                     .getTeam(it.player.team())
                     .sendMessage(
                         announcement_important_block_destroy_attempt(
-                            it.player, it.block, it.tile.x.toInt(), it.tile.y.toInt()))
+                            it.player, block, it.tile.x.toInt(), it.tile.y.toInt()))
                 return@addActionFilter false
             }
             true
