@@ -92,10 +92,10 @@ class ImperiumPlaceholderProcessor(plugin: MindustryPlugin, private val accounts
         when (this) {
             Rank.EVERYONE -> Color.gray
             Rank.VERIFIED -> Pal.accent
-            Rank.OVERSEER -> Color.green
+            Rank.OVERSEER -> Color.lime
             Rank.MODERATOR -> Color.blue
-            Rank.ADMIN,
-            Rank.OWNER -> Color.scarlet
+            Rank.ADMIN -> Color.scarlet
+            Rank.OWNER -> Color.darkgrey
         }
 
     companion object {
