@@ -21,7 +21,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.LimitedList
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toHexString
@@ -56,7 +56,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     private val users = instances.get<UserManager>()
     private val views = PlayerMap<View>(instances.get())
     private val teams = mutableMapOf<Team, ResourceTracker>()
-    private val config = instances.get<MindustryConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val resourceHudInterface: Interface
 
     init {
@@ -95,7 +95,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     }
 
     override fun onImperiumInit() {
-        if (!config.world.displayResourceTracker) return
+        if (!config.mindustry.world.displayResourceTracker) return
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)

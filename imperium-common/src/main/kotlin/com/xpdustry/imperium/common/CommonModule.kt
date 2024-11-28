@@ -29,7 +29,6 @@ import com.xpdustry.imperium.common.config.ImperiumConfigProvider
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.StorageConfig
-import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
@@ -56,9 +55,6 @@ import com.xpdustry.imperium.common.storage.MinioStorageBucket
 import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
-import com.xpdustry.imperium.common.translator.DeeplTranslator
-import com.xpdustry.imperium.common.translator.LibreTranslateTranslator
-import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.user.SimpleUserManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
@@ -74,15 +70,7 @@ import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
 fun MutableInstanceManager.registerCommonModule() {
-    provider(ImperiumConfigProvider())
-
-    provider<Translator> {
-        when (val config = get<ImperiumConfig>().translator) {
-            is TranslatorConfig.None -> Translator.Noop
-            is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(config, get())
-            is TranslatorConfig.DeepL -> DeeplTranslator(config, get())
-        }
-    }
+    provider(ImperiumConfigProvider)
 
     provider<Discovery> { SimpleDiscovery(get(), get("discovery"), get()) }
 

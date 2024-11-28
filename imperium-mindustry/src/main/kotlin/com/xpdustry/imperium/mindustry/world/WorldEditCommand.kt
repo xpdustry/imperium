@@ -39,7 +39,7 @@ import org.incendo.cloud.annotation.specifier.Range
 
 class WorldEditCommand : ImperiumApplication.Listener {
 
-    @ImperiumCommand(["wedit"], Rank.ADMIN)
+    @ImperiumCommand(["wedit"], Rank.MODERATOR)
     @ClientSide
     fun onWorldEditCommand(
         sender: CommandSender,

@@ -47,7 +47,6 @@ private val SUPPORTED_LANGUAGE =
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
-    val translator: TranslatorConfig = TranslatorConfig.None,
     val database: DatabaseConfig = DatabaseConfig.H2(),
     val messenger: MessengerConfig = MessengerConfig.None,
     val server: ServerConfig = ServerConfig("unknown"),
@@ -56,9 +55,9 @@ data class ImperiumConfig(
     // TODO Remove this goofy aah way of loading locales
     val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,
     val webhook: WebhookConfig = WebhookConfig.None,
-    val discord: DiscordConfig? = null,
-    val mindustry: MindustryConfig? = null,
-    val webserver: WebserverConfig? = null,
+    val discord: DiscordConfig = DiscordConfig(),
+    val mindustry: MindustryConfig = MindustryConfig(),
+    val webserver: WebserverConfig = WebserverConfig(),
     val storage: StorageConfig = StorageConfig.Local
 )
 
@@ -71,14 +70,6 @@ data class NetworkConfig(
 
         data class VpnApiIo(val vpnApiIoToken: Secret) : VpnDetectionConfig
     }
-}
-
-sealed interface TranslatorConfig {
-    data object None : TranslatorConfig
-
-    data class LibreTranslate(val ltEndpoint: URL, val ltToken: Secret) : TranslatorConfig
-
-    data class DeepL(val deeplToken: Secret) : TranslatorConfig
 }
 
 sealed interface DatabaseConfig {
@@ -131,9 +122,9 @@ sealed interface WebhookConfig {
 
 // TODO Cleanup roles (ranks, permission, special) listing and lookup
 data class DiscordConfig(
-    val token: Secret,
-    val categories: Categories,
-    val channels: Channels,
+    val token: Secret = Secret(""),
+    val categories: Categories = Categories(),
+    val channels: Channels = Channels(),
     val ranks2roles: Map<Rank, Long> = emptyMap(),
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Achievement, Long> = emptyMap(),
@@ -149,18 +140,18 @@ data class DiscordConfig(
     }
 
     data class Categories(
-        val liveChat: Long,
+        val liveChat: Long = 0,
     )
 
     data class Channels(
-        val notifications: Long,
-        val maps: Long,
-        val reports: Long,
+        val notifications: Long = 0,
+        val maps: Long = 0,
+        val reports: Long = 0,
     )
 }
 
 data class MindustryConfig(
-    val gamemode: MindustryGamemode,
+    val gamemode: MindustryGamemode = MindustryGamemode.SURVIVAL,
     val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
     val hub: Hub = Hub(),
     val history: History = History(),

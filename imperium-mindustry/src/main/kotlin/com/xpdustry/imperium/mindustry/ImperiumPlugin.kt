@@ -33,7 +33,6 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerApplication
@@ -192,7 +191,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 FlexListener::class)
             .forEach(application::register)
 
-        val gamemode = application.instances.get<MindustryConfig>().gamemode
+        val gamemode = application.instances.get<ImperiumConfig>().mindustry.gamemode
         if (gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         } else {

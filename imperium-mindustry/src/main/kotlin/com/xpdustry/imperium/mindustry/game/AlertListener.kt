@@ -24,7 +24,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
@@ -51,19 +51,26 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
     private val generators = IntSet()
     private val generatorsRateLimiter =
-        SimpleRateLimiter<Int>(1, instances.get<MindustryConfig>().world.explosiveDamageAlertDelay)
+        SimpleRateLimiter<Int>(
+            1, instances.get<ImperiumConfig>().mindustry.world.explosiveDamageAlertDelay)
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {
-            if (it.type == ActionType.breakBlock &&
-                it.block.isSourceBlock &&
+            if (((it.type == ActionType.breakBlock && it.block.isSourceBlock) ||
+                (it.type == ActionType.placeBlock && it.tile.block()?.isSourceBlock == true)) &&
                 !Vars.state.rules.infiniteResources) {
+                val block =
+                    when (it.type) {
+                        ActionType.breakBlock -> it.block
+                        ActionType.placeBlock -> it.tile.block()!!
+                        else -> error("That ain't right")
+                    }
                 DistributorProvider.get()
                     .audienceProvider
                     .getTeam(it.player.team())
                     .sendMessage(
                         announcement_important_block_destroy_attempt(
-                            it.player, it.block, it.tile.x.toInt(), it.tile.y.toInt()))
+                            it.player, block, it.tile.x.toInt(), it.tile.y.toInt()))
                 return@addActionFilter false
             }
             true

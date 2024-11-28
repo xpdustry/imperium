@@ -43,15 +43,14 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val discovery = instances.get<Discovery>()
     private val tracker = instances.get<PlayerTracker>()
-    private val config =
-        instances.get<ImperiumConfig>().webserver ?: error("Webserver configuration is missing")
+    private val config = instances.get<ImperiumConfig>()
     private val codec = instances.get<IdentifierCodec>()
 
     private lateinit var ktor: EmbeddedServer<*, *>
 
     override fun onImperiumInit() {
         ktor =
-            embeddedServer(Netty, port = config.port) {
+            embeddedServer(Netty, port = config.webserver.port) {
                     install(ContentNegotiation) { json() }
                     routing {
                         route("/v0") { get("/servers") { call.respond(getServerEntries()) } }
