@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.chat
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.flex.FlexAPI
@@ -55,7 +55,7 @@ class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .messages
             .broadcast(
                 sender.player.asAudience,
-                DistributorProvider.get().audienceProvider.getTeam(sender.player.team()),
+                Distributor.get().audienceProvider.getTeam(sender.player.team()),
                 message,
                 "mindustry_chat_team",
             )
@@ -110,8 +110,8 @@ class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         FlexAPI.get()
             .messages
             .broadcast(
-                DistributorProvider.get().audienceProvider.server,
-                DistributorProvider.get().audienceProvider.players,
+                Distributor.get().audienceProvider.server,
+                Distributor.get().audienceProvider.players,
                 message,
                 "mindustry_chat_say",
             )

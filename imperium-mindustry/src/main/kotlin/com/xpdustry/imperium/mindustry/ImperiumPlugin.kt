@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry
 import arc.Application
 import arc.ApplicationListener
 import arc.Core
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
@@ -229,7 +229,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     private fun <T : Any> registerService(klass: KClass<T>, instance: T) {
-        DistributorProvider.get()
+        Distributor.get()
             .serviceManager
             .register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }

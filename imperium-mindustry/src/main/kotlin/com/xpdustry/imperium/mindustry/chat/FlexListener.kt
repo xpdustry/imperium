@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.chat
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
@@ -56,7 +56,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Template(
                     listOf(
                         TemplateStep(
-                            "[%imperium:rank_color%]<[white]%imperium:hours%[]> [%audience:color%]%audience:name%"))),
+                            "[%imperium:rank_color%]<[white]%imperium:hours%[%imperium:rank_color%]> [%audience:color%]%audience:name_colored%"))),
             )
 
         FlexAPI.get()
@@ -114,7 +114,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         FlexAPI.get().messages.register("anti-links", Priority.NORMAL) { ctx ->
             if (ctx.filter &&
-                ctx.sender != DistributorProvider.get().audienceProvider.server &&
+                ctx.sender != Distributor.get().audienceProvider.server &&
                 ctx.message.containsLink()) {
                 ctx.sender.sendMessage(
                     text("You can't send discord invitations or links in the chat.", SCARLET))

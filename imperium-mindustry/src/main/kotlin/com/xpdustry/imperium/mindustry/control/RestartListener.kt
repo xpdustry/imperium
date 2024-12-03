@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.control
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ExitStatus
@@ -116,7 +116,7 @@ class RestartListener(instances: InstanceManager) : ImperiumApplication.Listener
         if (restating.getAndSet(true)) {
             return
         }
-        val everyone = DistributorProvider.get().audienceProvider.everyone
+        val everyone = Distributor.get().audienceProvider.everyone
         val gamemode = config.mindustry!!.gamemode
         if (immediate || Entities.getPlayers().isEmpty() || Vars.state.gameOver) {
             everyone.sendMessage(server_restart_delay(reason, 3.seconds))

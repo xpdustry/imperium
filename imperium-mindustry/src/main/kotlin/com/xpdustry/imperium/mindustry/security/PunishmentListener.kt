@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.component.Component
@@ -110,7 +110,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             target.uuid(),
                             punishment.reason,
                         )
-                        DistributorProvider.get()
+                        Distributor.get()
                             .audienceProvider
                             .players
                             .sendMessage(

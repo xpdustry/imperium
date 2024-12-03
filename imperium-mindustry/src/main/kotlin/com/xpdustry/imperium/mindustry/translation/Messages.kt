@@ -20,7 +20,7 @@
 package com.xpdustry.imperium.mindustry.translation
 
 import arc.graphics.Color
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.NumberComponent.number
@@ -142,7 +142,7 @@ fun gui_welcome_content(): Component =
             translatable(
                 "imperium.gui.welcome.content.header",
                 TranslationArguments.array(
-                    DistributorProvider.get()
+                    Distributor.get()
                         .mindustryComponentDecoder
                         .decode(Config.serverName.string()))))
         .append(newline())

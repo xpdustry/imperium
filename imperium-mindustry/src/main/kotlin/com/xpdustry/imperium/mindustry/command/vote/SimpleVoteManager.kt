@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.command.vote
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -43,7 +43,7 @@ internal class SimpleVoteManager<O>(
     override val sessions: Map<UUID, VoteManager.Session<O>> = _sessions
 
     init {
-        DistributorProvider.get().eventBus.subscribe(
+        Distributor.get().eventBus.subscribe(
             EventType.PlayerLeave::class.java,
             Priority.HIGH,
             plugin,
@@ -53,7 +53,7 @@ internal class SimpleVoteManager<O>(
             }
         }
 
-        DistributorProvider.get().eventBus.subscribe(
+        Distributor.get().eventBus.subscribe(
             EventType.PlayerJoin::class.java,
             Priority.HIGH,
             plugin,
