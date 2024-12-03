@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.player.MUUID
@@ -164,7 +164,7 @@ class VoteKickCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
         runMindustryThread {
-            DistributorProvider.get()
+            Distributor.get()
                 .eventBus
                 .post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
         }
@@ -184,7 +184,7 @@ class VoteKickCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionFailure(session: VoteManager.Session<Context>) {
         runMindustryThread {
-            DistributorProvider.get()
+            Distributor.get()
                 .eventBus
                 .post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
         }
@@ -208,9 +208,7 @@ class VoteKickCommand(instances: InstanceManager) :
                 "[scarlet]You are limited to one votekick per minute. Please try again later.")
             return false
         }
-        DistributorProvider.get()
-            .eventBus
-            .post(VotekickEvent(objective.target, VotekickEvent.Type.START))
+        Distributor.get().eventBus.post(VotekickEvent(objective.target, VotekickEvent.Type.START))
         return true
     }
 

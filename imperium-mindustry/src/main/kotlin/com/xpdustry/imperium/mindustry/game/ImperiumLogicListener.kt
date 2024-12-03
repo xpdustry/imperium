@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -30,11 +30,11 @@ class ImperiumLogicListener(instances: InstanceManager) : ImperiumApplication.Li
     private val plugin = instances.get<MindustryPlugin>()
 
     override fun onImperiumInit() {
-        DistributorProvider.get().eventBus.subscribe(
-            StateChangeEvent::class.java, Priority.HIGH, plugin) { event ->
-                if (event.from == GameState.State.menu && event.to == GameState.State.playing) {
-                    DistributorProvider.get().eventBus.post(MenuToPlayEvent)
-                }
+        Distributor.get().eventBus.subscribe(StateChangeEvent::class.java, Priority.HIGH, plugin) {
+            event ->
+            if (event.from == GameState.State.menu && event.to == GameState.State.playing) {
+                Distributor.get().eventBus.post(MenuToPlayEvent)
             }
+        }
     }
 }

@@ -19,7 +19,7 @@ package com.xpdustry.imperium.mindustry.ui.popup
 
 import arc.util.Interval
 import arc.util.Time
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.ui.AbstractTransformerInterface
 import com.xpdustry.imperium.mindustry.ui.TransformerInterface
@@ -46,7 +46,7 @@ private class SimplePopupInterface(
 
     init {
         interval.reset(0, Float.MAX_VALUE)
-        DistributorProvider.get().eventBus.subscribe(EventType.Trigger.update, plugin) {
+        Distributor.get().eventBus.subscribe(EventType.Trigger.update, plugin) {
             // TODO This should cover lag, needs more testing tho
             if (interval[updateInterval.toFloat() - (min(updateInterval.toFloat() / 30F, 6F))]) {
                 for (view in views.values) {

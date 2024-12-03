@@ -19,7 +19,7 @@ package com.xpdustry.imperium.mindustry.game
 
 import arc.math.geom.Point2
 import arc.struct.IntSet
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.collection.MindustryCollections
@@ -65,7 +65,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                         ActionType.placeBlock -> it.tile.block()!!
                         else -> error("That ain't right")
                     }
-                DistributorProvider.get()
+                Distributor.get()
                     .audienceProvider
                     .getTeam(it.player.team())
                     .sendMessage(
@@ -104,7 +104,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 if (building.items.has(item) &&
                     consumers.any { item.explosiveness > it.threshold } &&
                     generatorsRateLimiter.incrementAndCheck(pos)) {
-                    DistributorProvider.get()
+                    Distributor.get()
                         .audienceProvider
                         .getTeam(building.team())
                         .sendMessage(announcement_impending_explosion_alert(block, x, y))
@@ -118,7 +118,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onSourceBlockDestroy(event: EventType.BlockDestroyEvent) {
         if (Vars.state.rules.infiniteResources) return
         if (event.tile.block().isSourceBlock) {
-            DistributorProvider.get()
+            Distributor.get()
                 .audienceProvider
                 .getTeam(event.tile.team())
                 .sendMessage(
@@ -132,7 +132,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (Vars.state.rules.infiniteResources) return
         val building = event.tile.build
         if (event.breaking && building is ConstructBuild && building.current.isSourceBlock) {
-            DistributorProvider.get()
+            Distributor.get()
                 .audienceProvider
                 .getTeam(building.team())
                 .sendMessage(
@@ -173,7 +173,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         if (found) {
-            DistributorProvider.get()
+            Distributor.get()
                 .audienceProvider
                 .getTeam(event.unit.player.team())
                 .sendMessage(

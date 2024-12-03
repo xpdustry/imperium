@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.Events
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
@@ -119,7 +119,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
                         }
                     }
                     .setRenderer { it ->
-                        DistributorProvider.get().mindustryComponentDecoder.decode(it.map.name())
+                        Distributor.get().mindustryComponentDecoder.decode(it.map.name())
                     }
                     .setFillEmptySpace(true)
                     .setChoiceAction(

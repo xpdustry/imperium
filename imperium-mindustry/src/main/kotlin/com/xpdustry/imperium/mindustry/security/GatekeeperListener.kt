@@ -21,7 +21,7 @@ import arc.Events
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -115,7 +115,7 @@ private fun interceptPlayerConnection(
 
     Events.fire(ConnectPacketEvent(con, packet))
 
-    val audience = DistributorProvider.get().audienceProvider.getConnection(con)
+    val audience = Distributor.get().audienceProvider.getConnection(con)
     con.connectTime = Time.millis()
 
     if (Vars.netServer.admins.isIPBanned(con.address) ||
@@ -177,7 +177,7 @@ private fun interceptPlayerConnection(
                 .append(mods.toString("\n> "))
         }
         audience.kick(
-            DistributorProvider.get().mindustryComponentDecoder.decode(result.toString()),
+            Distributor.get().mindustryComponentDecoder.decode(result.toString()),
             Duration.ZERO,
             false)
         return

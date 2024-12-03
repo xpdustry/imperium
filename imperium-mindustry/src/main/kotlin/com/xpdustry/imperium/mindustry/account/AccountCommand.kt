@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.google.common.cache.CacheBuilder
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
@@ -232,9 +232,7 @@ private fun createLoginInterface(
                         view.viewer.tryGrantAdmin(manager)
                         val account = manager.selectBySession(view.viewer.sessionKey)!!
                         runMindustryThread {
-                            DistributorProvider.get()
-                                .eventBus
-                                .post(PlayerLoginEvent(view.viewer, account))
+                            Distributor.get().eventBus.post(PlayerLoginEvent(view.viewer, account))
                         }
                     }
                     is AccountResult.WrongPassword,

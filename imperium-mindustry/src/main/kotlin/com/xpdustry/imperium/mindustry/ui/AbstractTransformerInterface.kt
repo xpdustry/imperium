@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.ui
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
@@ -42,7 +42,7 @@ protected constructor(
     override val transformers: MutableList<PriorityTransformer<P>> = mutableListOf()
 
     init {
-        DistributorProvider.get().eventBus.subscribe(PlayerLeave::class.java, plugin) { event ->
+        Distributor.get().eventBus.subscribe(PlayerLeave::class.java, plugin) { event ->
             views[MUUID.from(event.player)]?.close()
         }
     }

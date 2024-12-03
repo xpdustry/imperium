@@ -29,7 +29,7 @@ import com.xpdustry.imperium.common.misc.BLURPLE
 class DiscordAudience(val name: String, val rank: Rank, val hours: Int?) : Audience {
     override fun getMetadata(): KeyContainer =
         DynamicKeyContainer.builder()
-            .putConstant(StandardKeys.DISPLAY_NAME, text(name))
+            .putConstant(StandardKeys.DECORATED_NAME, text(name))
             .putConstant(StandardKeys.NAME, name)
             .putConstant(StandardKeys.COLOR, ComponentColor.from(BLURPLE))
             .build()

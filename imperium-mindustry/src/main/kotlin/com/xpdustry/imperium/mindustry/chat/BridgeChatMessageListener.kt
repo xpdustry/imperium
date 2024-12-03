@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.chat
 
 import arc.util.Strings
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.flex.FlexAPI
@@ -60,7 +60,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                     .pump(
                         MessageContext(
                             Audience.empty(),
-                            DistributorProvider.get().audienceProvider.server,
+                            Distributor.get().audienceProvider.server,
                             it.message,
                             filter = true))
                     .await()
@@ -79,7 +79,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                         it.serverName,
                         account?.rank ?: Rank.EVERYONE,
                         account?.playtime?.inWholeHours?.toInt()),
-                    DistributorProvider.get().audienceProvider.players,
+                    Distributor.get().audienceProvider.players,
                     it.message)
                 .await()
         }

@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.tower
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import java.util.Collections
@@ -38,14 +38,13 @@ class TowerPathfinder(plugin: MindustryPlugin) : Pathfinder() {
         wrapPathCost(costGround)
         wrapPathCost(costLegs)
 
-        DistributorProvider.get().eventBus.subscribe(
-            WorldLoadEvent::class.java, Priority.HIGH, plugin) {
-                for (tile in Vars.world.tiles) {
-                    if (tile.overlay() === Blocks.spawn) {
-                        towerPassableFloors.add(tile.floor())
-                    }
+        Distributor.get().eventBus.subscribe(WorldLoadEvent::class.java, Priority.HIGH, plugin) {
+            for (tile in Vars.world.tiles) {
+                if (tile.overlay() === Blocks.spawn) {
+                    towerPassableFloors.add(tile.floor())
                 }
             }
+        }
 
         Vars.netServer.admins.addActionFilter {
             !(it.type == Administration.ActionType.placeBlock &&
