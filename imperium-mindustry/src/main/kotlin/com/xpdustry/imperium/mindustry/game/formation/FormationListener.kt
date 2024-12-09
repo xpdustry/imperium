@@ -18,19 +18,18 @@
 package com.xpdustry.imperium.mindustry.game.formation
 
 import arc.math.geom.Vec2
+import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
-import com.xpdustry.imperium.mindustry.misc.onEvent
 import kotlin.collections.set
 import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
-import mindustry.game.EventType.PlayerLeave
 import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -40,30 +39,27 @@ class FormationListener : ImperiumApplication.Listener {
 
     private val formations = mutableMapOf<Int, FormationContext>()
 
-    override fun onImperiumInit() {
-        onEvent(Trigger.update) {
-            val iterator = formations.iterator()
-            while (iterator.hasNext()) {
-                val (id, context) = iterator.next()
-                val player = Groups.player.getByID(id)
-                if (player == null) {
-                    context.deleted = true
-                    iterator.remove()
-                    continue
-                }
-                val anchor = Vec2(player.x(), player.y())
-                for (member in context.members) {
-                    context.pattern.calculate(
-                        member.targetVector,
-                        context.assignments[member.id] ?: 0,
-                        min(context.slots, context.members.size),
-                        player.unit().hitSize * 1.6F)
-                    member.targetVector.add(anchor)
-                }
+    @TriggerHandler(Trigger.update)
+    fun onFormationUpdate() {
+        val iterator = formations.iterator()
+        while (iterator.hasNext()) {
+            val (id, context) = iterator.next()
+            val player = Groups.player.getByID(id)
+            if (player == null) {
+                context.deleted = true
+                iterator.remove()
+                continue
+            }
+            val anchor = Vec2(player.x(), player.y())
+            for (member in context.members) {
+                context.pattern.calculate(
+                    member.targetVector,
+                    context.assignments[member.id] ?: 0,
+                    min(context.slots, context.members.size),
+                    player.unit().hitSize * 1.6F)
+                member.targetVector.add(anchor)
             }
         }
-
-        onEvent<PlayerLeave> { formations.remove(it.player.id()) }
     }
 
     @ImperiumCommand(["group|g"])
