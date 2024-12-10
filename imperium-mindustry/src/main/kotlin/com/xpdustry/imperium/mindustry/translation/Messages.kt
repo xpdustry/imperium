@@ -232,7 +232,7 @@ fun gui_back(): Component = translatable("imperium.gui.back", LIGHT_GRAY)
 fun gui_submit(): Component = translatable("imperium.gui.submit", ACCENT)
 
 fun user_setting_description(setting: User.Setting): Component =
-    translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
+    translatable("imperium.user-setting.${setting.name.lowercase()}.description")
 
 fun announcement_tip(tip: Tip): Component =
     components(
