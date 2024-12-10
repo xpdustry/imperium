@@ -19,8 +19,10 @@ package com.xpdustry.imperium.mindustry.metrics
 
 import arc.Core
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.message.FlexPlayerChatEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.metrics.Counter
@@ -28,30 +30,58 @@ import com.xpdustry.imperium.common.metrics.GaugeMetric
 import com.xpdustry.imperium.common.metrics.Metric
 import com.xpdustry.imperium.common.metrics.MetricsRegistry
 import com.xpdustry.imperium.common.metrics.SystemMetricCollector
+import com.xpdustry.imperium.common.metrics.UniqueCounter
+import com.xpdustry.imperium.common.misc.toInetAddress
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import java.net.InetAddress
+import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.Team
 
 class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val metrics = instances.get<MetricsRegistry>()
+    private val users = instances.get<UserManager>()
     private val joinCounter = Counter("mindustry_events_join_total")
     private val quitCounter = Counter("mindustry_events_quit_total")
     private val chatCounter = Counter("mindustry_events_chat_total")
+
+    private val newPlayersCounter = Counter("mindustry_players_new")
+    private val uniPlayersCounter = UniqueCounter<InetAddress>("mindustry_players_unique")
+    private val retPlayersCounter = Counter("mindustry_players_retained")
 
     override fun onImperiumInit() {
         metrics.register(SystemMetricCollector())
         metrics.register(joinCounter)
         metrics.register(quitCounter)
         metrics.register(chatCounter)
-        metrics.register { runMindustryThread { collectLiveServerData() } }
+        metrics.register(newPlayersCounter)
+        metrics.register(uniPlayersCounter)
+        metrics.register(retPlayersCounter)
+        metrics.register { runMindustryThread { collectActiveData() } }
     }
 
-    @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) {
-        joinCounter.inc()
-    }
+    @EventHandler(priority = Priority.LOW)
+    fun onPlayerJoin(event: EventType.PlayerJoin) =
+        ImperiumScope.MAIN.launch {
+            uniPlayersCounter += event.player.con.address.toInetAddress()
+            joinCounter.inc()
+
+            val id = event.player.id()
+            if ((users.findByUuid(event.player.uuid())?.timesJoined ?: 0) == 1) {
+                newPlayersCounter.inc()
+                delay(5.minutes)
+                runMindustryThread {
+                    if (Entities.findPlayerByID(id)?.con?.isConnected == true) {
+                        retPlayersCounter.inc()
+                    }
+                }
+            }
+        }
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {
@@ -63,7 +93,7 @@ class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener
         chatCounter.inc()
     }
 
-    private fun collectLiveServerData(): List<Metric> {
+    private fun collectActiveData(): List<Metric> {
         val result = mutableListOf<Metric>()
         result += GaugeMetric("mindustry_players_max", Vars.netServer.admins.playerLimit)
         Entities.getPlayers()
