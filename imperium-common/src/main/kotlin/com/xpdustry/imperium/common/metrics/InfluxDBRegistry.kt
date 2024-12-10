@@ -28,7 +28,6 @@ import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.CopyOnWriteArraySet
-import kotlin.math.max
 import kotlin.system.measureTimeMillis
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -61,15 +60,16 @@ class InfluxDBRegistry(
         ImperiumScope.IO.launch {
             val interval = config.interval.inWholeMilliseconds
             while (isActive) {
+                var count = 0
                 val elapsed = measureTimeMillis {
                     try {
-                        write()
+                        count = write()
                     } catch (error: Throwable) {
                         logger.error("An error occurred whilst writing samples to InfluxDB", error)
                     }
                 }
-                logger.debug("Collected metrics, took {} milliseconds", elapsed)
-                delay(max(0, interval - elapsed))
+                logger.trace("Collected {} metrics, took {} milliseconds", count, elapsed)
+                delay((interval - elapsed).coerceAtLeast(1))
             }
         }
     }
@@ -79,7 +79,8 @@ class InfluxDBRegistry(
         client.close()
     }
 
-    private suspend fun write() {
+    private suspend fun write(): Int {
+        val points = ArrayList<Point>()
         collectors.forEach { collector ->
             collector.collect().forEach { metric ->
                 val point = Point(metric.name)
@@ -89,10 +90,12 @@ class InfluxDBRegistry(
                     is GaugeMetric -> point.addField("gauge", metric.value)
                     is CounterMetric -> point.addField("counter", metric.value)
                 }
-                write.writePoint(point)
+                points += point
             }
         }
+        write.writePoints(points)
         write.flush()
+        return points.size
     }
 
     override fun register(collector: MetricsCollector) {
