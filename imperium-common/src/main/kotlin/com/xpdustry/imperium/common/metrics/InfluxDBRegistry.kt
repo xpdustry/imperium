@@ -35,6 +35,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 
+// This is a shameless port of unified-metrics (https://github.com/Cubxity/UnifiedMetrics).
 class InfluxDBRegistry(
     private val server: ServerConfig,
     private val config: MetricConfig.InfluxDB,

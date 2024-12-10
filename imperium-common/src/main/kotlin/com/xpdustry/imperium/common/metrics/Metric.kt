@@ -23,6 +23,7 @@ const val MILLISECONDS_PER_SECOND: Double = 1E3
 
 typealias Labels = Map<String, String>
 
+// This is a shameless port of unified-metrics (https://github.com/Cubxity/UnifiedMetrics).
 sealed interface Metric {
     val name: String
     val labels: Labels
