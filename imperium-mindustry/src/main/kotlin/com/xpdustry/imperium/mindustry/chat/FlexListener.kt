@@ -76,7 +76,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     listOf(
                         TemplateStep(
                             filter = TemplateFilter.placeholder("imperium:is_discord"),
-                            text = "[${BLURPLE.toHexString()}]<D> "),
+                            text = "[${BLURPLE.toHexString()}]<${Iconc.discord}> "),
                         TemplateStep(
                             "%template:${TemplateManager.NAME_TEMPLATE_NAME}% [accent]>[white] %argument:flex_message%"))),
             )
