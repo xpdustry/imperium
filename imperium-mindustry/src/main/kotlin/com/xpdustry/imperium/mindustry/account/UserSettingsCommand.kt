@@ -20,6 +20,7 @@ package com.xpdustry.imperium.mindustry.account
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -71,7 +72,7 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
                                 CoroutineAction(
                                     success =
                                         BiAction.from(
-                                            Action.compute(SETTINGS) { it + (setting to !value) }),
+                                            Action.compute(SETTINGS) { it + (setting to !value) }.then(Window::show)),
                                 ) {
                                     users.setSetting(it.viewer.uuid(), setting, !value)
                                 }))
