@@ -72,7 +72,8 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
                                 CoroutineAction(
                                     success =
                                         BiAction.from(
-                                            Action.compute(SETTINGS) { it + (setting to !value) }.then(Window::show)),
+                                            Action.compute(SETTINGS) { it + (setting to !value) }
+                                                .then(Window::show)),
                                 ) {
                                     users.setSetting(it.viewer.uuid(), setting, !value)
                                 }))
