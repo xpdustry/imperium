@@ -19,30 +19,39 @@ package com.xpdustry.imperium.mindustry.chat
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.FlexAPI
+import com.xpdustry.flex.message.MessageContext
+import com.xpdustry.flex.message.TranslationProcessor
 import com.xpdustry.flex.placeholder.template.Template
 import com.xpdustry.flex.placeholder.template.TemplateFilter
 import com.xpdustry.flex.placeholder.template.TemplateManager
 import com.xpdustry.flex.placeholder.template.TemplateStep
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.toHexString
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.translation.SCARLET
+import java.util.Locale
 import java.util.concurrent.CompletableFuture
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.future.future
 import mindustry.gen.Iconc
 
 class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
     private val config = instances.get<ImperiumConfig>()
     private val plugin = instances.get<MindustryPlugin>()
     private val accounts = instances.get<AccountManager>()
+    private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {
         FlexAPI.get()
@@ -67,7 +76,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     listOf(
                         TemplateStep(
                             filter = TemplateFilter.placeholder("imperium:is_discord"),
-                            text = "[${BLURPLE.toHexString()}]<D> "),
+                            text = "[${BLURPLE.toHexString()}]<${Iconc.discord}> "),
                         TemplateStep(
                             "%template:${TemplateManager.NAME_TEMPLATE_NAME}% [accent]>[white] %argument:flex_message%"))),
             )
@@ -123,5 +132,29 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 CompletableFuture.completedFuture(ctx.message)
             }
         }
+
+        FlexAPI.get()
+            .messages
+            .register(
+                "translator",
+                Priority.LOW,
+                object : TranslationProcessor() {
+                    override fun process(context: MessageContext) =
+                        ImperiumScope.MAIN.future {
+                            val muuid = context.sender.metadata[StandardKeys.MUUID]
+                            val sourceLocale =
+                                if (muuid != null &&
+                                    users.getSetting(
+                                        muuid.uuid, User.Setting.AUTOMATIC_LANGUAGE_DETECTION)) {
+                                    null
+                                } else {
+                                    context.sender.metadata[StandardKeys.LOCALE]
+                                        ?: Locale.getDefault()
+                                }
+                            val targetLocale =
+                                context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
+                            process(context, sourceLocale, targetLocale).await()
+                        }
+                })
     }
 }

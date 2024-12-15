@@ -19,12 +19,8 @@ package com.xpdustry.imperium.common.user
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import com.xpdustry.imperium.common.misc.buildAsyncCache
-import com.xpdustry.imperium.common.misc.getSuspending
 import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
@@ -32,15 +28,11 @@ import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Identity
 import java.net.InetAddress
 import java.time.Instant
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.toJavaDuration
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
-import org.jetbrains.exposed.sql.batchUpsert
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.insertIgnore
@@ -68,26 +60,17 @@ interface UserManager {
 
     suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean>
 
-    suspend fun setSetting(identity: Identity.Mindustry, setting: User.Setting, value: Boolean)
-
-    suspend fun setSettings(identity: Identity.Mindustry, settings: Map<User.Setting, Boolean>)
+    suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean)
 }
 
 class SimpleUserManager(private val provider: SQLProvider, private val messenger: Messenger) :
     UserManager, ImperiumApplication.Listener {
     private val userCreateMutex = Mutex()
-    private val settingsCache =
-        buildAsyncCache<MindustryUUID, Map<User.Setting, Boolean>> {
-            expireAfterAccess(5.minutes.toJavaDuration())
-            maximumSize(1000)
-        }
 
     override fun onImperiumInit() {
         provider.newTransaction {
             SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
         }
-
-        messenger.consumer<UserSettingChangeMessage> { (uuid) -> invalidateSettings(uuid, false) }
     }
 
     override suspend fun getByIdentity(identity: Identity.Mindustry): User =
@@ -207,42 +190,25 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
         getSettings0(uuid)
 
     private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> =
-        settingsCache.getSuspending(uuid) {
-            provider.newSuspendTransaction {
-                (UserSettingTable leftJoin UserTable)
-                    .select(UserSettingTable.setting, UserSettingTable.value)
-                    .where { UserTable.uuid eq uuid.toLongMuuid() }
-                    .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
-            }
+        provider.newSuspendTransaction {
+            (UserSettingTable leftJoin UserTable)
+                .select(UserSettingTable.setting, UserSettingTable.value)
+                .where { UserTable.uuid eq uuid.toLongMuuid() }
+                .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
         }
 
     override suspend fun setSetting(
-        identity: Identity.Mindustry,
+        uuid: MindustryUUID,
         setting: User.Setting,
         value: Boolean
     ): Unit =
         provider.newSuspendTransaction {
-            val user = getByIdentity(identity)
+            val user = findByUuid(uuid) ?: return@newSuspendTransaction
             UserSettingTable.upsert {
                 it[UserSettingTable.user] = user.id
                 it[UserSettingTable.setting] = setting
                 it[UserSettingTable.value] = value
             }
-            invalidateSettings(identity.uuid, true)
-        }
-
-    override suspend fun setSettings(
-        identity: Identity.Mindustry,
-        settings: Map<User.Setting, Boolean>
-    ): Unit =
-        provider.newSuspendTransaction {
-            val user = getByIdentity(identity)
-            UserSettingTable.batchUpsert(settings.entries) { (setting, value) ->
-                this[UserSettingTable.user] = user.id
-                this[UserSettingTable.setting] = setting
-                this[UserSettingTable.value] = value
-            }
-            invalidateSettings(identity.uuid, true)
         }
 
     private fun ResultRow.toUser() =
@@ -254,11 +220,4 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
             timesJoined = this[UserTable.timesJoined],
             lastJoin = this[UserTable.lastJoin],
             firstJoin = this[UserTable.firstJoin])
-
-    private suspend fun invalidateSettings(uuid: MindustryUUID, send: Boolean) {
-        settingsCache.synchronous().invalidate(uuid)
-        if (send) messenger.publish(UserSettingChangeMessage(uuid))
-    }
-
-    @Serializable private data class UserSettingChangeMessage(val uuid: MindustryUUID) : Message
 }

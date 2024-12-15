@@ -64,6 +64,7 @@ import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.game.UnpauseListener
 import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
+import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
@@ -188,7 +189,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 LogicListener::class,
                 SaveCommand::class,
                 AntiGriefListener::class,
-                FlexListener::class)
+                FlexListener::class,
+                MetricsListener::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<ImperiumConfig>().mindustry.gamemode

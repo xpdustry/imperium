@@ -58,7 +58,8 @@ data class ImperiumConfig(
     val discord: DiscordConfig = DiscordConfig(),
     val mindustry: MindustryConfig = MindustryConfig(),
     val webserver: WebserverConfig = WebserverConfig(),
-    val storage: StorageConfig = StorageConfig.Local
+    val storage: StorageConfig = StorageConfig.Local,
+    val metrics: MetricConfig = MetricConfig.None
 )
 
 data class NetworkConfig(
@@ -215,4 +216,16 @@ sealed interface StorageConfig {
         val secretKey: Secret = Secret("minioadmin"),
         val bucket: String = "imperium",
     ) : StorageConfig
+}
+
+sealed interface MetricConfig {
+    data object None : MetricConfig
+
+    data class InfluxDB(
+        val endpoint: URL,
+        val token: Secret,
+        val organization: String,
+        val bucket: String = "imperium",
+        val interval: Duration = 10.seconds
+    ) : MetricConfig
 }

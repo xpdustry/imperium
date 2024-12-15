@@ -19,20 +19,21 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
-import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gui_close
@@ -40,7 +41,6 @@ import com.xpdustry.imperium.mindustry.translation.gui_user_settings_description
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_entry
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_title
 import com.xpdustry.imperium.mindustry.translation.user_setting_description
-import kotlinx.coroutines.launch
 
 class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
@@ -67,17 +67,16 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
                     .sortedBy { it.key.name }
                     .forEach { (setting, value) ->
                         pane.grid.addRow(
-                            MenuOption.of(gui_user_settings_entry(setting, value)) { window ->
-                                val settings = window.state[SETTINGS]!!.toMutableMap()
-                                settings[setting] = !value
-                                ImperiumScope.MAIN.launch {
-                                    users.setSettings(window.viewer.identity, settings)
-                                    runMindustryThread {
-                                        window.state[SETTINGS] = settings
-                                        window.show()
-                                    }
-                                }
-                            })
+                            MenuOption.of(
+                                gui_user_settings_entry(setting, value),
+                                CoroutineAction(
+                                    success =
+                                        BiAction.from(
+                                            Action.compute(SETTINGS) { it + (setting to !value) }
+                                                .then(Window::show)),
+                                ) {
+                                    users.setSetting(it.viewer.uuid(), setting, !value)
+                                }))
                         pane.grid.addRow(
                             MenuOption.of(user_setting_description(setting), Action.none()))
                     }
@@ -87,9 +86,8 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
 
     private suspend fun loadUserSettings(uuid: String): Map<User.Setting, Boolean> {
         val settings = users.getSettings(uuid).toMutableMap()
-        for (setting in User.Setting.entries) {
-            settings.putIfAbsent(setting, setting.default)
-        }
+        for (setting in User.Setting.entries) settings.putIfAbsent(setting, setting.default)
+        settings.keys.removeAll(User.Setting::deprecated)
         return settings
     }
 
