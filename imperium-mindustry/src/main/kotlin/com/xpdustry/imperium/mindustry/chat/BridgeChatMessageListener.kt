@@ -78,7 +78,8 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                     DiscordAudience(
                         it.senderName,
                         account?.rank ?: Rank.EVERYONE,
-                        account?.playtime?.inWholeHours?.toInt()),
+                        account?.playtime?.inWholeHours?.toInt(),
+                        config.language),
                     Distributor.get().audienceProvider.players,
                     it.message)
                 .await()
