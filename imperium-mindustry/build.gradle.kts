@@ -115,11 +115,18 @@ val downloadDistributorPermissionRank by tasks.registering(GithubAssetDownload::
     version = libs.versions.distributor.map { "v$it" }
 }
 
-val downloadNoHorny by tasks.register<GithubAssetDownload>("downloadNoHorny") {
+val downloadNoHorny by tasks.registering(GithubAssetDownload::class) {
     owner = "xpdustry"
     repo = "nohorny"
     asset = "nohorny.jar"
     version = libs.versions.nohorny.map { "v$it" }
+}
+
+val downloadFlex by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "flex"
+    asset = "flex.jar"
+    version = libs.versions.flex.map { "v$it" }
 }
 
 tasks.register<MindustryExec>("runMindustryDesktop2") {
@@ -134,6 +141,7 @@ tasks.runMindustryServer {
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
+        downloadFlex,
         pluginLibs,
         downloadSql4md,
         downloadDistributorCommon,
@@ -150,6 +158,7 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
+        downloadFlex,
         pluginLibs,
         downloadSql4md,
         downloadDistributorCommon,
