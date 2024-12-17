@@ -21,6 +21,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.image.ImageFormat
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -31,15 +32,11 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.nohorny.image.NoHornyImage
-import com.xpdustry.nohorny.image.NoHornyInformation
+import com.xpdustry.nohorny.image.NoHornyResult
 import com.xpdustry.nohorny.image.analyzer.ImageAnalyzerEvent
 import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
-import mindustry.Vars
-import mindustry.content.Blocks
 import okhttp3.MediaType.Companion.toMediaType
 
 class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -47,12 +44,13 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val punishments = instances.get<PunishmentManager>()
     private val config = instances.get<ImperiumConfig>()
     private val webhook = instances.get<WebhookMessageSender>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @EventHandler
     fun onLogicAnalyzer(event: ImageAnalyzerEvent) =
         ImperiumScope.MAIN.launch {
             when (event.result.rating) {
-                NoHornyInformation.Rating.SAFE -> {
+                NoHornyResult.Rating.SAFE -> {
                     logger.debug(
                         "Cluster in rect ({}, {}, {}, {}) is safe",
                         event.group.x,
@@ -60,7 +58,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                         event.group.w,
                         event.group.h)
                 }
-                NoHornyInformation.Rating.WARNING -> {
+                NoHornyResult.Rating.WARNING -> {
                     logger.debug(
                         "Cluster in rect ({}, {}, {}, {}) is possibly unsafe.",
                         event.group.x,
@@ -73,7 +71,17 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                             content =
                                 buildString {
                                     appendLine("**Possible NSFW image detected**")
-                                    appendLine("Located at ${event.group.x}, ${event.group.y}")
+                                    append("Located at ${event.group.x}, ${event.group.y}")
+                                    val id =
+                                        event.author
+                                            ?.uuid
+                                            ?.let { users.findByUuid(it) }
+                                            ?.id
+                                            ?.let(codec::encode)
+                                    if (id != null) {
+                                        append(" by user `$id`")
+                                    }
+                                    appendLine()
                                     for ((entry, percent) in event.result.details) {
                                         appendLine(
                                             "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
@@ -81,25 +89,13 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 },
                             attachments = listOf(event.image.toUnsafeAttachment())))
                 }
-                NoHornyInformation.Rating.UNSAFE -> {
+                NoHornyResult.Rating.UNSAFE -> {
                     logger.info(
                         "Cluster in rect ({}, {}, {}, {}) is unsafe. Destroying blocks.",
                         event.group.x,
                         event.group.y,
                         event.group.w,
                         event.group.h)
-
-                    runMindustryThread {
-                        for (block in event.group.blocks) {
-                            Vars.world.tile(block.x, block.y)?.setNet(Blocks.air)
-                            val data = block.data
-                            if (data is NoHornyImage.Display) {
-                                for (processor in data.processors.keys) {
-                                    Vars.world.tile(processor.x, processor.y)?.setNet(Blocks.air)
-                                }
-                            }
-                        }
-                    }
 
                     val user = event.author?.uuid?.let { users.findByUuid(it) } ?: return@launch
                     val punishment =
@@ -115,7 +111,7 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                             content =
                                 buildString {
                                     appendLine("**NSFW image detected**")
-                                    appendLine("Related to punishment $punishment")
+                                    appendLine("Related to punishment ${codec.encode(punishment)}")
                                     for ((entry, percent) in event.result.details) {
                                         appendLine(
                                             "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
