@@ -17,7 +17,13 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import arc.Core
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.gui.Window
+import com.xpdustry.distributor.api.gui.popup.PopupManager
+import com.xpdustry.distributor.api.gui.popup.PopupPane.AlignementX
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.LimitedList
@@ -29,89 +35,77 @@ import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
-import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asList
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.popup.PopupAlignement
-import com.xpdustry.imperium.mindustry.ui.popup.PopupInterface
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
+import com.xpdustry.imperium.mindustry.misc.component3
 import java.awt.Color
 import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Items
 import mindustry.game.Team
 import mindustry.gen.Iconc
+import mindustry.gen.Player
 import mindustry.type.Item
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 
 class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
-    private val views = PlayerMap<View>(instances.get())
     private val teams = mutableMapOf<Team, ResourceTracker>()
     private val config = instances.get<ImperiumConfig>()
-    private val resourceHudInterface: Interface
+    private val popup = PopupManager.create(instances.get())
 
     init {
-        resourceHudInterface = PopupInterface.create(instances.get())
-        resourceHudInterface.addTransformer { view, pane ->
-            pane.alignement = PopupAlignement.RIGHT
-            pane.content = buildString {
-                val tracker = teams[view.viewer.team()] ?: return@buildString
-                val map = tracker.change.filterValues { it != 0 }
-                if (map.isEmpty()) {
-                    append("[gray]No changes")
-                    return@buildString
-                }
-                append("Rate of Change:")
-                for ((item, change) in map) {
-                    val rate = tracker.rate[item]!!
-                    val color = getColor(rate)
-                    val sign = if (rate > 0F) "+" else "-"
-                    append("\n[white]")
-                    append(getIcon(item))
-                    append(" ")
-                    append("[${color.toHexString()}]")
-                    append(sign)
-                    append("[white]")
-                    append(formatChange(change))
-                    append(" ")
-                    append("[${color.toHexString()}]")
-                    append(sign)
-                    append(String.format("%.2f", rate.absoluteValue))
-                    append("[white]")
-                    append("%")
-                }
-                append("\nEvery minute")
-            }
+        popup.addTransformer { (pane, _, viewer) ->
+            pane.alignementX = AlignementX.RIGHT
+            pane.setContent(
+                buildString {
+                    val tracker = teams[viewer.team()] ?: return@buildString
+                    val map = tracker.change.filterValues { it != 0 }
+                    if (map.isEmpty()) {
+                        append("[gray]No changes")
+                        return@buildString
+                    }
+                    append("Rate of Change:")
+                    for ((item, change) in map) {
+                        val rate = tracker.rate[item]!!
+                        val color = getColor(rate)
+                        val sign = if (rate > 0F) "+" else "-"
+                        append("\n[white]")
+                        append(getIcon(item))
+                        append(" ")
+                        append("[${color.toHexString()}]")
+                        append(sign)
+                        append("[white]")
+                        append(formatChange(change))
+                        append(" ")
+                        append("[${color.toHexString()}]")
+                        append(sign)
+                        append(String.format("%.2f", rate.absoluteValue))
+                        append("[white]")
+                        append("%")
+                    }
+                    append("\nEvery minute")
+                })
         }
     }
 
-    override fun onImperiumInit() {
-        if (!config.mindustry.world.displayResourceTracker) return
+    @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
+    fun onHUDUpdate() {
+        if (!config.mindustry.world.displayResourceTracker || !Vars.state.isPlaying) return
+        updateResourceTrackers()
         ImperiumScope.MAIN.launch {
-            while (isActive) {
-                delay(1.seconds)
-                if (!Vars.state.isPlaying) continue
-                runMindustryThread { updateResourceTrackers() }
-                for (player in Entities.getPlayersAsync()) {
-                    val enabled = users.getSetting(player.uuid(), User.Setting.RESOURCE_HUD)
-                    runMindustryThread<Unit> {
-                        if (enabled) {
-                            if (views[player] == null) {
-                                views[player] = resourceHudInterface.open(player)
-                            }
-                        } else {
-                            views[player]?.close()
-                            views.remove(player)
-                        }
+            for (player in Entities.getPlayersAsync()) {
+                val enabled = users.getSetting(player.uuid(), User.Setting.RESOURCE_HUD)
+                Core.app.post {
+                    if (enabled) {
+                        if (getActiveWindow(player) == null) popup.create(player).show()
+                    } else {
+                        getActiveWindow(player)?.hide()
                     }
                 }
             }
@@ -121,6 +115,10 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     @EventHandler
     fun onMenuToPlayEvent(event: MenuToPlayEvent) {
         teams.clear()
+    }
+
+    private fun getActiveWindow(player: Player): Window? {
+        return popup.activeWindows.firstOrNull { it.viewer == player }
     }
 
     private fun updateResourceTrackers() {
@@ -161,7 +159,6 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
         for (i in 1 until list.size) {
             sum += list[i] - list[i - 1]
         }
-        Team.sharded
         return sum / (list.size - 1)
     }
 
