@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.asList
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.component3
+import com.xpdustry.imperium.mindustry.misc.getItemIcon
 import java.awt.Color
 import kotlin.math.abs
 import kotlin.math.absoluteValue
@@ -46,9 +47,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.launch
 import mindustry.Vars
-import mindustry.content.Items
 import mindustry.game.Team
-import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.type.Item
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
@@ -76,7 +75,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                         val color = getColor(rate)
                         val sign = if (rate > 0F) "+" else "-"
                         append("\n[white]")
-                        append(getIcon(item))
+                        append(getItemIcon(item))
                         append(" ")
                         append("[${color.toHexString()}]")
                         append(sign)
@@ -161,33 +160,6 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
         }
         return sum / (list.size - 1)
     }
-
-    private fun getIcon(item: Item) =
-        when (item) {
-            Items.scrap -> Iconc.itemScrap
-            Items.copper -> Iconc.itemCopper
-            Items.lead -> Iconc.itemLead
-            Items.graphite -> Iconc.itemGraphite
-            Items.coal -> Iconc.itemCoal
-            Items.titanium -> Iconc.itemTitanium
-            Items.thorium -> Iconc.itemThorium
-            Items.silicon -> Iconc.itemSilicon
-            Items.plastanium -> Iconc.itemPlastanium
-            Items.phaseFabric -> Iconc.itemPhaseFabric
-            Items.surgeAlloy -> Iconc.itemSurgeAlloy
-            Items.sporePod -> Iconc.itemSporePod
-            Items.sand -> Iconc.itemSand
-            Items.blastCompound -> Iconc.itemBlastCompound
-            Items.pyratite -> Iconc.itemPyratite
-            Items.metaglass -> Iconc.itemMetaglass
-            Items.beryllium -> Iconc.itemBeryllium
-            Items.tungsten -> Iconc.itemTungsten
-            Items.oxide -> Iconc.itemOxide
-            Items.carbide -> Iconc.itemCarbide
-            Items.fissileMatter -> Iconc.itemFissileMatter
-            Items.dormantCyst -> Iconc.itemDormantCyst
-            else -> "<${item.name}>"
-        }
 
     data class ResourceTracker(
         val items: MutableMap<Item, LimitedList<Int>> = mutableMapOf(),
