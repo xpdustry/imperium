@@ -51,7 +51,7 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
-import com.xpdustry.imperium.mindustry.control.RestartListener
+import com.xpdustry.imperium.mindustry.control.ControlListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.AntiGriefListener
 import com.xpdustry.imperium.mindustry.game.GameListener
@@ -182,7 +182,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AlertListener::class,
                 TeamCommand::class,
                 FormationListener::class,
-                RestartListener::class,
+                ControlListener::class,
                 UnpauseListener::class,
                 AchievementCommand::class,
                 LogicListener::class,

@@ -50,9 +50,7 @@ data class ImperiumConfig(
     val database: DatabaseConfig = DatabaseConfig.H2(),
     val messenger: MessengerConfig = MessengerConfig.None,
     val server: ServerConfig = ServerConfig("unknown"),
-    val generatorId: Int = 0,
     val language: Locale = Locale.ENGLISH,
-    // TODO Remove this goofy aah way of loading locales
     val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,
     val webhook: WebhookConfig = WebhookConfig.None,
     val discord: DiscordConfig = DiscordConfig(),
@@ -100,8 +98,6 @@ sealed interface MessengerConfig {
 data class ServerConfig(
     val name: String,
     val displayName: String = name.capitalize(),
-    // TODO Fix the autoupdate spamming github API
-    val autoUpdate: Boolean = false
 ) {
     val identity: Identity.Server
         get() = Identity.Server(name)
