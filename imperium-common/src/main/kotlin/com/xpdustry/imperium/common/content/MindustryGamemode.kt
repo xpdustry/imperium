@@ -28,4 +28,5 @@ enum class MindustryGamemode(val pvp: Boolean = false) {
     TOWER_DEFENSE,
     HUB,
     TESTING,
+    EVENT,
 }
