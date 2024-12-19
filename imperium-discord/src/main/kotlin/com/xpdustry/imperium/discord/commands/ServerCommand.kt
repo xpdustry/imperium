@@ -101,10 +101,10 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
     // TODO The following code works but its turbo shit, fixit!!
     @ImperiumCommand(["server", "control"], Rank.ADMIN)
-    suspend fun onServerRestart(
+    suspend fun onServerControl(
         interaction: SlashCommandInteraction,
-        @Lowercase server: String? = null,
         action: RemoteActionMessage.Action,
+        @Lowercase server: String? = null,
         immediate: Boolean = false
     ) {
         val reply = interaction.deferReply(false).await()

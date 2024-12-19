@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
@@ -87,6 +88,8 @@ class SlashCommandRegistry(
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
         registerHandler(Rank::class, EnumTypeHandler(Rank::class))
+        registerHandler(
+            RemoteActionMessage.Action::class, EnumTypeHandler(RemoteActionMessage.Action::class))
     }
 
     override fun process() {
