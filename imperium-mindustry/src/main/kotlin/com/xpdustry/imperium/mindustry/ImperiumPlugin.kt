@@ -238,12 +238,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         override fun exit(status: ExitStatus) {
             if (exited) return
             exited = true
-            super.exit(status)
             runBlocking {
                 instances
                     .get<WebhookMessageSender>()
-                    .send(WebhookMessage(content = "The server has exit with $status code."))
+                    .send(WebhookMessage(content = "The server is exiting with $status code."))
             }
+            super.exit(status)
             when (status) {
                 ExitStatus.EXIT,
                 ExitStatus.INIT_FAILURE -> Core.app.exit()
