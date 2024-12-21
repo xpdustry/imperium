@@ -105,7 +105,7 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
                     (it.block.size * it.block.size) * it.block.importance * sign
                 }
                 .sum()
-        if (score < config.mindustry!!.security.griefingThreshold) return
+        if (score < config.mindustry.security.griefingThreshold) return
         Call.sendMessage(
             "[scarlet]${player.name}[white] is a potential griefer and therefore been marked. Votekick requirements have been halved for them.")
         marks.mark(player)
