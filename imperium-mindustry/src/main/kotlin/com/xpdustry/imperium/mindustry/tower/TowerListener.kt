@@ -40,6 +40,7 @@ import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.getItemIcon
 import java.text.DecimalFormat
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import mindustry.Vars
@@ -78,6 +79,7 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         Vars.pathfinder = TowerPathfinder(plugin)
+        Vars.spawner = TowerWaveSpawner()
 
         // Do not allow the deposit of items in any core
         Vars.netServer.admins.addActionFilter {
@@ -129,11 +131,10 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     if (!Vars.state.isPlaying) {
                         cancellable.cancel()
                         return@execute
-                    } else {
-                        Vars.state.rules.waveTeam.rules().unitHealthMultiplier *=
-                            MULTIPLIER_PER_MINUTE
                     }
+                    Vars.state.rules.waveTeam.rules().unitHealthMultiplier *= MULTIPLIER_PER_MINUTE
                 }
+
         Entities.getUnits().forEach { unit ->
             if (unit.team() == Vars.state.rules.waveTeam) unit.controller(GroundTowerAI())
         }
@@ -167,16 +168,6 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
         Call.effect(Fx.spawn, event.unit.x(), event.unit.y(), 0F, Color.red)
     }
 
-    private fun getTier(type: UnitType): Int {
-        var current = type
-        var tier = 0
-        while (current in downgrades) {
-            current = downgrades[current]!!
-            tier++
-        }
-        return tier
-    }
-
     private fun Map<Item, Int>.toBountyComponent(): Component =
         components()
             .apply {
@@ -197,104 +188,138 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private fun getItemBounty(type: UnitType): Map<Item, Int> {
         val bounty = HashMap<Item, Int>()
-        when (getTier(type).coerceIn(1..5)) {
-            1 -> {
+        when (TIERS[type] ?: UnitTier.TIER_1) {
+            UnitTier.TIER_1 -> {
                 bounty[Items.copper] = 20
                 bounty[Items.lead] = 20
                 bounty[Items.silicon] = 5
-                when (type) {
-                    in DAGGER_TREE -> bounty[Items.graphite] = 5
-                    in NOVA_TREE -> bounty[Items.metaglass] = 5
-                    in FLARE_TREE -> bounty[Items.titanium] = 5
+                when (Random.nextInt(1, 4)) {
+                    1 -> bounty[Items.graphite] = 10
+                    2 -> bounty[Items.metaglass] = 5
+                    3 -> bounty[Items.titanium] = 10
                 }
             }
-            2 -> {
+            UnitTier.TIER_2 -> {
                 bounty[Items.copper] = 30
                 bounty[Items.lead] = 30
                 bounty[Items.silicon] = 10
-                when (type) {
-                    in DAGGER_TREE -> bounty[Items.graphite] = 10
-                    in NOVA_TREE -> bounty[Items.metaglass] = 10
-                    in FLARE_TREE -> bounty[Items.titanium] = 10
+                when (Random.nextInt(1, 4)) {
+                    1 -> bounty[Items.graphite] = 20
+                    2 -> bounty[Items.metaglass] = 10
+                    3 -> bounty[Items.titanium] = 20
                 }
             }
-            3 -> {
+            UnitTier.TIER_3 -> {
                 bounty[Items.copper] = 50
                 bounty[Items.lead] = 50
                 bounty[Items.silicon] = 30
-                when (type) {
-                    in DAGGER_TREE -> bounty[Items.graphite] = 15
-                    in NOVA_TREE -> bounty[Items.metaglass] = 15
-                    in FLARE_TREE -> bounty[Items.titanium] = 15
-                    in MONO_TREE -> bounty[Items.plastanium] = 20
-                    in CRAWLER_TREE -> bounty[Items.thorium] = 20
+                bounty[Items.phaseFabric] = 3
+                bounty[Items.surgeAlloy] = 3
+                when (Random.nextInt(1, 6)) {
+                    1 -> bounty[Items.graphite] = 30
+                    2 -> bounty[Items.metaglass] = 20
+                    3 -> bounty[Items.titanium] = 30
+                    4 -> bounty[Items.plastanium] = 50
+                    5 -> bounty[Items.thorium] = 50
                 }
             }
-            4 -> {
+            UnitTier.TIER_4 -> {
                 bounty[Items.copper] = 200
                 bounty[Items.lead] = 200
                 bounty[Items.silicon] = 50
                 bounty[Items.phaseFabric] = 20
                 bounty[Items.surgeAlloy] = 40
-                when (type) {
-                    in DAGGER_TREE -> bounty[Items.graphite] = 30
-                    in NOVA_TREE -> bounty[Items.metaglass] = 30
-                    in FLARE_TREE -> bounty[Items.titanium] = 30
-                    in MONO_TREE -> bounty[Items.plastanium] = 30
-                    in CRAWLER_TREE -> bounty[Items.thorium] = 30
+                when (Random.nextInt(1, 6)) {
+                    1 -> bounty[Items.graphite] = 30
+                    2 -> bounty[Items.metaglass] = 30
+                    3 -> bounty[Items.titanium] = 30
+                    4 -> bounty[Items.plastanium] = 80
+                    5 -> bounty[Items.thorium] = 80
                 }
             }
-            5 -> {
+            UnitTier.TIER_5 -> {
                 bounty[Items.copper] = 300
                 bounty[Items.lead] = 300
                 bounty[Items.silicon] = 100
                 bounty[Items.phaseFabric] = 30
                 bounty[Items.surgeAlloy] = 60
-                when (type) {
-                    in DAGGER_TREE -> bounty[Items.graphite] = 40
-                    in NOVA_TREE -> bounty[Items.metaglass] = 40
-                    in FLARE_TREE -> bounty[Items.titanium] = 40
-                    in MONO_TREE -> bounty[Items.plastanium] = 50
-                    in CRAWLER_TREE -> bounty[Items.thorium] = 50
+                when (Random.nextInt(1, 6)) {
+                    1 -> bounty[Items.graphite] = 40
+                    2 -> bounty[Items.metaglass] = 40
+                    3 -> bounty[Items.titanium] = 40
+                    4 -> bounty[Items.plastanium] = 120
+                    5 -> bounty[Items.thorium] = 120
                 }
             }
         }
         return bounty
     }
 
+    enum class UnitTier {
+        TIER_1,
+        TIER_2,
+        TIER_3,
+        TIER_4,
+        TIER_5,
+    }
+
+    enum class UnitTree {
+        DAGGER,
+        NOVA,
+        CRAWLER,
+        MONO,
+        FLARE
+    }
+
     companion object {
         private val LOGGER by LoggerDelegate()
         private val DECIMAL_FORMAT = DecimalFormat("#.##")
         private const val MULTIPLIER_PER_MINUTE = 1.03F
-        private val DAGGER_TREE =
-            setOf(
-                UnitTypes.dagger,
-                UnitTypes.mace,
-                UnitTypes.fortress,
-                UnitTypes.scepter,
-                UnitTypes.reign)
-        private val CRAWLER_TREE =
-            setOf(
-                UnitTypes.crawler,
-                UnitTypes.atrax,
-                UnitTypes.spiroct,
-                UnitTypes.arkyid,
-                UnitTypes.toxopid)
-        private val NOVA_TREE =
-            setOf(
-                UnitTypes.nova,
-                UnitTypes.pulsar,
-                UnitTypes.quasar,
-                UnitTypes.vela,
-                UnitTypes.corvus)
-        private val MONO_TREE =
-            setOf(UnitTypes.mono, UnitTypes.poly, UnitTypes.mega, UnitTypes.quad, UnitTypes.oct)
-        private val FLARE_TREE =
-            setOf(
-                UnitTypes.flare,
-                UnitTypes.horizon,
-                UnitTypes.zenith,
-                UnitTypes.antumbra,
-                UnitTypes.eclipse)
+
+        private val TIERS: Map<UnitType, UnitTier>
+        private val TREES: Map<UnitType, UnitTree>
+
+        init {
+            val tiers = mutableMapOf<UnitType, UnitTier>()
+            val trees = mutableMapOf<UnitType, UnitTree>()
+
+            fun addUnit(type: UnitType, tier: UnitTier, tree: UnitTree) {
+                tiers[type] = tier
+                trees[type] = tree
+            }
+
+            addUnit(UnitTypes.dagger, UnitTier.TIER_1, UnitTree.DAGGER)
+            addUnit(UnitTypes.mace, UnitTier.TIER_2, UnitTree.DAGGER)
+            addUnit(UnitTypes.fortress, UnitTier.TIER_3, UnitTree.DAGGER)
+            addUnit(UnitTypes.scepter, UnitTier.TIER_4, UnitTree.DAGGER)
+            addUnit(UnitTypes.reign, UnitTier.TIER_5, UnitTree.DAGGER)
+
+            addUnit(UnitTypes.crawler, UnitTier.TIER_1, UnitTree.CRAWLER)
+            addUnit(UnitTypes.atrax, UnitTier.TIER_2, UnitTree.CRAWLER)
+            addUnit(UnitTypes.spiroct, UnitTier.TIER_3, UnitTree.CRAWLER)
+            addUnit(UnitTypes.arkyid, UnitTier.TIER_4, UnitTree.CRAWLER)
+            addUnit(UnitTypes.toxopid, UnitTier.TIER_5, UnitTree.CRAWLER)
+
+            addUnit(UnitTypes.nova, UnitTier.TIER_1, UnitTree.NOVA)
+            addUnit(UnitTypes.pulsar, UnitTier.TIER_2, UnitTree.NOVA)
+            addUnit(UnitTypes.quasar, UnitTier.TIER_3, UnitTree.NOVA)
+            addUnit(UnitTypes.vela, UnitTier.TIER_4, UnitTree.NOVA)
+            addUnit(UnitTypes.corvus, UnitTier.TIER_5, UnitTree.NOVA)
+
+            addUnit(UnitTypes.mono, UnitTier.TIER_1, UnitTree.MONO)
+            addUnit(UnitTypes.poly, UnitTier.TIER_2, UnitTree.MONO)
+            addUnit(UnitTypes.mega, UnitTier.TIER_3, UnitTree.MONO)
+            addUnit(UnitTypes.quad, UnitTier.TIER_4, UnitTree.MONO)
+            addUnit(UnitTypes.oct, UnitTier.TIER_5, UnitTree.MONO)
+
+            addUnit(UnitTypes.flare, UnitTier.TIER_1, UnitTree.FLARE)
+            addUnit(UnitTypes.horizon, UnitTier.TIER_2, UnitTree.FLARE)
+            addUnit(UnitTypes.zenith, UnitTier.TIER_3, UnitTree.FLARE)
+            addUnit(UnitTypes.antumbra, UnitTier.TIER_4, UnitTree.FLARE)
+            addUnit(UnitTypes.eclipse, UnitTier.TIER_5, UnitTree.FLARE)
+
+            TIERS = tiers
+            TREES = trees
+        }
     }
 }
