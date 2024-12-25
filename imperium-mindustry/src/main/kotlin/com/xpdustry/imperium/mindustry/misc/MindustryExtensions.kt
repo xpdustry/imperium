@@ -33,14 +33,14 @@ import mindustry.net.Administration
 import mindustry.type.Item
 import mindustry.world.Block
 import mindustry.world.blocks.distribution.Conveyor
-import mindustry.world.blocks.distribution.StackConveyor
 import mindustry.world.blocks.distribution.Duct
-import mindustry.world.blocks.distribution.Router
 import mindustry.world.blocks.distribution.DuctRouter
 import mindustry.world.blocks.distribution.Junction
 import mindustry.world.blocks.distribution.OverflowDuct
 import mindustry.world.blocks.distribution.OverflowGate
+import mindustry.world.blocks.distribution.Router
 import mindustry.world.blocks.distribution.Sorter
+import mindustry.world.blocks.distribution.StackConveyor
 import mindustry.world.blocks.distribution.StackRouter
 import mindustry.world.blocks.sandbox.ItemSource
 import mindustry.world.blocks.sandbox.ItemVoid
@@ -114,10 +114,21 @@ val Block.isVoidBlock: Boolean
     get() = this is ItemVoid || this is LiquidVoid || this is PowerVoid
 
 val Block.isErekirDistribution: Boolean
-    get() = this is Duct || this is DuctRouter || this is OverflowDuct || this is StackConveyor || this is StackRouter
+    get() =
+        this is Duct ||
+            this is DuctRouter ||
+            this is OverflowDuct ||
+            this is StackConveyor ||
+            this is StackRouter
 
 val Block.isSerpuloDistribution: Boolean
-    get() = this is Conveyor || this is StackConveyor || this is Junction || this is Sorter || this is Router || this is OverflowGate
+    get() =
+        this is Conveyor ||
+            this is StackConveyor ||
+            this is Junction ||
+            this is Sorter ||
+            this is Router ||
+            this is OverflowGate
 
 fun Color.toHexString(): String = String.format("#%06x", rgb888())
 

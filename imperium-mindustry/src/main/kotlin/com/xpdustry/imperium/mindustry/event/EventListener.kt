@@ -101,18 +101,19 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun crateRarityLabel() {
         crates.forEach {
             val (x, y, rarity) = it
-            val rarityText = when (rarity) {
-                1 -> "Common"
-                2 -> "Uncommon"
-                3 -> "Rare"
-                4 -> "Epic"
-                5 -> "Legendary"
-                6 -> "Mythic"
-                else -> "Unknown, this shouldnt happen"
-            }
+            val rarityText =
+                when (rarity) {
+                    1 -> "Common"
+                    2 -> "Uncommon"
+                    3 -> "Rare"
+                    4 -> "Epic"
+                    5 -> "Legendary"
+                    6 -> "Mythic"
+                    else -> "Unknown, this shouldnt happen"
+                }
             Call.label("Event Vault\nRarity: $rarityText", 1, (x * 8).toFloat(), (y * 8).toFloat())
         }
-    } 
+    }
 
     // TODO: should this stay during the event?
     @ImperiumCommand(["crate"], Rank.ADMIN)
@@ -136,7 +137,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Events.fire(GameOverEvent(Team.derelict))
                 Call.announce(
                     "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
-                }
+            }
             val localValidTiles = secondHandTiles.toMutableList()
         } else {
             val localValidTiles = validTiles.toMutableList()
@@ -206,7 +207,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     fun checkValid(x: Int, y: Int, replace: Boolean): Boolean {
-        if(!replace) {
+        if (!replace) {
             return (x - 1..x + 1).all { x1 ->
                 (y - 1..y + 1).all { y1 ->
                     val tile = Vars.world.tile(x1, y1)
@@ -217,7 +218,10 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
             return (x - 1..x + 1).all { x1 ->
                 (y - 1..y + 1).all { y1 ->
                     val tile = Vars.world.tile(x1, y1)
-                    tile != null && (tile.block() == Blocks.air || tile.block().isSerpuloDistribution() || tile.block().isErekirDistribution)
+                    tile != null &&
+                        (tile.block() == Blocks.air ||
+                            tile.block().isSerpuloDistribution() ||
+                            tile.block().isErekirDistribution)
                 }
             }
         }
