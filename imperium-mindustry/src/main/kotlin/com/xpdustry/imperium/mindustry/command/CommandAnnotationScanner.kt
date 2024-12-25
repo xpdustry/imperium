@@ -108,28 +108,28 @@ class CommandAnnotationScanner(
         annotation: ImperiumCommand
     ) {
         var names = annotation.name.toNameWithAliases()
-        val base = mutableListOf(names.first)
-
+        val path = mutableListOf(names.first)
         var builder =
             manager
-                .commandBuilder(names.first, createLiteralDescription(base), *names.second)
+                .commandBuilder(names.first, createLiteralDescription(path), *names.second)
                 .permission(createPermission(function, annotation))
-                .commandDescription(createLiteralDescription(base))
 
         for (rest in annotation.path.drop(1)) {
             names = rest.toNameWithAliases()
-            base += names.first
-            builder = builder.literal(names.first, createLiteralDescription(base), *names.second)
+            path += names.first
+            builder = builder.literal(names.first, createLiteralDescription(path), *names.second)
         }
+
+        builder = builder.commandDescription(createLiteralDescription(path))
 
         for (parameter in function.parameters.drop(1)) {
             if (parameter.type.classifier == CommandSender::class) continue
             val flag = parameter.findAnnotation<Flag>()
             builder =
                 if (flag == null) {
-                    builder.argument(createCommandComponent<Any>(manager, parameter, base))
+                    builder.argument(createCommandComponent<Any>(manager, parameter, path))
                 } else {
-                    builder.flag(createFlagComponent<Any>(manager, parameter, base, flag))
+                    builder.flag(createFlagComponent<Any>(manager, parameter, path, flag))
                 }
         }
 
@@ -178,7 +178,7 @@ class CommandAnnotationScanner(
     private fun <T : Any> createCommandComponent(
         manager: MindustryCommandManager<CommandSender>,
         parameter: KParameter,
-        base: List<String>
+        path: List<String>
     ): TypedCommandComponent<CommandSender, T> {
         val token = TypeToken.get(parameter.type.javaType) as TypeToken<T>
         val parameters = manager.parserRegistry().parseAnnotations(token, parameter.annotations)
@@ -189,7 +189,7 @@ class CommandAnnotationScanner(
                     ?: error("No parser found for type: ${parameter.type.javaType}"))
             .valueType(token)
             .required(!parameter.isOptional)
-            .description(createArgumentDescription(base, parameter.name!!))
+            .description(createArgumentDescription(path, parameter.name!!))
             .commandManager(manager)
             .build()
     }
@@ -198,7 +198,7 @@ class CommandAnnotationScanner(
     private fun <T : Any> createFlagComponent(
         manager: MindustryCommandManager<CommandSender>,
         parameter: KParameter,
-        base: List<String>,
+        path: List<String>,
         flag: Flag
     ): CommandFlag<T> {
         if (parameter.type.classifier != Boolean::class && !parameter.isOptional) {
@@ -207,11 +207,11 @@ class CommandAnnotationScanner(
         val builder =
             CommandFlag.builder<CommandSender>(parameter.name!!)
                 .withAliases(if (flag.alias.isNotBlank()) listOf(flag.alias) else emptyList())
-                .withDescription(createArgumentDescription(base, parameter.name!!))
+                .withDescription(createArgumentDescription(path, parameter.name!!))
         return if (parameter.type.classifier == Boolean::class && !parameter.isOptional) {
             builder.build() as CommandFlag<T>
         } else {
-            builder.withComponent(createCommandComponent<T>(manager, parameter, base)).build()
+            builder.withComponent(createCommandComponent<T>(manager, parameter, path)).build()
         }
     }
 
