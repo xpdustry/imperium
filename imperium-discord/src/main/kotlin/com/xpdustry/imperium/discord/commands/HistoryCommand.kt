@@ -31,6 +31,7 @@ import com.xpdustry.imperium.common.message.request
 import com.xpdustry.imperium.discord.misc.await
 import kotlin.time.Duration.Companion.seconds
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
+import net.dv8tion.jda.api.utils.FileUpload
 
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
@@ -49,13 +50,15 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             reply.sendMessage("Invalid player id.").await()
             return
         }
-        val response =
-            messenger.request<HistoryResponseMessage>(
+        messenger
+            .request<HistoryResponseMessage>(
                 HistoryRequestMessage(server, identifier), timeout = 5.seconds)
-        if (response == null) {
-            reply.sendMessage("No history found.").await()
-            return
-        }
-        reply.sendMessage("```\n${response.history}\n```").await()
+            ?.history
+            ?.let {
+                reply
+                    .sendFiles(
+                        FileUpload.fromStreamSupplier("history.txt") { it.byteInputStream() })
+                    .await()
+            } ?: reply.sendMessage("No history found.").await()
     }
 }

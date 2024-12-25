@@ -27,9 +27,9 @@ import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ImperiumConfigProvider
 import com.xpdustry.imperium.common.config.MessengerConfig
+import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.StorageConfig
-import com.xpdustry.imperium.common.config.TranslatorConfig
 import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
@@ -43,6 +43,8 @@ import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.NoopMessenger
 import com.xpdustry.imperium.common.message.RabbitmqMessenger
+import com.xpdustry.imperium.common.metrics.InfluxDBRegistry
+import com.xpdustry.imperium.common.metrics.MetricsRegistry
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnApiIoDetection
@@ -56,9 +58,6 @@ import com.xpdustry.imperium.common.storage.MinioStorageBucket
 import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
-import com.xpdustry.imperium.common.translator.DeeplTranslator
-import com.xpdustry.imperium.common.translator.LibreTranslateTranslator
-import com.xpdustry.imperium.common.translator.Translator
 import com.xpdustry.imperium.common.user.SimpleUserManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
@@ -74,15 +73,7 @@ import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
 fun MutableInstanceManager.registerCommonModule() {
-    provider(ImperiumConfigProvider())
-
-    provider<Translator> {
-        when (val config = get<ImperiumConfig>().translator) {
-            is TranslatorConfig.None -> Translator.Noop
-            is TranslatorConfig.LibreTranslate -> LibreTranslateTranslator(config, get())
-            is TranslatorConfig.DeepL -> DeeplTranslator(config, get())
-        }
-    }
+    provider(ImperiumConfigProvider)
 
     provider<Discovery> { SimpleDiscovery(get(), get("discovery"), get()) }
 
@@ -154,6 +145,14 @@ fun MutableInstanceManager.registerCommonModule() {
         when (val config = get<ImperiumConfig>().storage) {
             is StorageConfig.Local -> LocalStorageBucket(get<Path>("directory").resolve("storage"))
             is StorageConfig.Minio -> MinioStorageBucket(config, get())
+        }
+    }
+
+    provider<MetricsRegistry> {
+        val config = get<ImperiumConfig>()
+        when (config.metrics) {
+            is MetricConfig.InfluxDB -> InfluxDBRegistry(config.server, config.metrics, get())
+            is MetricConfig.None -> MetricsRegistry.None
         }
     }
 }

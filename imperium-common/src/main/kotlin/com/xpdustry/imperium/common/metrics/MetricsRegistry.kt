@@ -15,26 +15,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.ui.popup
+package com.xpdustry.imperium.common.metrics
 
-import arc.util.Align
-import com.xpdustry.imperium.mindustry.ui.Pane
+interface MetricsRegistry {
+    fun register(collector: MetricsCollector)
 
-data class PopupPane(
-    var content: String = "",
-    var shiftX: Int = 0,
-    var shiftY: Int = 0,
-    var alignement: PopupAlignement = PopupAlignement.CENTER,
-) : Pane
-
-enum class PopupAlignement(val align: Int) {
-    TOP_LEFT(Align.topLeft),
-    TOP(Align.top),
-    TOP_RIGHT(Align.topRight),
-    LEFT(Align.left),
-    CENTER(Align.center),
-    RIGHT(Align.right),
-    BOTTOM_LEFT(Align.bottomLeft),
-    BOTTOM(Align.bottom),
-    BOTTOM_RIGHT(Align.bottomRight),
+    data object None : MetricsRegistry {
+        override fun register(collector: MetricsCollector) = Unit
+    }
 }

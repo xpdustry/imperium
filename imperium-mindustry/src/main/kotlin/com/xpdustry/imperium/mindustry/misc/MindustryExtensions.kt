@@ -17,16 +17,20 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
+import arc.graphics.Color
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.MindustryVersion
 import java.net.InetAddress
 import mindustry.Vars
+import mindustry.content.Items
 import mindustry.core.GameState
 import mindustry.core.Version
 import mindustry.game.Gamemode
 import mindustry.gen.Building
+import mindustry.gen.Iconc
 import mindustry.net.Administration
+import mindustry.type.Item
 import mindustry.world.Block
 import mindustry.world.blocks.distribution.Conveyor
 import mindustry.world.blocks.distribution.StackConveyor
@@ -114,3 +118,32 @@ val Block.isErekirDistribution: Boolean
 
 val Block.isSerpuloDistribution: Boolean
     get() = this is Conveyor || this is StackConveyor || this is Junction || this is Sorter || this is Router || this is OverflowGate
+
+fun Color.toHexString(): String = String.format("#%06x", rgb888())
+
+fun getItemIcon(item: Item): String =
+    when (item) {
+        Items.scrap -> Iconc.itemScrap.toString()
+        Items.copper -> Iconc.itemCopper.toString()
+        Items.lead -> Iconc.itemLead.toString()
+        Items.graphite -> Iconc.itemGraphite.toString()
+        Items.coal -> Iconc.itemCoal.toString()
+        Items.titanium -> Iconc.itemTitanium.toString()
+        Items.thorium -> Iconc.itemThorium.toString()
+        Items.silicon -> Iconc.itemSilicon.toString()
+        Items.plastanium -> Iconc.itemPlastanium.toString()
+        Items.phaseFabric -> Iconc.itemPhaseFabric.toString()
+        Items.surgeAlloy -> Iconc.itemSurgeAlloy.toString()
+        Items.sporePod -> Iconc.itemSporePod.toString()
+        Items.sand -> Iconc.itemSand.toString()
+        Items.blastCompound -> Iconc.itemBlastCompound.toString()
+        Items.pyratite -> Iconc.itemPyratite.toString()
+        Items.metaglass -> Iconc.itemMetaglass.toString()
+        Items.beryllium -> Iconc.itemBeryllium.toString()
+        Items.tungsten -> Iconc.itemTungsten.toString()
+        Items.oxide -> Iconc.itemOxide.toString()
+        Items.carbide -> Iconc.itemCarbide.toString()
+        Items.fissileMatter -> Iconc.itemFissileMatter.toString()
+        Items.dormantCyst -> Iconc.itemDormantCyst.toString()
+        else -> "<${item.name}>"
+    }

@@ -20,7 +20,7 @@
 package com.xpdustry.imperium.mindustry.translation
 
 import arc.graphics.Color
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.NumberComponent.number
@@ -142,7 +142,7 @@ fun gui_welcome_content(): Component =
             translatable(
                 "imperium.gui.welcome.content.header",
                 TranslationArguments.array(
-                    DistributorProvider.get()
+                    Distributor.get()
                         .mindustryComponentDecoder
                         .decode(Config.serverName.string()))))
         .append(newline())
@@ -232,7 +232,7 @@ fun gui_back(): Component = translatable("imperium.gui.back", LIGHT_GRAY)
 fun gui_submit(): Component = translatable("imperium.gui.submit", ACCENT)
 
 fun user_setting_description(setting: User.Setting): Component =
-    translatable("imperium.user-setting.${setting.name.lowercase().replace('_', '-')}.description")
+    translatable("imperium.user-setting.${setting.name.lowercase()}.description")
 
 fun announcement_tip(tip: Tip): Component =
     components(

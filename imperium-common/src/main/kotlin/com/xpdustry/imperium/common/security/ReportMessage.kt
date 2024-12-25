@@ -23,8 +23,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ReportMessage(
     val serverName: String,
-    val sender: Identity.Mindustry,
-    val target: Identity.Mindustry,
+    val senderName: String,
+    val senderId: Int,
+    val targetName: String,
+    val targetId: Int,
     val reason: Reason
 ) : Message {
     enum class Reason {

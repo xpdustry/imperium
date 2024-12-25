@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.misc
 import arc.struct.ObjectMap
 import arc.struct.ObjectSet
 import arc.struct.Seq
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.event.EventSubscription
@@ -65,7 +65,7 @@ fun <T> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this)
 suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T =
     withTimeout(timeout) {
         suspendCancellableCoroutine { continuation ->
-            DistributorProvider.get()
+            Distributor.get()
                 .pluginScheduler
                 .schedule(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
                 .async(false)
@@ -101,7 +101,7 @@ inline fun <reified E : Any> onEvent(
     priority: Priority = Priority.NORMAL,
     crossinline listener: (E) -> Unit
 ): EventSubscription =
-    DistributorProvider.get().eventBus.subscribe(
+    Distributor.get().eventBus.subscribe(
         E::class.java,
         priority,
         Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
@@ -113,7 +113,7 @@ inline fun <E : Enum<E>> onEvent(
     priority: Priority = Priority.NORMAL,
     crossinline listener: () -> Unit
 ): EventSubscription =
-    DistributorProvider.get().eventBus.subscribe(
+    Distributor.get().eventBus.subscribe(
         enum, priority, Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
             listener()
         }

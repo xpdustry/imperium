@@ -23,9 +23,9 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
-import com.xpdustry.imperium.common.config.DiscordConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
@@ -71,7 +71,6 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 class SlashCommandRegistry(
     private val discord: DiscordService,
     private val config: ImperiumConfig,
-    private val discordConfig: DiscordConfig,
 ) : AnnotationScanner, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
@@ -89,6 +88,8 @@ class SlashCommandRegistry(
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
         registerHandler(Rank::class, EnumTypeHandler(Rank::class))
+        registerHandler(
+            RemoteActionMessage.Action::class, EnumTypeHandler(RemoteActionMessage.Action::class))
     }
 
     override fun process() {
@@ -262,7 +263,7 @@ class SlashCommandRegistry(
         }
 
         runBlocking {
-            if (discordConfig.globalCommands) {
+            if (config.discord.globalCommands) {
                 discord.jda.updateCommands().addCommands(compiled).await()
                 discord.getMainServer().retrieveCommands().await().map {
                     ImperiumScope.MAIN.launch {

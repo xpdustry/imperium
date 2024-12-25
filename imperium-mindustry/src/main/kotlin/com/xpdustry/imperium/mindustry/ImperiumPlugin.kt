@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry
 import arc.Application
 import arc.ApplicationListener
 import arc.Core
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
@@ -33,7 +33,6 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerApplication
@@ -52,6 +51,7 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.control.ControlListener
 import com.xpdustry.imperium.mindustry.control.RestartListener
 import com.xpdustry.imperium.mindustry.event.EventListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
@@ -65,6 +65,7 @@ import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.game.UnpauseListener
 import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
+import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
@@ -183,16 +184,17 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AlertListener::class,
                 TeamCommand::class,
                 FormationListener::class,
-                RestartListener::class,
+                ControlListener::class,
                 UnpauseListener::class,
                 AchievementCommand::class,
                 LogicListener::class,
                 SaveCommand::class,
                 AntiGriefListener::class,
-                FlexListener::class)
+                FlexListener::class,
+                MetricsListener::class)
             .forEach(application::register)
 
-        val gamemode = application.instances.get<MindustryConfig>().gamemode
+        val gamemode = application.instances.get<ImperiumConfig>().mindustry.gamemode
         if (gamemode == MindustryGamemode.HUB) {
             application.register(HubListener::class)
         } else {
@@ -230,7 +232,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     private fun <T : Any> registerService(klass: KClass<T>, instance: T) {
-        DistributorProvider.get()
+        Distributor.get()
             .serviceManager
             .register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }
@@ -241,12 +243,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         override fun exit(status: ExitStatus) {
             if (exited) return
             exited = true
-            super.exit(status)
             runBlocking {
                 instances
                     .get<WebhookMessageSender>()
-                    .send(WebhookMessage(content = "The server has exit with $status code."))
+                    .send(WebhookMessage(content = "The server is exiting with $status code."))
             }
+            super.exit(status)
             when (status) {
                 ExitStatus.EXIT,
                 ExitStatus.INIT_FAILURE -> Core.app.exit()

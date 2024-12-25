@@ -7,7 +7,6 @@ dependencies {
     api(libs.guava)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
-    api(libs.deepl)
     api(libs.password4j)
     api(libs.rabbitmq.client)
     api(libs.okhttp)
@@ -33,6 +32,8 @@ dependencies {
     api(libs.prettytime)
     api(libs.time4j.core)
     testRuntimeOnly(libs.h2)
+
+    api(libs.influxdb)
 }
 
 // We love OOMs :^)

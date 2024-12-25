@@ -25,7 +25,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -66,13 +66,13 @@ class ExcavateCommand(instances: InstanceManager) :
     ImperiumApplication.Listener {
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
-    private val config = instances.get<MindustryConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private lateinit var item: Item
 
     override fun onImperiumInit() {
         item =
-            Vars.content.item(config.world.excavationItem)
-                ?: error("${config.world.excavationItem} is not a valid mindustry item.")
+            Vars.content.item(config.mindustry.world.excavationItem)
+                ?: error("${config.mindustry.world.excavationItem} is not a valid mindustry item.")
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.seconds)
@@ -106,7 +106,8 @@ class ExcavateCommand(instances: InstanceManager) :
         if (other != UNSET_POINT) {
             val dx = abs(point.x - other.x)
             val dy = abs(point.y - other.y)
-            if (dx >= config.world.maxExcavateSize || dy >= config.world.maxExcavateSize) {
+            if (dx >= config.mindustry.world.maxExcavateSize ||
+                dy >= config.mindustry.world.maxExcavateSize) {
                 areas[event.player] = ExcavateArea()
                 event.player.sendMessage(
                     "The chosen excavation point is too far from the other point, try again!")
@@ -169,7 +170,7 @@ class ExcavateCommand(instances: InstanceManager) :
         for (x in area.x1..area.x2) {
             for (y in area.y1..area.y2) {
                 if (Vars.world.tile(x, y).block()?.isStatic == true) {
-                    price += config.world.excavationTilePrice
+                    price += config.mindustry.world.excavationTilePrice
                 }
             }
         }

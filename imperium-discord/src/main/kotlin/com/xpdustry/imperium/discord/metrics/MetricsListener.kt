@@ -15,9 +15,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.control
+package com.xpdustry.imperium.discord.metrics
 
-import com.xpdustry.imperium.common.message.Message
-import kotlinx.serialization.Serializable
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.metrics.MetricsRegistry
+import com.xpdustry.imperium.common.metrics.SystemMetricCollector
 
-@Serializable data class RestartMessage(val target: String, val immediate: Boolean) : Message
+class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val metrics = instances.get<MetricsRegistry>()
+
+    override fun onImperiumInit() {
+        metrics.register(SystemMetricCollector())
+    }
+}

@@ -21,11 +21,12 @@ import arc.Events
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetAllOf
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -61,16 +62,16 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val pipeline = instances.get<GatekeeperPipeline>()
     private val vpn = instances.get<VpnDetection>()
     private val http = instances.get<OkHttpClient>()
-    private val config = instances.get<MindustryConfig>()
+    private val config = instances.get<ImperiumConfig>()
     private val whitelist = instances.get<AddressWhitelist>()
     private val badWords = instances.get<BadWordDetector>()
 
     override fun onImperiumInit() {
-        if (!config.security.gatekeeper) {
+        if (!config.mindustry.security.gatekeeper) {
             logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")
         }
 
-        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.security))
+        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.mindustry.security))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register("links", Priority.NORMAL) { context ->
             if (context.name.containsLink()) {
@@ -91,7 +92,7 @@ class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
-            interceptPlayerConnection(con, packet, pipeline, config)
+            interceptPlayerConnection(con, packet, pipeline, config.mindustry)
         }
     }
 
@@ -114,7 +115,7 @@ private fun interceptPlayerConnection(
 
     Events.fire(ConnectPacketEvent(con, packet))
 
-    val audience = DistributorProvider.get().audienceProvider.getConnection(con)
+    val audience = Distributor.get().audienceProvider.getConnection(con)
     con.connectTime = Time.millis()
 
     if (Vars.netServer.admins.isIPBanned(con.address) ||
@@ -176,7 +177,7 @@ private fun interceptPlayerConnection(
                 .append(mods.toString("\n> "))
         }
         audience.kick(
-            DistributorProvider.get().mindustryComponentDecoder.decode(result.toString()),
+            Distributor.get().mindustryComponentDecoder.decode(result.toString()),
             Duration.ZERO,
             false)
         return

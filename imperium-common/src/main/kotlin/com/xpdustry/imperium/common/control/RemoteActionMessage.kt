@@ -15,29 +15,23 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.translator
+package com.xpdustry.imperium.common.control
 
-import java.util.Locale
+import com.xpdustry.imperium.common.application.ExitStatus
+import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
 
-interface Translator {
-    suspend fun translate(text: String, source: Locale, target: Locale): TranslatorResult
-
-    fun isSupportedLanguage(locale: Locale): Boolean
-
-    object Noop : Translator {
-        override suspend fun translate(text: String, source: Locale, target: Locale) =
-            TranslatorResult.UnsupportedLanguage(target)
-
-        override fun isSupportedLanguage(locale: Locale) = false
+@Serializable
+data class RemoteActionMessage(val target: String?, val action: Action, val immediate: Boolean) :
+    Message {
+    enum class Action {
+        RESTART,
+        EXIT
     }
 }
 
-sealed interface TranslatorResult {
-    data class Success(val text: String) : TranslatorResult
-
-    data class Failure(val exception: Exception) : TranslatorResult
-
-    data class UnsupportedLanguage(val locale: Locale) : TranslatorResult
-
-    data object RateLimited : TranslatorResult
-}
+fun RemoteActionMessage.Action.toExitStatus() =
+    when (this) {
+        RemoteActionMessage.Action.EXIT -> ExitStatus.EXIT
+        RemoteActionMessage.Action.RESTART -> ExitStatus.RESTART
+    }

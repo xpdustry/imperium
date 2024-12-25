@@ -30,19 +30,15 @@ data class User(
     val lastJoin: Instant,
     val firstJoin: Instant,
 ) {
-    data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>) {
-        companion object {
-            val EMPTY = NamesAndAddresses(emptySet(), emptySet())
-        }
-    }
+    data class NamesAndAddresses(val names: Set<String>, val addresses: Set<InetAddress>)
 
-    enum class Setting(val default: Boolean, val description: String) {
-        SHOW_WELCOME_MESSAGE(true, "Show the welcome message when joining the server."),
-        RESOURCE_HUD(true, "Show a HUD with the evolution of the resources."),
-        REMEMBER_LOGIN(true, "Remember the last used login."),
-        DOUBLE_TAP_TILE_LOG(true, "Double tapping on a tile will display its history."),
-        ANTI_BAN_EVADE(
-            false, "Notifies you when a player leaves but rejoins with a different name."),
-        CHAT_TRANSLATOR(true, "Translates chat messages based on the language of your game.")
+    enum class Setting(val default: Boolean, val deprecated: Boolean = false) {
+        SHOW_WELCOME_MESSAGE(true),
+        RESOURCE_HUD(true),
+        REMEMBER_LOGIN(true),
+        DOUBLE_TAP_TILE_LOG(true),
+        ANTI_BAN_EVADE(false),
+        CHAT_TRANSLATOR(true, deprecated = true),
+        AUTOMATIC_LANGUAGE_DETECTION(true),
     }
 }

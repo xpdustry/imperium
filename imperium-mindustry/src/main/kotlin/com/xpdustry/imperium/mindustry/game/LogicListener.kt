@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
@@ -51,7 +51,7 @@ class LogicListener : ImperiumApplication.Listener {
                 it is UnitControlI && it.type == LUnitControl.build
             }) {
                 val permissions =
-                    DistributorProvider.get().playerPermissionProvider.getPermissions(action.player)
+                    Distributor.get().playerPermissionProvider.getPermissions(action.player)
                 return@addActionFilter permissions
                     .getPermission("imperium.rank.overseer")
                     .asBoolean() ||

@@ -17,23 +17,23 @@
  */
 package com.xpdustry.imperium.common.config
 
+import com.sksamuel.hoplite.ConfigException
+import com.sksamuel.hoplite.ConfigFailure
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
+import com.sksamuel.hoplite.fp.getOrElse
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.InstanceProvider
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
-import kotlin.io.path.notExists
 
-class ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
-    override fun create(instances: InstanceManager): ImperiumConfig {
-        val file = instances.get<Path>("directory").resolve("config.yaml")
-        if (file.notExists()) {
-            error("A config file is required. Please create one at ${file.absolutePathString()}")
-        }
-        return ConfigLoaderBuilder.empty()
+object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
+    private val logger by LoggerDelegate()
+
+    override fun create(instances: InstanceManager) =
+        ConfigLoaderBuilder.empty()
             .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
             .addDefaultDecoders()
             .addDefaultPreprocessors()
@@ -41,10 +41,18 @@ class ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addParameterMapper(KebabCaseParamMapper)
             .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-            .addPathSource(file)
+            .addPathSource(
+                instances.get<Path>("directory").resolve("config.yaml"),
+                optional = true,
+                allowEmpty = true)
             .addDecoder(ColorDecoder())
             .strict()
+            .withReport()
+            .withReportPrintFn(logger::debug)
             .build()
-            .loadConfigOrThrow()
-    }
+            .loadConfig<ImperiumConfig>()
+            .getOrElse {
+                if (it is ConfigFailure.UndefinedTree) ImperiumConfig()
+                else throw ConfigException(it.description())
+            }
 }

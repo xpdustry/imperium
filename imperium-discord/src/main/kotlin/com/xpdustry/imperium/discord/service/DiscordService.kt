@@ -20,7 +20,7 @@ package com.xpdustry.imperium.discord.service
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.DiscordConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.discord.misc.awaitVoid
@@ -53,7 +53,7 @@ interface DiscordService {
 }
 
 class SimpleDiscordService(
-    private val config: DiscordConfig,
+    private val config: ImperiumConfig,
     private val http: OkHttpClient,
     private val accounts: AccountManager,
 ) : DiscordService, ImperiumApplication.Listener {
@@ -69,7 +69,7 @@ class SimpleDiscordService(
                     GatewayIntent.GUILD_MESSAGE_REACTIONS,
                     GatewayIntent.DIRECT_MESSAGES,
                     GatewayIntent.GUILD_EMOJIS_AND_STICKERS)
-                .setToken(config.token.value)
+                .setToken(config.discord.token.value)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .build()
                 .awaitReady()
@@ -87,14 +87,14 @@ class SimpleDiscordService(
 
         var max = Rank.EVERYONE
         for (role in (getMainServer().getMemberById(user.idLong)?.roles ?: emptyList())) {
-            max = maxOf(max, config.roles2ranks[role.idLong] ?: Rank.EVERYONE)
+            max = maxOf(max, config.discord.roles2ranks[role.idLong] ?: Rank.EVERYONE)
         }
         return max >= rank
     }
 
     override suspend fun isAllowed(user: User, permission: Permission): Boolean =
         getMainServer().getMemberById(user.idLong)?.roles?.any {
-            it.idLong == config.permissions2roles[permission]
+            it.idLong == config.discord.permissions2roles[permission]
         } ?: false
 
     override suspend fun syncRoles(member: Member) {
@@ -109,7 +109,7 @@ class SimpleDiscordService(
         val current = member.roles.associateBy(Role::getIdLong)
 
         for ((achievement, completed) in accounts.selectAchievements(id)) {
-            val roleId = config.achievements2roles[achievement] ?: continue
+            val roleId = config.discord.achievements2roles[achievement] ?: continue
             val role = getMainServer().getRoleById(roleId) ?: continue
             if (completed) {
                 if (roleId in current.keys) continue
@@ -134,7 +134,7 @@ class SimpleDiscordService(
 
         val ranks = account.rank.getRanksBelow()
         for (rank in Rank.entries) {
-            val roleId = config.ranks2roles[rank] ?: continue
+            val roleId = config.discord.ranks2roles[rank] ?: continue
             val role = getMainServer().getRoleById(roleId) ?: continue
             if (rank in ranks) {
                 if (roleId in current) continue

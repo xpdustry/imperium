@@ -25,7 +25,6 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
 import com.xpdustry.imperium.common.message.Messenger
@@ -86,7 +85,7 @@ fun List<HistoryEntry>.normalize(limit: Int) =
 
 class SimpleHistorian(
     private val imperium: ImperiumConfig,
-    private val mindustry: MindustryConfig,
+    private val config: ImperiumConfig,
     private val users: UserManager,
     private val renderer: HistoryRenderer,
     private val messenger: Messenger,
@@ -254,7 +253,7 @@ class SimpleHistorian(
     private fun addEntry(entry: HistoryEntry) {
         val entries =
             positions.computeIfAbsent(Point2.pack(entry.x, entry.y)) {
-                LimitedList(mindustry.history.tileEntriesLimit)
+                LimitedList(config.mindustry.history.tileEntriesLimit)
             }
         val previous: HistoryEntry? = entries.peekLast()
         // Some blocks have repeating configurations, we don't want to spam the history with them
@@ -265,7 +264,7 @@ class SimpleHistorian(
         if (entry.actor.player != null && !entry.virtual) {
             players
                 .computeIfAbsent(entry.actor.player) {
-                    LimitedList(mindustry.history.playerEntriesLimit)
+                    LimitedList(config.mindustry.history.playerEntriesLimit)
                 }
                 .add(entry)
         }

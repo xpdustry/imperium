@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.misc
 
 import com.google.common.primitives.Longs
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
@@ -53,7 +53,7 @@ val Player.javaLocale: Locale
     get() = Locale.forLanguageTag(locale().replace('_', '-'))
 
 val Player.asAudience: Audience
-    get() = DistributorProvider.get().audienceProvider.getPlayer(this)
+    get() = Distributor.get().audienceProvider.getPlayer(this)
 
 fun Player.showInfoMessage(message: String) = Call.infoMessage(con, message)
 

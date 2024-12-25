@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import mindustry.game.EventType.PlayerLeave
@@ -34,10 +34,9 @@ class PlayerMap<V>(plugin: MindustryPlugin) {
                 .filter { it.first != null } as Sequence<Pair<Player, V>>
 
     init {
-        DistributorProvider.get().eventBus.subscribe(
-            PlayerLeave::class.java, Priority.LOWEST, plugin) {
-                players.remove(it.player.id())
-            }
+        Distributor.get().eventBus.subscribe(PlayerLeave::class.java, Priority.LOWEST, plugin) {
+            players.remove(it.player.id())
+        }
     }
 
     operator fun get(player: Player): V? = players[player.id()]

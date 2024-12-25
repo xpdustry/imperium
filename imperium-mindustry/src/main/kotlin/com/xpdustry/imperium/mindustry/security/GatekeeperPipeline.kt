@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -46,7 +46,7 @@ sealed interface GatekeeperResult {
             reason: String,
             time: Duration = Duration.ZERO,
             silent: Boolean = false
-        ) : this(DistributorProvider.get().mindustryComponentDecoder.decode(reason), time, silent)
+        ) : this(Distributor.get().mindustryComponentDecoder.decode(reason), time, silent)
     }
 }
 

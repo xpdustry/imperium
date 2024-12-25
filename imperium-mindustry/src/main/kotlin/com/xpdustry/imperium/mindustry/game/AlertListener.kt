@@ -19,12 +19,12 @@ package com.xpdustry.imperium.mindustry.game
 
 import arc.math.geom.Point2
 import arc.struct.IntSet
-import com.xpdustry.distributor.api.DistributorProvider
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
@@ -51,19 +51,26 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
     private val generators = IntSet()
     private val generatorsRateLimiter =
-        SimpleRateLimiter<Int>(1, instances.get<MindustryConfig>().world.explosiveDamageAlertDelay)
+        SimpleRateLimiter<Int>(
+            1, instances.get<ImperiumConfig>().mindustry.world.explosiveDamageAlertDelay)
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {
-            if (it.type == ActionType.breakBlock &&
-                it.block.isSourceBlock &&
+            if (((it.type == ActionType.breakBlock && it.block.isSourceBlock) ||
+                (it.type == ActionType.placeBlock && it.tile.block()?.isSourceBlock == true)) &&
                 !Vars.state.rules.infiniteResources) {
-                DistributorProvider.get()
+                val block =
+                    when (it.type) {
+                        ActionType.breakBlock -> it.block
+                        ActionType.placeBlock -> it.tile.block()!!
+                        else -> error("That ain't right")
+                    }
+                Distributor.get()
                     .audienceProvider
                     .getTeam(it.player.team())
                     .sendMessage(
                         announcement_important_block_destroy_attempt(
-                            it.player, it.block, it.tile.x.toInt(), it.tile.y.toInt()))
+                            it.player, block, it.tile.x.toInt(), it.tile.y.toInt()))
                 return@addActionFilter false
             }
             true
@@ -97,7 +104,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 if (building.items.has(item) &&
                     consumers.any { item.explosiveness > it.threshold } &&
                     generatorsRateLimiter.incrementAndCheck(pos)) {
-                    DistributorProvider.get()
+                    Distributor.get()
                         .audienceProvider
                         .getTeam(building.team())
                         .sendMessage(announcement_impending_explosion_alert(block, x, y))
@@ -111,7 +118,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onSourceBlockDestroy(event: EventType.BlockDestroyEvent) {
         if (Vars.state.rules.infiniteResources) return
         if (event.tile.block().isSourceBlock) {
-            DistributorProvider.get()
+            Distributor.get()
                 .audienceProvider
                 .getTeam(event.tile.team())
                 .sendMessage(
@@ -125,7 +132,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (Vars.state.rules.infiniteResources) return
         val building = event.tile.build
         if (event.breaking && building is ConstructBuild && building.current.isSourceBlock) {
-            DistributorProvider.get()
+            Distributor.get()
                 .audienceProvider
                 .getTeam(building.team())
                 .sendMessage(
@@ -166,7 +173,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         if (found) {
-            DistributorProvider.get()
+            Distributor.get()
                 .audienceProvider
                 .getTeam(event.unit.player.team())
                 .sendMessage(
