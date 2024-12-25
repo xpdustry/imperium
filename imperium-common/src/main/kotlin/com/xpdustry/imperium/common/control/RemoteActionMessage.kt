@@ -17,7 +17,21 @@
  */
 package com.xpdustry.imperium.common.control
 
+import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.message.Message
 import kotlinx.serialization.Serializable
 
-@Serializable data class RestartMessage(val target: String, val immediate: Boolean) : Message
+@Serializable
+data class RemoteActionMessage(val target: String?, val action: Action, val immediate: Boolean) :
+    Message {
+    enum class Action {
+        RESTART,
+        EXIT
+    }
+}
+
+fun RemoteActionMessage.Action.toExitStatus() =
+    when (this) {
+        RemoteActionMessage.Action.EXIT -> ExitStatus.EXIT
+        RemoteActionMessage.Action.RESTART -> ExitStatus.RESTART
+    }

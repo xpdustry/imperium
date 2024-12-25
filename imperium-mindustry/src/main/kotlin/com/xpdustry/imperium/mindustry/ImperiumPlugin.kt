@@ -51,6 +51,7 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
+import com.xpdustry.imperium.mindustry.control.ControlListener
 import com.xpdustry.imperium.mindustry.control.RestartListener
 import com.xpdustry.imperium.mindustry.event.EventListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
@@ -183,7 +184,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AlertListener::class,
                 TeamCommand::class,
                 FormationListener::class,
-                RestartListener::class,
+                ControlListener::class,
                 UnpauseListener::class,
                 AchievementCommand::class,
                 LogicListener::class,
@@ -242,12 +243,12 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         override fun exit(status: ExitStatus) {
             if (exited) return
             exited = true
-            super.exit(status)
             runBlocking {
                 instances
                     .get<WebhookMessageSender>()
-                    .send(WebhookMessage(content = "The server has exit with $status code."))
+                    .send(WebhookMessage(content = "The server is exiting with $status code."))
             }
+            super.exit(status)
             when (status) {
                 ExitStatus.EXIT,
                 ExitStatus.INIT_FAILURE -> Core.app.exit()

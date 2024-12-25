@@ -23,7 +23,8 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
-import com.xpdustry.imperium.common.control.RestartMessage
+import com.xpdustry.imperium.common.control.RemoteActionMessage
+import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
@@ -98,25 +99,32 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    @ImperiumCommand(["server", "restart"], Rank.ADMIN)
-    suspend fun onServerRestart(
+    // TODO The following code works but its turbo shit, fixit!!
+    @ImperiumCommand(["server", "control"], Rank.ADMIN)
+    suspend fun onServerControl(
         interaction: SlashCommandInteraction,
-        @Lowercase server: String,
+        action: RemoteActionMessage.Action,
+        @Lowercase server: String? = null,
         immediate: Boolean = false
     ) {
         val reply = interaction.deferReply(false).await()
-        if (server == "discord") {
+        if (server == null || server == "discord") {
             reply.sendMessage("Restarting discord bot.").await()
-            application.exit(ExitStatus.RESTART)
-            return
-        } else {
-            if (discovery.servers[server] == null) {
-                reply.sendMessage("Server not found.").await()
+            application.exit(action.toExitStatus())
+            if (server != null) {
                 return
             }
-            messenger.publish(RestartMessage(server, immediate))
-            reply.sendMessage("Sent restart request to server **$server**.").await()
         }
+        if (server != null && discovery.servers[server] == null) {
+            reply.sendMessage("Server not found.").await()
+            return
+        }
+        messenger.publish(RemoteActionMessage(server, action, immediate))
+        reply
+            .sendMessage(
+                "Sent ${action.name.lowercase()} request to " +
+                    if (server == null) "all servers" else "server **$server**.")
+            .await()
     }
 
     @ImperiumCommand(["exit"], Rank.OWNER)
