@@ -97,11 +97,24 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    // @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
+    @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
     fun crateRarityLabel() {
-        // TODO: Markers
+        crates.forEach {
+            val (x, y, rarity) = it
+            val rarityText = when (rarity) {
+                1 -> "Common"
+                2 -> "Uncommon"
+                3 -> "Rare"
+                4 -> "Epic"
+                5 -> "Legendary"
+                6 -> "Mythic"
+                else -> "Unknown, this shouldnt happen"
+            }
+            Call.label("Event Vault\nRarity: $rarityText", 1, (x * 8).toFloat(), (y * 8).toFloat())
+        }
     } 
 
+    // TODO: should this stay during the event?
     @ImperiumCommand(["crate"], Rank.ADMIN)
     @Scope(MindustryGamemode.EVENT)
     @ClientSide
@@ -151,8 +164,6 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         tile.setNet(Blocks.vault)
         crates.add(Triple(x, y, newRarity))
-        // TODO: Make this a marker/effect for rarity (outline)
-        Call.label("Event Vault\nRarity: $rarity", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
     }
 
     @EventHandler
