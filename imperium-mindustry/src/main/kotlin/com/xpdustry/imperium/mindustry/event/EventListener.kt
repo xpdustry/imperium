@@ -33,6 +33,8 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
+import com.xpdustry.imperium.mindustry.misc.isErekirDistribution
+import com.xpdustry.imperium.mindustry.misc.isSerpuloDistribution
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -51,6 +53,7 @@ import mindustry.world.blocks.ConstructBlock.ConstructBuild
 
 class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val validTiles = mutableListOf<Pair<Int, Int>>()
+    private val secondHandTiles = mutableListOf<Pair<Int, Int>>()
     private val crates = mutableListOf<Triple<Int, Int, Int>>()
     private var delayJob: Job? = null
 
@@ -72,6 +75,33 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         delayJob = null
     }
 
+    @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
+    fun registerValidTiles() {
+        for (x in 0..Vars.world.width()) {
+            for (y in 0..Vars.world.height()) {
+                if (checkValid(x, y, false)) {
+                    validTiles.add(x to y)
+                }
+            }
+        }
+    }
+
+    @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
+    fun registerSecondHandTiles() {
+        for (x in 0..Vars.world.width()) {
+            for (y in 0..Vars.world.height()) {
+                if (checkValid(x, y, true)) {
+                    secondHandTiles.add(x to y)
+                }
+            }
+        }
+    }
+
+    // @TaskHandler(interval = 1L, unit = MindustryTimeUnit.SECONDS)
+    fun crateRarityLabel() {
+        // TODO: Markers
+    } 
+
     @ImperiumCommand(["crate"], Rank.ADMIN)
     @Scope(MindustryGamemode.EVENT)
     @ClientSide
@@ -81,16 +111,22 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         y: Int = 0,
         @Flag rarity: Int = 0
     ) {
+        sender.sendMessage("Spawned crate at $x, $y with rarity $rarity")
         generateCrate(x, y, rarity)
     }
 
     fun onCrateGenerate() {
-        val localValidTiles = validTiles.toMutableList()
-        if (localValidTiles.isEmpty()) {
-            return LOGGER.error("How is the entire map full??")
-            Events.fire(GameOverEvent(Team.derelict))
-            Call.sendMessage(
-                "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
+        if (validTiles.isEmpty()) {
+            if (secondHandTiles.isEmpty()) {
+                return
+                LOGGER.error("How is the entire map full??")
+                Events.fire(GameOverEvent(Team.derelict))
+                Call.announce(
+                    "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
+                }
+            val localValidTiles = secondHandTiles.toMutableList()
+        } else {
+            val localValidTiles = validTiles.toMutableList()
         }
 
         while (localValidTiles.isNotEmpty()) {
@@ -106,17 +142,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         LOGGER.error(
             "Failed to generate crate: No valid tiles left.") // tmp log, shout at players instead
         registerValidTiles()
-    }
-
-    @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
-    fun registerValidTiles() {
-        for (x in 0..Vars.world.width()) {
-            for (y in 0..Vars.world.height()) {
-                if (checkValid(x, y)) {
-                    validTiles.add(x to y)
-                }
-            }
-        }
+        registerSecondHandTiles()
     }
 
     fun generateCrate(x: Int, y: Int, rarity: Int) {
@@ -125,7 +151,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         tile.setNet(Blocks.vault)
         crates.add(Triple(x, y, newRarity))
-        Call.label("Event Vault", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
+        // TODO: Make this a marker/effect for rarity (outline)
+        Call.label("Event Vault\nRarity: $rarity", Float.MAX_VALUE, (x * 8).toFloat(), (y * 8).toFloat())
     }
 
     @EventHandler
@@ -167,11 +194,20 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         tile.setNet(Blocks.air)
     }
 
-    fun checkValid(x: Int, y: Int): Boolean {
-        return (x - 1..x + 1).all { x1 ->
-            (y - 1..y + 1).all { y1 ->
-                val tile = Vars.world.tile(x1, y1)
-                tile != null && tile.block() == Blocks.air
+    fun checkValid(x: Int, y: Int, replace: Boolean): Boolean {
+        if(!replace) {
+            return (x - 1..x + 1).all { x1 ->
+                (y - 1..y + 1).all { y1 ->
+                    val tile = Vars.world.tile(x1, y1)
+                    tile != null && tile.block() == Blocks.air
+                }
+            }
+        } else {
+            return (x - 1..x + 1).all { x1 ->
+                (y - 1..y + 1).all { y1 ->
+                    val tile = Vars.world.tile(x1, y1)
+                    tile != null && (tile.block() == Blocks.air || tile.block().isSerpuloDistribution() || tile.block().isErekirDistribution)
+                }
             }
         }
     }
