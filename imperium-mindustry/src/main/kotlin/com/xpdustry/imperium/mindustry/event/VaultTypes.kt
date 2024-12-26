@@ -21,7 +21,6 @@ import arc.graphics.Color
 import arc.math.geom.Vec2
 import com.xpdustry.imperium.mindustry.misc.toWorldFloat
 import mindustry.content.UnitTypes
-import mindustry.content.Weapons
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.graphics.Fx
@@ -58,27 +57,33 @@ object VaultTypes {
                     unit = UnitTypes.dagger.spawn(Vec2(x.toWorldFloat(), y.toWorldFloat()), team)
                     unit.weapons.clear() // remove old weapon
                     unit.weapons.add(
-                        Weapon("large-weapon") {{
-                            top = false
-                            shake = 2f
-                            shootY = 4f // probably need to change this
-                            x = 4f
-                            y = 2f
-                            reload = 55f // dagger 13f
-                            shootSound = Sounds.laser
+                        Weapon("large-weapon") {
+                            {
+                                top = false
+                                shake = 2f
+                                shootY = 4f // probably need to change this
+                                x = 4f
+                                y = 2f
+                                reload = 55f // dagger 13f
+                                shootSound = Sounds.laser
 
-                            bullet = LaserBulletType() {{
-                                damage = 45f
-                                recoil = 1f
-                                sideAngle = 45f
-                                sideLength = 70f
-                                healPercent = 10f
-                                collidesTeam = true
-                                length = 135f
-                                colors = arrayOf(Pal.heal.cpy().a(0.4f), Pal.heal, Color.white)
-                            }}
-                        }}
-                    )
+                                bullet =
+                                    LaserBulletType() {
+                                        {
+                                            damage = 45f
+                                            recoil = 1f
+                                            sideAngle = 45f
+                                            sideLength = 70f
+                                            healPercent = 10f
+                                            collidesTeam = true
+                                            length = 135f
+                                            colors =
+                                                arrayOf(
+                                                    Pal.heal.cpy().a(0.4f), Pal.heal, Color.white)
+                                        }
+                                    }
+                            }
+                        })
                 }
             },
             Vault("test2", 1, false) { x, y, team -> println("i dont want to finish this") },
@@ -90,40 +95,44 @@ object VaultTypes {
                 unit = UnitTypes.crawler.spawn(Vec2(x.toWorldFloat, y.toWorldFloat), team)
                 unit.weapons.clear()
                 unit.weapons.add(
-                    Weapon(){{
-                        shootOnDeath = true
-                        targetUnderBlocks = false
-                        reload = 24f
-                        shootCone = 180f
-                        ejectEffect = Fx.none
-                        shootSound = Sounds.plasmadrop
-                        x = shootY = 0f
-                        mirror = false
-
-                        bullet = BulletType(){{
-                            sprite = "large-bomb"
-                            width = height = 120/4f 
-                            maxRange = 30f
-                            ignoreRotation = true
-                            hitSound = Sounds.plasmadrop
+                    Weapon() {
+                        {
+                            shootOnDeath = true
+                            targetUnderBlocks = false
+                            reload = 24f
                             shootCone = 180f
                             ejectEffect = Fx.none
-                            collidesAir = false
-                            lifetime = 70f
-                            despawnEffect = Fx.greenBomb
-                            hitEffect = Fx.massiveExplosion
-                            keepVelocity = false
-                            spin = 2f
-                            shrinkX = shrinkY = 0.7f
-                            speed = 0f
-                            collides = false
-                            healPercent = 15f
-                            splashDamage = 220f
-                            splashDamageRadius = 80f
-                            damage = splashDamage * 0.7f
-                        }}
-                    }}
-                )
+                            shootSound = Sounds.plasmadrop
+                            x = shootY = 0f
+                            mirror = false
+
+                            bullet =
+                                BulletType() {
+                                    {
+                                        sprite = "large-bomb"
+                                        width = height = 120 / 4f
+                                        maxRange = 30f
+                                        ignoreRotation = true
+                                        hitSound = Sounds.plasmadrop
+                                        shootCone = 180f
+                                        ejectEffect = Fx.none
+                                        collidesAir = false
+                                        lifetime = 70f
+                                        despawnEffect = Fx.greenBomb
+                                        hitEffect = Fx.massiveExplosion
+                                        keepVelocity = false
+                                        spin = 2f
+                                        shrinkX = shrinkY = 0.7f
+                                        speed = 0f
+                                        collides = false
+                                        healPercent = 15f
+                                        splashDamage = 220f
+                                        splashDamageRadius = 80f
+                                        damage = splashDamage * 0.7f
+                                    }
+                                }
+                        }
+                    })
             },
             Vault("test2", 2, false) { x, y, team ->
                 // Todo

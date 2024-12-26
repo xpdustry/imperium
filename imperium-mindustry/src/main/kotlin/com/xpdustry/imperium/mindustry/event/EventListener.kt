@@ -114,7 +114,8 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     6 -> "Mythic"
                     else -> "Unknown, this shouldnt happen"
                 }
-            Call.label("Event Vault\nRarity: $rarityText", 1.toFloat(), x.toWorldFloat(), y.toWorldFloat())
+            Call.label(
+                "Event Vault\nRarity: $rarityText", 1.toFloat(), x.toWorldFloat(), y.toWorldFloat())
         }
     }
 
@@ -210,16 +211,17 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
         tile.setNet(Blocks.air)
         val rarityText =
-                when (rarity) {
-                    1 -> "[grey]Common"
-                    2 -> "[green]Uncommon"
-                    3 -> "[royal]Rare"
-                    4 -> "[purple]Epic"
-                    5 -> "[gold]Legendary"
-                    6 -> "Mythic"
-                    else -> "Unknown Rarity"
-                }
-        Call.sendMessage("A $rarityText [white]crate $crate.name [white]has been triggered at (${tile.x}, ${tile.y})")
+            when (rarity) {
+                1 -> "[grey]Common"
+                2 -> "[green]Uncommon"
+                3 -> "[royal]Rare"
+                4 -> "[purple]Epic"
+                5 -> "[gold]Legendary"
+                6 -> "Mythic"
+                else -> "Unknown Rarity"
+            }
+        Call.sendMessage(
+            "A $rarityText [white]crate $crate.name [white]has been triggered at (${tile.x}, ${tile.y})")
     }
 
     fun checkValid(x: Int, y: Int, replace: Boolean): Boolean {
