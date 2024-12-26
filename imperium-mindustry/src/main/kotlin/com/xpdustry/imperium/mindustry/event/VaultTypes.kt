@@ -54,7 +54,8 @@ object VaultTypes {
         listOf(
             Vault("Electric Dagger", 1, true) { x1, y, team ->
                 repeat(1) {
-                    val unit = UnitTypes.dagger.spawn(Vec2(x1.toWorldFloat(), y.toWorldFloat()), team)
+                    val unit =
+                        UnitTypes.dagger.spawn(Vec2(x1.toWorldFloat(), y.toWorldFloat()), team)
                     unit.weapons.clear() // remove old weapon
                     unit.weapons.add(
                         Weapon("large-weapon").apply {
@@ -66,16 +67,17 @@ object VaultTypes {
                             reload = 55f // dagger 13f
                             shootSound = Sounds.laser
 
-                            bullet = LaserBulletType().apply {
-                                damage = 45f
-                                recoil = 1f
-                                sideAngle = 45f
-                                sideLength = 70f
-                                healPercent = 10f
-                                collidesTeam = true
-                                length = 135f
-                                colors = arrayOf(Pal.heal.cpy().a(0.4f), Pal.heal, Color.white)
-                            }
+                            bullet =
+                                LaserBulletType().apply {
+                                    damage = 45f
+                                    recoil = 1f
+                                    sideAngle = 45f
+                                    sideLength = 70f
+                                    healPercent = 10f
+                                    collidesTeam = true
+                                    length = 135f
+                                    colors = arrayOf(Pal.heal.cpy().a(0.4f), Pal.heal, Color.white)
+                                }
                         })
                 }
             },
@@ -98,32 +100,32 @@ object VaultTypes {
                         x = shootY = 0f
                         mirror = false
 
-                        bullet = BulletType().apply {
-                            sprite = "large-bomb"
-                            width = height = 120 / 4f
-                            maxRange = 30f
-                            ignoreRotation = true
-                            hitSound = Sounds.plasmadrop
-                            shootCone = 180f
-                            ejectEffect = Fx.none
-                            collidesAir = false
-                            lifetime = 70f
-                            despawnEffect = Fx.greenBomb
-                            hitEffect = Fx.massiveExplosion
-                            keepVelocity = false
-                            spin = 2f
-                            shrinkX = shrinkY = 0.7f
-                            speed = 0f
-                            collides = false
-                            healPercent = 15f
-                            splashDamage = 220f
-                            splashDamageRadius = 80f
-                            damage = splashDamage * 0.7f
-                        }
-                    }
-                )
+                        bullet =
+                            BulletType().apply {
+                                sprite = "large-bomb"
+                                width = height = 120 / 4f
+                                maxRange = 30f
+                                ignoreRotation = true
+                                hitSound = Sounds.plasmadrop
+                                shootCone = 180f
+                                ejectEffect = Fx.none
+                                collidesAir = false
+                                lifetime = 70f
+                                despawnEffect = Fx.greenBomb
+                                hitEffect = Fx.massiveExplosion
+                                keepVelocity = false
+                                spin = 2f
+                                shrinkX = shrinkY = 0.7f
+                                speed = 0f
+                                collides = false
+                                healPercent = 15f
+                                splashDamage = 220f
+                                splashDamageRadius = 80f
+                                damage = splashDamage * 0.7f
+                            }
+                    })
             },
-            Vault("test2", 2, false) { x, y, team -> 
+            Vault("test2", 2, false) { x, y, team ->
                 // Todo
             },
         )
