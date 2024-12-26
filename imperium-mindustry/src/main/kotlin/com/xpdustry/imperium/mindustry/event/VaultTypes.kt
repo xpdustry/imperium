@@ -120,7 +120,15 @@ object VaultTypes {
                             splashDamageRadius = 80f
                             damage = splashDamage * 0.7f
                         }
-                    })
+                    }
+                )
+            },
+            Vault("test2", 2, false) { x, y, team -> 
+                // Todo
+            },
+        )
+
+    val rareVault =
         listOf(
             Vault("test1", 3, true) { x, y, team ->
                 // Todo
