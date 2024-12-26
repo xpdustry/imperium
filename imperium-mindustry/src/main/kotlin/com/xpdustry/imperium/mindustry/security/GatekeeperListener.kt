@@ -22,6 +22,9 @@ import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
 import com.xpdustry.distributor.api.Distributor
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -129,6 +132,16 @@ private fun interceptPlayerConnection(
         return
     }
 
+    if (packet.uuid == null || packet.usid == null) {
+        audience.kick(KickReason.idInUse, Duration.ZERO, false)
+        return
+    }
+
+    if (!MUUID.isUuid(packet.uuid) || !MUUID.isUsid(packet.usid)) {
+        audience.kick(text("Invalid uuid or usid", ComponentColor.RED), Duration.ZERO, false)
+        return
+    }
+
     // We do not want to save the data of DDOSers, so we postpone the saving of the player info
     val info =
         Vars.netServer.admins.getInfoOptional(packet.uuid)
@@ -136,11 +149,6 @@ private fun interceptPlayerConnection(
 
     con.hasBegunConnecting = true
     con.mobile = packet.mobile
-
-    if (packet.uuid == null || packet.usid == null) {
-        audience.kick(KickReason.idInUse, Duration.ZERO, false)
-        return
-    }
 
     if (Vars.netServer.admins.isIDBanned(packet.uuid)) {
         con.kick(KickReason.banned)
