@@ -37,14 +37,8 @@ application {
     mainClass = "com.xpdustry.imperium.discord.ImperiumDiscordKt"
 }
 
-val generateChangelog by tasks.registering(GenerateImperiumChangelog::class) {
-    target = temporaryDir.resolve("imperium-changelog.txt")
-}
-
 tasks.shadowJar {
     archiveFileName.set("imperium-discord.jar")
-
-    from(generateChangelog)
 
     doFirst {
         val file = temporaryDir.resolve("imperium-version.txt")

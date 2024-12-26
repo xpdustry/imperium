@@ -17,8 +17,8 @@ open class GenerateImperiumChangelog : DefaultTask() {
     @TaskAction
     fun generate() {
         val git = project.rootProject.extensions.getByType<IndraGitExtension>().git()!!
-        val latest = git.repository.resolve("v" + project.rootProject.file("VERSION.txt").readText().trim())
-        val head = git.repository.resolve(Constants.HEAD)
+        val latest = git.repository.resolve("v" + project.rootProject.file("VERSION.txt").readText().trim())!!
+        val head = git.repository.resolve(Constants.HEAD)!!
         target.get().asFile.writer().buffered().use { writer ->
             git.log().addRange(latest, head).call().forEach { commit ->
                 val message = commit.shortMessage ?: return@forEach
