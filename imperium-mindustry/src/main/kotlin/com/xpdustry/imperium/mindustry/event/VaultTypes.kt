@@ -52,36 +52,29 @@ fun getVaultByRarity(rarity: Int): List<Vault> {
 object VaultTypes {
     val commonVault =
         listOf(
-            Vault("Electric Dagger", 1, true) { x, y, team ->
+            Vault("Electric Dagger", 1, true) { x1, y, team ->
                 repeat(1) {
-                    unit = UnitTypes.dagger.spawn(Vec2(x.toWorldFloat(), y.toWorldFloat()), team)
+                    val unit = UnitTypes.dagger.spawn(Vec2(x1.toWorldFloat(), y.toWorldFloat()), team)
                     unit.weapons.clear() // remove old weapon
                     unit.weapons.add(
-                        Weapon("large-weapon") {
-                            {
-                                top = false
-                                shake = 2f
-                                shootY = 4f // probably need to change this
-                                x = 4f
-                                y = 2f
-                                reload = 55f // dagger 13f
-                                shootSound = Sounds.laser
+                        Weapon("large-weapon").apply {
+                            top = false
+                            shake = 2f
+                            shootY = 4f // probably need to change this
+                            x = 4f
+                            y = 2f
+                            reload = 55f // dagger 13f
+                            shootSound = Sounds.laser
 
-                                bullet =
-                                    LaserBulletType() {
-                                        {
-                                            damage = 45f
-                                            recoil = 1f
-                                            sideAngle = 45f
-                                            sideLength = 70f
-                                            healPercent = 10f
-                                            collidesTeam = true
-                                            length = 135f
-                                            colors =
-                                                arrayOf(
-                                                    Pal.heal.cpy().a(0.4f), Pal.heal, Color.white)
-                                        }
-                                    }
+                            bullet = LaserBulletType().apply {
+                                damage = 45f
+                                recoil = 1f
+                                sideAngle = 45f
+                                sideLength = 70f
+                                healPercent = 10f
+                                collidesTeam = true
+                                length = 135f
+                                colors = arrayOf(Pal.heal.cpy().a(0.4f), Pal.heal, Color.white)
                             }
                         })
                 }
@@ -91,55 +84,43 @@ object VaultTypes {
 
     val uncommonVault =
         listOf(
-            Vault("Crawler Bomb", 2, true) { x, y, team ->
-                unit = UnitTypes.crawler.spawn(Vec2(x.toWorldFloat, y.toWorldFloat), team)
+            Vault("Crawler Bomb", 2, true) { x1, y, team ->
+                val unit = UnitTypes.crawler.spawn(Vec2(x1.toWorldFloat(), y.toWorldFloat()), team)
                 unit.weapons.clear()
                 unit.weapons.add(
-                    Weapon() {
-                        {
-                            shootOnDeath = true
-                            targetUnderBlocks = false
-                            reload = 24f
+                    Weapon().apply {
+                        shootOnDeath = true
+                        targetUnderBlocks = false
+                        reload = 24f
+                        shootCone = 180f
+                        ejectEffect = Fx.none
+                        shootSound = Sounds.plasmadrop
+                        x = shootY = 0f
+                        mirror = false
+
+                        bullet = BulletType().apply {
+                            sprite = "large-bomb"
+                            width = height = 120 / 4f
+                            maxRange = 30f
+                            ignoreRotation = true
+                            hitSound = Sounds.plasmadrop
                             shootCone = 180f
                             ejectEffect = Fx.none
-                            shootSound = Sounds.plasmadrop
-                            x = shootY = 0f
-                            mirror = false
-
-                            bullet =
-                                BulletType() {
-                                    {
-                                        sprite = "large-bomb"
-                                        width = height = 120 / 4f
-                                        maxRange = 30f
-                                        ignoreRotation = true
-                                        hitSound = Sounds.plasmadrop
-                                        shootCone = 180f
-                                        ejectEffect = Fx.none
-                                        collidesAir = false
-                                        lifetime = 70f
-                                        despawnEffect = Fx.greenBomb
-                                        hitEffect = Fx.massiveExplosion
-                                        keepVelocity = false
-                                        spin = 2f
-                                        shrinkX = shrinkY = 0.7f
-                                        speed = 0f
-                                        collides = false
-                                        healPercent = 15f
-                                        splashDamage = 220f
-                                        splashDamageRadius = 80f
-                                        damage = splashDamage * 0.7f
-                                    }
-                                }
+                            collidesAir = false
+                            lifetime = 70f
+                            despawnEffect = Fx.greenBomb
+                            hitEffect = Fx.massiveExplosion
+                            keepVelocity = false
+                            spin = 2f
+                            shrinkX = shrinkY = 0.7f
+                            speed = 0f
+                            collides = false
+                            healPercent = 15f
+                            splashDamage = 220f
+                            splashDamageRadius = 80f
+                            damage = splashDamage * 0.7f
                         }
                     })
-            },
-            Vault("test2", 2, false) { x, y, team ->
-                // Todo
-            },
-        )
-
-    val rareVault =
         listOf(
             Vault("test1", 3, true) { x, y, team ->
                 // Todo

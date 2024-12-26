@@ -129,24 +129,27 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
         y: Int = 0,
         @Flag rarity: Int = 0
     ) {
-        sender.sendMessage("Spawned crate at $x, $y with rarity $rarity")
+        sender.player.sendMessage("Spawned crate at $x, $y with rarity $rarity")
         generateCrate(x, y, rarity)
     }
 
     fun onCrateGenerate() {
+        val localValidTiles: MutableList<Pair<Int, Int>>
+        val dirty: Boolean
+
         if (validTiles.isEmpty()) {
             if (secondHandTiles.isEmpty()) {
-                return
                 LOGGER.error("How is the entire map full??")
                 Events.fire(GameOverEvent(Team.derelict))
                 Call.announce(
                     "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
+                return
             }
-            val localValidTiles = secondHandTiles.toMutableList()
-            val dirty = true
+            localValidTiles = secondHandTiles.toMutableList()
+            dirty = true
         } else {
-            val localValidTiles = validTiles.toMutableList()
-            val dirty = false
+            localValidTiles = validTiles.toMutableList()
+            dirty = false
         }
 
         while (localValidTiles.isNotEmpty()) {
@@ -156,7 +159,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 generateCrate(x, y, 0)
                 return
             } else {
-                localValidTiles.removeAt(randomTile)
+                localValidTiles.remove(randomTile)
             }
         }
         LOGGER.error(
