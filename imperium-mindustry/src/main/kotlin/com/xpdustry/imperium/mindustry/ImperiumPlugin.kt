@@ -54,6 +54,7 @@ import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.control.ControlListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.AntiGriefListener
+import com.xpdustry.imperium.mindustry.game.ChangelogCommand
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
@@ -189,7 +190,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 SaveCommand::class,
                 AntiGriefListener::class,
                 FlexListener::class,
-                MetricsListener::class)
+                MetricsListener::class,
+                ChangelogCommand::class)
             .forEach(application::register)
 
         val gamemode = application.instances.get<ImperiumConfig>().mindustry.gamemode

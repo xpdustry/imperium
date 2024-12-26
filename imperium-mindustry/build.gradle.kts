@@ -47,11 +47,15 @@ val generateResources by tasks.registering {
     }
 }
 
+val generateChangelog by tasks.registering(GenerateImperiumChangelog::class) {
+    target = temporaryDir.resolve("imperium-changelog.txt")
+}
+
 tasks.shadowJar {
     archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
 
-    from(generateResources)
+    from(generateResources, generateChangelog)
 
     from(rootProject.file("LICENSE.md")) {
         into("META-INF")

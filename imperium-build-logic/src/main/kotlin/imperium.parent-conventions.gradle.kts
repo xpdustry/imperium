@@ -1,3 +1,7 @@
+plugins {
+    id("net.kyori.indra.git")
+}
+
 tasks.register("incrementVersionFile") {
     doLast { file("VERSION.txt").writeText(project.version.toString()) }
 }
