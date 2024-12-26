@@ -35,6 +35,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.isErekirDistribution
 import com.xpdustry.imperium.mindustry.misc.isSerpuloDistribution
+import com.xpdustry.imperium.mindustry.misc.toWorldFloat
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -77,6 +78,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
     fun registerValidTiles() {
+        validTiles.clear()
         for (x in 0..Vars.world.width()) {
             for (y in 0..Vars.world.height()) {
                 if (checkValid(x, y, false)) {
@@ -88,6 +90,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
     fun registerSecondHandTiles() {
+        secondHandTiles.clear()
         for (x in 0..Vars.world.width()) {
             for (y in 0..Vars.world.height()) {
                 if (checkValid(x, y, true)) {
@@ -103,15 +106,15 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val (x, y, rarity) = it
             val rarityText =
                 when (rarity) {
-                    1 -> "Common"
-                    2 -> "Uncommon"
-                    3 -> "Rare"
-                    4 -> "Epic"
-                    5 -> "Legendary"
+                    1 -> "[grey]Common"
+                    2 -> "[green]Uncommon"
+                    3 -> "[royal]Rare"
+                    4 -> "[purple]Epic"
+                    5 -> "[gold]Legendary"
                     6 -> "Mythic"
                     else -> "Unknown, this shouldnt happen"
                 }
-            Call.label("Event Vault\nRarity: $rarityText", 1, (x * 8).toFloat(), (y * 8).toFloat())
+            Call.label("Event Vault\nRarity: $rarityText", 1.toFloat(), x.toWorldFloat(), y.toWorldFloat())
         }
     }
 
@@ -139,18 +142,20 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     "[scarlet]The map has ended due to no valid tiles left to spawn crates!")
             }
             val localValidTiles = secondHandTiles.toMutableList()
+            val dirty = true
         } else {
             val localValidTiles = validTiles.toMutableList()
+            val dirty = false
         }
 
         while (localValidTiles.isNotEmpty()) {
             val randomTile = localValidTiles.random()
             val (x, y) = randomTile
-            if (checkValid(x, y)) {
+            if (checkValid(x, y, dirty)) {
                 generateCrate(x, y, 0)
                 return
             } else {
-                localValidTiles.remove(randomTile)
+                localValidTiles.removeAt(randomTile)
             }
         }
         LOGGER.error(
@@ -204,6 +209,17 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
             it.first == tile.x.toInt() && it.second == tile.y.toInt() && it.third == rarity
         }
         tile.setNet(Blocks.air)
+        val rarityText =
+                when (rarity) {
+                    1 -> "[grey]Common"
+                    2 -> "[green]Uncommon"
+                    3 -> "[royal]Rare"
+                    4 -> "[purple]Epic"
+                    5 -> "[gold]Legendary"
+                    6 -> "Mythic"
+                    else -> "Unknown Rarity"
+                }
+        Call.sendMessage("A $rarityText [white]crate $crate.name [white]has been triggered at (${tile.x}, ${tile.y})")
     }
 
     fun checkValid(x: Int, y: Int, replace: Boolean): Boolean {
@@ -220,7 +236,7 @@ class EventListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     val tile = Vars.world.tile(x1, y1)
                     tile != null &&
                         (tile.block() == Blocks.air ||
-                            tile.block().isSerpuloDistribution() ||
+                            tile.block().isSerpuloDistribution ||
                             tile.block().isErekirDistribution)
                 }
             }

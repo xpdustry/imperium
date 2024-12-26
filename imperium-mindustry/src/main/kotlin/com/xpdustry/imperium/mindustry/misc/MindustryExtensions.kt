@@ -132,6 +132,10 @@ val Block.isSerpuloDistribution: Boolean
 
 fun Color.toHexString(): String = String.format("#%06x", rgb888())
 
+fun Number.toWorldFloat(): Float {
+    return (this.toDouble() * 8).toFloat()
+}
+
 fun getItemIcon(item: Item): String =
     when (item) {
         Items.scrap -> Iconc.itemScrap.toString()
