@@ -17,10 +17,17 @@
  */
 package com.xpdustry.imperium.mindustry.event
 
+import fake.test.wildcard.test.*
 import arc.graphics.Color
 import arc.math.geom.Vec2
 import com.xpdustry.imperium.mindustry.misc.toWorldFloat
 import mindustry.content.UnitTypes
+import mindustry.entities.*
+import mindustry.entities.abilities.*
+import mindustry.entities.bullet.*
+import mindustry.entities.effect.*
+import mindustry.entities.part.*
+import mindustry.entities.pattern.*
 import mindustry.game.Team
 import mindustry.gen.*
 import mindustry.graphics.Fx
@@ -29,6 +36,9 @@ import mindustry.type.*
 import mindustry.type.ammo.*
 import mindustry.type.unit.*
 import mindustry.type.weapons.*
+
+// sooo many comp issues
+// Fix the imports, have to import each one manually (sucks)
 
 data class Vault(
     val name: String,
@@ -97,7 +107,8 @@ object VaultTypes {
                         shootCone = 180f
                         ejectEffect = Fx.none
                         shootSound = Sounds.plasmadrop
-                        x = shootY = 0f
+                        x = 0f
+                        shootY = 0f
                         mirror = false
 
                         bullet =
