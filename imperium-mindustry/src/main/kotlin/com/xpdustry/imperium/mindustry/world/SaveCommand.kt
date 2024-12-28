@@ -51,6 +51,7 @@ import com.xpdustry.imperium.mindustry.misc.then
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 import com.xpdustry.imperium.mindustry.translation.ORANGE
 import com.xpdustry.imperium.mindustry.translation.SCARLET
+import com.xpdustry.imperium.mindustry.translation.gui_close
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.deleteExisting
@@ -84,12 +85,14 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                             BiAction.from(
                                 Action.with(SAVE_PAGE, SavePage.VIEW).then(Window::show))))
                     .then { (pane, _) ->
+                        pane.title = text("Save Manager")
                         pane.grid.addOption(
                             2,
                             pane.grid.options.size - 1,
                             MenuOption.of(
                                 text(Iconc.add),
                                 Action.with(SAVE_PAGE, SavePage.CREATE).then(Action.show(text))))
+                        pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
                     }))
 
         menu.addTransformer(
@@ -257,7 +260,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
     private fun validateSave(name: String): ImperiumResult<Path, Component> {
-        if (!SAVE_PATTERN.matches(name)) {
+        if (!SAVE_VALIDATE_REGEX.matches(name)) {
             return ImperiumResult.failure(text("Invalid name.", SCARLET))
         }
         val path =
@@ -273,21 +276,21 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private fun renderSaveName(path: Path): Component {
-        if (path.nameWithoutExtension.startsWith("auto_")) {
-            val parts = path.nameWithoutExtension.split("_").toMutableList()
-            parts.removeFirst() // auto prefix
-            val time = parts.removeLast()
-            val date = parts.removeLast()
-            val name = parts.joinToString(" ")
-            return components(
-                text(name, ComponentColor.ACCENT),
-                newline(),
-                text(date, LIGHT_GRAY),
-                space(),
-                text(time, LIGHT_GRAY))
-        } else {
-            return text(path.nameWithoutExtension)
-        }
+        val result =
+            SAVE_NAME_REGEX.find(path.nameWithoutExtension)
+                ?: return text(path.nameWithoutExtension)
+        val name =
+            try {
+                SaveIO.getMeta(Fi(path.toFile())).map.name()
+            } catch (exception: Exception) {
+                result.groups["name"]!!.value
+            }
+        return components(
+            text(name, ComponentColor.ACCENT),
+            newline(),
+            text(result.groups["date"]!!.value, LIGHT_GRAY),
+            space(),
+            text(result.groups["time"]!!.value, LIGHT_GRAY))
     }
 
     private enum class SavePage {
@@ -302,6 +305,8 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val SAVE_BACKUP_EXTENSION = "msav-backup.msav"
         private val SAVE_PAGE = key<SavePage>("save_page")
         private val SAVE_FILE = key<Path>("choice")
-        private val SAVE_PATTERN = Regex("^[a-zA-Z0-9_\\-\\s]+$")
+        private val SAVE_NAME_REGEX =
+            Regex("^auto_(?<name>.+)_(?<date>\\d{2}-\\d{2}-\\d{4})_(?<time>\\d{2}-\\d{2}-\\d{2})$")
+        private val SAVE_VALIDATE_REGEX = Regex("^[a-zA-Z0-9_\\-\\s]+$")
     }
 }
