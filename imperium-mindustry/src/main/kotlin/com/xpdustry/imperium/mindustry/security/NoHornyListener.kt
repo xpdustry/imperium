@@ -39,7 +39,7 @@ import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 
-class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
     private val punishments = instances.get<PunishmentManager>()
     private val config = instances.get<ImperiumConfig>()
@@ -47,17 +47,10 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val codec = instances.get<IdentifierCodec>()
 
     @EventHandler
-    fun onLogicAnalyzer(event: ImageAnalyzerEvent) =
+    fun onImageLogicAnalyzer(event: ImageAnalyzerEvent) =
         ImperiumScope.MAIN.launch {
             when (event.result.rating) {
-                NoHornyResult.Rating.SAFE -> {
-                    logger.debug(
-                        "Cluster in rect ({}, {}, {}, {}) is safe",
-                        event.group.x,
-                        event.group.y,
-                        event.group.w,
-                        event.group.h)
-                }
+                NoHornyResult.Rating.SAFE -> Unit
                 NoHornyResult.Rating.WARNING -> {
                     logger.debug(
                         "Cluster in rect ({}, {}, {}, {}) is possibly unsafe.",
@@ -111,7 +104,8 @@ class LogicImageListener(instances: InstanceManager) : ImperiumApplication.Liste
                             content =
                                 buildString {
                                     appendLine("**NSFW image detected**")
-                                    appendLine("Related to punishment ${codec.encode(punishment)}")
+                                    appendLine(
+                                        "Related to punishment `${codec.encode(punishment)}`")
                                     for ((entry, percent) in event.result.details) {
                                         appendLine(
                                             "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")

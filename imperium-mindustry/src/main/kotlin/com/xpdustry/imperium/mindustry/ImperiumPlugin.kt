@@ -72,8 +72,8 @@ import com.xpdustry.imperium.mindustry.permission.ImperiumRankProvider
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
-import com.xpdustry.imperium.mindustry.security.LogicImageListener
 import com.xpdustry.imperium.mindustry.security.ModerationCommand
+import com.xpdustry.imperium.mindustry.security.NoHornyListener
 import com.xpdustry.imperium.mindustry.security.PunishmentListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
 import com.xpdustry.imperium.mindustry.security.VoteKickCommand
@@ -155,7 +155,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 HistoryCommand::class,
                 BridgeChatMessageListener::class,
                 ReportCommand::class,
-                LogicImageListener::class,
+                NoHornyListener::class,
                 AdminRequestListener::class,
                 PunishmentListener::class,
                 MapListener::class,
