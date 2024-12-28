@@ -41,7 +41,6 @@ import org.testcontainers.utility.DockerImageName
 
 @Testcontainers
 class RabbitmqMessengerTest {
-    @Container private var rabbitmq = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
     private lateinit var messenger1: RabbitmqMessenger
     private lateinit var messenger2: RabbitmqMessenger
 
@@ -224,6 +223,10 @@ class RabbitmqMessengerTest {
         RabbitmqMessenger(
             ImperiumConfig(
                 server = ServerConfig("test-${UUID.randomUUID()}"),
-                messenger = MessengerConfig.RabbitMQ(port = rabbitmq.amqpPort)),
+                messenger = MessengerConfig.RabbitMQ(port = RABBITMQ.amqpPort)),
         )
+
+    companion object {
+        @Container private val RABBITMQ = RabbitMQContainer(DockerImageName.parse("rabbitmq:3"))
+    }
 }
