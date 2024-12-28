@@ -61,7 +61,6 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val config = instances.get<ImperiumConfig>().mindustry.hub
     private val directory = instances.get<Path>("directory").resolve("hub")
-    // TODO When dedicated plugin, load as Map<String, Polygon>
     private val portals = mutableMapOf<String, Portal>()
     private val building = PlayerMap<PortalBuilder>(instances.get())
     private val discovery = instances.get<Discovery>()

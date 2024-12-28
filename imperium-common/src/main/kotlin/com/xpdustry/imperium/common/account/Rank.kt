@@ -31,5 +31,4 @@ enum class Rank {
     fun getRanksBelow() = entries.slice(0..this.ordinal)
 }
 
-// TODO Change to generic account change event ?
 @Serializable data class RankChangeEvent(val account: Int) : Message

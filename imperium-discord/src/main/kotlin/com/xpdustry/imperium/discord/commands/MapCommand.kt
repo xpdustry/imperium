@@ -119,15 +119,15 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                 Embed {
                     color = MINDUSTRY_ACCENT_COLOR.rgb
                     title = "Game ${codec.encode(game.id)}"
-                    field("Date", renderer.renderInstant(game.start))
-                    field("Playtime", renderer.renderDuration(game.playtime))
-                    field("Units Created", game.unitsCreated.toString())
-                    field("Ennemies Killed", game.ennemiesKilled.toString())
-                    field("Waves Lasted", game.wavesLasted.toString())
-                    field("Buildings Constructed", game.buildingsConstructed.toString())
-                    field("Buildings Deconstructed", game.buildingsDeconstructed.toString())
-                    field("Buildings Destroyed", game.buildingsDestroyed.toString())
-                    field("Winner", getWinnerName(game.winner))
+                    field("Date", renderer.renderInstant(game.data.start))
+                    field("Playtime", renderer.renderDuration(game.data.playtime))
+                    field("Units Created", game.data.unitsCreated.toString())
+                    field("Ennemies Killed", game.data.ennemiesKilled.toString())
+                    field("Waves Lasted", game.data.wavesLasted.toString())
+                    field("Buildings Constructed", game.data.buildingsConstructed.toString())
+                    field("Buildings Deconstructed", game.data.buildingsDeconstructed.toString())
+                    field("Buildings Destroyed", game.data.buildingsDestroyed.toString())
+                    field("Winner", getWinnerName(game.data.winner))
                 })
             .await()
     }

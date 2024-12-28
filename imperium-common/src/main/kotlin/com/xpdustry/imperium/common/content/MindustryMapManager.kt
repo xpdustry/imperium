@@ -79,21 +79,9 @@ interface MindustryMapManager {
         stream: Supplier<InputStream>
     ): Boolean
 
-    // TODO This is horrible, pass a Params class instead
-    suspend fun addMapGame(
-        map: Int,
-        start: Instant,
-        playtime: Duration,
-        unitsCreated: Int,
-        ennemiesKilled: Int,
-        wavesLasted: Int,
-        buildingsConstructed: Int,
-        buildingsDeconstructed: Int,
-        buildingsDestroyed: Int,
-        winner: UByte
-    )
+    suspend fun addMapGame(map: Int, data: MindustryMap.PlayThrough.Data)
 
-    suspend fun findMapGameBySnowflake(game: Int): MindustryMap.Game?
+    suspend fun findMapGameBySnowflake(game: Int): MindustryMap.PlayThrough?
 
     suspend fun getMapStats(map: Int): MindustryMap.Stats?
 
@@ -226,35 +214,24 @@ class SimpleMindustryMapManager(
             }
         }
 
-    override suspend fun addMapGame(
-        map: Int,
-        start: Instant,
-        playtime: Duration,
-        unitsCreated: Int,
-        ennemiesKilled: Int,
-        wavesLasted: Int,
-        buildingsConstructed: Int,
-        buildingsDeconstructed: Int,
-        buildingsDestroyed: Int,
-        winner: UByte
-    ): Unit =
+    override suspend fun addMapGame(map: Int, data: MindustryMap.PlayThrough.Data): Unit =
         provider.newSuspendTransaction {
             MindustryMapGameTable.insert {
                 it[MindustryMapGameTable.map] = map
-                it[server] = config.server.name
-                it[MindustryMapGameTable.start] = start
-                it[MindustryMapGameTable.playtime] = playtime.toJavaDuration()
-                it[MindustryMapGameTable.unitsCreated] = unitsCreated
-                it[MindustryMapGameTable.ennemiesKilled] = ennemiesKilled
-                it[MindustryMapGameTable.wavesLasted] = wavesLasted
-                it[MindustryMapGameTable.buildingsConstructed] = buildingsConstructed
-                it[MindustryMapGameTable.buildingsDeconstructed] = buildingsDeconstructed
-                it[MindustryMapGameTable.buildingsDestroyed] = buildingsDestroyed
-                it[MindustryMapGameTable.winner] = winner
+                it[server] = data.server
+                it[start] = data.start
+                it[playtime] = data.playtime.toJavaDuration()
+                it[unitsCreated] = data.unitsCreated
+                it[ennemiesKilled] = data.ennemiesKilled
+                it[wavesLasted] = data.wavesLasted
+                it[buildingsConstructed] = data.buildingsConstructed
+                it[buildingsDeconstructed] = data.buildingsDeconstructed
+                it[buildingsDestroyed] = data.buildingsDestroyed
+                it[winner] = data.winner
             }
         }
 
-    override suspend fun findMapGameBySnowflake(game: Int): MindustryMap.Game? =
+    override suspend fun findMapGameBySnowflake(game: Int): MindustryMap.PlayThrough? =
         provider.newSuspendTransaction {
             MindustryMapGameTable.selectAll()
                 .where { MindustryMapGameTable.id eq game }
@@ -352,17 +329,19 @@ class SimpleMindustryMapManager(
             difficulty = this[MindustryMapRatingTable.difficulty])
 
     private fun ResultRow.toMindustryMapGame() =
-        MindustryMap.Game(
+        MindustryMap.PlayThrough(
             id = this[MindustryMapGameTable.id].value,
             map = this[MindustryMapGameTable.map].value,
-            server = this[MindustryMapGameTable.server],
-            start = this[MindustryMapGameTable.start],
-            playtime = this[MindustryMapGameTable.playtime].toKotlinDuration(),
-            unitsCreated = this[MindustryMapGameTable.unitsCreated],
-            ennemiesKilled = this[MindustryMapGameTable.ennemiesKilled],
-            wavesLasted = this[MindustryMapGameTable.wavesLasted],
-            buildingsConstructed = this[MindustryMapGameTable.buildingsConstructed],
-            buildingsDeconstructed = this[MindustryMapGameTable.buildingsDeconstructed],
-            buildingsDestroyed = this[MindustryMapGameTable.buildingsDestroyed],
-            winner = this[MindustryMapGameTable.winner])
+            data =
+                MindustryMap.PlayThrough.Data(
+                    server = this[MindustryMapGameTable.server],
+                    start = this[MindustryMapGameTable.start],
+                    playtime = this[MindustryMapGameTable.playtime].toKotlinDuration(),
+                    unitsCreated = this[MindustryMapGameTable.unitsCreated],
+                    ennemiesKilled = this[MindustryMapGameTable.ennemiesKilled],
+                    wavesLasted = this[MindustryMapGameTable.wavesLasted],
+                    buildingsConstructed = this[MindustryMapGameTable.buildingsConstructed],
+                    buildingsDeconstructed = this[MindustryMapGameTable.buildingsDeconstructed],
+                    buildingsDestroyed = this[MindustryMapGameTable.buildingsDestroyed],
+                    winner = this[MindustryMapGameTable.winner]))
 }

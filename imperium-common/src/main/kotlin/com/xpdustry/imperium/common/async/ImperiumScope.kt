@@ -21,9 +21,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-// TODO
-//  Implement wrapper function for launching coroutines with automatic exception handling
-//  > Critical are sent to Discord, with an option to specify a local handler
 object ImperiumScope {
     val MAIN = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val IO = CoroutineScope(Dispatchers.IO + SupervisorJob())

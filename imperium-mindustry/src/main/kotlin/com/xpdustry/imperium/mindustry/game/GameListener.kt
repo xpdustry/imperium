@@ -20,11 +20,14 @@ package com.xpdustry.imperium.mindustry.game
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.version.MindustryVersion
+import com.xpdustry.imperium.mindustry.map.MapLoader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.playtime
@@ -44,6 +47,7 @@ import mindustry.io.SaveIO
 import mindustry.net.Administration
 
 class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val config = instances.get<ImperiumConfig>()
     private val maps = instances.get<MindustryMapManager>()
     private val autoSave = Vars.saveDirectory.child("auto_imperium.${Vars.saveExtension}")
     private val logger by LoggerDelegate()
@@ -57,7 +61,6 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        // TODO Add better auto-save for anti-grief ?
         ImperiumScope.MAIN.launch {
             while (isActive) {
                 delay(1.minutes)
@@ -75,10 +78,7 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
         if (Vars.state.state == GameState.State.menu &&
             Administration.Config.autosave.bool() &&
             autoSave.exists()) {
-            // TODO Use MapLoader ?
-            SaveIO.load(autoSave)
-            Vars.state.set(GameState.State.playing)
-            Vars.netServer.openServer()
+            MapLoader().use { loader -> loader.load(autoSave.file()) }
             logger.info("Loaded Imperium AutoSave")
         }
     }
@@ -90,27 +90,28 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
         }
     }
 
-    // TODO Notify players when they beat the map world record
     @EventHandler
     internal fun onGameOverEvent(event: EventType.GameOverEvent) {
         val playtime = Vars.state.map.playtime
         val stats = Vars.state.stats
         val waves = Vars.state.wave
         val start = Vars.state.map.start ?: Instant.now()
-        val id = Vars.state.map.id ?: return
+        val mapId = Vars.state.map.id ?: return
         if (playtime < 1.minutes) return
         ImperiumScope.MAIN.launch {
             maps.addMapGame(
-                map = id,
-                start = start,
-                playtime = playtime,
-                unitsCreated = stats.unitsCreated,
-                ennemiesKilled = stats.enemyUnitsDestroyed,
-                wavesLasted = waves.coerceAtLeast(0),
-                buildingsConstructed = stats.buildingsBuilt,
-                buildingsDeconstructed = stats.buildingsDeconstructed,
-                buildingsDestroyed = stats.buildingsDestroyed,
-                winner = event.winner.id.toUByte())
+                mapId,
+                MindustryMap.PlayThrough.Data(
+                    server = config.server.name,
+                    start = start,
+                    playtime = playtime,
+                    unitsCreated = stats.unitsCreated,
+                    ennemiesKilled = stats.enemyUnitsDestroyed,
+                    wavesLasted = waves.coerceAtLeast(0),
+                    buildingsConstructed = stats.buildingsBuilt,
+                    buildingsDeconstructed = stats.buildingsDeconstructed,
+                    buildingsDestroyed = stats.buildingsDestroyed,
+                    winner = event.winner.id.toUByte()))
         }
         Vars.state.map.playtime = ZERO
         Vars.state.map.start = null
