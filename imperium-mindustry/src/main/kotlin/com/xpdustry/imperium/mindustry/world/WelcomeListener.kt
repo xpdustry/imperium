@@ -38,6 +38,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gui_close
 import com.xpdustry.imperium.mindustry.translation.gui_rules_content
 import com.xpdustry.imperium.mindustry.translation.gui_rules_title
+import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_changelog
 import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_discord
 import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_rules
 import com.xpdustry.imperium.mindustry.translation.gui_welcome_content
@@ -68,6 +69,8 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
                 MenuOption.of(
                     gui_welcome_button_discord(),
                     Action.audience { it.openURI(DISCORD_INVITATION_LINK.toURI()) }))
+            pane.grid.addRow(
+                MenuOption.of(gui_welcome_button_changelog(), Action.command("changelog")))
             pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
         }
     }

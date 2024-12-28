@@ -161,6 +161,10 @@ fun gui_welcome_button_rules(): Component =
 
 fun gui_welcome_button_discord(): Component = text(Iconc.discord + " Discord", BLURPLE)
 
+fun gui_welcome_button_changelog(): Component =
+    components(
+        GREEN, text(Iconc.book), space(), translatable("imperium.gui.welcome.button.changelog"))
+
 fun gui_rules_title(): Component = translatable("imperium.gui.rules.title")
 
 fun gui_rules_content(): Component =

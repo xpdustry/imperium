@@ -25,12 +25,17 @@ import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.translation.GRAY
 import java.io.Reader
 
-class ChangelogCommand : ImperiumApplication.Listener {
+class ChangelogCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val version = instances.get<ImperiumVersion>()
 
     private val changelog: Component
 
@@ -53,18 +58,22 @@ class ChangelogCommand : ImperiumApplication.Listener {
 
         val builder = components()
         val none = text("None", GRAY)
-        builder.append(newline())
+
+        builder.append(text("Changelog for Imperium v$version", ComponentColor.GREEN))
+        builder.append(newline(), newline())
         builder.append(text("Features and Changes", ComponentColor.ACCENT))
-        builder.append(newline())
+        builder.append(newline(), newline())
         if (features.isNotEmpty()) {
-            features.forEach { feature -> builder.append(text(" - "), text(feature), newline()) }
+            features.forEach { feature ->
+                builder.append(text(" - "), text(feature), newline(), newline())
+            }
         } else {
-            builder.append(none)
+            builder.append(none, newline(), newline())
         }
         builder.append(text("Bugfixes", ComponentColor.ACCENT))
-        builder.append(newline())
+        builder.append(newline(), newline())
         if (bugfixes.isNotEmpty()) {
-            bugfixes.forEach { fix -> builder.append(text(" - "), text(fix), newline()) }
+            bugfixes.forEach { fix -> builder.append(text(" - "), text(fix), newline(), newline()) }
         } else {
             builder.append(none)
         }
