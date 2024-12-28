@@ -108,12 +108,10 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         immediate: Boolean = false
     ) {
         val reply = interaction.deferReply(false).await()
-        if (server == null || server == "discord") {
+        if (server == "discord") {
             reply.sendMessage("Restarting discord bot.").await()
             application.exit(action.toExitStatus())
-            if (server != null) {
-                return
-            }
+            return
         }
         if (server != null && discovery.servers[server] == null) {
             reply.sendMessage("Server not found.").await()
@@ -123,7 +121,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         reply
             .sendMessage(
                 "Sent ${action.name.lowercase()} request to " +
-                    if (server == null) "all servers" else "server **$server**.")
+                    if (server == null) "**all servers**" else "server **$server**.")
             .await()
     }
 
