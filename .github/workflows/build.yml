@@ -33,6 +33,11 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: Add upstream
+        run: |
+          git remote add upstream https://github.com/xpdustry/imperium.git --tags
+          git fetch upstream
+
       - name: Build Artifact
         run: ./gradlew build
 
