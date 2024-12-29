@@ -21,6 +21,7 @@ import fake.test.wildcard.test.*
 import arc.graphics.Color
 import arc.math.geom.Vec2
 import com.xpdustry.imperium.mindustry.misc.toWorldFloat
+import mindustry.content.Fx
 import mindustry.content.UnitTypes
 import mindustry.entities.*
 import mindustry.entities.abilities.*
@@ -30,7 +31,6 @@ import mindustry.entities.part.*
 import mindustry.entities.pattern.*
 import mindustry.game.Team
 import mindustry.gen.*
-import mindustry.graphics.Fx
 import mindustry.graphics.Pal
 import mindustry.type.*
 import mindustry.type.ammo.*
@@ -62,10 +62,10 @@ fun getVaultByRarity(rarity: Int): List<Vault> {
 object VaultTypes {
     val commonVault =
         listOf(
-            Vault("Electric Dagger", 1, true) { x1, y, team ->
+            Vault("Electric Dagger", 1, true) { x1, y1, team ->
                 repeat(1) {
                     val unit =
-                        UnitTypes.dagger.spawn(Vec2(x1.toWorldFloat(), y.toWorldFloat()), team)
+                        UnitTypes.dagger.spawn(Vec2(x1.toWorldFloat(), y1.toWorldFloat()), team)
                     unit.weapons.clear() // remove old weapon
                     unit.weapons.add(
                         Weapon("large-weapon").apply {
@@ -96,8 +96,8 @@ object VaultTypes {
 
     val uncommonVault =
         listOf(
-            Vault("Crawler Bomb", 2, true) { x1, y, team ->
-                val unit = UnitTypes.crawler.spawn(Vec2(x1.toWorldFloat(), y.toWorldFloat()), team)
+            Vault("Crawler Bomb", 2, true) { x1, y1, team ->
+                val unit = UnitTypes.crawler.spawn(Vec2(x1.toWorldFloat(), y1.toWorldFloat()), team)
                 unit.weapons.clear()
                 unit.weapons.add(
                     Weapon().apply {
