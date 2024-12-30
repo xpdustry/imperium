@@ -58,10 +58,10 @@ import com.xpdustry.imperium.mindustry.game.ChangelogCommand
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
+import com.xpdustry.imperium.mindustry.game.PauseListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
-import com.xpdustry.imperium.mindustry.game.PauseListener
 import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.metrics.MetricsListener
