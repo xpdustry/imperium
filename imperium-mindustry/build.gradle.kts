@@ -49,6 +49,7 @@ val generateResources by tasks.registering {
 
 val generateChangelog by tasks.registering(GenerateImperiumChangelog::class) {
     outputs.upToDateWhen { false }
+    onlyIfHasUpstream()
     target = temporaryDir.resolve("imperium-changelog.txt")
 }
 
