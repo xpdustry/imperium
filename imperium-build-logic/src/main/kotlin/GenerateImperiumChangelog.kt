@@ -17,7 +17,7 @@ open class GenerateImperiumChangelog : DefaultTask() {
 
     fun onlyIfHasUpstream() {
         onlyIf("run only if upstream repo is available") { task ->
-            task.git.remoteList().call().any { remote -> remote.urIs.contains(UPSTREAM_URI) }
+            task.git.remoteList().call().any { remote -> remote.urIs.contains(UPSTREAM_URI_1) || remote.urIs.contains(UPSTREAM_URI_2) }
         }
     }
 
@@ -44,7 +44,8 @@ open class GenerateImperiumChangelog : DefaultTask() {
     companion object {
         private val ACCEPTED_SUFFIX =
             Pattern.compile("^(?<verb>feat|fix)(\\((?<scope>mindustry|discord)\\))?:", Pattern.CASE_INSENSITIVE)
-        private val UPSTREAM_URI = URIish("https://github.com/xpdustry/imperium.git")
+        private val UPSTREAM_URI_1 = URIish("https://github.com/xpdustry/imperium.git")
+        private val UPSTREAM_URI_2 = URIish("https://github.com/xpdustry/imperium")
         private val Task.git: Git
             get() = project.rootProject.extensions.getByType<IndraGitExtension>().git()!!
     }
