@@ -22,58 +22,43 @@ import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.permission.rank.EnumRankNode
 import com.xpdustry.distributor.api.permission.rank.RankNode
 import com.xpdustry.distributor.api.permission.rank.RankProvider
-import com.xpdustry.distributor.api.player.MUUID
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
-import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
+import java.util.Collections
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-// TODO use events instead of polling
-class ImperiumRankProvider(private val accounts: AccountManager) :
+class ImperiumRankProvider(plugin: MindustryPlugin, private val accounts: AccountManager) :
     RankProvider, ImperiumApplication.Listener {
 
-    private val rank = buildCache<MUUID, Rank> { expireAfterWrite(20.seconds.toJavaDuration()) }
-    private val achievements =
-        buildCache<MUUID, Set<Achievement>> { expireAfterWrite(20.seconds.toJavaDuration()) }
+    private val ranks = PlayerMap<List<RankNode>>(plugin)
 
     @EventHandler(priority = Priority.HIGH)
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch { fetchPlayerInfo(event.player) }
+    fun onPlayerJoin(event: EventType.PlayerJoin) = updatePlayerRanks(event.player)
 
-    @TaskHandler(interval = 10L, unit = MindustryTimeUnit.SECONDS)
-    fun refreshPlayerRank() =
-        ImperiumScope.MAIN.launch { Entities.getPlayersAsync().forEach { fetchPlayerInfo(it) } }
+    @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
+    fun refreshPlayerRank() = Entities.getPlayers().forEach(::updatePlayerRanks)
 
-    override fun getRanks(player: Player): List<RankNode> {
-        val ranks =
-            mutableListOf(
-                EnumRankNode.linear(
-                    rank.getIfPresent(MUUID.from(player)) ?: Rank.EVERYONE, "imperium", true))
-        ranks.addAll(
-            achievements.getIfPresent(MUUID.from(player)).orEmpty().map {
-                EnumRankNode.singular(it, "imperium")
-            })
-        return ranks
-    }
+    override fun getRanks(player: Player) = ranks[player].orEmpty()
 
-    private suspend fun fetchPlayerInfo(player: Player) {
-        val account = accounts.selectBySession(player.sessionKey)
-        rank.put(MUUID.from(player), account?.rank ?: Rank.EVERYONE)
-        achievements.put(
-            MUUID.from(player),
-            (account?.let { accounts.selectAchievements(it.id) } ?: emptyMap())
-                .filterValues { it }
-                .keys)
-    }
+    private fun updatePlayerRanks(player: Player) =
+        ImperiumScope.MAIN.launch {
+            val account = accounts.selectBySession(player.sessionKey)
+            val achievements = account?.let { accounts.selectAchievements(it.id) }.orEmpty()
+            val nodes = ArrayList<RankNode>()
+            nodes += EnumRankNode.linear(account?.rank ?: Rank.EVERYONE, "imperium", true)
+            nodes +=
+                achievements.filterValues { it }.map { EnumRankNode.singular(it.key, "imperium") }
+            runMindustryThread { ranks[player] = Collections.unmodifiableList(nodes) }
+        }
 }

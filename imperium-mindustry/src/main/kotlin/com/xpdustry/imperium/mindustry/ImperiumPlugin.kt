@@ -124,7 +124,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         registerService(
             RankProvider::class,
-            ImperiumRankProvider(application.instances.get()).also(application::register))
+            ImperiumRankProvider(application.instances.get(), application.instances.get())
+                .also(application::register))
 
         registerService(
             RankPermissionSource::class, ImperiumRankPermissionSource(application.instances.get()))
