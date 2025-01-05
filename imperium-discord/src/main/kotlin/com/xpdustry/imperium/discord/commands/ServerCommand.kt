@@ -89,11 +89,9 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             for ((key, value) in discovery.servers) {
                 if (value.data is Discovery.Data.Mindustry) {
                     val players = tracker.getOnlinePlayers(key) ?: emptyList()
-                    embeds +=
-                        createPlayerListEmbed(players, "Online", time = false, server = key)
+                    embeds += createPlayerListEmbed(players, "Online", time = false, server = key)
                 }
-            }z
-            reply.sendMessageEmbeds(embeds).await()
+            } reply.sendMessageEmbeds(embeds).await()
         }
     }
 
