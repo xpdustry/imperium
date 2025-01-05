@@ -91,7 +91,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     val players = tracker.getOnlinePlayers(key) ?: emptyList()
                     embeds += createPlayerListEmbed(players, "Online", time = false, server = key)
                 }
-            } reply.sendMessageEmbeds(embeds).await()
+            }
+            reply.sendMessageEmbeds(embeds).await()
         }
     }
 
