@@ -77,7 +77,7 @@ class FormationListener : ImperiumApplication.Listener {
                     context.remove(member)
                     member.resetController()
                     val unit = newUnits.first()
-                    newUnits.removeAt(0)
+                    newUnits.removeFirst()
                     unit.controller(FormationAI(player.unit(), context))
                     context.members.add(FormationAI(player.unit(), context))
                     updated = true
@@ -143,7 +143,7 @@ class FormationListener : ImperiumApplication.Listener {
         player: Player,
         context: FormationContext,
         replace: Boolean
-    ): List<Unit> {
+    ): MutableList<Unit> {
         val leader = player.unit()
         val result = mutableListOf<Unit>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) {

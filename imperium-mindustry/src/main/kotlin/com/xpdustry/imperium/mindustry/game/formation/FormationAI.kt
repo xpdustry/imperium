@@ -29,10 +29,12 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
 
     override var id: Int = -1
     override val targetVector = Vec2()
+    override var type = unit.type
 
     override fun init() {
         id = unit.id
         targetVector.set(unit.x, unit.y)
+        type = unit.type
     }
 
     override fun updateUnit() {
