@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
+import com.xpdustry.imperium.mindustry.translation.formation_dead
 import kotlin.collections.set
 import kotlin.math.min
 import mindustry.Vars
@@ -49,6 +50,12 @@ class FormationListener : ImperiumApplication.Listener {
                 context.deleted = true
                 iterator.remove()
                 continue
+            }
+            // TODO: Replace units instead of disabling the formation
+            if (context.members.isEmpty()) {
+                context.deleted = true
+                iterator.remove()
+                return player.sendMessage(formation_dead())
             }
             val anchor = Vec2(player.x(), player.y())
             for (member in context.members) {
@@ -112,6 +119,7 @@ class FormationListener : ImperiumApplication.Listener {
         sender.reply("Formation pattern set to ${pattern.name.lowercase()}.")
     }
 
+    // TODO: Update active formations with the same type as the leader dynamically
     private fun findEligibleFormationUnits(player: Player, context: FormationContext): List<Unit> {
         val leader = player.unit()
         val result = mutableListOf<Unit>()
@@ -126,7 +134,9 @@ class FormationListener : ImperiumApplication.Listener {
                 result.add(it)
             }
         }
-        return result.take(context.slots)
+        // Prioritize units of the same type as the leader
+        return result.partition { it.type == leader.type}.let {(preferred, other) ->
+            preferred + other}.take(context.slots)
     }
 
     enum class FormationPatternEntry(val pattern: FormationPattern) {

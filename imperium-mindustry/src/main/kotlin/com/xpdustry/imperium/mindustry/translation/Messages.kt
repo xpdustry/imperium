@@ -361,3 +361,5 @@ fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =
 
 fun selected(component: Component, selected: Boolean): Component =
     if (selected) components(text("> "), component, text(" <")) else component
+
+fun formation_dead(): Component = translatable("imperium.formation.dead", SCARLET)
