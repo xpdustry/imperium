@@ -135,8 +135,10 @@ class FormationListener : ImperiumApplication.Listener {
             }
         }
         // Prioritize units of the same type as the leader
-        return result.partition { it.type == leader.type}.let {(preferred, other) ->
-            preferred + other}.take(context.slots)
+        return result
+            .partition { it.type == leader.type }
+            .let { (preferred, other) -> preferred + other }
+            .take(context.slots)
     }
 
     enum class FormationPatternEntry(val pattern: FormationPattern) {
