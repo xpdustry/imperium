@@ -32,7 +32,6 @@ import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
-import mindustry.entities.units.AIController
 import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -140,7 +139,11 @@ class FormationListener : ImperiumApplication.Listener {
         sender.reply("Formation pattern set to ${pattern.name.lowercase()}.")
     }
 
-    private fun findEligibleFormationUnits(player: Player, context: FormationContext, replace: Boolean): List<Unit> {
+    private fun findEligibleFormationUnits(
+        player: Player,
+        context: FormationContext,
+        replace: Boolean
+    ): List<Unit> {
         val leader = player.unit()
         val result = mutableListOf<Unit>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) {
