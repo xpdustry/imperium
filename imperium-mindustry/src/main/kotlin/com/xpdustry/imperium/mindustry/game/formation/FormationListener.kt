@@ -55,7 +55,7 @@ class FormationListener : ImperiumApplication.Listener {
             if (context.members.isEmpty()) {
                 context.deleted = true
                 iterator.remove()
-                return player.sendMessage(formation_dead())
+                return player.sendMessage(formation_dead().toString())
             }
             val anchor = Vec2(player.x(), player.y())
             for (member in context.members) {
