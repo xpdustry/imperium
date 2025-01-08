@@ -55,7 +55,8 @@ class FormationListener : ImperiumApplication.Listener {
             if (context.members.isEmpty()) {
                 context.deleted = true
                 iterator.remove()
-                return player.sendMessage(formation_dead().toString())
+                player.sendMessage(formation_dead)
+                continue
             }
             val anchor = Vec2(player.x(), player.y())
             for (member in context.members) {
@@ -65,6 +66,24 @@ class FormationListener : ImperiumApplication.Listener {
                     min(context.slots, context.members.size),
                     player.unit().hitSize * 1.6F)
                 member.targetVector.add(anchor)
+            }
+            // Update formation members
+            val newUnits = findEligibleFormationUnits(player, context, true)
+            val newUnitTypes = newUnits.map { it.type }.toSet()
+            var updated = false
+            for (member in context.members) {
+                if (member.type != player.unit().type && player.unit().type in newUnitTypes) {
+                    context.remove(member)
+                    member.resetController()
+                    val unit = newUnits.first()
+                    newUnits.removeFirst()
+                    unit.controller(FormationAI(player.unit(), context))
+                    context.members.add(FormationAI(player.unit(), context))
+                    updated = true
+                }
+            }
+            if (updated) {
+                context.strategy.update(context)
             }
         }
     }
@@ -88,7 +107,7 @@ class FormationListener : ImperiumApplication.Listener {
                     8,
                     CircleFormationPattern,
                     DistanceAssignmentStrategy)
-            val eligible = findEligibleFormationUnits(sender.player, context)
+            val eligible = findEligibleFormationUnits(sender.player, context, false)
             if (eligible.isEmpty()) {
                 sender.reply("No eligible units found.")
                 return
@@ -119,8 +138,7 @@ class FormationListener : ImperiumApplication.Listener {
         sender.reply("Formation pattern set to ${pattern.name.lowercase()}.")
     }
 
-    // TODO: Update active formations with the same type as the leader dynamically
-    private fun findEligibleFormationUnits(player: Player, context: FormationContext): List<Unit> {
+    private fun findEligibleFormationUnits(player: Player, context: FormationContext, replace: Boolean): List<Unit> {
         val leader = player.unit()
         val result = mutableListOf<Unit>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) {
@@ -129,16 +147,18 @@ class FormationListener : ImperiumApplication.Listener {
                 it.type.flying == leader.type.flying &&
                 leader.type.buildSpeed > 0 == it.type.buildSpeed > 0 &&
                 it != leader &&
-                it.hitSize <= leader.hitSize * 1.1f &&
+                (it.hitSize <= leader.hitSize * 1.2f) &&
                 it.controller() !is FormationAI) {
                 result.add(it)
             }
         }
         // Prioritize units of the same type as the leader
-        return result
-            .partition { it.type == leader.type }
-            .let { (preferred, other) -> preferred + other }
-            .take(context.slots)
+        val (preferred, other) = result.partition { it.type == leader.type }
+        return if (replace) {
+            preferred.take(context.slots)
+        } else {
+            (preferred + other).take(context.slots)
+        }
     }
 
     enum class FormationPatternEntry(val pattern: FormationPattern) {
