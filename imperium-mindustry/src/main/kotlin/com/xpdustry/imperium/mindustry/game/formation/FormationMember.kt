@@ -18,8 +18,10 @@
 package com.xpdustry.imperium.mindustry.game.formation
 
 import arc.math.geom.Vec2
+import mindustry.content.UnitTypes
 
 interface FormationMember {
     val targetVector: Vec2
     val id: Int
+    val type: UnitTypes
 }

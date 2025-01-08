@@ -25,12 +25,14 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.translation.formation_dead
 import kotlin.collections.set
 import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
+import mindustry.entities.units.AIController
 import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -55,7 +57,7 @@ class FormationListener : ImperiumApplication.Listener {
             if (context.members.isEmpty()) {
                 context.deleted = true
                 iterator.remove()
-                player.sendMessage(formation_dead)
+                player.asAudience.sendMessage(formation_dead())
                 continue
             }
             val anchor = Vec2(player.x(), player.y())
@@ -76,7 +78,7 @@ class FormationListener : ImperiumApplication.Listener {
                     context.remove(member)
                     member.resetController()
                     val unit = newUnits.first()
-                    newUnits.removeFirst()
+                    newUnits.removeAt(0)
                     unit.controller(FormationAI(player.unit(), context))
                     context.members.add(FormationAI(player.unit(), context))
                     updated = true
