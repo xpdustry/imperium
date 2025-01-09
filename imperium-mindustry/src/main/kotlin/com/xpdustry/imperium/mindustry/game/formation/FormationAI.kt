@@ -25,7 +25,6 @@ import mindustry.entities.units.AIController
 import mindustry.gen.Call
 import mindustry.gen.Unit
 
-
 class FormationAI(private val leader: Unit, private val context: FormationContext) :
     AIController(), FormationMember {
 
