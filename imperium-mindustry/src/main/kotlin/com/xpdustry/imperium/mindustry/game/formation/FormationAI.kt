@@ -20,7 +20,7 @@ package com.xpdustry.imperium.mindustry.game.formation
 import arc.math.Mathf
 import arc.math.geom.Vec2
 import arc.util.Time
-import mindustry.content.UnitTypes
+import mindustry.type.UnitType
 import mindustry.entities.units.AIController
 import mindustry.gen.Call
 import mindustry.gen.Unit
@@ -30,7 +30,7 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
 
     override var id: Int = -1
     override val targetVector = Vec2()
-    override lateinit var type: UnitTypes
+    override lateinit var type: UnitType
 
     override fun init() {
         id = unit.id
