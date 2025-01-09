@@ -20,10 +20,10 @@ package com.xpdustry.imperium.mindustry.game.formation
 import arc.math.Mathf
 import arc.math.geom.Vec2
 import arc.util.Time
-import mindustry.type.UnitType
 import mindustry.entities.units.AIController
 import mindustry.gen.Call
 import mindustry.gen.Unit
+import mindustry.type.UnitType
 
 class FormationAI(private val leader: Unit, private val context: FormationContext) :
     AIController(), FormationMember {
