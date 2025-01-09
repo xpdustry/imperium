@@ -75,7 +75,6 @@ class FormationListener : ImperiumApplication.Listener {
             for (member in context.members) {
                 if (member.type != player.unit().type && player.unit().type in newUnitTypes) {
                     context.remove(member)
-                    member.resetController()
                     val unit = newUnits.first()
                     newUnits.removeFirst()
                     unit.controller(FormationAI(player.unit(), context))
@@ -160,9 +159,9 @@ class FormationListener : ImperiumApplication.Listener {
         // Prioritize units of the same type as the leader
         val (preferred, other) = result.partition { it.type == leader.type }
         return if (replace) {
-            preferred.take(context.slots)
+            preferred.take(context.slots).toMutableList()
         } else {
-            (preferred + other).take(context.slots)
+            (preferred + other).take(context.slots).toMutableList()
         }
     }
 
