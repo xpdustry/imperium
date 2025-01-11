@@ -53,6 +53,7 @@ import mindustry.game.Team
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.net.Administration.Config
+import mindustry.type.UnitType
 import mindustry.world.Block
 
 val SCARLET: ComponentColor = from(Color.scarlet)
@@ -62,7 +63,6 @@ val LIGHT_GRAY: ComponentColor = from(Color.lightGray)
 val BLURPLE: ComponentColor = from(com.xpdustry.imperium.common.misc.BLURPLE)
 val ROYAL: ComponentColor = from(Color.royal)
 val LIME: ComponentColor = from(Color.lime)
-val VANILLA: ComponentColor
 
 fun punishment_type_verb(type: Punishment.Type): Component =
     translatable("imperium.messages.punishment.type.${type.name.lowercase()}.verb", ORANGE)
@@ -363,12 +363,12 @@ fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =
 fun selected(component: Component, selected: Boolean): Component =
     if (selected) components(text("> "), component, text(" <")) else component
 
-fun spawned(player: String, number: Int, unit: UnitType, team: String, x: Int, y: Int): Component =
+fun spawned(player: String, amount: Int, unit: UnitType, team: String, x: Int, y: Int): Component =
     translatable(
         "imperium.spawn-unit.success",
         TranslationArguments.array(
             text(player),
-            number(int),
+            number(amount),
             translatable(unit, WHITE),
             text(team),
             number(x),
