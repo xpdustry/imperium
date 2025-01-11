@@ -23,19 +23,16 @@ import arc.util.Time
 import mindustry.entities.units.AIController
 import mindustry.gen.Call
 import mindustry.gen.Unit
-import mindustry.type.UnitType
 
 class FormationAI(private val leader: Unit, private val context: FormationContext) :
     AIController(), FormationMember {
 
     override var id: Int = -1
     override val targetVector = Vec2()
-    override lateinit var type: UnitType
 
     override fun init() {
         id = unit.id
         targetVector.set(unit.x, unit.y)
-        type = unit.type
     }
 
     override fun updateUnit() {

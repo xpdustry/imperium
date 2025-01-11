@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.account
 enum class Achievement {
     ACTIVE,
     HYPER,
+    ADDICT,
     GAMER,
     DAY,
     WEEK,

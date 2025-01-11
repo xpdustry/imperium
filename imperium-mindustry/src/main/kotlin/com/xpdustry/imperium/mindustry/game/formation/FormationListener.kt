@@ -20,12 +20,15 @@ package com.xpdustry.imperium.mindustry.game.formation
 import arc.math.geom.Vec2
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.imperium.common.account.Achievement
+import com.xpdustry.imperium.common.account
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.selectAchievement
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
 import com.xpdustry.imperium.mindustry.misc.asAudience
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.formation_dead
 import kotlin.collections.set
 import kotlin.math.min
@@ -37,9 +40,10 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Unit
 
-class FormationListener : ImperiumApplication.Listener {
+class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val formations = mutableMapOf<Int, FormationContext>()
+    private val manager = instances.get<AccountManager>()
 
     @TriggerHandler(Trigger.update)
     fun onFormationUpdate() {
@@ -73,7 +77,10 @@ class FormationListener : ImperiumApplication.Listener {
             val newUnitTypes = newUnits.map { it.type }.toSet()
             var updated = false
             for (member in context.members) {
-                if (member.type != player.unit().type && player.unit().type in newUnitTypes) {
+                println(member.id) // testing
+                if (Groups.unit.getByID(member.id) != null &&
+                    Groups.unit.getByID(member.id).type != player.unit().type &&
+                    player.unit().type in newUnitTypes) {
                     context.remove(member)
                     val unit = newUnits.first()
                     newUnits.removeFirst()
@@ -89,9 +96,16 @@ class FormationListener : ImperiumApplication.Listener {
     }
 
     @ImperiumCommand(["group|g"])
-    @RequireAchievement(Achievement.ACTIVE)
     @ClientSide
     fun onFormationCommand(sender: CommandSender) {
+        val account = manager.selectBySession(sender.player.sessionKey)
+        val slots =
+            when {
+                selectAchievement(account, Achievement.ADDICT) -> 32 // Only 1 person has this
+                selectAchievement(account, Achievement.HYPER) -> 16
+                selectAchievement(account, Achievement.ACTIVE) -> 8
+                else -> 4
+            }
         if (sender.player.id() in formations) {
             formations.remove(sender.player.id())!!.deleted = true
             sender.reply("Formation disabled.")
@@ -104,7 +118,7 @@ class FormationListener : ImperiumApplication.Listener {
                 FormationContext(
                     mutableListOf(),
                     mutableMapOf(),
-                    8,
+                    slots,
                     CircleFormationPattern,
                     DistanceAssignmentStrategy)
             val eligible = findEligibleFormationUnits(sender.player, context, false)
