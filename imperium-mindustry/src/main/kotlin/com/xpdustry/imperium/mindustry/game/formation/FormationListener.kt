@@ -117,7 +117,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 sender.reply("You must be logged in to use this command.")
                 return@launch
             }
-            
+
             if (sender.player.id() in formations) {
                 formations.remove(sender.player.id())!!.deleted = true
                 sender.reply("Formation disabled.")
