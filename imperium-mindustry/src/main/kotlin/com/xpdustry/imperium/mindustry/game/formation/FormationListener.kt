@@ -88,8 +88,9 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                         // how did compiler say this is kotlin.Unit
                         var unit = newUnits.first()
                         newUnits.removeFirst()
-                        unit = unit.controller(FormationAI(player.unit(), context))
-                        toAdd.add(unit)
+                        val a = FormationAI(player.unit(), context)
+                        unit.controller(a)
+                        toAdd.add(a)
                         println("unit added to list")
                     }
                 }
