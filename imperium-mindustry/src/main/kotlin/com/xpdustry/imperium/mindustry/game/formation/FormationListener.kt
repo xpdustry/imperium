@@ -75,18 +75,19 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 member.targetVector.add(anchor)
             }
             // Update formation members
-            private val newUnits = findEligibleFormationUnits(player, context, true)
-            private val newUnitTypes = newUnits.map { it.type }.toSet()
-            private val toRemove = mutableListOf<FormationAI>()
-            private val toAdd = mutableListOf<Unit>()
+            val newUnits = findEligibleFormationUnits(player, context, true)
+            val newUnitTypes = newUnits.map { it.type }.toSet()
+            val toRemove = mutableListOf<FormationMember>()
+            val toAdd = mutableListOf<FormationMember>()
             for (member in context.members) {
                 if (Groups.unit.getByID(member.id) != null &&
                     Groups.unit.getByID(member.id).type != player.unit().type &&
                     player.unit().type in newUnitTypes) {
                     toRemove.add(member)
                     if (newUnits.isNotEmpty()) {
-                        private val unit = newUnits.first()
+                        var unit = newUnits.first()
                         newUnits.removeFirst()
+                        unit = unit.controller(FormationAI(player.unit(), context))
                         toAdd.add(unit)
                         println("unit added to list")
                     }
@@ -95,10 +96,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             if (toRemove.isNotEmpty() || toAdd.isNotEmpty()) {
                 context.members.removeAll(toRemove)
                 context.members.addAll(toAdd)
-                for (member in toAdd) {
-                    member.controller(FormationAI(player.unit(), context))
-                    println("unit added to formation")
-                }
+                println("unit added to formation")
                 context.strategy.update(context)
                 println("updated player")
             }
