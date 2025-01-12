@@ -22,6 +22,7 @@ import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
+import com.xpdustry.imperium.common.account.SimpleAccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -45,7 +46,7 @@ import mindustry.gen.Unit
 class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val formations = mutableMapOf<Int, FormationContext>()
-    private val manager = instances.get<AccountManager>()
+    private val manager: AccountManager = instances.get(AccountManager::class.kt)
 
     @TriggerHandler(Trigger.update)
     fun onFormationUpdate() {
@@ -103,9 +104,10 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @ClientSide
     fun onFormationCommand(sender: CommandSender) {
         ImperiumScope.MAIN.launch {
+            var slots = 0
             val account = manager.selectBySession(sender.player.sessionKey)?.id
             if (account != null) {
-                val slots =
+                slots =
                     when {
                         // Only 1 person has this
                         manager.selectAchievement(account, Achievement.ADDICT) -> 32
