@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.selectAchievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -33,6 +34,7 @@ import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.formation_dead
 import kotlin.collections.set
 import kotlin.math.min
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
@@ -102,7 +104,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @ClientSide
     fun onFormationCommand(sender: CommandSender) {
         ImperiumScope.MAIN.launch {
-            val account = manager.selectBySession(sender.player.sessionKey)
+            val account = manager.selectBySession(sender.player.sessionKey).id
             val slots =
                 when {
                     // Only 1 person has this
