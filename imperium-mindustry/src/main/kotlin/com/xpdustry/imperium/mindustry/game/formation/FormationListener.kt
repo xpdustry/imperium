@@ -22,7 +22,6 @@ import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
-import com.xpdustry.imperium.common.account.selectAchievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -104,15 +103,21 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @ClientSide
     fun onFormationCommand(sender: CommandSender) {
         ImperiumScope.MAIN.launch {
-            val account = manager.selectBySession(sender.player.sessionKey).id
-            val slots =
-                when {
-                    // Only 1 person has this
-                    manager.selectAchievement(account, Achievement.ADDICT) -> 32
-                    manager.selectAchievement(account, Achievement.HYPER) -> 16
-                    manager.selectAchievement(account, Achievement.ACTIVE) -> 8
-                    else -> 4
-                }
+            val account = manager.selectBySession(sender.player.sessionKey)?.id
+            if (account != null) {
+                val slots =
+                    when {
+                        // Only 1 person has this
+                        manager.selectAchievement(account, Achievement.ADDICT) -> 32
+                        manager.selectAchievement(account, Achievement.HYPER) -> 16
+                        manager.selectAchievement(account, Achievement.ACTIVE) -> 8
+                        else -> 4
+                    }
+            } else {
+                sender.reply("You must be logged in to use this command.")
+                return@launch
+            }
+            
             if (sender.player.id() in formations) {
                 formations.remove(sender.player.id())!!.deleted = true
                 sender.reply("Formation disabled.")
