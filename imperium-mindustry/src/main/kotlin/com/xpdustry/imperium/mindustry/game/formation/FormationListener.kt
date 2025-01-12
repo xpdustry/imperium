@@ -75,7 +75,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 member.targetVector.add(anchor)
             }
             // Update formation members
-            val newUnits: mindustry.gen.Unit = findEligibleFormationUnits(player, context, true)
+            val newUnits = findEligibleFormationUnits(player, context, true)
             val newUnitTypes = newUnits.map { it.type }.toSet()
             val toRemove = mutableListOf<FormationMember>()
             val toAdd = mutableListOf<FormationMember>()
@@ -86,7 +86,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     toRemove.add(member)
                     if (newUnits.isNotEmpty()) {
                         // how did compiler say this is kotlin.Unit
-                        var unit: mindustry.gen.Unit = newUnits.first()
+                        var unit = newUnits.first()
                         newUnits.removeFirst()
                         unit = unit.controller(FormationAI(player.unit(), context))
                         toAdd.add(unit)
