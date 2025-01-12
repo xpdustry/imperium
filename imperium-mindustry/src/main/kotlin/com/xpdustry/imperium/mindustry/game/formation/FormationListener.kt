@@ -106,7 +106,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             val slots =
                 when {
                     // Only 1 person has this
-                    manager.selectAchievement(account, Achievement.ADDICT) -> 32 
+                    manager.selectAchievement(account, Achievement.ADDICT) -> 32
                     manager.selectAchievement(account, Achievement.HYPER) -> 16
                     manager.selectAchievement(account, Achievement.ACTIVE) -> 8
                     else -> 4
