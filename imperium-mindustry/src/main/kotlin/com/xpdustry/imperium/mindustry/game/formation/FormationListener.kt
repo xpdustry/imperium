@@ -20,11 +20,12 @@ package com.xpdustry.imperium.mindustry.game.formation
 import arc.math.geom.Vec2
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.imperium.common.account
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Achievement
+import com.xpdustry.imperium.common.account.selectAchievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.selectAchievement
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -82,11 +83,13 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     Groups.unit.getByID(member.id).type != player.unit().type &&
                     player.unit().type in newUnitTypes) {
                     context.remove(member)
-                    val unit = newUnits.first()
-                    newUnits.removeFirst()
-                    unit.controller(FormationAI(player.unit(), context))
-                    context.members.add(FormationAI(player.unit(), context))
-                    updated = true
+                    if (newUnits.isNotEmpty()) {
+                        val unit = newUnits.first()
+                        newUnits.removeFirst()
+                        unit.controller(FormationAI(player.unit(), context))
+                        context.members.add(FormationAI(player.unit(), context))
+                        updated = true
+                    }
                 }
             }
             if (updated) {
@@ -98,42 +101,45 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @ImperiumCommand(["group|g"])
     @ClientSide
     fun onFormationCommand(sender: CommandSender) {
-        val account = manager.selectBySession(sender.player.sessionKey)
-        val slots =
-            when {
-                selectAchievement(account, Achievement.ADDICT) -> 32 // Only 1 person has this
-                selectAchievement(account, Achievement.HYPER) -> 16
-                selectAchievement(account, Achievement.ACTIVE) -> 8
-                else -> 4
+        ImperiumScope.MAIN.launch {
+            val account = manager.selectBySession(sender.player.sessionKey)
+            val slots =
+                when {
+                    // Only 1 person has this
+                    manager.selectAchievement(account, Achievement.ADDICT) -> 32 
+                    manager.selectAchievement(account, Achievement.HYPER) -> 16
+                    manager.selectAchievement(account, Achievement.ACTIVE) -> 8
+                    else -> 4
+                }
+            if (sender.player.id() in formations) {
+                formations.remove(sender.player.id())!!.deleted = true
+                sender.reply("Formation disabled.")
+            } else {
+                if (sender.player.unit().dead()) {
+                    sender.reply("You must be alive to enable formation.")
+                    return@launch
+                }
+                val context =
+                    FormationContext(
+                        mutableListOf(),
+                        mutableMapOf(),
+                        slots,
+                        CircleFormationPattern,
+                        DistanceAssignmentStrategy)
+                val eligible = findEligibleFormationUnits(sender.player, context, false)
+                if (eligible.isEmpty()) {
+                    sender.reply("No eligible units found.")
+                    return@launch
+                }
+                for (unit in eligible) {
+                    val a = FormationAI(sender.player.unit(), context)
+                    unit.controller(a)
+                    context.members.add(a)
+                }
+                context.strategy.update(context)
+                formations[sender.player.id()] = context
+                sender.reply("Formation enabled.")
             }
-        if (sender.player.id() in formations) {
-            formations.remove(sender.player.id())!!.deleted = true
-            sender.reply("Formation disabled.")
-        } else {
-            if (sender.player.unit().dead()) {
-                sender.reply("You must be alive to enable formation.")
-                return
-            }
-            val context =
-                FormationContext(
-                    mutableListOf(),
-                    mutableMapOf(),
-                    slots,
-                    CircleFormationPattern,
-                    DistanceAssignmentStrategy)
-            val eligible = findEligibleFormationUnits(sender.player, context, false)
-            if (eligible.isEmpty()) {
-                sender.reply("No eligible units found.")
-                return
-            }
-            for (unit in eligible) {
-                val a = FormationAI(sender.player.unit(), context)
-                unit.controller(a)
-                context.members.add(a)
-            }
-            context.strategy.update(context)
-            formations[sender.player.id()] = context
-            sender.reply("Formation enabled.")
         }
     }
 
@@ -165,7 +171,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 it.type.flying == leader.type.flying &&
                 leader.type.buildSpeed > 0 == it.type.buildSpeed > 0 &&
                 it != leader &&
-                (it.hitSize <= leader.hitSize * 1.2f) &&
+                (it.hitSize <= leader.hitSize * 1.5f) &&
                 it.controller() !is FormationAI) {
                 result.add(it)
             }
