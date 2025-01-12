@@ -85,6 +85,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     player.unit().type in newUnitTypes) {
                     toRemove.add(member)
                     if (newUnits.isNotEmpty()) {
+                        // how did compiler say this is kotlin.Unit
                         var unit = newUnits.first()
                         newUnits.removeFirst()
                         unit = unit.controller(FormationAI(player.unit(), context))
@@ -174,9 +175,9 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         player: Player,
         context: FormationContext,
         replace: Boolean
-    ): MutableList<Unit> {
+    ): MutableList<mindustry.gen.Unit> {
         val leader = player.unit()
-        val result = mutableListOf<Unit>()
+        val result = mutableListOf<mindustry.gen.Unit>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) {
             if (it.isAI &&
                 it.type != UnitTypes.mono &&
