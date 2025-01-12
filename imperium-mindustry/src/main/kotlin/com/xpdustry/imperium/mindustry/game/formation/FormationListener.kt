@@ -45,7 +45,7 @@ import mindustry.gen.Unit
 class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val formations = mutableMapOf<Int, FormationContext>()
-    private val manager: AccountManager = instances.get(AccountManager::class.kt)
+    private val manager: AccountManager = instances.get(AccountManager::class)
 
     @TriggerHandler(Trigger.update)
     fun onFormationUpdate() {
