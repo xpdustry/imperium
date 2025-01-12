@@ -75,26 +75,32 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 member.targetVector.add(anchor)
             }
             // Update formation members
-            val newUnits = findEligibleFormationUnits(player, context, true)
-            val newUnitTypes = newUnits.map { it.type }.toSet()
-            var updated = false
+            private val newUnits = findEligibleFormationUnits(player, context, true)
+            private val newUnitTypes = newUnits.map { it.type }.toSet()
+            private val toRemove = mutableListOf<FormationAI>()
+            private val toAdd = mutableListOf<Unit>()
             for (member in context.members) {
-                println(member.id) // testing
                 if (Groups.unit.getByID(member.id) != null &&
                     Groups.unit.getByID(member.id).type != player.unit().type &&
                     player.unit().type in newUnitTypes) {
-                    context.remove(member)
+                    toRemove.add(member)
                     if (newUnits.isNotEmpty()) {
-                        val unit = newUnits.first()
+                        private val unit = newUnits.first()
                         newUnits.removeFirst()
-                        unit.controller(FormationAI(player.unit(), context))
-                        context.members.add(FormationAI(player.unit(), context))
-                        updated = true
+                        toAdd.add(unit)
+                        println("unit added to list")
                     }
                 }
             }
-            if (updated) {
+            if (toRemove.isNotEmpty() || toAdd.isNotEmpty()) {
+                context.members.removeAll(toRemove)
+                context.members.addAll(toAdd)
+                for (member in toAdd) {
+                    member.controller(FormationAI(player.unit(), context))
+                    println("unit added to formation")
+                }
                 context.strategy.update(context)
+                println("updated player")
             }
         }
     }
