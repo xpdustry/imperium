@@ -76,33 +76,19 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             }
             // Update formation members
             val newUnits = findEligibleFormationUnits(player, context, true)
-            val newUnitTypes = newUnits.map { it.type }.toMutableList()
-            val toRemove = mutableListOf<FormationMember>()
-            val toAdd = mutableListOf<FormationMember>()
-            println(newUnitTypes)
-            for (member in context.members) {
-                if (Groups.unit.getByID(member.id) != null &&
-                    Groups.unit.getByID(member.id).type != player.unit().type &&
-                    newUnitTypes.isNotEmpty() &&
-                    player.unit().type == newUnitTypes.first()) {
-                    if (newUnits.isNotEmpty()) {
-                        newUnitTypes.removeFirst()
-                        var unit = newUnits.first()
-                        toRemove.add(member)
-                        newUnits.removeFirst()
-                        val a = FormationAI(player.unit(), context)
-                        unit.controller(a)
-                        toAdd.add(a)
-                        println("unit added to list")
-                    }
-                }
+            val toRemove = context.members.filter { member ->
+                Groups.unit.getByID(member.id)?.let { unit ->
+                    unit.type != player.unit().type && newUnits.any { it.type == player.unit().type }
+                } ?: false
+            }
+            val toAdd = newUnits.take(toRemove.size).map { unit ->
+                FormationAI(player.unit(), context).also { unit.controller(it) }
             }
             if (toRemove.isNotEmpty() || toAdd.isNotEmpty()) {
                 context.members.removeAll(toRemove)
                 context.members.addAll(toAdd)
-                println("unit added to formation")
                 context.strategy.update(context)
-                println("updated player")
+                toRemove.forEach { Groups.unit.getByID(it.id)?.resetController() }
             }
         }
     }
@@ -206,3 +192,61 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         SQUARE(SquareFormationPattern)
     }
 }
+
+/*
+            // Update formation members
+            val newUnits = findEligibleFormationUnits(player, context, true)
+            val toRemove = context.members.filter { member ->
+                Groups.unit.getByID(member.id)?.let { unit ->
+                    unit.type != player.unit().type && newUnits.any { it.type == player.unit().type }
+                } ?: false
+            }
+            val toAdd = newUnits.take(toRemove.size).map { unit ->
+                FormationAI(player.unit(), context).also { unit.controller(it) }
+            }
+            if (toRemove.isNotEmpty() || toAdd.isNotEmpty()) {
+                context.members.removeAll(toRemove)
+                context.members.addAll(toAdd)
+                context.strategy.update(context)
+                toRemove.forEach { Groups.unit.getByID(it.id)?.resetController() }
+            }
+*/
+/*
+            // Update formation members
+            val newUnits = findEligibleFormationUnits(player, context, true)
+            val newUnitTypes = newUnits.map { it.type }.toMutableList()
+            val toRemove = mutableListOf<FormationMember>()
+            val toAdd = mutableListOf<FormationMember>()
+            println(newUnitTypes)
+            for (member in context.members) {
+                if (Groups.unit.getByID(member.id) != null &&
+                    Groups.unit.getByID(member.id).type != player.unit().type &&
+                    newUnitTypes.isNotEmpty() &&
+                    player.unit().type == newUnitTypes.first()) {
+                    if (newUnits.isNotEmpty()) {
+                        newUnitTypes.removeFirst()
+                        var unit = newUnits.first()
+                        toRemove.add(member)
+                        newUnits.removeFirst()
+                        val a = FormationAI(player.unit(), context)
+                        unit.controller(a)
+                        toAdd.add(a)
+                        println("unit added to list")
+                    }
+                }
+            }
+            if (toRemove.isNotEmpty() || toAdd.isNotEmpty()) {
+                context.members.removeAll(toRemove)
+                context.members.addAll(toAdd)
+                println("unit added to formation")
+                context.strategy.update(context)
+                println("updated player")
+                for(member in toRemove) {
+                    Groups.units.getByID(member.id).resetController()
+                }
+                toRemove.clear()
+                toAdd.clear()
+                newUnits.clear()
+                newUnitTypes.clear()
+            }
+*/
