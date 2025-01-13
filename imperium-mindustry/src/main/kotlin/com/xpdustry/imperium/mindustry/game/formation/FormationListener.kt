@@ -95,7 +95,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             if (toChange.isNotEmpty()) {
                 for (change in toChange) {
                     val member = change.first
-                    Groups.units.getByID(member.id).resetController()
+                    Groups.unit.getByID(member.id).resetController()
                     context.members.remove(member)
                     context.members.add(change.second)
                 }
