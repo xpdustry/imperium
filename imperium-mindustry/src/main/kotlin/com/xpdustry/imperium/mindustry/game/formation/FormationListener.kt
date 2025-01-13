@@ -76,7 +76,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             }
             // Update formation members
             val newUnits = findEligibleFormationUnits(player, context, true)
-            val newUnitTypes = newUnits.map { it.type }.toSet()
+            val newUnitTypes = newUnits.map { it.type }.toMutableList()
             val toRemove = mutableListOf<FormationMember>()
             val toAdd = mutableListOf<FormationMember>()
             println(newUnitTypes)
