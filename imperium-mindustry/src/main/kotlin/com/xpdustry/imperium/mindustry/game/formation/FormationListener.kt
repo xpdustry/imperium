@@ -79,14 +79,16 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             val newUnitTypes = newUnits.map { it.type }.toSet()
             val toRemove = mutableListOf<FormationMember>()
             val toAdd = mutableListOf<FormationMember>()
+            println(newUnitTypes)
             for (member in context.members) {
                 if (Groups.unit.getByID(member.id) != null &&
                     Groups.unit.getByID(member.id).type != player.unit().type &&
-                    player.unit().type in newUnitTypes) {
-                    toRemove.add(member)
+                    newUnitTypes.isNotEmpty() &&
+                    player.unit().type == newUnitTypes.first()) {
                     if (newUnits.isNotEmpty()) {
-                        // how did compiler say this is kotlin.Unit
+                        newUnitTypes.removeFirst()
                         var unit = newUnits.first()
+                        toRemove.add(member)
                         newUnits.removeFirst()
                         val a = FormationAI(player.unit(), context)
                         unit.controller(a)
