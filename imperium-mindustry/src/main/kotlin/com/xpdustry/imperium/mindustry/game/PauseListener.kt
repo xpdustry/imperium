@@ -17,43 +17,31 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
-import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import mindustry.Vars
 import mindustry.core.GameState
-import mindustry.game.EventType
-import mindustry.gen.Groups
-import mindustry.net.Administration
 
 class PauseListener : ImperiumApplication.Listener {
 
-    override fun onImperiumInit() {
-        // autoPause is bad
-        Administration.Config.autoPause.set(false)
-    }
-
-    // TODO: remove when v8 is released
-    @TriggerHandler(EventType.Trigger.update)
-    fun pauseListener() {
-        if (Vars.state.isPlaying && Groups.player.size() == 0) {
-            Vars.state.set(GameState.State.paused)
-        } else if (Vars.state.isPaused && Groups.player.size() > 0) {
-            Vars.state.set(GameState.State.playing)
-        }
-    }
-
-    @ImperiumCommand(["unpause"])
+    @ImperiumCommand(["pause"], rank = Rank.MODERATOR)
     @ClientSide
-    @ServerSide
-    fun onUnpauseCommand(sender: CommandSender) {
+    fun onPauseCommand(sender: CommandSender) {
         when (Vars.state.state!!) {
-            GameState.State.playing -> sender.error("The server is already unpaused")
-            GameState.State.paused -> Vars.state.set(GameState.State.playing)
-            GameState.State.menu -> sender.error("The server is not running")
+            GameState.State.paused -> {
+                Vars.state.set(GameState.State.playing)
+                sender.reply("The server has been un-paused")
+            }
+            GameState.State.playing -> {
+                Vars.state.set(GameState.State.paused)
+                sender.reply("The server has been paused")
+            }
+            GameState.State.menu -> {
+                sender.error("The server is not running")
+            }
         }
     }
 }
