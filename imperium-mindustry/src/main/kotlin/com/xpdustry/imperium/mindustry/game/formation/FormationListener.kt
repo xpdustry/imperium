@@ -58,7 +58,6 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 iterator.remove()
                 continue
             }
-            // TODO: Replace units instead of disabling the formation
             if (context.members.isEmpty()) {
                 context.deleted = true
                 iterator.remove()
@@ -82,7 +81,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 if ((Groups.unit.getByID(member.id) != null &&
                     Groups.unit.getByID(member.id).type != player.unit().type &&
                     newUnitTypes.isNotEmpty() &&
-                    player.unit().type == newUnitTypes.first()) || (context.members.size < context.slots && newUnitTypes.isNotEmpty())) {
+                    player.unit().type == newUnitTypes.first()) ||
+                    (context.members.size < context.slots && newUnitTypes.isNotEmpty())) {
                     if (newUnits.isNotEmpty()) {
                         newUnitTypes.removeFirst()
                         val a = FormationAI(player.unit(), context)
@@ -90,7 +90,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                         newUnits.removeFirst()
                         if (Groups.unit.getByID(member.id).type != player.unit().type) {
                             toChange.add(Pair(member, a))
-                        } else { toChange.add(Pair(null, a))}
+                        } else { 
+                            toChange.add(Pair(null, a))}
                     }
                 }
             }
