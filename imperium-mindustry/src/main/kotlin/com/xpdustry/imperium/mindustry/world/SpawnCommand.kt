@@ -65,9 +65,8 @@ class SpawnCommand : ImperiumApplication.Listener {
         } else {
             Distributor.get()
                 .audienceProvider
-                .getEveryone()
-                .sendMessage(
-                    spawned("${sender.name}[white]", spawned, unit, team.coloredName(), x, y))
+                .players
+                .sendMessage(spawned(sender.player, spawned, unit, team, x, y))
         }
     }
 }

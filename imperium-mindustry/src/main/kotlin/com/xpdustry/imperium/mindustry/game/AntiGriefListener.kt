@@ -74,10 +74,7 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
             deaths[player] ?: SimpleRateLimiter(if (Vars.state.rules.pvp) 10 else 5, 1.minutes)
         deaths[player] = limiter
         if (limiter.incrementAndCheck(Unit)) return
-        Distributor.get()
-            .audienceProvider
-            .getEveryone()
-            .sendMessage(marked_griefer_unit("${player.name}[white]"))
+        Distributor.get().audienceProvider.everyone.sendMessage(marked_griefer_unit(player))
         marks.mark(player)
     }
 
@@ -110,10 +107,7 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
                 }
                 .sum()
         if (score < config.mindustry.security.griefingThreshold) return
-        Distributor.get()
-            .audienceProvider
-            .getEveryone()
-            .sendMessage(marked_griefer_block("${player.name}[white]"))
+        Distributor.get().audienceProvider.everyone.sendMessage(marked_griefer_block(player))
         marks.mark(player)
     }
 

@@ -363,20 +363,33 @@ fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =
 fun selected(component: Component, selected: Boolean): Component =
     if (selected) components(text("> "), component, text(" <")) else component
 
-fun spawned(player: String, amount: Int, unit: UnitType, team: String, x: Int, y: Int): Component =
-    translatable(
-        "imperium.spawn-unit.success",
-        TranslationArguments.array(
-            text(player),
-            number(amount),
-            translatable(unit, WHITE),
-            text(team),
-            number(x),
-            number(y),
-            WHITE))
+fun spawned(player: Player, amount: Int, unit: UnitType, team: Team, x: Int, y: Int): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.spawn-unit.success",
+            TranslationArguments.array(
+                text(player.info.plainLastName(), ACCENT),
+                number(amount, ACCENT),
+                translatable(unit, ACCENT),
+                translatable(team, from(team.color)),
+                number(x, ACCENT),
+                number(y, ACCENT))))
 
-fun marked_griefer_block(player: String): Component =
-    translatable("imperium.marked.block", TranslationArguments.array(text(player), SCARLET))
+fun marked_griefer_block(player: Player): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.marked.block",
+            TranslationArguments.array(text(player.info.plainLastName(), SCARLET))))
 
-fun marked_griefer_unit(player: String): Component =
-    translatable("imperium.marked.unit", TranslationArguments.array(text(player), SCARLET))
+fun marked_griefer_unit(player: Player): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.marked.unit",
+            TranslationArguments.array(text(player.info.plainLastName(), SCARLET))),
+    )
