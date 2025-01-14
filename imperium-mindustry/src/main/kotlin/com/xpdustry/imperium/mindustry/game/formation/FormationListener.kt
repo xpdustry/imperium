@@ -77,26 +77,30 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             // Update formation members
             val newUnits = findEligibleFormationUnits(player, context, true)
             val newUnitTypes = newUnits.map { it.type }.toMutableList()
-            val toChange = mutableListOf<Pair<FormationMember, FormationMember>>()
+            val toChange = mutableListOf<Pair<FormationMember?, FormationMember>>()
             for (member in context.members) {
-                if (Groups.unit.getByID(member.id) != null &&
+                if ((Groups.unit.getByID(member.id) != null &&
                     Groups.unit.getByID(member.id).type != player.unit().type &&
                     newUnitTypes.isNotEmpty() &&
-                    player.unit().type == newUnitTypes.first()) {
+                    player.unit().type == newUnitTypes.first()) || (context.members.size < context.slots && newUnitTypes.isNotEmpty())) {
                     if (newUnits.isNotEmpty()) {
                         newUnitTypes.removeFirst()
                         val a = FormationAI(player.unit(), context)
                         newUnits.first().controller(a)
                         newUnits.removeFirst()
-                        toChange.add(Pair(member, a))
+                        if (Groups.unit.getByID(member.id).type != player.unit().type) {
+                            toChange.add(Pair(member, a))
+                        } else { toChange.add(Pair(null, a))}
                     }
                 }
             }
             if (toChange.isNotEmpty()) {
                 for (change in toChange) {
                     val member = change.first
-                    Groups.unit.getByID(member.id).resetController()
-                    context.members.remove(member)
+                    if (member != null) {
+                        Groups.unit.getByID(member.id).resetController()
+                        context.members.remove(member)
+                    }
                     context.members.add(change.second)
                 }
                 context.strategy.update(context)
