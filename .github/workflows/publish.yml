@@ -26,7 +26,7 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Build Artifacts
-        run: ./gradlew build
+        run: gradle build
 
       - name: Upload Test Summary
         uses: EnricoMi/publish-unit-test-result-action@v2
@@ -38,9 +38,9 @@ jobs:
       - name: Set up Artifacts Upload
         id: setup
         run: |
-          echo "MINDUSTRY_ARTIFACT_PATH=$(./gradlew :imperium-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
-          echo "DISCORD_ARTIFACT_PATH=$(./gradlew :imperium-discord:getArtifactPath -q)" >> $GITHUB_ENV
-          echo "version=$(./gradlew printVersion -q)" >> $GITHUB_OUTPUT
+          echo "MINDUSTRY_ARTIFACT_PATH=$(gradle :imperium-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "DISCORD_ARTIFACT_PATH=$(gradle :imperium-discord:getArtifactPath -q)" >> $GITHUB_ENV
+          echo "version=$(gradle printVersion -q)" >> $GITHUB_OUTPUT
 
       - name: Upload Artifacts to Release
         uses: softprops/action-gh-release@v2
@@ -52,7 +52,7 @@ jobs:
             ${{ env.DISCORD_ARTIFACT_PATH }}
 
       - name: Increment Version
-        run: ./gradlew incrementVersionFile
+        run: gradle incrementVersionFile
 
       - name: Commit Incremented Version
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -82,7 +82,7 @@ jobs:
           cache: "gradle"
 
       - name: Publish Artifacts
-        run: ./gradlew publish
+        run: gradle publish
         env:
           ORG_GRADLE_PROJECT_xpdustryUsername: "${{ secrets.XPDUSTRY_MAVEN_USERNAME }}"
           ORG_GRADLE_PROJECT_xpdustryPassword: "${{ secrets.XPDUSTRY_MAVEN_PASSWORD }}"
