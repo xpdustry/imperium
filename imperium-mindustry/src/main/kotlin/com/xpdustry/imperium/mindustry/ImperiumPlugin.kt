@@ -250,7 +250,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             Core.app.post {
                 if (Administration.Config.autoPause.bool() && Groups.player.size() == 0) {
                     Vars.state.set(GameState.State.paused)
-                    val autoPaused = ServerControl::class.java.getField("autoPaused")
+                    val autoPaused = ServerControl::class.java.getDeclaredField("autoPaused")
                     autoPaused.isAccessible = true
                     autoPaused.set(ServerControl.instance, true)
                 }
