@@ -53,6 +53,7 @@ import mindustry.game.Team
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.net.Administration.Config
+import mindustry.type.UnitType
 import mindustry.world.Block
 
 val SCARLET: ComponentColor = from(Color.scarlet)
@@ -361,5 +362,36 @@ fun difficulty_name(difficulty: MindustryMap.Difficulty): Component =
 
 fun selected(component: Component, selected: Boolean): Component =
     if (selected) components(text("> "), component, text(" <")) else component
+
+fun spawned(player: Player, amount: Int, unit: UnitType, team: Team, x: Int, y: Int): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.spawn-unit.success",
+            TranslationArguments.array(
+                text(player.info.plainLastName(), ACCENT),
+                number(amount, ACCENT),
+                translatable(unit, ACCENT),
+                translatable(team, from(team.color)),
+                number(x, ACCENT),
+                number(y, ACCENT))))
+
+fun marked_griefer_block(player: Player): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.marked.block",
+            TranslationArguments.array(text(player.info.plainLastName(), SCARLET))))
+
+fun marked_griefer_unit(player: Player): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.marked.unit",
+            TranslationArguments.array(text(player.info.plainLastName(), SCARLET))),
+    )
 
 fun formation_dead(): Component = translatable("imperium.formation.dead", SCARLET)

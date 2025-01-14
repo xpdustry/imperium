@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -32,12 +33,13 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
+import com.xpdustry.imperium.mindustry.translation.marked_griefer_block
+import com.xpdustry.imperium.mindustry.translation.marked_griefer_unit
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
-import mindustry.gen.Call
 import mindustry.world.Block
 import mindustry.world.blocks.power.PowerGenerator
 import mindustry.world.blocks.storage.StorageBlock
@@ -72,8 +74,7 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
             deaths[player] ?: SimpleRateLimiter(if (Vars.state.rules.pvp) 10 else 5, 1.minutes)
         deaths[player] = limiter
         if (limiter.incrementAndCheck(Unit)) return
-        Call.sendMessage(
-            "[scarlet]${player.name}[white] has been marked as a potential griefer for killing too many units. Votekick requirements have been halved for them.")
+        Distributor.get().audienceProvider.everyone.sendMessage(marked_griefer_unit(player))
         marks.mark(player)
     }
 
@@ -106,8 +107,7 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
                 }
                 .sum()
         if (score < config.mindustry.security.griefingThreshold) return
-        Call.sendMessage(
-            "[scarlet]${player.name}[white] is a potential griefer and therefore been marked. Votekick requirements have been halved for them.")
+        Distributor.get().audienceProvider.everyone.sendMessage(marked_griefer_block(player))
         marks.mark(player)
     }
 

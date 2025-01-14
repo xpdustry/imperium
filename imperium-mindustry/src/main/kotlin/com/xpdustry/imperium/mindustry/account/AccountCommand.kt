@@ -126,7 +126,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         changePasswordInterface.open(sender.player)
     }
 
-    @ImperiumCommand(["verify", "discord"])
+    @ImperiumCommand(["verify"])
     @ClientSide
     suspend fun onVerifyCommand(sender: CommandSender) {
         val account = manager.selectBySession(sender.player.sessionKey)
