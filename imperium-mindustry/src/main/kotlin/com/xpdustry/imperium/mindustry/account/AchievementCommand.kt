@@ -28,9 +28,7 @@ import com.xpdustry.imperium.mindustry.translation.command_achievements
 class AchievementCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["achievements"])
-
     @ClientSide
-
     @ServerSide
     fun onAchievementsCommand(sender: CommandSender, achievement: Achievement? = null) {
         sender.reply(command_achievements(achievement?.let(::listOf) ?: Achievement.entries))
