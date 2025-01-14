@@ -90,7 +90,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                         newUnits.removeFirst()
                         if (Groups.unit.getByID(member.id).type != player.unit().type) {
                             toChange.add(Pair(member, a))
-                        } else { 
+                        } else {
                             toChange.add(Pair(null, a))}
                     }
                 }
