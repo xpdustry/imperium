@@ -30,6 +30,8 @@ import mindustry.game.Team
 
 class TeamCommand : ImperiumApplication.Listener {
 
+    // TODO: Make this use a menu for the base game teams
+    // Custom ID option?
     @ImperiumCommand(["team"], Rank.VERIFIED)
     @Scope(MindustryGamemode.SANDBOX)
     @ClientSide

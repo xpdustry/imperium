@@ -18,16 +18,17 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.math.geom.Vec2
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
+import com.xpdustry.imperium.mindustry.translation.spawned
 import kotlin.random.Random
 import mindustry.Vars
 import mindustry.game.Team
-import mindustry.gen.Call
 import mindustry.type.UnitType
 import org.incendo.cloud.annotation.specifier.Range
 
@@ -53,15 +54,19 @@ class SpawnCommand : ImperiumApplication.Listener {
         }
         if (spawned == 0) {
             sender.error(
+                // Not translated as all admins speak english
                 "You reached the unit cap of ${unit.name} for the team ${team.coloredName()}.")
             return
         }
         if (silent) {
             sender.reply(
+                // Not translated as all admins speak english
                 "You spawned $spawned ${unit.name} for team ${team.coloredName()} at ($x, $y).")
         } else {
-            Call.sendMessage(
-                "${sender.name}[white] spawned $spawned ${unit.name} for team ${team.coloredName()} at ($x, $y).")
+            Distributor.get()
+                .audienceProvider
+                .players
+                .sendMessage(spawned(sender.player, spawned, unit, team, x, y))
         }
     }
 }
