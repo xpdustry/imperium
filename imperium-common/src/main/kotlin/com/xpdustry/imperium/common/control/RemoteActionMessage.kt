@@ -22,11 +22,10 @@ import com.xpdustry.imperium.common.message.Message
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class RemoteActionMessage(val target: String?, val action: Action, val immediate: Boolean) :
-    Message {
+data class RemoteActionMessage(val target: String?, val action: Action, val immediate: Boolean) : Message {
     enum class Action {
         RESTART,
-        EXIT
+        EXIT,
     }
 }
 

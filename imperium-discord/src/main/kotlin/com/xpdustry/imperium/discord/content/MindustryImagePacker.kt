@@ -112,10 +112,7 @@ class MindustryImagePacker(private val directory: Path) {
     private fun generateBlockIcons() {
         logger.info("Generating full block images...")
         for (block in Vars.content.blocks()) {
-            if (block.isAir ||
-                block is ConstructBlock ||
-                block is OreBlock ||
-                block is LegacyBlock) {
+            if (block.isAir || block is ConstructBlock || block is OreBlock || block is LegacyBlock) {
                 continue
             }
 
@@ -132,13 +129,8 @@ class MindustryImagePacker(private val directory: Path) {
                         val color = teamRegion.getRaw(x, y)
                         val index =
                             if (color == -0x1) 0
-                            else if (color == -0x23393901) 1
-                            else if (color == -0x62808001) 2 else -1
-                        out.setRaw(
-                            x,
-                            y,
-                            if (index == -1) teamRegion.getRaw(x, y)
-                            else Team.sharded.palettei[index])
+                            else if (color == -0x23393901) 1 else if (color == -0x62808001) 2 else -1
+                        out.setRaw(x, y, if (index == -1) teamRegion.getRaw(x, y) else Team.sharded.palettei[index])
                     }
                     shardTeamTop = out
                 }
@@ -150,9 +142,7 @@ class MindustryImagePacker(private val directory: Path) {
 
             var last: Pixmap? = null
             if (block.outlineIcon) {
-                val region =
-                    regions[if (block.outlinedIcon >= 0) block.outlinedIcon else regions.size - 1]
-                        as GenRegion
+                val region = regions[if (block.outlinedIcon >= 0) block.outlinedIcon else regions.size - 1] as GenRegion
                 val base = get(region)
                 last = base.outline(block.outlineColor, block.outlineRadius)
                 val out = last
@@ -193,9 +183,7 @@ class MindustryImagePacker(private val directory: Path) {
                 }
             }
 
-            if (!(regions.size == 1 &&
-                regions[0] === Core.atlas.find(block.name) &&
-                shardTeamTop == null)) {
+            if (!(regions.size == 1 && regions[0] === Core.atlas.find(block.name) && shardTeamTop == null)) {
                 save(image, "block-" + block.name + "-full")
             }
         }

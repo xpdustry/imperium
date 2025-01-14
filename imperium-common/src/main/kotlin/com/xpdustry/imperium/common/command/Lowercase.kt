@@ -17,6 +17,4 @@
  */
 package com.xpdustry.imperium.common.command
 
-@Target(AnnotationTarget.VALUE_PARAMETER)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class Lowercase
+@Target(AnnotationTarget.VALUE_PARAMETER) @Retention(AnnotationRetention.RUNTIME) annotation class Lowercase

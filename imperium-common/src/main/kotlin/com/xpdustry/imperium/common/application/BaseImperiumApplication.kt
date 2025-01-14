@@ -48,15 +48,13 @@ open class BaseImperiumApplication(private val logger: Logger) : ImperiumApplica
         }
         constructor =
             listener.constructors.find {
-                it.parameters.size == 1 &&
-                    it.parameters[0].type.classifier == InstanceManager::class
+                it.parameters.size == 1 && it.parameters[0].type.classifier == InstanceManager::class
             }
         if (constructor != null) {
             register(constructor.call(instances))
             return
         }
-        throw IllegalArgumentException(
-            "Cannot find a valid constructor for listener: ${listener.simpleName}")
+        throw IllegalArgumentException("Cannot find a valid constructor for listener: ${listener.simpleName}")
     }
 
     override fun init() {

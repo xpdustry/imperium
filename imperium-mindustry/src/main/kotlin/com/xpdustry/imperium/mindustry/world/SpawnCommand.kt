@@ -55,18 +55,17 @@ class SpawnCommand : ImperiumApplication.Listener {
         if (spawned == 0) {
             sender.error(
                 // Not translated as all admins speak english
-                "You reached the unit cap of ${unit.name} for the team ${team.coloredName()}.")
+                "You reached the unit cap of ${unit.name} for the team ${team.coloredName()}."
+            )
             return
         }
         if (silent) {
             sender.reply(
                 // Not translated as all admins speak english
-                "You spawned $spawned ${unit.name} for team ${team.coloredName()} at ($x, $y).")
+                "You spawned $spawned ${unit.name} for team ${team.coloredName()} at ($x, $y)."
+            )
         } else {
-            Distributor.get()
-                .audienceProvider
-                .players
-                .sendMessage(spawned(sender.player, spawned, unit, team, x, y))
+            Distributor.get().audienceProvider.players.sendMessage(spawned(sender.player, spawned, unit, team, x, y))
         }
     }
 }

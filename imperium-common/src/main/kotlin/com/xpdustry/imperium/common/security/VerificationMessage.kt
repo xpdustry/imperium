@@ -28,5 +28,5 @@ data class VerificationMessage(
     val uuid: MindustryUUID,
     val usid: MindustryUSID,
     val code: Int,
-    val response: Boolean = false
+    val response: Boolean = false,
 ) : Message

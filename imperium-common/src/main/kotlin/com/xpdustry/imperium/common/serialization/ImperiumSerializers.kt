@@ -35,14 +35,11 @@ import kotlinx.serialization.encoding.Encoder
 typealias SerializableInetAddress = @Serializable(with = InetAddressSerializer::class) InetAddress
 
 object InetAddressSerializer : KSerializer<InetAddress> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("InetAddress", PrimitiveKind.STRING)
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("InetAddress", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: InetAddress) =
-        encoder.encodeString(value.hostAddress)
+    override fun serialize(encoder: Encoder, value: InetAddress) = encoder.encodeString(value.hostAddress)
 
-    override fun deserialize(decoder: Decoder): InetAddress =
-        InetAddresses.forString(decoder.decodeString())
+    override fun deserialize(decoder: Decoder): InetAddress = InetAddresses.forString(decoder.decodeString())
 }
 
 typealias SerializableJInstant = @Serializable(with = JavaInstantSerializer::class) Instant
@@ -50,8 +47,7 @@ typealias SerializableJInstant = @Serializable(with = JavaInstantSerializer::cla
 object JavaInstantSerializer : KSerializer<Instant> {
     override val descriptor = PrimitiveSerialDescriptor("JavaInstant", PrimitiveKind.STRING)
 
-    override fun serialize(encoder: Encoder, value: Instant) =
-        encoder.encodeString(value.toString())
+    override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
 
     override fun deserialize(decoder: Decoder): Instant = Instant.parse(decoder.decodeString())
 }

@@ -52,9 +52,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
         ktor =
             embeddedServer(Netty, port = config.webserver.port) {
                     install(ContentNegotiation) { json() }
-                    routing {
-                        route("/v0") { get("/servers") { call.respond(getServerEntries()) } }
-                    }
+                    routing { route("/v0") { get("/servers") { call.respond(getServerEntries()) } } }
                 }
                 .start(wait = false)
     }
@@ -80,9 +78,9 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     active = data.state != Discovery.Data.Mindustry.State.STOPPED,
                     players =
                         tracker.getOnlinePlayers(name)?.map { player ->
-                            ServerEntry.Player(
-                                player.player.displayName, codec.encode(player.playerId))
-                        } ?: emptyList())
+                            ServerEntry.Player(player.player.displayName, codec.encode(player.playerId))
+                        } ?: emptyList(),
+                )
             }
 
     override fun onImperiumExit() {

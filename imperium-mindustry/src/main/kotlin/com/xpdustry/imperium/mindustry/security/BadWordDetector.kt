@@ -42,8 +42,7 @@ enum class Category {
     HATE_SPEECH,
 }
 
-class SimpleBadWordDetector(private val http: OkHttpClient) :
-    BadWordDetector, ImperiumApplication.Listener {
+class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, ImperiumApplication.Listener {
 
     private lateinit var trie: PayloadTrie<Category>
 
@@ -51,9 +50,8 @@ class SimpleBadWordDetector(private val http: OkHttpClient) :
     override fun onImperiumInit() {
         http
             .newCall(
-                Request.Builder()
-                    .url("https://github.com/xpdustry/bad-words/archive/refs/heads/master.zip")
-                    .build())
+                Request.Builder().url("https://github.com/xpdustry/bad-words/archive/refs/heads/master.zip").build()
+            )
             .execute()
             .use { response ->
                 if (response.code != 200) {
@@ -63,8 +61,7 @@ class SimpleBadWordDetector(private val http: OkHttpClient) :
                 temp.outputStream().use { out -> response.body!!.byteStream().copyTo(out) }
                 val builder = PayloadTrie.builder<Category>().ignoreCase()
                 FileSystems.newFileSystem(temp, null as ClassLoader?).use { fs ->
-                    fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach {
-                        entry ->
+                    fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach { entry ->
                         entry.inputStream().use {
                             for (category in Json.decodeFromStream<List<BadWordCategory>>(it)) {
                                 val parsed =

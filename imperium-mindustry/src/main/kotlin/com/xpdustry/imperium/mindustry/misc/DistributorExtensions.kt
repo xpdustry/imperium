@@ -69,9 +69,7 @@ suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T)
                 .pluginScheduler
                 .schedule(Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin)
                 .async(false)
-                .execute { _ ->
-                    runCatching(task).fold(continuation::resume, continuation::resumeWithException)
-                }
+                .execute { _ -> runCatching(task).fold(continuation::resume, continuation::resumeWithException) }
         }
     }
 
@@ -86,11 +84,9 @@ operator fun <P : Pane> Transformer.Context<P>.component3(): Player = viewer
 inline fun <reified T : Any> key(name: String): Key<T> =
     Key.of("imperium", name, TypeToken.of(typeOf<T>().javaType) as TypeToken<T>)
 
-fun <T : Any> key(name: String, clazz: Class<T>): Key<T> =
-    Key.of("imperium", name, TypeToken.of(clazz))
+fun <T : Any> key(name: String, clazz: Class<T>): Key<T> = Key.of("imperium", name, TypeToken.of(clazz))
 
-fun <T : Any> key(name: String, clazz: KClass<T>): Key<T> =
-    Key.of("imperium", name, TypeToken.of(clazz.java))
+fun <T : Any> key(name: String, clazz: KClass<T>): Key<T> = Key.of("imperium", name, TypeToken.of(clazz.java))
 
 fun <P : Pane> Transformer<P>.then(transformer: Transformer<P>) = Transformer {
     this@then.transform(it)
@@ -99,35 +95,34 @@ fun <P : Pane> Transformer<P>.then(transformer: Transformer<P>) = Transformer {
 
 inline fun <reified E : Any> onEvent(
     priority: Priority = Priority.NORMAL,
-    crossinline listener: (E) -> Unit
+    crossinline listener: (E) -> Unit,
 ): EventSubscription =
     Distributor.get().eventBus.subscribe(
         E::class.java,
         priority,
-        Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
-            listener(it)
-        }
+        Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin,
+    ) {
+        listener(it)
+    }
 
 inline fun <E : Enum<E>> onEvent(
     enum: E,
     priority: Priority = Priority.NORMAL,
-    crossinline listener: () -> Unit
+    crossinline listener: () -> Unit,
 ): EventSubscription =
     Distributor.get().eventBus.subscribe(
-        enum, priority, Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin) {
-            listener()
-        }
+        enum,
+        priority,
+        Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin,
+    ) {
+        listener()
+    }
 
 @Suppress("FunctionName")
-fun <E : Enum<E>> NavigateAction(key: Key<E>, target: E): Action =
-    Action.with(key, target).then(Window::show)
+fun <E : Enum<E>> NavigateAction(key: Key<E>, target: E): Action = Action.with(key, target).then(Window::show)
 
 @Suppress("FunctionName")
-fun <E : Enum<E>, P : Pane> NavigationTransformer(
-    key: Key<E>,
-    page: E,
-    transformer: Transformer<P>
-) = Transformer {
+fun <E : Enum<E>, P : Pane> NavigationTransformer(key: Key<E>, page: E, transformer: Transformer<P>) = Transformer {
     if (it.state[key] == page) {
         transformer.transform(it)
     }
@@ -147,7 +142,7 @@ private val DEFAULT_FAILURE_ACTION =
 fun <T : Any> CoroutineAction(
     success: BiAction<T> = BiAction.from(Action.none()),
     failure: BiAction<Throwable> = DEFAULT_FAILURE_ACTION,
-    block: suspend (Window) -> T
+    block: suspend (Window) -> T,
 ): Action = Action { window ->
     ImperiumScope.MAIN.launch {
         try {

@@ -30,10 +30,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
-class VpnApiIoDetection(
-    private val config: NetworkConfig.VpnDetectionConfig.VpnApiIo,
-    private val http: OkHttpClient
-) : VpnDetection {
+class VpnApiIoDetection(private val config: NetworkConfig.VpnDetectionConfig.VpnApiIo, private val http: OkHttpClient) :
+    VpnDetection {
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
         if (address.isLoopbackAddress || address.isAnyLocalAddress) {
@@ -53,11 +51,11 @@ class VpnApiIoDetection(
             }
             if (response.code != 200) {
                 return@use VpnDetection.Result.Failure(
-                    IllegalStateException("Unexpected status code: ${response.code}"))
+                    IllegalStateException("Unexpected status code: ${response.code}")
+                )
             }
             val json = Json.decodeFromStream<JsonObject>(response.body!!.byteStream())
-            VpnDetection.Result.Success(
-                json["security"]!!.jsonObject["vpn"]!!.jsonPrimitive.boolean)
+            VpnDetection.Result.Success(json["security"]!!.jsonObject["vpn"]!!.jsonPrimitive.boolean)
         }
     }
 }

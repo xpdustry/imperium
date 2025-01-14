@@ -60,7 +60,8 @@ fun getMindustryServerInfo(): Discovery.Data.Mindustry =
             GameState.State.playing -> Discovery.Data.Mindustry.State.PLAYING
             GameState.State.paused -> Discovery.Data.Mindustry.State.PAUSED
             GameState.State.menu -> Discovery.Data.Mindustry.State.STOPPED
-        })
+        },
+    )
 
 fun getGameMode(): Discovery.Data.Mindustry.Gamemode =
     when (Vars.state.rules.mode()!!) {
@@ -72,12 +73,7 @@ fun getGameMode(): Discovery.Data.Mindustry.Gamemode =
     }
 
 fun getMindustryVersion(): MindustryVersion =
-    MindustryVersion(
-        Version.number,
-        Version.build.coerceAtLeast(0),
-        Version.revision,
-        getVersionType(),
-    )
+    MindustryVersion(Version.number, Version.build.coerceAtLeast(0), Version.revision, getVersionType())
 
 // Yes, this is a mess
 private fun getVersionType(): MindustryVersion.Type =

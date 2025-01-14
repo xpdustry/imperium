@@ -68,10 +68,8 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 // TODO
 //   - This is awful, rewrite it, eventually
 //   - Arguments name are case insensitive, quite annoying
-class SlashCommandRegistry(
-    private val discord: DiscordService,
-    private val config: ImperiumConfig,
-) : AnnotationScanner, ImperiumApplication.Listener {
+class SlashCommandRegistry(private val discord: DiscordService, private val config: ImperiumConfig) :
+    AnnotationScanner, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
     private val tree = CommandNode("root", parent = null)
@@ -88,8 +86,7 @@ class SlashCommandRegistry(
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
         registerHandler(Rank::class, EnumTypeHandler(Rank::class))
-        registerHandler(
-            RemoteActionMessage.Action::class, EnumTypeHandler(RemoteActionMessage.Action::class))
+        registerHandler(RemoteActionMessage.Action::class, EnumTypeHandler(RemoteActionMessage.Action::class))
     }
 
     override fun process() {
@@ -124,15 +121,14 @@ class SlashCommandRegistry(
                     val argument = command.arguments.find { it.name == parameter.name!! }!!
                     val option =
                         try {
-                            event.getOption(parameter.name!!)?.let {
-                                argument.handler.parse(it, parameter)
-                            }
+                            event.getOption(parameter.name!!)?.let { argument.handler.parse(it, parameter) }
                         } catch (e: OptionParsingException) {
                             event
                                 .deferReply(true)
                                 .await()
                                 .sendMessage(
-                                    ":warning: Failed to parse the **${argument.name}** argument: ${e.message}")
+                                    ":warning: Failed to parse the **${argument.name}** argument: ${e.message}"
+                                )
                                 .await()
                             return@addSuspendingEventListener
                         }
@@ -143,8 +139,7 @@ class SlashCommandRegistry(
                     }
 
                     if (!argument.optional) {
-                        throw IllegalArgumentException(
-                            "Missing required parameter: ${parameter.name}")
+                        throw IllegalArgumentException("Missing required parameter: ${parameter.name}")
                     }
                 }
             } catch (e: Exception) {
@@ -152,8 +147,7 @@ class SlashCommandRegistry(
                 event
                     .deferReply(true)
                     .await()
-                    .sendMessage(
-                        ":warning: **An unexpected error occurred while parsing your command.**")
+                    .sendMessage(":warning: **An unexpected error occurred while parsing your command.**")
                     .await()
                 return@addSuspendingEventListener
             }
@@ -166,8 +160,7 @@ class SlashCommandRegistry(
                     event.deferReply(true).await()
                 } catch (_: Exception) {}
                 event.hook
-                    .sendMessage(
-                        ":warning: **An unexpected error occurred while executing your command.**")
+                    .sendMessage(":warning: **An unexpected error occurred while executing your command.**")
                     .await()
             }
         }
@@ -195,14 +188,12 @@ class SlashCommandRegistry(
                 }
 
                 if (parameter.name!!.lowercase() != parameter.name) {
-                    throw IllegalArgumentException(
-                        "$function parameter names must be lowercase: ${parameter.name}")
+                    throw IllegalArgumentException("$function parameter names must be lowercase: ${parameter.name}")
                 }
 
                 if (parameter.index == 1) {
                     if (!isSupportedActor(parameter.type.classifier!!)) {
-                        throw IllegalArgumentException(
-                            "$function first parameter is not a InteractionActor")
+                        throw IllegalArgumentException("$function first parameter is not a InteractionActor")
                     }
                     continue
                 }
@@ -210,14 +201,14 @@ class SlashCommandRegistry(
                 val optional = parameter.isOptional || parameter.type.isMarkedNullable
                 if (wasOptional && !optional) {
                     throw IllegalArgumentException(
-                        "$function optional parameters must be at the end of the parameter list.")
+                        "$function optional parameters must be at the end of the parameter list."
+                    )
                 }
                 wasOptional = optional
 
                 val classifier = parameter.type.classifier
                 if (classifier !is KClass<*> || classifier !in handlers) {
-                    throw IllegalArgumentException(
-                        "$function has unsupported parameter type $classifier")
+                    throw IllegalArgumentException("$function has unsupported parameter type $classifier")
                 }
 
                 arguments += createCommandEdgeArgument(parameter, optional, classifier)
@@ -228,16 +219,11 @@ class SlashCommandRegistry(
             val allow = function.findAnnotation<AlsoAllow>()
             if (allow != null) {
                 val previous = permission
-                permission = PermissionPredicate {
-                    previous.test(it) or discord.isAllowed(it.user, allow.permission)
-                }
+                permission = PermissionPredicate { previous.test(it) or discord.isAllowed(it.user, allow.permission) }
             }
 
             function.isAccessible = true
-            tree.resolve(
-                path = command.path.toList(),
-                edge = CommandEdge(container, function, permission, arguments),
-            )
+            tree.resolve(path = command.path.toList(), edge = CommandEdge(container, function, permission, arguments))
         }
     }
 
@@ -247,9 +233,7 @@ class SlashCommandRegistry(
         optional: Boolean,
         klass: KClass<T>,
     ): CommandEdge.Argument<T> {
-        val handler =
-            handlers[klass] as TypeHandler<T>?
-                ?: throw IllegalArgumentException("Unsupported type $klass")
+        val handler = handlers[klass] as TypeHandler<T>? ?: throw IllegalArgumentException("Unsupported type $klass")
         return CommandEdge.Argument(parameter.name!!, optional, parameter, handler)
     }
 
@@ -266,9 +250,7 @@ class SlashCommandRegistry(
             if (config.discord.globalCommands) {
                 discord.jda.updateCommands().addCommands(compiled).await()
                 discord.getMainServer().retrieveCommands().await().map {
-                    ImperiumScope.MAIN.launch {
-                        discord.getMainServer().deleteCommandById(it.idLong).await()
-                    }
+                    ImperiumScope.MAIN.launch { discord.getMainServer().deleteCommandById(it.idLong).await() }
                 }
             } else {
                 discord.getMainServer().updateCommands().addCommands(compiled).await()
@@ -281,11 +263,9 @@ class SlashCommandRegistry(
             0 -> throw IllegalStateException("Root node cannot be compiled.")
             1 -> {
                 for (argument in node.edge?.arguments ?: emptyList()) {
-                    val wrapper =
-                        SlashCommandNode.Option(argument.name, parent.path, argument.handler.type)
+                    val wrapper = SlashCommandNode.Option(argument.name, parent.path, argument.handler.type)
                     wrapper.delegate.isRequired = !argument.optional
-                    argument.handler.apply(
-                        wrapper.delegate, argument.annotations, argument.optional)
+                    argument.handler.apply(wrapper.delegate, argument.annotations, argument.optional)
                     wrapper.applyBuilderTranslations()
                     parent.addOptions(wrapper.delegate)
                 }
@@ -294,16 +274,13 @@ class SlashCommandRegistry(
                 for (child in node.children.values) {
                     when (child.height) {
                         1 -> {
-                            val wrapper =
-                                SlashCommandNode.Subcommand(child.name, parent.path + child.name)
+                            val wrapper = SlashCommandNode.Subcommand(child.name, parent.path + child.name)
                             compile(wrapper, child)
                             wrapper.applyBuilderTranslations()
                             parent.addSubcommands(wrapper.delegate)
                         }
                         2 -> {
-                            val wrapper =
-                                SlashCommandNode.SubcommandGroup(
-                                    child.name, parent.path + child.name)
+                            val wrapper = SlashCommandNode.SubcommandGroup(child.name, parent.path + child.name)
                             compile(wrapper, child)
                             parent.addSubcommandGroups(wrapper.delegate)
                         }
@@ -342,8 +319,7 @@ class SlashCommandRegistry(
         if (path.isEmpty()) {
             throw IllegalArgumentException("Command name cannot be empty")
         } else if (path.any { !it.matches(Regex("^[a-zA-Z](-?[a-zA-Z0-9])*$")) }) {
-            throw IllegalArgumentException(
-                "Command name must be alphanumeric and start with a letter")
+            throw IllegalArgumentException("Command name must be alphanumeric and start with a letter")
         }
     }
 
@@ -412,7 +388,7 @@ private data class CommandEdge(
         val name: String,
         val optional: Boolean,
         val annotations: KAnnotatedElement,
-        val handler: TypeHandler<T>
+        val handler: TypeHandler<T>,
     )
 }
 
@@ -479,8 +455,7 @@ private val CHANNEL_TYPE_HANDLER =
 
 private val ATTACHMENT_TYPE_HANDLER =
     object : TypeHandler<Message.Attachment>(OptionType.ATTACHMENT) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) =
-            option.asAttachment
+        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asAttachment
     }
 
 // https://github.com/Incendo/cloud/blob/fda52448c20f5537c8f03aaf6a3b844119c20463/cloud-core/src/main/java/cloud/commandframework/arguments/standard/DurationArgument.java
@@ -518,7 +493,7 @@ private val DURATION_TYPE_HANDLER =
 
 private class EnumTypeHandler<T : Enum<T>>(
     private val klass: KClass<T>,
-    private val renderer: (T) -> String = { it.name.lowercase().replace("_", " ") }
+    private val renderer: (T) -> String = { it.name.lowercase().replace("_", " ") },
 ) : TypeHandler<T>(OptionType.STRING) {
     override fun parse(option: OptionMapping, annotations: KAnnotatedElement): T? {
         return klass.java.enumConstants.firstOrNull { option.asString == it.name }
@@ -526,8 +501,7 @@ private class EnumTypeHandler<T : Enum<T>>(
 
     override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
         klass.java.enumConstants.forEach {
-            if (optional && it.name == "none")
-                error("Can't have a none enum value if the argument is optional")
+            if (optional && it.name == "none") error("Can't have a none enum value if the argument is optional")
             val choice = it as T
             builder.addChoice(renderer(choice), choice.name)
         }

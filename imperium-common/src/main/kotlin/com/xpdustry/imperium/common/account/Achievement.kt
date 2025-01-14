@@ -23,5 +23,5 @@ enum class Achievement {
     GAMER,
     DAY,
     WEEK,
-    MONTH
+    MONTH,
 }

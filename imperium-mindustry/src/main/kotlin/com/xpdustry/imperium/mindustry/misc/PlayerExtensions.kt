@@ -34,9 +34,7 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 
 val Player.identity: Identity.Mindustry
-    get() =
-        Identity.Mindustry(
-            info.plainLastName(), uuid(), usid(), con.address.toInetAddress(), info.lastName)
+    get() = Identity.Mindustry(info.plainLastName(), uuid(), usid(), con.address.toInetAddress(), info.lastName)
 
 @OptIn(ExperimentalEncodingApi::class)
 val Player.sessionKey: SessionKey
@@ -44,7 +42,8 @@ val Player.sessionKey: SessionKey
         SessionKey(
             Longs.fromByteArray(Base64.decode(uuid())),
             Longs.fromByteArray(Base64.decode(usid())),
-            con.address.toInetAddress())
+            con.address.toInetAddress(),
+        )
 
 val Player.joinTime: Instant
     get() = Instant.ofEpochMilli(con.connectTime)

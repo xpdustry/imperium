@@ -69,8 +69,7 @@ class ImperiumPlaceholderProcessor(plugin: MindustryPlugin, private val accounts
             "hours" ->
                 when (val audience = context.subject) {
                     is DiscordAudience -> audience.hours?.let(CHAOTIC_HOUR_FORMAT::format) ?: ""
-                    is PlayerAudience ->
-                        hours[audience.player]?.let(CHAOTIC_HOUR_FORMAT::format) ?: ""
+                    is PlayerAudience -> hours[audience.player]?.let(CHAOTIC_HOUR_FORMAT::format) ?: ""
                     else -> ""
                 }
             "is_discord" ->
@@ -81,8 +80,7 @@ class ImperiumPlaceholderProcessor(plugin: MindustryPlugin, private val accounts
             "rank_color" ->
                 when (val audience = context.subject) {
                     is DiscordAudience -> audience.rank.toColor().toHexString()
-                    is PlayerAudience ->
-                        (ranks[audience.player] ?: Rank.EVERYONE).toColor().toHexString()
+                    is PlayerAudience -> (ranks[audience.player] ?: Rank.EVERYONE).toColor().toHexString()
                     else -> Rank.EVERYONE.toColor().toHexString()
                 }
             else -> null

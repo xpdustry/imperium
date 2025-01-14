@@ -77,31 +77,35 @@ class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener 
                     pane.grid.addOption(
                         MenuOption.of(
                             selected(number(score), state[SCORE] == score),
-                            Action.with(SCORE, score).then(Window::show)))
+                            Action.with(SCORE, score).then(Window::show),
+                        )
+                    )
                 }
 
-                pane.grid.addRow(
-                    MenuOption.of(gui_rate_map_content_difficulty_title(), Action.none()))
+                pane.grid.addRow(MenuOption.of(gui_rate_map_content_difficulty_title(), Action.none()))
                 MindustryMap.Difficulty.entries.forEach { difficulty ->
                     pane.grid.addRow(
                         MenuOption.of(
                             selected(difficulty_name(difficulty), state[DIFFICULTY] == difficulty),
-                            Action.with(DIFFICULTY, difficulty).then(Window::show)))
+                            Action.with(DIFFICULTY, difficulty).then(Window::show),
+                        )
+                    )
                 }
 
                 pane.grid.addRow(
                     MenuOption.of(gui_close(), Window::hide),
                     MenuOption.of(
                         gui_submit(),
-                        CoroutineAction(
-                            success =
-                                BiAction.from(HideAllAndAnnounceAction(gui_rate_map_success()))) {
-                                maps.saveRating(
-                                    Vars.state.map.id!!,
-                                    users.getByIdentity(it.viewer.identity).id,
-                                    it.state[SCORE]!!,
-                                    it.state[DIFFICULTY]!!)
-                            }))
+                        CoroutineAction(success = BiAction.from(HideAllAndAnnounceAction(gui_rate_map_success()))) {
+                            maps.saveRating(
+                                Vars.state.map.id!!,
+                                users.getByIdentity(it.viewer.identity).id,
+                                it.state[SCORE]!!,
+                                it.state[DIFFICULTY]!!,
+                            )
+                        },
+                    ),
+                )
             }
         }
 

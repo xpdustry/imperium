@@ -87,15 +87,11 @@ class SimpleDiscovery(
     }
 
     override fun heartbeat() =
-        runBlocking(ImperiumScope.MAIN.coroutineContext) {
-            sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-        }
+        runBlocking(ImperiumScope.MAIN.coroutineContext) { sendDiscovery(DiscoveryMessage.Type.DISCOVER) }
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
         logger.trace("Sending {} discovery message", type.name)
-        messenger.publish(
-            DiscoveryMessage(
-                Discovery.Server(config.server.name, discoveryDataProvider.get()), type))
+        messenger.publish(DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataProvider.get()), type))
     }
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, Discovery.Server> {

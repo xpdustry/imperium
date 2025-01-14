@@ -21,5 +21,5 @@ enum class Rotation {
     RIGHT,
     UP,
     LEFT,
-    DOWN
+    DOWN,
 }

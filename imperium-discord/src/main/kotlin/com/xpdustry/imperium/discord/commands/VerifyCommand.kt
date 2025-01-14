@@ -44,8 +44,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
     private val messenger = instances.get<Messenger>()
-    private val pending =
-        buildCache<Int, Verification> { expireAfterWrite(10.minutes.toJavaDuration()) }
+    private val pending = buildCache<Int, Verification> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     override fun onImperiumInit() {
         messenger.consumer<VerificationMessage> { message ->
@@ -81,17 +80,11 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         accounts.updateRank(verification.account, rank)
 
         discord.syncRoles(interaction.member!!)
-        messenger.publish(
-            VerificationMessage(
-                verification.account, verification.uuid, verification.usid, code, true))
+        messenger.publish(VerificationMessage(verification.account, verification.uuid, verification.usid, code, true))
         reply.sendMessage("You have been verified!").await()
     }
 
-    data class Verification(
-        val account: Int,
-        val uuid: MindustryUUID,
-        val usid: MindustryUSID,
-    )
+    data class Verification(val account: Int, val uuid: MindustryUUID, val usid: MindustryUSID)
 
     companion object {
         private val logger by LoggerDelegate()

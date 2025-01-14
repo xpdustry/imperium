@@ -31,10 +31,12 @@ object LogicProcessorConfigProvider : LinkableBlockConfigProvider<LogicBlock.Log
     private const val MAX_INSTRUCTIONS_SIZE = 1024 * 500
 
     override fun create(building: LogicBlock.LogicBuild, type: HistoryEntry.Type, config: Any?) =
-        if (type == HistoryEntry.Type.PLACING ||
-            type == HistoryEntry.Type.PLACE ||
-            type == HistoryEntry.Type.BREAKING ||
-            type == HistoryEntry.Type.BREAK) {
+        if (
+            type == HistoryEntry.Type.PLACING ||
+                type == HistoryEntry.Type.PLACE ||
+                type == HistoryEntry.Type.BREAKING ||
+                type == HistoryEntry.Type.BREAK
+        ) {
             getConfiguration(building)
         } else if (config is ByteArray) {
             readCode(config)?.let { BlockConfig.Text(it) }

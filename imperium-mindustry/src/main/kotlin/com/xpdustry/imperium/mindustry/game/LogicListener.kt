@@ -47,14 +47,9 @@ class LogicListener : ImperiumApplication.Listener {
             }
 
             val assembler = assemble(block, config) ?: return@addActionFilter true
-            if (assembler.instructions.any {
-                it is UnitControlI && it.type == LUnitControl.build
-            }) {
-                val permissions =
-                    Distributor.get().playerPermissionProvider.getPermissions(action.player)
-                return@addActionFilter permissions
-                    .getPermission("imperium.rank.overseer")
-                    .asBoolean() ||
+            if (assembler.instructions.any { it is UnitControlI && it.type == LUnitControl.build }) {
+                val permissions = Distributor.get().playerPermissionProvider.getPermissions(action.player)
+                return@addActionFilter permissions.getPermission("imperium.rank.overseer").asBoolean() ||
                     permissions.getPermission("imperium.achievement.active").asBoolean()
             }
 

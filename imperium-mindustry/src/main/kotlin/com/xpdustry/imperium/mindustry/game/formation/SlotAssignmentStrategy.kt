@@ -40,8 +40,7 @@ object DistanceAssignmentStrategy : SlotAssignmentStrategy {
 
             for (i in 0 until slots.size) {
                 context.pattern.calculate(vector, slots[i], context.slots)
-                val cost =
-                    Mathf.dst2(member.targetVector.x, member.targetVector.y, vector.x, vector.y)
+                val cost = Mathf.dst2(member.targetVector.x, member.targetVector.y, vector.x, vector.y)
                 if (cost < mcost) {
                     mcost = cost
                     mindex = i

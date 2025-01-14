@@ -27,11 +27,9 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
 
     fun getElement(x: Int, y: Int): Pair<Cluster<T>, Cluster.Block<T>>? {
         for (cluster in _clusters) {
-            if (x in cluster.x until cluster.x + cluster.w &&
-                y in cluster.y until cluster.y + cluster.h) {
+            if (x in cluster.x until cluster.x + cluster.w && y in cluster.y until cluster.y + cluster.h) {
                 for (block in cluster._blocks) {
-                    if (x in block.x until block.x + block.size &&
-                        y in block.y until block.y + block.size) {
+                    if (x in block.x until block.x + block.size && y in block.y until block.y + block.size) {
                         return cluster to block
                     }
                 }
@@ -46,7 +44,8 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
         if (existing != null) {
             val (cluster, element) = existing
             error(
-                "The point is occupied by the block (x=${element.x}, y=${element.y}, size=${element.size}) of the cluster (x=${cluster.x}, y=${cluster.y}, w=${cluster.w}, h=${cluster.h})")
+                "The point is occupied by the block (x=${element.x}, y=${element.y}, size=${element.size}) of the cluster (x=${cluster.x}, y=${cluster.y}, w=${cluster.w}, h=${cluster.h})"
+            )
         }
         val candidates = mutableListOf<Int>()
         for (i in _clusters.indices) {
@@ -151,7 +150,7 @@ class ClusterManager<T : Any>(private val listener: Listener<T>) {
     enum class Event {
         NEW,
         UPDATE,
-        REMOVE
+        REMOVE,
     }
 }
 
@@ -193,8 +192,7 @@ class Cluster<T : Any>(blocks: List<Block<T>> = emptyList()) {
             maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
         }
 
-    fun isAdjacentOrContains(cluster: Cluster<*>): Boolean =
-        cluster._blocks.any(::isAdjacentOrContains)
+    fun isAdjacentOrContains(cluster: Cluster<*>): Boolean = cluster._blocks.any(::isAdjacentOrContains)
 
     fun copy() =
         Cluster<T>().also {
@@ -213,10 +211,5 @@ class Cluster<T : Any>(blocks: List<Block<T>> = emptyList()) {
         _blocks.sortWith(compareBy(Block<T>::x, Block<T>::y))
     }
 
-    data class Block<T : Any>(
-        val x: Int,
-        val y: Int,
-        val size: Int,
-        val data: T,
-    )
+    data class Block<T : Any>(val x: Int, val y: Int, val size: Int, val data: T)
 }

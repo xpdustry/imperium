@@ -24,12 +24,10 @@ interface InstanceManager {
     fun <T : Any> getOrNull(clazz: KClass<T>, name: String = ""): T?
 
     fun <T : Any> get(clazz: KClass<T>, name: String = ""): T =
-        getOrNull(clazz, name)
-            ?: throw IllegalArgumentException("No instance of $clazz (name=$name) found")
+        getOrNull(clazz, name) ?: throw IllegalArgumentException("No instance of $clazz (name=$name) found")
 }
 
-inline fun <reified T : Any> InstanceManager.getOrNull(name: String = ""): T? =
-    getOrNull(T::class, name)
+inline fun <reified T : Any> InstanceManager.getOrNull(name: String = ""): T? = getOrNull(T::class, name)
 
 inline fun <reified T : Any> InstanceManager.get(name: String = ""): T = get(T::class, name)
 
@@ -46,7 +44,7 @@ interface MutableInstanceManager : InstanceManager {
 
 inline fun <reified T : Any> MutableInstanceManager.provider(
     name: String = "",
-    noinline provider: InstanceManager.() -> T
+    noinline provider: InstanceManager.() -> T,
 ) = provider(T::class, name, provider)
 
 inline fun <reified T : Any> MutableInstanceManager.provider(provider: InstanceProvider<T>) =
@@ -62,19 +60,14 @@ internal class SimpleMutableInstanceManager(private val listener: MutableInstanc
         }
     }
 
-    override fun <T : Any> provider(
-        clazz: KClass<T>,
-        name: String,
-        provider: InstanceProvider<out T>
-    ) {
+    override fun <T : Any> provider(clazz: KClass<T>, name: String, provider: InstanceProvider<out T>) {
         instances[InstanceKey(clazz, name)] = NotifyingInstanceProvider(provider)
     }
 
     override fun <T : Any> getOrNull(clazz: KClass<T>, name: String): T? {
         val key = InstanceKey(clazz, name)
 
-        @Suppress("UNCHECKED_CAST")
-        val instance = instances[key]?.create(ResolvingInstanceManager()) as T?
+        @Suppress("UNCHECKED_CAST") val instance = instances[key]?.create(ResolvingInstanceManager()) as T?
         return instance
     }
 
@@ -97,9 +90,8 @@ internal class SimpleMutableInstanceManager(private val listener: MutableInstanc
         }
     }
 
-    private inner class NotifyingInstanceProvider<T : Any>(
-        private val provider: InstanceProvider<T>
-    ) : InstanceProvider<T> {
+    private inner class NotifyingInstanceProvider<T : Any>(private val provider: InstanceProvider<T>) :
+        InstanceProvider<T> {
         private var provided = false
         private var value: T? = null
 

@@ -64,11 +64,10 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     if (discord.isAllowed(interaction.user, Rank.ADMIN)) {
                         field("Uuid", "`${user.uuid}`")
                         field("Last Address", "`${user.lastAddress.hostAddress}`")
-                        field(
-                            "Addresses",
-                            details.addresses.joinToString(transform = { "`${it.hostAddress}`" }))
+                        field("Addresses", details.addresses.joinToString(transform = { "`${it.hostAddress}`" }))
                     }
-                })
+                }
+            )
             .await()
     }
 
@@ -103,7 +102,8 @@ class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 Embed {
                     title = "Player Search"
                     description = text
-                })
+                }
+            )
             .await()
     }
 }

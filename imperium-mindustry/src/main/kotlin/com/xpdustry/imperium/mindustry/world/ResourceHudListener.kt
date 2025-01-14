@@ -89,7 +89,8 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                         append("%")
                     }
                     append("\nEvery minute")
-                })
+                }
+            )
         }
     }
 
@@ -129,9 +130,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
                 list += team.items().get(item)
                 val change = getAverageChange(list) * PROJECTED_SECONDS
                 tracker.change[item] = change
-                tracker.rate[item] =
-                    (change / max(team.cores().sum(CoreBuild::storageCapacity).toFloat(), 1F)) *
-                        100F
+                tracker.rate[item] = (change / max(team.cores().sum(CoreBuild::storageCapacity).toFloat(), 1F)) * 100F
             }
         }
     }
@@ -147,10 +146,7 @@ class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.List
     }
 
     private fun getColor(rate: Float): Color =
-        Color(
-            arc.graphics.Color.HSVtoRGB(
-                    if (rate > 0F) 120F else 0F, min(abs(rate) * 200F, 100F), 100F)
-                .rgb888())
+        Color(arc.graphics.Color.HSVtoRGB(if (rate > 0F) 120F else 0F, min(abs(rate) * 200F, 100F), 100F).rgb888())
 
     private fun getAverageChange(list: List<Int>): Int {
         if (list.size < 2) return 0

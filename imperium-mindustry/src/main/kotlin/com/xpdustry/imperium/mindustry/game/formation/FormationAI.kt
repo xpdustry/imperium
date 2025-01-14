@@ -24,8 +24,7 @@ import mindustry.entities.units.AIController
 import mindustry.gen.Call
 import mindustry.gen.Unit
 
-class FormationAI(private val leader: Unit, private val context: FormationContext) :
-    AIController(), FormationMember {
+class FormationAI(private val leader: Unit, private val context: FormationContext) : AIController(), FormationMember {
 
     override var id: Int = -1
     override val targetVector = Vec2()
@@ -53,7 +52,8 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
                     if (leader.type.canBoost) leader.elevation
                     else // follow leader
                      0f,
-                    unit.type.riseSpeed)
+                    unit.type.riseSpeed,
+                )
         }
 
         unit.controlWeapons(true, leader.isShooting)
@@ -70,17 +70,9 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
 
         val speed = unit.speed() * Time.delta
         unit.approach(
-            Mathf.arrive(
-                    unit.x,
-                    unit.y,
-                    realTarget.x,
-                    realTarget.y,
-                    unit.vel,
-                    speed,
-                    0f,
-                    speed,
-                    Float.MAX_VALUE)
-                .scl(1f / Time.delta))
+            Mathf.arrive(unit.x, unit.y, realTarget.x, realTarget.y, unit.vel, speed, 0f, speed, Float.MAX_VALUE)
+                .scl(1f / Time.delta)
+        )
 
         if (unit.canMine() && leader.canMine()) {
             if (leader.mineTile != null && unit.validMine(leader.mineTile)) {
@@ -88,13 +80,14 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
 
                 val core = unit.team.core()
 
-                if (core != null &&
-                    leader.mineTile.drop() != null &&
-                    unit.within(core, unit.type.range) &&
-                    !unit.acceptsItem(leader.mineTile.drop())) {
+                if (
+                    core != null &&
+                        leader.mineTile.drop() != null &&
+                        unit.within(core, unit.type.range) &&
+                        !unit.acceptsItem(leader.mineTile.drop())
+                ) {
                     if (core.acceptStack(unit.stack.item, unit.stack.amount, unit) > 0) {
-                        Call.transferItemTo(
-                            unit, unit.stack.item, unit.stack.amount, unit.x, unit.y, core)
+                        Call.transferItemTo(unit, unit.stack.item, unit.stack.amount, unit.x, unit.y, core)
 
                         unit.clearItem()
                     }

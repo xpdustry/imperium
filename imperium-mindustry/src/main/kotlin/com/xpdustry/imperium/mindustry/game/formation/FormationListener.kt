@@ -62,8 +62,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 }
             }
             if (context.slots > context.members.size) {
-                val eligible =
-                    findEligibleFormationUnits(player, context.slots - context.members.size)
+                val eligible = findEligibleFormationUnits(player, context.slots - context.members.size)
                 for (unit in eligible) {
                     val a = FormationAI(player.unit(), context)
                     unit.controller(a)
@@ -77,7 +76,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     member.targetVector,
                     context.assignments[member.id] ?: 0,
                     min(context.slots, context.members.size),
-                    player.unit().hitSize * 1.6F)
+                    player.unit().hitSize * 1.6F,
+                )
                 member.targetVector.add(anchor)
             }
         }
@@ -115,12 +115,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     }
         }
         val context =
-            FormationContext(
-                mutableListOf(),
-                mutableMapOf(),
-                slots,
-                CircleFormationPattern,
-                DistanceAssignmentStrategy)
+            FormationContext(mutableListOf(), mutableMapOf(), slots, CircleFormationPattern, DistanceAssignmentStrategy)
 
         runMindustryThread {
             val eligible = findEligibleFormationUnits(sender.player, context.slots)
@@ -158,13 +153,15 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         val leader = player.unit()
         val result = ArrayDeque<Unit>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) {
-            if (it.isAI &&
-                it.type != UnitTypes.mono &&
-                it.type.flying == leader.type.flying &&
-                leader.type.buildSpeed > 0 == it.type.buildSpeed > 0 &&
-                it != leader &&
-                (it.hitSize <= leader.hitSize * 1.5F) &&
-                it.controller() !is FormationAI) {
+            if (
+                it.isAI &&
+                    it.type != UnitTypes.mono &&
+                    it.type.flying == leader.type.flying &&
+                    leader.type.buildSpeed > 0 == it.type.buildSpeed > 0 &&
+                    it != leader &&
+                    (it.hitSize <= leader.hitSize * 1.5F) &&
+                    it.controller() !is FormationAI
+            ) {
                 if (it.type() == leader.type()) {
                     result.addFirst(it)
                 } else {
@@ -177,6 +174,6 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
 
     enum class FormationPatternEntry(val pattern: FormationPattern) {
         CIRCLE(CircleFormationPattern),
-        SQUARE(SquareFormationPattern)
+        SQUARE(SquareFormationPattern),
     }
 }

@@ -27,8 +27,7 @@ fun interface MetricsCollector {
     suspend fun collect(): List<Metric>
 }
 
-class Counter(private val name: String, private val labels: Labels = emptyMap()) :
-    MetricsCollector {
+class Counter(private val name: String, private val labels: Labels = emptyMap()) : MetricsCollector {
 
     private val adder = DoubleAdder()
 
@@ -48,7 +47,7 @@ class Counter(private val name: String, private val labels: Labels = emptyMap())
 class UniqueCounter<K : Any>(
     private val name: String,
     private val labels: Labels = emptyMap(),
-    private val period: Duration = 1.days
+    private val period: Duration = 1.days,
 ) : MetricsCollector {
 
     private val cache = buildCache<K, Unit> { expireAfterWrite(period.toJavaDuration()) }

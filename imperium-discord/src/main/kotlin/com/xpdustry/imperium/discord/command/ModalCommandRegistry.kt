@@ -37,8 +37,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction
 
-class ModalCommandRegistry(private val discord: DiscordService) :
-    AnnotationScanner, ImperiumApplication.Listener {
+class ModalCommandRegistry(private val discord: DiscordService) : AnnotationScanner, ImperiumApplication.Listener {
 
     private val handlers = mutableMapOf<String, ModalHandler>()
 
@@ -57,7 +56,8 @@ class ModalCommandRegistry(private val discord: DiscordService) :
                     "Unexpected modal type for {}, expected {}, got {}",
                     event.modalId,
                     expected,
-                    event.interaction::class)
+                    event.interaction::class,
+                )
                 event
                     .deferReply(true)
                     .await()
@@ -73,10 +73,7 @@ class ModalCommandRegistry(private val discord: DiscordService) :
                 try {
                     event.deferReply(true).await()
                 } catch (_: Exception) {}
-                event.hook
-                    .sendMessage(
-                        "**:warning: An unexpected error occurred while handling this modal.**")
-                    .await()
+                event.hook.sendMessage("**:warning: An unexpected error occurred while handling this modal.**").await()
             }
         }
     }
@@ -89,15 +86,14 @@ class ModalCommandRegistry(private val discord: DiscordService) :
                 throw IllegalArgumentException("$function modal name must be alphanumeric")
             }
 
-            if (function.parameters.size != 2 ||
-                !isSupportedInteraction(function.parameters[1].type.classifier!!)) {
+            if (function.parameters.size != 2 || !isSupportedInteraction(function.parameters[1].type.classifier!!)) {
                 throw IllegalArgumentException(
-                    "$function button must have exactly one parameter of type ModalInteraction")
+                    "$function button must have exactly one parameter of type ModalInteraction"
+                )
             }
 
             if (command.name in handlers) {
-                throw IllegalArgumentException(
-                    "$function modal ${command.name} is already registered")
+                throw IllegalArgumentException("$function modal ${command.name} is already registered")
             }
 
             function.isAccessible = true
@@ -112,8 +108,5 @@ class ModalCommandRegistry(private val discord: DiscordService) :
         private val logger by LoggerDelegate()
     }
 
-    private data class ModalHandler(
-        val container: Any,
-        val function: KFunction<*>,
-    )
+    private data class ModalHandler(val container: Any, val function: KFunction<*>)
 }

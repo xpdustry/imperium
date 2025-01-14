@@ -56,12 +56,12 @@ class HelpCommand : ImperiumApplication.Listener {
             if (command == null) {
                 sender.reply(
                     buildString {
-                        appendLine(
-                            "[orange]-- Too many root commands found for [lightgray]${path[0]}[] --")
+                        appendLine("[orange]-- Too many root commands found for [lightgray]${path[0]}[] --")
                         for (candidate in results) {
                             appendLine("[orange] /${candidate.name}[]")
                         }
-                    })
+                    }
+                )
                 return
             }
         }
@@ -71,21 +71,17 @@ class HelpCommand : ImperiumApplication.Listener {
             is CommandHelp.Suggestion -> {
                 if (help.childSuggestions.isEmpty()) {
                     sender.reply("[scarlet]No command found.")
-                    logger.error(
-                        "Impossible state: No suggestions for CommandHelp.Suggestion (query={})",
-                        query)
+                    logger.error("Impossible state: No suggestions for CommandHelp.Suggestion (query={})", query)
                     return
                 }
                 sender.reply(
                     buildString {
-                        appendLine(
-                            "[orange]-- Suggestions for [lightgray]${help.longestSharedPath}[orange] --")
+                        appendLine("[orange]-- Suggestions for [lightgray]${help.longestSharedPath}[orange] --")
                         for (suggestion in help.childSuggestions) {
                             val parts = suggestion.split(" ")
-                            appendLine(
-                                "[orange] /${parts[0]} [white]${parts.drop(1).joinToString(" ")}")
+                            appendLine("[orange] /${parts[0]} [white]${parts.drop(1).joinToString(" ")}")
                         }
-                    },
+                    }
                 )
             }
             is CommandHelp.Entry -> {
@@ -100,8 +96,7 @@ class HelpCommand : ImperiumApplication.Listener {
                             if (argument.kind == CommandElement.Argument.Kind.LITERAL) continue
                             val argumentDescription = argument.description.getText(sender)
                             if (argumentDescription.isNotBlank()) {
-                                appendLine(
-                                    " [accent]${argument.name}: [lightgray]$argumentDescription")
+                                appendLine(" [accent]${argument.name}: [lightgray]$argumentDescription")
                             }
                         }
                         for (flag in help.flags) {
@@ -110,7 +105,7 @@ class HelpCommand : ImperiumApplication.Listener {
                                 appendLine(" [accent]${flag.name}: [lightgray]$argumentDescription")
                             }
                         }
-                    },
+                    }
                 )
             }
         }
@@ -120,14 +115,12 @@ class HelpCommand : ImperiumApplication.Listener {
         val commands = getCommandList(sender)
         val pages = ceil(commands.size.toFloat() / COMMANDS_PER_PAGE).toInt()
         if (page < 1 || page > pages) {
-            sender.reply(
-                "[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
+            sender.reply("[scarlet]'page' must be a number between[orange] 1[] and[orange] ${pages}[scarlet].")
             return
         }
         sender.reply(
             buildString {
-                appendLine(
-                    "[orange]-- Commands Page[lightgray] $page[gray]/[lightgray]${pages}[orange] --")
+                appendLine("[orange]-- Commands Page[lightgray] $page[gray]/[lightgray]${pages}[orange] --")
                 commands
                     .sortedBy(CommandFacade::getName)
                     .drop(COMMANDS_PER_PAGE * (page - 1))
@@ -140,14 +133,12 @@ class HelpCommand : ImperiumApplication.Listener {
                         }
                         appendLine()
                     }
-            },
+            }
         )
     }
 
     private fun getCommandList(sender: CommandSender) =
-        Vars.netServer.clientCommands.commandList.asList().map(CommandFacade::from).filter {
-            it.isVisible(sender)
-        }
+        Vars.netServer.clientCommands.commandList.asList().map(CommandFacade::from).filter { it.isVisible(sender) }
 
     companion object {
         private const val COMMANDS_PER_PAGE = 6

@@ -97,7 +97,8 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     Iconc.alphaaaa.toString(),
                     1F,
                     point.x.toFloat() * Vars.tilesize,
-                    point.y.toFloat() * Vars.tilesize)
+                    point.y.toFloat() * Vars.tilesize,
+                )
             }
         }
     }
@@ -115,21 +116,18 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
                             portal.polygon.ypoints[i].toFloat(),
                             portal.polygon.xpoints[ni].toFloat(),
                             portal.polygon.ypoints[ni].toFloat(),
-                            1F) { x, y ->
-                                Call.label(
-                                    player.con,
-                                    Iconc.alphaaaa.toString(),
-                                    1F,
-                                    x * Vars.tilesize,
-                                    y * Vars.tilesize)
-                            }
+                            1F,
+                        ) { x, y ->
+                            Call.label(player.con, Iconc.alphaaaa.toString(), 1F, x * Vars.tilesize, y * Vars.tilesize)
+                        }
                     }
                     Call.label(
                         player.con,
                         portal.name,
                         1F,
                         portal.centerX * Vars.tilesize,
-                        portal.centerY * Vars.tilesize)
+                        portal.centerY * Vars.tilesize,
+                    )
                 }
             }
     }
@@ -169,10 +167,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["portal", "create"], Rank.OWNER)
     @ClientSide
-    fun onHubPortalBuildCommand(
-        sender: CommandSender,
-        name: String,
-    ) {
+    fun onHubPortalBuildCommand(sender: CommandSender, name: String) {
         if (building[sender.player] != null) {
             sender.error("You are already building a portal.")
             return
@@ -224,9 +219,11 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 append("-- [accent]Portals: --")
                 for (portal in portals.values) {
                     append(
-                        "\n[cyan]- [white]${portal.name} [lightgray](${portal.x}, ${portal.y}, ${portal.w}, ${portal.h})")
+                        "\n[cyan]- [white]${portal.name} [lightgray](${portal.x}, ${portal.y}, ${portal.w}, ${portal.h})"
+                    )
                 }
-            })
+            }
+        )
     }
 
     @ImperiumCommand(["portal", "debug"], Rank.OWNER)
@@ -261,9 +258,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onTeleportTapEvent(event: EventType.TapEvent) {
         if (building[event.player] != null) return
         val portal =
-            portals.values.firstOrNull {
-                it.polygon.contains(event.tile.x.toInt(), event.tile.y.toInt())
-            } ?: return
+            portals.values.firstOrNull { it.polygon.contains(event.tile.x.toInt(), event.tile.y.toInt()) } ?: return
         val data = discovery.servers[portal.name]?.data ?: return
         if (data !is Discovery.Data.Mindustry) return
         Call.connect(event.player.con, data.host.hostAddress, data.port)
@@ -293,9 +288,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @OptIn(ExperimentalSerializationApi::class)
     private fun savePortals() {
-        directory.resolve("${getCurrentMapName()}.json").outputStream().use {
-            Json.encodeToStream(portals, it)
-        }
+        directory.resolve("${getCurrentMapName()}.json").outputStream().use { Json.encodeToStream(portals, it) }
     }
 
     private fun updatePortals() {
@@ -303,9 +296,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             var labels = portal.labels
             if (labels == null) {
                 labels =
-                    Portal.Labels(
-                        createErrorLabel(portal),
-                        config.overlays.map { createWorldLabel(portal, it) to it })
+                    Portal.Labels(createErrorLabel(portal), config.overlays.map { createWorldLabel(portal, it) to it })
                 portal.labels = labels
             }
             val info = discovery.servers[portal.name]
@@ -380,11 +371,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         Vars.state.map.id ?: Vars.state.map.name() ?: error("The current map has no name.")
 
     @Serializable
-    data class Portal(
-        val name: String,
-        val polygon: SerializablePolygon,
-        @Transient var labels: Labels? = null
-    ) {
+    data class Portal(val name: String, val polygon: SerializablePolygon, @Transient var labels: Labels? = null) {
         val x: Int = polygon.xpoints.min()
         val y: Int = polygon.ypoints.min()
         val w: Int = polygon.xpoints.max() - x
@@ -393,10 +380,7 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val centerX: Float = x + (w / 2F)
         val centerY: Float = y + (h / 2F)
 
-        data class Labels(
-            val error: WorldLabel,
-            val overlays: List<Pair<WorldLabel, MindustryConfig.Hub.Overlay>>
-        )
+        data class Labels(val error: WorldLabel, val overlays: List<Pair<WorldLabel, MindustryConfig.Hub.Overlay>>)
     }
 
     data class PortalBuilder(val name: String, val points: List<ImmutablePoint>)

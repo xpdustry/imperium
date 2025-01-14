@@ -59,11 +59,7 @@ class ControlListener(instances: InstanceManager) : ImperiumApplication.Listener
         }
     }
 
-    private fun prepareAction(
-        reason: String,
-        action: RemoteActionMessage.Action,
-        immediate: Boolean
-    ) {
+    private fun prepareAction(reason: String, action: RemoteActionMessage.Action, immediate: Boolean) {
         job = null
         val everyone = Distributor.get().audienceProvider.everyone
         if (immediate || Entities.getPlayers().isEmpty() || Vars.state.gameOver) {

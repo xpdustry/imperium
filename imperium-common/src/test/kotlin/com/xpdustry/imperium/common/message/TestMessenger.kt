@@ -28,19 +28,11 @@ import kotlinx.coroutines.launch
 class TestMessenger : Messenger {
     override suspend fun publish(message: Message, local: Boolean): Boolean = true
 
-    override suspend fun <R : Message> request(
-        message: Message,
-        timeout: Duration,
-        responseKlass: KClass<R>
-    ): R? = null
+    override suspend fun <R : Message> request(message: Message, timeout: Duration, responseKlass: KClass<R>): R? = null
 
-    override fun <M : Message> consumer(
-        type: KClass<M>,
-        listener: Messenger.ConsumerListener<M>
-    ): Job = ImperiumScope.MAIN.launch { while (isActive) delay(1000L) }
+    override fun <M : Message> consumer(type: KClass<M>, listener: Messenger.ConsumerListener<M>): Job =
+        ImperiumScope.MAIN.launch { while (isActive) delay(1000L) }
 
-    override fun <M : Message, R : Message> function(
-        type: KClass<M>,
-        function: Messenger.FunctionListener<M, R>
-    ): Job = ImperiumScope.MAIN.launch { while (isActive) delay(1000L) }
+    override fun <M : Message, R : Message> function(type: KClass<M>, function: Messenger.FunctionListener<M, R>): Job =
+        ImperiumScope.MAIN.launch { while (isActive) delay(1000L) }
 }

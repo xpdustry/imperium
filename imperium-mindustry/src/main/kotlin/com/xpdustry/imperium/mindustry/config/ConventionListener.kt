@@ -31,7 +31,7 @@ class ConventionListener(instances: InstanceManager) : ImperiumApplication.Liste
 
     override fun onImperiumInit() {
         Administration.Config.serverName.set(
-            "[accent]<[white]CN[]> [${config.mindustry.color.toHexString()}]${config.server.displayName}",
+            "[accent]<[white]CN[]> [${config.mindustry.color.toHexString()}]${config.server.displayName}"
         )
     }
 

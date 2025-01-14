@@ -30,8 +30,7 @@ interface SaltyHashFunction<P : HashParams> : HashFunction<P> {
 }
 
 object GenericSaltyHashFunction : SaltyHashFunction<HashParams> {
-    suspend fun equals(chars: CharArray, hash: Hash): Boolean =
-        create(chars, hash.params, hash.salt) == hash
+    suspend fun equals(chars: CharArray, hash: Hash): Boolean = create(chars, hash.params, hash.salt) == hash
 
     override suspend fun create(chars: CharArray, params: HashParams): Hash =
         when (params) {

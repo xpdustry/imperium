@@ -26,11 +26,7 @@ interface Messenger {
 
     suspend fun publish(message: Message, local: Boolean = false): Boolean
 
-    suspend fun <R : Message> request(
-        message: Message,
-        timeout: Duration,
-        responseKlass: KClass<R>
-    ): R?
+    suspend fun <R : Message> request(message: Message, timeout: Duration, responseKlass: KClass<R>): R?
 
     fun <M : Message> consumer(type: KClass<M>, listener: ConsumerListener<M>): Job
 
@@ -48,11 +44,8 @@ interface Messenger {
 inline fun <reified M : Message> Messenger.consumer(listener: Messenger.ConsumerListener<M>) =
     consumer(M::class, listener)
 
-inline fun <reified M : Message, reified R : Message> Messenger.function(
-    function: Messenger.FunctionListener<M, R>
-) = function(M::class, function)
+inline fun <reified M : Message, reified R : Message> Messenger.function(function: Messenger.FunctionListener<M, R>) =
+    function(M::class, function)
 
-suspend inline fun <reified R : Message> Messenger.request(
-    message: Message,
-    timeout: Duration = 3.seconds
-) = request(message, timeout, R::class)
+suspend inline fun <reified R : Message> Messenger.request(message: Message, timeout: Duration = 3.seconds) =
+    request(message, timeout, R::class)

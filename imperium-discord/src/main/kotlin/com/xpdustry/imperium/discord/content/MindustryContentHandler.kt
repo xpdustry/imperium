@@ -33,9 +33,7 @@ interface MindustryContentHandler {
 
     suspend fun getMapMetadata(stream: InputStream): Result<MapMetadata>
 
-    suspend fun getMapMetadataWithPreview(
-        stream: InputStream
-    ): Result<Pair<MapMetadata, BufferedImage>>
+    suspend fun getMapMetadataWithPreview(stream: InputStream): Result<Pair<MapMetadata, BufferedImage>>
 }
 
 data class MapMetadata(

@@ -76,8 +76,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         val detailsInterface = TextInputInterface.create(plugin)
         detailsInterface.addTransformer { v, pane ->
             pane.title = "Admin Action (3/3)"
-            pane.description =
-                "Enter the reason of the ${v.state[PUNISHMENT_TYPE].toString().lowercase()}"
+            pane.description = "Enter the reason of the ${v.state[PUNISHMENT_TYPE].toString().lowercase()}"
             pane.placeholder = v.state[PUNISHMENT_TYPE].toString().lowercase()
             pane.inputAction = BiAction { view, input ->
                 view.closeAll()
@@ -118,7 +117,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                                 view.close()
                                 view.state[PUNISHMENT_DURATION] = duration
                                 detailsInterface.open(view)
-                            },
+                            }
                         )
 
                     addDuration("[green]15 minutes", 15.minutes)
@@ -146,7 +145,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                                 view.close()
                                 view.state[PUNISHMENT_TYPE] = type
                                 durationInterface.open(view)
-                            })
+                            }
+                        )
                     }
 
                     pane.options.addRow(MenuOption("[red]Cancel", View::back))
@@ -158,10 +158,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
 
     private fun interceptAdminRequest(con: NetConnection, packet: AdminRequestCallPacket) {
         if (con.player == null) {
-            logger.warn(
-                "Received admin request from non-existent player (uuid: {}, ip: {})",
-                con.uuid,
-                con.address)
+            logger.warn("Received admin request from non-existent player (uuid: {}, ip: {})", con.uuid, con.address)
             return
         }
 
@@ -169,7 +166,8 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             logger.warn(
                 "{} ({}) attempted to perform an admin action without permission",
                 con.player.plainName(),
-                con.player.uuid())
+                con.player.uuid(),
+            )
             return
         }
 
@@ -177,12 +175,12 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             logger.warn(
                 "{} ({}) attempted to perform an admin action on non-existent",
                 con.player.plainName(),
-                con.player.uuid())
+                con.player.uuid(),
+            )
             return
         }
 
-        if (packet.other.admin() &&
-            (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)) {
+        if (packet.other.admin() && (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action on the admin {} ({})",
                 con.player.plainName(),
@@ -197,10 +195,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         when (packet.action) {
             AdminAction.wave -> handleWaveSkip(con.player)
             AdminAction.trace -> handleTraceInfo(con.player, packet.other)
-            AdminAction.ban ->
-                adminActionInterface.open(con.player) {
-                    it[PUNISHMENT_TARGET] = packet.other.identity
-                }
+            AdminAction.ban -> adminActionInterface.open(con.player) { it[PUNISHMENT_TARGET] = packet.other.identity }
             AdminAction.kick -> {
                 packet.other.kick(Packets.KickReason.kick, 0L)
                 logger.info(
@@ -256,31 +251,30 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 Call.infoMessage(requester.con, "Player not found.")
                 return@launch
             }
-            val canSeeInfo =
-                (accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE) >=
-                    Rank.ADMIN
+            val canSeeInfo = (accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE) >= Rank.ADMIN
             val historic = users.findNamesAndAddressesById(user.id)
             Call.traceInfo(
                 requester.con,
                 target,
                 TraceInfo(
-                    if (canSeeInfo) target.con.address
-                    else "Don't have permission to view addresses.",
+                    if (canSeeInfo) target.con.address else "Don't have permission to view addresses.",
                     if (canSeeInfo) target.uuid() else codec.encode(user.id),
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,
                     punishments.findAllByIdentity(target.identity).count(),
-                    if (canSeeInfo)
-                        historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
+                    if (canSeeInfo) historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
                     else arrayOf("Don't have permission to view addresses."),
-                    historic.names.toTypedArray()))
+                    historic.names.toTypedArray(),
+                ),
+            )
             logger.info(
                 "{} ({}) has requested trace info of {} ({})",
                 requester.plainName(),
                 requester.uuid(),
                 target.plainName(),
-                target.uuid())
+                target.uuid(),
+            )
         }
 
     private fun handleWaveSkip(requester: Player) =
@@ -289,15 +283,15 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             if (rank >= Rank.MODERATOR) {
                 runMindustryThread {
                     Vars.logic.skipWave()
-                    logger.info(
-                        "{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
+                    logger.info("{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
                 }
             } else {
                 requester.showInfoMessage("You don't have permission to skip the wave.")
                 logger.warn(
                     "{} ({}) attempted to skip the wave without permission",
                     requester.plainName(),
-                    requester.uuid())
+                    requester.uuid(),
+                )
             }
         }
 

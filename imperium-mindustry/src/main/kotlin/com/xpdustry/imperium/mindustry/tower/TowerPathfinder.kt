@@ -47,14 +47,12 @@ class TowerPathfinder(plugin: MindustryPlugin) : Pathfinder() {
         }
 
         Vars.netServer.admins.addActionFilter {
-            !(it.type == Administration.ActionType.placeBlock &&
-                it.tile.floor() in towerPassableFloors)
+            !(it.type == Administration.ActionType.placeBlock && it.tile.floor() in towerPassableFloors)
         }
     }
 
     override fun packTile(tile: Tile): Int {
-        val towerPassable =
-            (if (tile.floor() in towerPassableFloors) BIT_MASK_TOWER_PASSABLE else 0)
+        val towerPassable = (if (tile.floor() in towerPassableFloors) BIT_MASK_TOWER_PASSABLE else 0)
         return super.packTile(tile) or towerPassable
     }
 

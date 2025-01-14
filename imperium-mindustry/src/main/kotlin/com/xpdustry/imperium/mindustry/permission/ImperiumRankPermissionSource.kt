@@ -36,8 +36,7 @@ class ImperiumRankPermissionSource(private val config: ImperiumConfig) : RankPer
             }
         }
         if (node is EnumRankNode<*> && node.value is Achievement) {
-            tree.setPermission(
-                "imperium.achievement.${(node.value as Achievement).name.lowercase()}", true)
+            tree.setPermission("imperium.achievement.${(node.value as Achievement).name.lowercase()}", true)
         }
         return tree
     }

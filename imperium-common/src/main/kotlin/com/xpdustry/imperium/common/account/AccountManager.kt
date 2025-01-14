@@ -79,21 +79,13 @@ interface AccountManager {
 
     suspend fun updateRank(account: Int, rank: Rank)
 
-    suspend fun updatePassword(
-        account: Int,
-        oldPassword: CharArray,
-        newPassword: CharArray
-    ): AccountResult
+    suspend fun updatePassword(account: Int, oldPassword: CharArray, newPassword: CharArray): AccountResult
 
     suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean
 
     suspend fun selectAchievements(account: Int): Map<Achievement, Boolean>
 
-    suspend fun updateAchievement(
-        account: Int,
-        achievement: Achievement,
-        completed: Boolean
-    ): Boolean
+    suspend fun updateAchievement(account: Int, achievement: Achievement, completed: Boolean): Boolean
 
     suspend fun selectMetadata(account: Int, key: String): String?
 
@@ -101,24 +93,19 @@ interface AccountManager {
 
     suspend fun register(username: String, password: CharArray): AccountResult
 
-    suspend fun migrate(
-        oldUsername: String,
-        newUsername: String,
-        password: CharArray
-    ): AccountResult
+    suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray): AccountResult
 
     suspend fun login(key: SessionKey, username: String, password: CharArray): AccountResult
 
     suspend fun logout(key: SessionKey, all: Boolean = false): Boolean
 }
 
-@Serializable
-data class AchievementCompletedMessage(val account: Int, val achievement: Achievement) : Message
+@Serializable data class AchievementCompletedMessage(val account: Int, val achievement: Achievement) : Message
 
 class SimpleAccountManager(
     private val provider: SQLProvider,
     private val messenger: Messenger,
-    private val config: ImperiumConfig
+    private val config: ImperiumConfig,
 ) : AccountManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -129,14 +116,12 @@ class SimpleAccountManager(
                 AccountAchievementTable,
                 AccountMetadataTable,
                 LegacyAccountTable,
-                LegacyAccountAchievementTable)
+                LegacyAccountAchievementTable,
+            )
 
             if (config.testing) {
-                LOGGER.warn(
-                    "Testing mode enabled, creating test account, with credentials {}", "test:test")
-                val password = runBlocking {
-                    GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS)
-                }
+                LOGGER.warn("Testing mode enabled, creating test account, with credentials {}", "test:test")
+                val password = runBlocking { GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS) }
                 AccountTable.upsert {
                     it[username] = "test"
                     it[passwordHash] = password.hash
@@ -151,10 +136,7 @@ class SimpleAccountManager(
 
     override suspend fun selectByUsername(username: String): Account? =
         provider.newSuspendTransaction {
-            AccountTable.selectAll()
-                .where { AccountTable.username eq username }
-                .firstOrNull()
-                ?.toAccount()
+            AccountTable.selectAll().where { AccountTable.username eq username }.firstOrNull()?.toAccount()
         }
 
     override suspend fun selectById(id: Int): Account? =
@@ -164,17 +146,12 @@ class SimpleAccountManager(
 
     override suspend fun selectByDiscord(discord: Long): Account? =
         provider.newSuspendTransaction {
-            AccountTable.selectAll()
-                .where { AccountTable.discord eq discord }
-                .firstOrNull()
-                ?.toAccount()
+            AccountTable.selectAll().where { AccountTable.discord eq discord }.firstOrNull()?.toAccount()
         }
 
     override suspend fun updateDiscord(account: Int, discord: Long): Boolean =
         provider.newSuspendTransaction {
-            AccountTable.update({ AccountTable.id eq account }) {
-                it[AccountTable.discord] = discord
-            } > 0
+            AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.discord] = discord } > 0
         }
 
     override suspend fun selectBySession(key: SessionKey): Account? =
@@ -209,32 +186,26 @@ class SimpleAccountManager(
                 if (current == rank) {
                     return@newSuspendTransaction false
                 }
-                AccountTable.update({ AccountTable.id eq account }) {
-                    it[AccountTable.rank] = rank
-                } != 0
+                AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.rank] = rank } != 0
             }
         if (changed) {
             messenger.publish(RankChangeEvent(account), local = true)
         }
     }
 
-    override suspend fun updatePassword(
-        account: Int,
-        oldPassword: CharArray,
-        newPassword: CharArray
-    ): AccountResult =
+    override suspend fun updatePassword(account: Int, oldPassword: CharArray, newPassword: CharArray): AccountResult =
         provider.newSuspendTransaction {
             val result =
                 AccountTable.select(AccountTable.passwordHash, AccountTable.passwordSalt)
                     .where { AccountTable.id eq account }
                     .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
-            if (!GenericSaltyHashFunction.equals(
-                oldPassword,
-                Hash(
-                    result[AccountTable.passwordHash],
-                    result[AccountTable.passwordSalt],
-                    PASSWORD_PARAMS))) {
+            if (
+                !GenericSaltyHashFunction.equals(
+                    oldPassword,
+                    Hash(result[AccountTable.passwordHash], result[AccountTable.passwordSalt], PASSWORD_PARAMS),
+                )
+            ) {
                 return@newSuspendTransaction AccountResult.WrongPassword
             }
 
@@ -265,19 +236,12 @@ class SimpleAccountManager(
 
     override suspend fun selectAchievements(account: Int): Map<Achievement, Boolean> =
         provider.newSuspendTransaction {
-            AccountAchievementTable.select(
-                    AccountAchievementTable.achievement, AccountAchievementTable.completed)
+            AccountAchievementTable.select(AccountAchievementTable.achievement, AccountAchievementTable.completed)
                 .where { AccountAchievementTable.account eq account }
-                .associate {
-                    it[AccountAchievementTable.achievement] to it[AccountAchievementTable.completed]
-                }
+                .associate { it[AccountAchievementTable.achievement] to it[AccountAchievementTable.completed] }
         }
 
-    override suspend fun updateAchievement(
-        account: Int,
-        achievement: Achievement,
-        completed: Boolean
-    ): Boolean {
+    override suspend fun updateAchievement(account: Int, achievement: Achievement, completed: Boolean): Boolean {
         if (!existsById(account)) {
             return false
         }
@@ -311,9 +275,7 @@ class SimpleAccountManager(
     override suspend fun selectMetadata(account: Int, key: String): String? {
         return provider.newSuspendTransaction {
             AccountMetadataTable.select(AccountMetadataTable.value)
-                .where {
-                    (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key)
-                }
+                .where { (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key) }
                 .firstOrNull()
                 ?.get(AccountMetadataTable.value)
         }
@@ -338,17 +300,16 @@ class SimpleAccountManager(
             val hashUsr = ShaHashFunction.create(username.toCharArray(), ShaType.SHA256).hash
             if (LegacyAccountTable.exists { LegacyAccountTable.usernameHash eq hashUsr }) {
                 return@newSuspendTransaction AccountResult.InvalidUsername(
-                    listOf(UsernameRequirement.Reserved(username)))
+                    listOf(UsernameRequirement.Reserved(username))
+                )
             }
 
-            val missingPwdRequirements =
-                DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
+            val missingPwdRequirements = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
             if (missingPwdRequirements.isNotEmpty()) {
                 return@newSuspendTransaction AccountResult.InvalidPassword(missingPwdRequirements)
             }
 
-            val missingUsrRequirements =
-                DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(username)
+            val missingUsrRequirements = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(username)
             if (missingUsrRequirements.isNotEmpty()) {
                 return@newSuspendTransaction AccountResult.InvalidUsername(missingUsrRequirements)
             }
@@ -363,26 +324,25 @@ class SimpleAccountManager(
             return@newSuspendTransaction AccountResult.Success
         }
 
-    override suspend fun migrate(
-        oldUsername: String,
-        newUsername: String,
-        password: CharArray
-    ): AccountResult =
+    override suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray): AccountResult =
         provider.newSuspendTransaction {
-            val oldUsernameHash =
-                ShaHashFunction.create(oldUsername.lowercase().toCharArray(), ShaType.SHA256).hash
+            val oldUsernameHash = ShaHashFunction.create(oldUsername.lowercase().toCharArray(), ShaType.SHA256).hash
 
             val oldAccount =
                 LegacyAccountTable.selectAll()
                     .where { LegacyAccountTable.usernameHash eq oldUsernameHash }
                     .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
-            if (!GenericSaltyHashFunction.equals(
-                password,
-                Hash(
-                    oldAccount[LegacyAccountTable.passwordHash],
-                    oldAccount[LegacyAccountTable.passwordSalt],
-                    LEGACY_PASSWORD_PARAMS))) {
+            if (
+                !GenericSaltyHashFunction.equals(
+                    password,
+                    Hash(
+                        oldAccount[LegacyAccountTable.passwordHash],
+                        oldAccount[LegacyAccountTable.passwordSalt],
+                        LEGACY_PASSWORD_PARAMS,
+                    ),
+                )
+            ) {
                 return@newSuspendTransaction AccountResult.NotFound
             }
 
@@ -414,8 +374,7 @@ class SimpleAccountManager(
 
             AccountAchievementTable.batchInsert(oldAchievements) {
                 this[AccountAchievementTable.account] = newAccount
-                this[AccountAchievementTable.achievement] =
-                    it[LegacyAccountAchievementTable.achievement]
+                this[AccountAchievementTable.achievement] = it[LegacyAccountAchievementTable.achievement]
                 this[AccountAchievementTable.completed] = true
             }
 
@@ -424,33 +383,30 @@ class SimpleAccountManager(
             return@newSuspendTransaction AccountResult.Success
         }
 
-    override suspend fun login(
-        key: SessionKey,
-        username: String,
-        password: CharArray
-    ): AccountResult =
+    override suspend fun login(key: SessionKey, username: String, password: CharArray): AccountResult =
         provider.newSuspendTransaction {
-            if (AccountSessionTable.exists {
-                (AccountSessionTable.uuid eq key.uuid) and
-                    (AccountSessionTable.usid eq key.usid) and
-                    (AccountSessionTable.address eq key.address.address) and
-                    (AccountSessionTable.expiration greaterEq Instant.now())
-            }) {
+            if (
+                AccountSessionTable.exists {
+                    (AccountSessionTable.uuid eq key.uuid) and
+                        (AccountSessionTable.usid eq key.usid) and
+                        (AccountSessionTable.address eq key.address.address) and
+                        (AccountSessionTable.expiration greaterEq Instant.now())
+                }
+            ) {
                 return@newSuspendTransaction AccountResult.AlreadyLogged
             }
 
             val result =
-                AccountTable.select(
-                        AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
+                AccountTable.select(AccountTable.id, AccountTable.passwordHash, AccountTable.passwordSalt)
                     .where { AccountTable.username eq username }
                     .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
-            if (!GenericSaltyHashFunction.equals(
-                password,
-                Hash(
-                    result[AccountTable.passwordHash],
-                    result[AccountTable.passwordSalt],
-                    PASSWORD_PARAMS))) {
+            if (
+                !GenericSaltyHashFunction.equals(
+                    password,
+                    Hash(result[AccountTable.passwordHash], result[AccountTable.passwordSalt], PASSWORD_PARAMS),
+                )
+            ) {
                 return@newSuspendTransaction AccountResult.NotFound
             }
 
@@ -476,9 +432,7 @@ class SimpleAccountManager(
                     AccountSessionTable.select(AccountSessionTable.account)
                         .where { (AccountSessionTable.uuid eq key.uuid) }
                         .map { it[AccountSessionTable.account].value }
-                return@newSuspendTransaction AccountSessionTable.deleteWhere {
-                    (account inList sessions)
-                } > 0
+                return@newSuspendTransaction AccountSessionTable.deleteWhere { (account inList sessions) } > 0
             }
         }
 
@@ -502,7 +456,8 @@ class SimpleAccountManager(
             playtime = this[AccountTable.playtime].toKotlinDuration(),
             creation = this[AccountTable.creation],
             legacy = this[AccountTable.legacy],
-            rank = this[AccountTable.rank])
+            rank = this[AccountTable.rank],
+        )
 
     companion object {
         private val LOGGER by LoggerDelegate()
@@ -532,11 +487,6 @@ class SimpleAccountManager(
             )
 
         internal val LEGACY_PASSWORD_PARAMS =
-            PBKDF2Params(
-                hmac = PBKDF2Params.Hmac.SHA256,
-                iterations = 10000,
-                length = 256,
-                saltLength = 16,
-            )
+            PBKDF2Params(hmac = PBKDF2Params.Hmac.SHA256, iterations = 10000, length = 256, saltLength = 16)
     }
 }

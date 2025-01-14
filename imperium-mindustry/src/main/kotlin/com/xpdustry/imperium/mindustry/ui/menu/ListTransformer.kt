@@ -61,9 +61,7 @@ class ListTransformer<E : Any>(
                 cursor = page * pageSize + i * width + j
                 if (cursor < elements.size) {
                     val element = elements[cursor]
-                    options.add(
-                        MenuOption(renderer.apply(element)) { v -> onChoice.accept(v, element) },
-                    )
+                    options.add(MenuOption(renderer.apply(element)) { v -> onChoice.accept(v, element) })
                 } else if (fill) {
                     options.add(MenuOption())
                 } else {
@@ -82,25 +80,14 @@ class ListTransformer<E : Any>(
 
     private fun renderNavigation(pane: MenuPane, page: Int, hasNext: Boolean) {
         pane.options.addRow(
-            enableIf(
-                page > 0,
-                Iconc.left,
-                Action.open { state -> state[pageKey] = page - 1 },
-            ),
+            enableIf(page > 0, Iconc.left, Action.open { state -> state[pageKey] = page - 1 }),
             MenuOption(Iconc.cancel.toString()) { it.back() },
-            enableIf(
-                hasNext,
-                Iconc.right,
-                Action.open { state -> state[pageKey] = page + 1 },
-            ),
+            enableIf(hasNext, Iconc.right, Action.open { state -> state[pageKey] = page + 1 }),
         )
     }
 
     private fun enableIf(active: Boolean, icon: Char, action: Action): MenuOption {
-        return MenuOption(
-            if (active) icon.toString() else "[darkgray]$icon",
-            (if (active) action else Action.open()),
-        )
+        return MenuOption(if (active) icon.toString() else "[darkgray]$icon", (if (active) action else Action.open()))
     }
 }
 

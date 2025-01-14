@@ -67,7 +67,7 @@ interface MindustryMapManager {
         author: String?,
         width: Int,
         height: Int,
-        stream: Supplier<InputStream>
+        stream: Supplier<InputStream>,
     ): Int
 
     suspend fun updateMap(
@@ -76,7 +76,7 @@ interface MindustryMapManager {
         author: String?,
         width: Int,
         height: Int,
-        stream: Supplier<InputStream>
+        stream: Supplier<InputStream>,
     ): Boolean
 
     suspend fun addMapGame(map: Int, data: MindustryMap.PlayThrough.Data)
@@ -96,7 +96,7 @@ class SimpleMindustryMapManager(
     private val provider: SQLProvider,
     private val config: ImperiumConfig,
     private val messenger: Messenger,
-    private val storage: StorageBucket
+    private val storage: StorageBucket,
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -105,24 +105,19 @@ class SimpleMindustryMapManager(
                 MindustryMapTable,
                 MindustryMapRatingTable,
                 MindustryMapGamemodeTable,
-                MindustryMapGameTable)
+                MindustryMapGameTable,
+            )
         }
     }
 
     override suspend fun findMapById(id: Int): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll()
-                .where { MindustryMapTable.id eq id }
-                .firstOrNull()
-                ?.toMindustryMap()
+            MindustryMapTable.selectAll().where { MindustryMapTable.id eq id }.firstOrNull()?.toMindustryMap()
         }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll()
-                .where { MindustryMapTable.name eq name }
-                .firstOrNull()
-                ?.toMindustryMap()
+            MindustryMapTable.selectAll().where { MindustryMapTable.name eq name }.firstOrNull()?.toMindustryMap()
         }
 
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
@@ -136,19 +131,12 @@ class SimpleMindustryMapManager(
     override suspend fun findRatingByMapAndUser(map: Int, user: Int): MindustryMap.Rating? =
         provider.newSuspendTransaction {
             MindustryMapRatingTable.selectAll()
-                .where {
-                    (MindustryMapRatingTable.map eq map) and (MindustryMapRatingTable.user eq user)
-                }
+                .where { (MindustryMapRatingTable.map eq map) and (MindustryMapRatingTable.user eq user) }
                 .firstOrNull()
                 ?.toMindustryMapRating()
         }
 
-    override suspend fun saveRating(
-        map: Int,
-        user: Int,
-        score: Int,
-        difficulty: MindustryMap.Difficulty
-    ) {
+    override suspend fun saveRating(map: Int, user: Int, score: Int, difficulty: MindustryMap.Difficulty) {
         provider.newSuspendTransaction {
             MindustryMapRatingTable.upsert {
                 it[MindustryMapRatingTable.map] = map
@@ -163,9 +151,7 @@ class SimpleMindustryMapManager(
         provider.newSuspendTransaction { MindustryMapTable.selectAll().map { it.toMindustryMap() } }
 
     override suspend fun deleteMapById(id: Int): Boolean =
-        provider.newSuspendTransaction {
-            MindustryMapTable.deleteWhere { MindustryMapTable.id eq id } > 0
-        }
+        provider.newSuspendTransaction { MindustryMapTable.deleteWhere { MindustryMapTable.id eq id } > 0 }
 
     override suspend fun createMap(
         name: String,
@@ -173,7 +159,7 @@ class SimpleMindustryMapManager(
         author: String?,
         width: Int,
         height: Int,
-        stream: Supplier<InputStream>
+        stream: Supplier<InputStream>,
     ): Int =
         provider.newSuspendTransaction {
             val id =
@@ -194,7 +180,7 @@ class SimpleMindustryMapManager(
         author: String?,
         width: Int,
         height: Int,
-        stream: Supplier<InputStream>
+        stream: Supplier<InputStream>,
     ): Boolean =
         provider.newSuspendTransaction {
             val rows =
@@ -259,11 +245,7 @@ class SimpleMindustryMapManager(
                         if (it == null) MindustryMap.Difficulty.NORMAL
                         else MindustryMap.Difficulty.entries[it.toDouble().roundToInt()]
                     }
-            val games =
-                MindustryMapGameTable.selectAll()
-                    .where { MindustryMapGameTable.map eq map }
-                    .count()
-                    .toInt()
+            val games = MindustryMapGameTable.selectAll().where { MindustryMapGameTable.map eq map }.count().toInt()
             val playtime =
                 MindustryMapGameTable.select(MindustryMapGameTable.playtime.sum())
                     .where { MindustryMapGameTable.map eq map }
@@ -286,9 +268,7 @@ class SimpleMindustryMapManager(
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll()
-                .where { MindustryMapTable.name like "%$query%" }
-                .map { it.toMindustryMap() }
+            MindustryMapTable.selectAll().where { MindustryMapTable.name like "%$query%" }.map { it.toMindustryMap() }
         }
 
     override suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean {
@@ -320,13 +300,15 @@ class SimpleMindustryMapManager(
             width = this[MindustryMapTable.width],
             height = this[MindustryMapTable.height],
             lastUpdate = this[MindustryMapTable.lastUpdate],
-            gamemodes = getMapGamemodes(this[MindustryMapTable.id].value))
+            gamemodes = getMapGamemodes(this[MindustryMapTable.id].value),
+        )
 
     private fun ResultRow.toMindustryMapRating() =
         MindustryMap.Rating(
             user = this[MindustryMapRatingTable.user].value,
             score = this[MindustryMapRatingTable.score],
-            difficulty = this[MindustryMapRatingTable.difficulty])
+            difficulty = this[MindustryMapRatingTable.difficulty],
+        )
 
     private fun ResultRow.toMindustryMapGame() =
         MindustryMap.PlayThrough(
@@ -343,5 +325,7 @@ class SimpleMindustryMapManager(
                     buildingsConstructed = this[MindustryMapGameTable.buildingsConstructed],
                     buildingsDeconstructed = this[MindustryMapGameTable.buildingsDeconstructed],
                     buildingsDestroyed = this[MindustryMapGameTable.buildingsDestroyed],
-                    winner = this[MindustryMapGameTable.winner]))
+                    winner = this[MindustryMapGameTable.winner],
+                ),
+        )
 }

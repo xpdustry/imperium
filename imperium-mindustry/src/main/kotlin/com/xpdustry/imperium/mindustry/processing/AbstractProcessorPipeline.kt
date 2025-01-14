@@ -27,8 +27,7 @@ abstract class AbstractProcessorPipeline<I : Any, O : Any>(name: String) : Proce
     protected val processors: List<Processor<I, O>>
         get() = _processors.map { it.processor }
 
-    protected fun processor(name: String): Processor<I, O>? =
-        _processors.firstOrNull { it.name == name }?.processor
+    protected fun processor(name: String): Processor<I, O>? = _processors.firstOrNull { it.name == name }?.processor
 
     private val _processors = mutableListOf<ProcessorWithData>()
 
@@ -41,9 +40,5 @@ abstract class AbstractProcessorPipeline<I : Any, O : Any>(name: String) : Proce
         logger.debug("Registered processor {} with priority {}", name, priority)
     }
 
-    private inner class ProcessorWithData(
-        val processor: Processor<I, O>,
-        val name: String,
-        val priority: Priority,
-    )
+    private inner class ProcessorWithData(val processor: Processor<I, O>, val name: String, val priority: Priority)
 }

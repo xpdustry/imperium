@@ -70,8 +70,7 @@ object LegacyAccountTable : IntIdTable("legacy_account") {
 }
 
 object LegacyAccountAchievementTable : Table("legacy_account_achievement") {
-    val account =
-        reference("legacy_account_id", LegacyAccountTable, onDelete = ReferenceOption.CASCADE)
+    val account = reference("legacy_account_id", LegacyAccountTable, onDelete = ReferenceOption.CASCADE)
     val achievement = enumerationByName<Achievement>("achievement", 32)
     override val primaryKey = PrimaryKey(account, achievement)
 }

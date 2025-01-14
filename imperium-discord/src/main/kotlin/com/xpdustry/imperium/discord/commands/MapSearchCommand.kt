@@ -60,9 +60,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
             expireAfterAccess(1.minutes.toJavaDuration())
             scheduler(Scheduler.systemScheduler())
             removalListener<Long, MapSearchState> { key, value, cause ->
-                if (key == null ||
-                    value == null ||
-                    !(cause == RemovalCause.EXPLICIT || cause == RemovalCause.EXPIRED))
+                if (key == null || value == null || !(cause == RemovalCause.EXPLICIT || cause == RemovalCause.EXPIRED))
                     return@removalListener
                 ImperiumScope.MAIN.launch { disableMessageComponents(key, value.channel) }
             }
@@ -74,11 +72,9 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
     @ImperiumCommand(["map", "search"])
     suspend fun onMapSearchCommand(interaction: SlashCommandInteraction, name: String? = null) {
-        val state =
-            MapSearchState(name, 0, emptySet(), interaction.user.idLong, interaction.channel.idLong)
+        val state = MapSearchState(name, 0, emptySet(), interaction.user.idLong, interaction.channel.idLong)
         val result = getResultFromState(state)
-        val message =
-            interaction.deferReply().await().sendMessage(createMessage(result, state)).await()
+        val message = interaction.deferReply().await().sendMessage(createMessage(result, state)).await()
         states.put(message.idLong, state)
     }
 
@@ -105,15 +101,13 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     @MenuCommand(MAP_SEARCH_GAMEMODE_SELECT)
     suspend fun onGamemodeSelect(interaction: StringSelectInteraction) {
         val gamemodes =
-            interaction.values
-                .map { if (it == NONE_GAMEMODE) null else MindustryGamemode.valueOf(it) }
-                .toSet()
+            interaction.values.map { if (it == NONE_GAMEMODE) null else MindustryGamemode.valueOf(it) }.toSet()
         onMapSearchMessageUpdate(interaction) { it.copy(gamemodes = gamemodes) }
     }
 
     private suspend fun onMapSearchMessageUpdate(
         interaction: ComponentInteraction,
-        update: (MapSearchState) -> MapSearchState
+        update: (MapSearchState) -> MapSearchState,
     ) {
         var state = states.getIfPresent(interaction.message.idLong)
         if (state == null) {
@@ -124,9 +118,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
             interaction.deferReply(true).await().sendMessage("This button is not for you").await()
             // Ensures selects are reset
             val result = getResultFromState(state)
-            interaction.message
-                .editMessage(MessageEditData.fromCreateData(createMessage(result, state)))
-                .await()
+            interaction.message.editMessage(MessageEditData.fromCreateData(createMessage(result, state))).await()
             return
         }
         val edit = interaction.deferEdit().await()
@@ -153,12 +145,12 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
         components +=
             ActionRow.of(
-                Button.primary(MAP_SEARCH_PREVIOUS_BUTTON, "Previous")
-                    .withDisabled(state.page == 0),
+                Button.primary(MAP_SEARCH_PREVIOUS_BUTTON, "Previous").withDisabled(state.page == 0),
                 Button.secondary("unused", "${state.page + 1} / ${pages + 1}").withDisabled(true),
                 Button.primary(MAP_SEARCH_NEXT_BUTTON, "Next").withDisabled(state.page == pages),
                 Button.success(MAP_SEARCH_FIRST_BUTTON, "First").withDisabled(state.page == 0),
-                Button.success(MAP_SEARCH_LAST_BUTTON, "Last").withDisabled(state.page == pages))
+                Button.success(MAP_SEARCH_LAST_BUTTON, "Last").withDisabled(state.page == pages),
+            )
 
         val entries = (MindustryGamemode.entries + null)
         components +=
@@ -177,23 +169,19 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
                         addOptions(options.values)
                         setDefaultOptions(state.gamemodes.map { options[it]!! })
                     }
-                    .build())
+                    .build()
+            )
     }
 
     private suspend fun getResultFromState(state: MapSearchState) =
-        (if (state.query == null) maps.findAllMaps() else maps.searchMapByName(state.query))
-            .filter {
-                state.gamemodes.isEmpty() ||
-                    it.gamemodes.intersect(state.gamemodes).isNotEmpty() ||
-                    (null in state.gamemodes && it.gamemodes.isEmpty())
-            }
+        (if (state.query == null) maps.findAllMaps() else maps.searchMapByName(state.query)).filter {
+            state.gamemodes.isEmpty() ||
+                it.gamemodes.intersect(state.gamemodes).isNotEmpty() ||
+                (null in state.gamemodes && it.gamemodes.isEmpty())
+        }
 
     private suspend fun disableMessageComponents(messageId: Long, channelId: Long) {
-        discord.jda
-            .getTextChannelById(channelId)
-            ?.retrieveMessageById(messageId)
-            ?.await()
-            ?.disableComponents()
+        discord.jda.getTextChannelById(channelId)?.retrieveMessageById(messageId)?.await()?.disableComponents()
     }
 
     private val List<MindustryMap>.pages: Int
@@ -204,7 +192,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
         val page: Int,
         val gamemodes: Set<MindustryGamemode?>,
         val owner: Long,
-        val channel: Long
+        val channel: Long,
     )
 
     companion object {
