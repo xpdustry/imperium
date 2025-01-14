@@ -50,13 +50,10 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder
 import net.dv8tion.jda.api.utils.messages.MessageRequest
 
-inline fun <reified T : GenericEvent> JDA.addSuspendingEventListener(
-    crossinline listener: suspend (T) -> Unit
-) {
+inline fun <reified T : GenericEvent> JDA.addSuspendingEventListener(crossinline listener: suspend (T) -> Unit) {
     addEventListener(
-        EventListener { event ->
-            ImperiumScope.MAIN.launch { (event as? T)?.let { casted -> listener(casted) } }
-        })
+        EventListener { event -> ImperiumScope.MAIN.launch { (event as? T)?.let { casted -> listener(casted) } } }
+    )
 }
 
 inline val Member.snowflake: UserSnowflake
@@ -102,7 +99,7 @@ inline fun MessageCreateBuilder(
     components: Collection<LayoutComponent> = emptyList(),
     tts: Boolean = false,
     mentions: Mentions = Mentions.default(),
-    builder: InlineMessage<MessageCreateData>.() -> Unit = {}
+    builder: InlineMessage<MessageCreateData>.() -> Unit = {},
 ) =
     MessageCreateBuilder().run {
         setTTS(tts)
@@ -124,7 +121,7 @@ inline fun MessageCreate(
     components: Collection<LayoutComponent> = emptyList(),
     tts: Boolean = false,
     mentions: Mentions = Mentions.default(),
-    builder: InlineMessage<MessageCreateData>.() -> Unit = {}
+    builder: InlineMessage<MessageCreateData>.() -> Unit = {},
 ) = MessageCreateBuilder(content, embeds, files, components, tts, mentions, builder).build()
 
 class InlineMessage<T>(val builder: AbstractMessageBuilder<T, *>) {
@@ -246,7 +243,7 @@ class EmbedAccumulator(private val builder: InlineMessage<*>) {
 
 class ComponentAccumulator(
     private val config: MutableList<LayoutComponent>,
-    private val builder: InlineMessage<*>? = null
+    private val builder: InlineMessage<*>? = null,
 ) {
     operator fun plusAssign(components: Collection<LayoutComponent>) {
         builder?.let { it.set = it.set or SetFlags.COMPONENTS }
@@ -322,15 +319,14 @@ inline fun Embed(
             image,
             thumbnail,
             fields,
-            builder)
+            builder,
+        )
         .build()
 }
 
 @MessageDSL
-inline fun Embed(
-    embed: MessageEmbed,
-    builder: InlineEmbed.() -> Unit,
-): MessageEmbed = InlineEmbed(embed).apply(builder).build()
+inline fun Embed(embed: MessageEmbed, builder: InlineEmbed.() -> Unit): MessageEmbed =
+    InlineEmbed(embed).apply(builder).build()
 
 @MessageDSL
 inline fun EmbedBuilder(
@@ -347,7 +343,7 @@ inline fun EmbedBuilder(
     image: String? = null,
     thumbnail: String? = null,
     fields: Collection<MessageEmbed.Field> = emptyList(),
-    builder: InlineEmbed.() -> Unit = {}
+    builder: InlineEmbed.() -> Unit = {},
 ): InlineEmbed {
     return EmbedBuilder().run {
         setDescription(description)
@@ -411,11 +407,7 @@ class InlineEmbed(val builder: EmbedBuilder) {
             field = value
         }
 
-    inline fun footer(
-        name: String = "",
-        iconUrl: String? = null,
-        build: InlineFooter.() -> Unit = {}
-    ) {
+    inline fun footer(name: String = "", iconUrl: String? = null, build: InlineFooter.() -> Unit = {}) {
         val footer = InlineFooter(name, iconUrl).apply(build)
         this.builder.setFooter(footer.name, footer.iconUrl)
     }
@@ -424,7 +416,7 @@ class InlineEmbed(val builder: EmbedBuilder) {
         name: String? = null,
         url: String? = null,
         iconUrl: String? = null,
-        build: InlineAuthor.() -> Unit = {}
+        build: InlineAuthor.() -> Unit = {},
     ) {
         val author = InlineAuthor(name, iconUrl, url).apply(build)
         builder.setAuthor(author.name, author.url, author.iconUrl)
@@ -436,7 +428,7 @@ class InlineEmbed(val builder: EmbedBuilder) {
         name: String = EmbedBuilder.ZERO_WIDTH_SPACE,
         value: String = EmbedBuilder.ZERO_WIDTH_SPACE,
         inline: Boolean = true,
-        build: @MessageDSL InlineField.() -> Unit = {}
+        build: @MessageDSL InlineField.() -> Unit = {},
     ) {
         val field = InlineField(name, value, inline).apply(build)
         builder.addField(field.name, field.value, field.inline)
@@ -444,43 +436,30 @@ class InlineEmbed(val builder: EmbedBuilder) {
 
     @MessageDSL data class InlineFooter(var name: String = "", var iconUrl: String? = null)
 
-    @MessageDSL
-    data class InlineAuthor(
-        var name: String? = null,
-        var iconUrl: String? = null,
-        var url: String? = null
-    )
+    @MessageDSL data class InlineAuthor(var name: String? = null, var iconUrl: String? = null, var url: String? = null)
 
     @MessageDSL
     data class InlineField(
         var name: String = EmbedBuilder.ZERO_WIDTH_SPACE,
         var value: String = EmbedBuilder.ZERO_WIDTH_SPACE,
-        var inline: Boolean = true
+        var inline: Boolean = true,
     )
 }
 
-class MentionConfig
-internal constructor(val any: Boolean, val list: List<Long>, val type: Message.MentionType) {
+class MentionConfig internal constructor(val any: Boolean, val list: List<Long>, val type: Message.MentionType) {
     companion object {
         val USERS = MentionConfig(true, emptyList(), Message.MentionType.USER)
         val ROLES = MentionConfig(true, emptyList(), Message.MentionType.ROLE)
         val EVERYONE = MentionConfig(true, emptyList(), Message.MentionType.EVERYONE)
         val HERE = MentionConfig(true, emptyList(), Message.MentionType.HERE)
 
-        fun users(list: Collection<Long>) =
-            MentionConfig(false, list.toList(), Message.MentionType.USER)
+        fun users(list: Collection<Long>) = MentionConfig(false, list.toList(), Message.MentionType.USER)
 
-        fun roles(list: Collection<Long>) =
-            MentionConfig(false, list.toList(), Message.MentionType.ROLE)
+        fun roles(list: Collection<Long>) = MentionConfig(false, list.toList(), Message.MentionType.ROLE)
     }
 }
 
-data class Mentions(
-    var users: MentionConfig,
-    var roles: MentionConfig,
-    var everyone: Boolean,
-    var here: Boolean
-) {
+data class Mentions(var users: MentionConfig, var roles: MentionConfig, var everyone: Boolean, var here: Boolean) {
     fun apply(request: MessageRequest<*>) {
         val types = EnumSet.noneOf(Message.MentionType::class.java)
         if (everyone) types.add(Message.MentionType.EVERYONE)
@@ -508,16 +487,11 @@ data class Mentions(
             val defaultTypes = MessageRequest.getDefaultMentions()
 
             return Mentions(
-                MentionConfig(
-                    Message.MentionType.USER in defaultTypes,
-                    emptyList(),
-                    Message.MentionType.USER),
-                MentionConfig(
-                    Message.MentionType.ROLE in defaultTypes,
-                    emptyList(),
-                    Message.MentionType.ROLE),
+                MentionConfig(Message.MentionType.USER in defaultTypes, emptyList(), Message.MentionType.USER),
+                MentionConfig(Message.MentionType.ROLE in defaultTypes, emptyList(), Message.MentionType.ROLE),
                 Message.MentionType.EVERYONE in defaultTypes,
-                Message.MentionType.HERE in defaultTypes)
+                Message.MentionType.HERE in defaultTypes,
+            )
         }
 
         fun of(vararg configs: MentionConfig): Mentions {
@@ -550,5 +524,4 @@ fun Role.ref() = BackedReference(this) { guild.getRoleById(idLong) }
 fun PrivateChannel.ref() = BackedReference(this) { jda.getPrivateChannelById(idLong) }
 
 @Suppress("UNCHECKED_CAST")
-fun <T : GuildChannel> T.ref() =
-    BackedReference(this) { jda.getGuildChannelById(type, idLong) as T }
+fun <T : GuildChannel> T.ref() = BackedReference(this) { jda.getGuildChannelById(type, idLong) as T }

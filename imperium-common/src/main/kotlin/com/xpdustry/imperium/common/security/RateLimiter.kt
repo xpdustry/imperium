@@ -36,8 +36,7 @@ class SimpleRateLimiter<K : Any>(private val limit: Int, period: Duration) : Rat
         require(period > Duration.ZERO) { "Period must be positive" }
     }
 
-    private val cache =
-        CacheBuilder.newBuilder().expireAfterWrite(period.toJavaDuration()).build<K, Int>()
+    private val cache = CacheBuilder.newBuilder().expireAfterWrite(period.toJavaDuration()).build<K, Int>()
 
     override fun check(key: K) = (cache.getIfPresent(key) ?: 0) < limit
 

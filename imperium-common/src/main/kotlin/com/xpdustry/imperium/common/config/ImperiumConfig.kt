@@ -42,7 +42,8 @@ private val SUPPORTED_LANGUAGE =
         Locale.forLanguageTag("es"),
         Locale.forLanguageTag("ru"),
         Locale.forLanguageTag("pl"),
-        Locale.forLanguageTag("hr"))
+        Locale.forLanguageTag("hr"),
+    )
 
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
@@ -57,7 +58,7 @@ data class ImperiumConfig(
     val mindustry: MindustryConfig = MindustryConfig(),
     val webserver: WebserverConfig = WebserverConfig(),
     val storage: StorageConfig = StorageConfig.Local,
-    val metrics: MetricConfig = MetricConfig.None
+    val metrics: MetricConfig = MetricConfig.None,
 )
 
 data class NetworkConfig(
@@ -95,10 +96,7 @@ sealed interface MessengerConfig {
     ) : MessengerConfig
 }
 
-data class ServerConfig(
-    val name: String,
-    val displayName: String = name.capitalize(),
-) {
+data class ServerConfig(val name: String, val displayName: String = name.capitalize()) {
     val identity: Identity.Server
         get() = Identity.Server(name)
 
@@ -129,22 +127,15 @@ data class DiscordConfig(
     val globalCommands: Boolean = false,
     val alertsRole: Long? = null,
 ) {
-    val roles2ranks: Map<Long, Rank> =
-        ranks2roles.entries.associate { (key, value) -> value to key }
+    val roles2ranks: Map<Long, Rank> = ranks2roles.entries.associate { (key, value) -> value to key }
 
     init {
         require(ranks2roles.size == roles2ranks.size) { "some ranks have a shared role id" }
     }
 
-    data class Categories(
-        val liveChat: Long = 0,
-    )
+    data class Categories(val liveChat: Long = 0)
 
-    data class Channels(
-        val notifications: Long = 0,
-        val maps: Long = 0,
-        val reports: Long = 0,
-    )
+    data class Channels(val notifications: Long = 0, val maps: Long = 0, val reports: Long = 0)
 }
 
 data class MindustryConfig(
@@ -155,7 +146,7 @@ data class MindustryConfig(
     val color: Color = Color.WHITE,
     val world: World = World(),
     val security: Security = Security(),
-    val tipsDelay: Duration = 5.minutes
+    val tipsDelay: Duration = 5.minutes,
 ) {
     data class History(
         val tileEntriesLimit: Int = 20,
@@ -196,10 +187,7 @@ data class MindustryConfig(
     }
 }
 
-data class WebserverConfig(
-    val port: Int = 8080,
-    val host: InetAddress = InetAddresses.forString("0.0.0.0")
-)
+data class WebserverConfig(val port: Int = 8080, val host: InetAddress = InetAddresses.forString("0.0.0.0"))
 
 sealed interface StorageConfig {
     data object Local : StorageConfig
@@ -222,6 +210,6 @@ sealed interface MetricConfig {
         val token: Secret,
         val organization: String,
         val bucket: String = "imperium",
-        val interval: Duration = 10.seconds
+        val interval: Duration = 10.seconds,
     ) : MetricConfig
 }

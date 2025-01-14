@@ -38,7 +38,7 @@ import okhttp3.OkHttpClient
 class InfluxDBRegistry(
     private val server: ServerConfig,
     private val config: MetricConfig.InfluxDB,
-    private val http: OkHttpClient
+    private val http: OkHttpClient,
 ) : MetricsRegistry, ImperiumApplication.Listener {
     private val collectors = CopyOnWriteArraySet<MetricsCollector>()
     private lateinit var client: InfluxDBClient
@@ -53,7 +53,8 @@ class InfluxDBRegistry(
                     .bucket(config.bucket)
                     .org(config.organization)
                     .okHttpClient(http.newBuilder())
-                    .build())
+                    .build()
+            )
 
         write = client.makeWriteApi()
 

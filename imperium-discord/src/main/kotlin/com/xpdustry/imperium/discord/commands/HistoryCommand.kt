@@ -42,7 +42,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     suspend fun onHistoryCommand(
         interaction: SlashCommandInteraction,
         @Lowercase player: String,
-        @Lowercase server: String
+        @Lowercase server: String,
     ) {
         val reply = interaction.deferReply(true).await()
         val identifier = codec.tryDecode(player)
@@ -51,14 +51,9 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             return
         }
         messenger
-            .request<HistoryResponseMessage>(
-                HistoryRequestMessage(server, identifier), timeout = 5.seconds)
+            .request<HistoryResponseMessage>(HistoryRequestMessage(server, identifier), timeout = 5.seconds)
             ?.history
-            ?.let {
-                reply
-                    .sendFiles(
-                        FileUpload.fromStreamSupplier("history.txt") { it.byteInputStream() })
-                    .await()
-            } ?: reply.sendMessage("No history found.").await()
+            ?.let { reply.sendFiles(FileUpload.fromStreamSupplier("history.txt") { it.byteInputStream() }).await() }
+            ?: reply.sendMessage("No history found.").await()
     }
 }

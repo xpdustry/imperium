@@ -30,12 +30,11 @@ fun interface Processor<I : Any, O : Any> {
 class CachingProcessor<I : Any, O : Any, K : Any>(
     expiration: Duration,
     private val extractor: (I) -> K,
-    private val delegate: Processor<I, O>
+    private val delegate: Processor<I, O>,
 ) : Processor<I, O> {
     private val cache = buildAsyncCache<K, O> { expireAfterWrite(expiration.toJavaDuration()) }
 
-    override suspend fun process(context: I): O =
-        cache.getSuspending(extractor(context)) { delegate.process(context) }
+    override suspend fun process(context: I): O = cache.getSuspending(extractor(context)) { delegate.process(context) }
 }
 
 fun <I : Any, O : Any, K : Any> ProcessorPipeline<I, O>.registerCaching(
@@ -43,5 +42,5 @@ fun <I : Any, O : Any, K : Any> ProcessorPipeline<I, O>.registerCaching(
     expiration: Duration,
     extractor: (I) -> K,
     priority: Priority = Priority.NORMAL,
-    processor: Processor<I, O>
+    processor: Processor<I, O>,
 ) = register(name, priority, CachingProcessor(expiration, extractor, processor))

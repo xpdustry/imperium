@@ -62,7 +62,8 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
                     Call.warningToast(
                         player.con,
                         Iconc.infoCircle.code,
-                        "Congrats, you obtained the achievement [orange]${message.achievement.name.lowercase()}.")
+                        "Congrats, you obtained the achievement [orange]${message.achievement.name.lowercase()}.",
+                    )
                     break
                 }
             }
@@ -134,17 +135,11 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
         }
     }
 
-    private suspend fun checkDailyLoginAchievement(
-        account: Account,
-        playtime: Duration,
-        achievement: Achievement,
-    ) {
+    private suspend fun checkDailyLoginAchievement(account: Account, playtime: Duration, achievement: Achievement) {
         if (playtime < 30.minutes || accounts.selectAchievement(account.id, achievement)) return
         val now = System.currentTimeMillis()
-        var last =
-            accounts.selectMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT)?.toLongOrNull()
-        var increment =
-            accounts.selectMetadata(account.id, PLAYTIME_ACHIEVEMENT_INCREMENT)?.toIntOrNull() ?: 0
+        var last = accounts.selectMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT)?.toLongOrNull()
+        var increment = accounts.selectMetadata(account.id, PLAYTIME_ACHIEVEMENT_INCREMENT)?.toIntOrNull() ?: 0
 
         if (last == null) {
             last = now
@@ -173,8 +168,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
             accounts.updateAchievement(account.id, achievement, true)
         } else {
             accounts.updateMetadata(account.id, PLAYTIME_ACHIEVEMENT_LAST_GRANT, last.toString())
-            accounts.updateMetadata(
-                account.id, PLAYTIME_ACHIEVEMENT_INCREMENT, increment.toString())
+            accounts.updateMetadata(account.id, PLAYTIME_ACHIEVEMENT_INCREMENT, increment.toString())
         }
     }
 

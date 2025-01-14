@@ -51,12 +51,11 @@ val UNIT_FACTORY_CONFIGURATION_FACTORY =
         override fun create(
             building: UnitFactory.UnitFactoryBuild,
             type: HistoryEntry.Type,
-            config: Any?
+            config: Any?,
         ): BlockConfig? {
             val plans = (building.block as UnitFactory).plans
             return if (config is Int) {
-                if (config > 0 && config < plans.size) BlockConfig.Content(plans[config].unit)
-                else BlockConfig.Reset
+                if (config > 0 && config < plans.size) BlockConfig.Content(plans[config].unit) else BlockConfig.Reset
             } else if (config is UnitType) {
                 create(building, type, plans.indexOf { plan -> plan.unit == config })
             } else {
@@ -91,11 +90,7 @@ val POWER_NODE_CONFIGURATION_FACTORY =
 
 val PAYLOAD_DRIVER_CONFIGURATION_FACTORY =
     object : LinkableBlockConfigProvider<PayloadMassDriver.PayloadDriverBuild>() {
-        override fun isLinkValid(
-            building: PayloadMassDriver.PayloadDriverBuild,
-            x: Int,
-            y: Int
-        ): Boolean {
+        override fun isLinkValid(building: PayloadMassDriver.PayloadDriverBuild, x: Int, y: Int): Boolean {
             val other = Vars.world.build(Point2.pack(x, y))
             return other is MassDriver.MassDriverBuild &&
                 building.block === other.block &&

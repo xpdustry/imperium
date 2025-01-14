@@ -91,13 +91,14 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 onChoice = { view, server ->
                     view.closeAll()
                     switchToServer(view.viewer, server)
-                }))
+                },
+            )
+        )
         return switchInterface
     }
 
     private fun switchToServer(player: Player, server: Discovery.Data.Mindustry) {
         Call.connect(player.con, server.host.hostAddress, server.port)
-        Call.sendMessage(
-            "[accent]${player.plainName()}[] switched to the [cyan]${server.name}[accent].")
+        Call.sendMessage("[accent]${player.plainName()}[] switched to the [cyan]${server.name}[accent].")
     }
 }

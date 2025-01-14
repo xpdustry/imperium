@@ -38,24 +38,20 @@ class SystemMetricCollector : MetricsCollector {
         // OS
         if (os != null) {
             result += GaugeMetric("process_cpu_load_ratio", os.processCpuLoad)
-            result +=
-                CounterMetric(
-                    "process_cpu_seconds_total", os.processCpuTime / NANOSECONDS_PER_SECOND)
+            result += CounterMetric("process_cpu_seconds_total", os.processCpuTime / NANOSECONDS_PER_SECOND)
         }
 
         // Runtime
-        result +=
-            GaugeMetric("process_start_time_seconds", runtime.startTime / MILLISECONDS_PER_SECOND)
+        result += GaugeMetric("process_start_time_seconds", runtime.startTime / MILLISECONDS_PER_SECOND)
 
         // Memory
-        sequenceOf(memory.heapMemoryUsage to "heap", memory.nonHeapMemoryUsage to "nonheap")
-            .forEach { (usage, area) ->
-                val tags = mapOf("area" to area)
-                result += GaugeMetric("jvm_memory_bytes_used", usage.used, tags)
-                result += GaugeMetric("jvm_memory_bytes_committed", usage.committed, tags)
-                result += GaugeMetric("jvm_memory_bytes_max", usage.max, tags)
-                result += GaugeMetric("jvm_memory_bytes_init", usage.init, tags)
-            }
+        sequenceOf(memory.heapMemoryUsage to "heap", memory.nonHeapMemoryUsage to "nonheap").forEach { (usage, area) ->
+            val tags = mapOf("area" to area)
+            result += GaugeMetric("jvm_memory_bytes_used", usage.used, tags)
+            result += GaugeMetric("jvm_memory_bytes_committed", usage.committed, tags)
+            result += GaugeMetric("jvm_memory_bytes_max", usage.max, tags)
+            result += GaugeMetric("jvm_memory_bytes_init", usage.init, tags)
+        }
 
         return result
     }

@@ -108,7 +108,7 @@ private fun interceptPlayerConnection(
     con: NetConnection,
     packet: Packets.ConnectPacket,
     pipeline: GatekeeperPipeline,
-    config: MindustryConfig
+    config: MindustryConfig,
 ) {
     if (con.kicked) return
 
@@ -121,10 +121,12 @@ private fun interceptPlayerConnection(
     val audience = Distributor.get().audienceProvider.getConnection(con)
     con.connectTime = Time.millis()
 
-    if (Vars.netServer.admins.isIPBanned(con.address) ||
-        Vars.netServer.admins.isSubnetBanned(con.address) ||
-        con.kicked ||
-        !con.isConnected)
+    if (
+        Vars.netServer.admins.isIPBanned(con.address) ||
+            Vars.netServer.admins.isSubnetBanned(con.address) ||
+            con.kicked ||
+            !con.isConnected
+    )
         return
 
     if (con.hasBegunConnecting) {
@@ -143,9 +145,7 @@ private fun interceptPlayerConnection(
     }
 
     // We do not want to save the data of DDOSers, so we postpone the saving of the player info
-    val info =
-        Vars.netServer.admins.getInfoOptional(packet.uuid)
-            ?: PlayerInfo().apply { id = packet.uuid }
+    val info = Vars.netServer.admins.getInfoOptional(packet.uuid) ?: PlayerInfo().apply { id = packet.uuid }
 
     con.hasBegunConnecting = true
     con.mobile = packet.mobile
@@ -161,9 +161,11 @@ private fun interceptPlayerConnection(
     }
 
     // CHECK: Player limit
-    if (Vars.netServer.admins.playerLimit > 0 &&
-        Entities.getPlayers().size >= Vars.netServer.admins.playerLimit &&
-        !Vars.netServer.admins.isAdmin(packet.uuid, packet.usid)) {
+    if (
+        Vars.netServer.admins.playerLimit > 0 &&
+            Entities.getPlayers().size >= Vars.netServer.admins.playerLimit &&
+            !Vars.netServer.admins.isAdmin(packet.uuid, packet.usid)
+    ) {
         con.kick(KickReason.playerLimit)
         return
     }
@@ -179,15 +181,9 @@ private fun interceptPlayerConnection(
             result.append("[]\n")
         }
         if (!mods.isEmpty) {
-            result
-                .append("Unnecessary mods:[lightgray]\n")
-                .append("> ")
-                .append(mods.toString("\n> "))
+            result.append("Unnecessary mods:[lightgray]\n").append("> ").append(mods.toString("\n> "))
         }
-        audience.kick(
-            Distributor.get().mindustryComponentDecoder.decode(result.toString()),
-            Duration.ZERO,
-            false)
+        audience.kick(Distributor.get().mindustryComponentDecoder.decode(result.toString()), Duration.ZERO, false)
         return
     }
 
@@ -198,40 +194,34 @@ private fun interceptPlayerConnection(
         info.id = packet.uuid
         Vars.netServer.admins.save()
         Call.infoMessage(con, "You are not whitelisted here.")
-        logger.info(
-            "&lcDo &lywhitelist-add {}&lc to whitelist the player &lb'{}'",
-            packet.uuid,
-            packet.name)
+        logger.info("&lcDo &lywhitelist-add {}&lc to whitelist the player &lb'{}'", packet.uuid, packet.name)
         audience.kick(KickReason.whitelist, Duration.ZERO, false)
         return
     }
 
     // CHECK: Custom client
-    if (packet.versionType == null ||
-        (packet.version == -1 || packet.versionType != Version.type) &&
-            Version.build != -1 &&
-            Vars.netServer.admins.allowsCustomClients().not()) {
-        con.kick(
-            if (Version.type != packet.versionType) KickReason.typeMismatch
-            else KickReason.customClient)
+    if (
+        packet.versionType == null ||
+            (packet.version == -1 || packet.versionType != Version.type) &&
+                Version.build != -1 &&
+                Vars.netServer.admins.allowsCustomClients().not()
+    ) {
+        con.kick(if (Version.type != packet.versionType) KickReason.typeMismatch else KickReason.customClient)
         return
     }
 
     // CHECK: Duplicate names
-    if (Entities.getPlayers().any {
-        it.name
-            .stripMindustryColors()
-            .trim()
-            .equals(packet.name.stripMindustryColors().trim(), ignoreCase = true)
-    }) {
+    if (
+        Entities.getPlayers().any {
+            it.name.stripMindustryColors().trim().equals(packet.name.stripMindustryColors().trim(), ignoreCase = true)
+        }
+    ) {
         audience.kick(KickReason.nameInUse, Duration.ZERO, false)
         return
     }
 
     // CHECK: Duplicate ids
-    if (Entities.getPlayers().any { player ->
-        player.uuid() == packet.uuid || player.usid() == packet.usid
-    }) {
+    if (Entities.getPlayers().any { player -> player.uuid() == packet.uuid || player.usid() == packet.usid }) {
         con.uuid = packet.uuid
         audience.kick(KickReason.idInUse, Duration.ZERO, false)
         return
@@ -262,10 +252,10 @@ private fun interceptPlayerConnection(
     // CHECK: Version
     if (packet.version != Version.build && Version.build != -1 && packet.version != -1) {
         audience.kick(
-            if (packet.version > Version.build) KickReason.serverOutdated
-            else KickReason.clientOutdated,
+            if (packet.version > Version.build) KickReason.serverOutdated else KickReason.clientOutdated,
             Duration.ZERO,
-            false)
+            false,
+        )
         return
     }
 
@@ -279,11 +269,8 @@ private fun interceptPlayerConnection(
         val result =
             if (config.security.gatekeeper) {
                 pipeline.pump(
-                    GatekeeperContext(
-                        packet.name,
-                        packet.uuid,
-                        packet.usid,
-                        InetAddresses.forString(con.address)))
+                    GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address))
+                )
             } else {
                 GatekeeperResult.Success
             }

@@ -36,12 +36,11 @@ class ImperiumComponentRendererProvider(renderer: TimeRenderer) : ComponentRende
             else -> null
         }
 
-    class DurationComponentRenderer(private val renderer: TimeRenderer) :
-        ComponentRenderer<DurationComponent> {
+    class DurationComponentRenderer(private val renderer: TimeRenderer) : ComponentRenderer<DurationComponent> {
         override fun render(component: DurationComponent, builder: ComponentStringBuilder) {
             builder.append(
-                renderer.renderDuration(
-                    component.duration, builder.context.get(StandardKeys.LOCALE) ?: Locale.ENGLISH))
+                renderer.renderDuration(component.duration, builder.context.get(StandardKeys.LOCALE) ?: Locale.ENGLISH)
+            )
         }
     }
 }

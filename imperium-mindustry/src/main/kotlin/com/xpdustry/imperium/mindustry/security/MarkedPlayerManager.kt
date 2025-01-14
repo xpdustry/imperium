@@ -28,8 +28,7 @@ interface MarkedPlayerManager {
     fun mark(player: Player)
 }
 
-class SimpleMarkedPlayerManager(plugin: MindustryPlugin) :
-    MarkedPlayerManager, ImperiumApplication.Listener {
+class SimpleMarkedPlayerManager(plugin: MindustryPlugin) : MarkedPlayerManager, ImperiumApplication.Listener {
     private val marked = PlayerMap<Boolean>(plugin)
 
     override fun isMarked(player: Player): Boolean = marked[player] ?: false

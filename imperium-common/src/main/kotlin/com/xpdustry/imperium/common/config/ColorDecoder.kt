@@ -37,8 +37,7 @@ class ColorDecoder : NonNullableLeafDecoder<Color> {
                 runCatching { Color(node.value.toInt(16)) }
                     .toValidated {
                         when (it) {
-                            is NumberFormatException ->
-                                ConfigFailure.NumberConversionError(node, type)
+                            is NumberFormatException -> ConfigFailure.NumberConversionError(node, type)
                             else -> ThrowableFailure(it)
                         }
                     }

@@ -36,8 +36,7 @@ import mindustry.game.Team
 import mindustry.gen.Call
 
 class KillAllCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds),
-    ImperiumApplication.Listener {
+    AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds), ImperiumApplication.Listener {
 
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)
@@ -85,9 +84,7 @@ class KillAllCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Unit>) {
         runMindustryThread {
-            Entities.getUnits().toList().forEach { unit ->
-                if (!unit.isPlayer) Call.unitDespawn(unit)
-            }
+            Entities.getUnits().toList().forEach { unit -> if (!unit.isPlayer) Call.unitDespawn(unit) }
         }
     }
 }

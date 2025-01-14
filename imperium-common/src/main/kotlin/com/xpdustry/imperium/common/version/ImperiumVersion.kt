@@ -20,8 +20,7 @@ package com.xpdustry.imperium.common.version
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ImperiumVersion(val year: Int, val month: Int, val build: Int) :
-    Comparable<ImperiumVersion> {
+data class ImperiumVersion(val year: Int, val month: Int, val build: Int) : Comparable<ImperiumVersion> {
     init {
         require(year >= 0) { "Year must be positive" }
         require(month in 1..12) { "Month must be between 1 and 12" }

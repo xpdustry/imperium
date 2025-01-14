@@ -84,11 +84,10 @@ class RockTheVoteCommand(instances: InstanceManager) :
                             window.state[DIFFICULTY] = difficulty
                         }
                         window.show()
-                    })
+                    }
+            )
 
-            addTransformer { (pane) ->
-                pane.grid.addRow(MenuOption.of("Select a map", Action.none()))
-            }
+            addTransformer { (pane) -> pane.grid.addRow(MenuOption.of("Select a map", Action.none())) }
 
             addTransformer { (pane, state) ->
                 val difficulty = state[DIFFICULTY]
@@ -102,9 +101,9 @@ class RockTheVoteCommand(instances: InstanceManager) :
                     pane.grid.addRow(
                         MenuOption.of(
                             text("Random", ComponentColor.YELLOW),
-                            Action.hideAll().then {
-                                onVoteSessionStart(it.viewer, manager.session, selector)
-                            }))
+                            Action.hideAll().then { onVoteSessionStart(it.viewer, manager.session, selector) },
+                        )
+                    )
                 } else {
                     pane.grid.addRow(MenuOption.of(text("Random", LIGHT_GRAY), Action.none()))
                 }
@@ -114,23 +113,18 @@ class RockTheVoteCommand(instances: InstanceManager) :
                 ListTransformer<MapWithDifficulty>()
                     .setProvider { ctx ->
                         val difficulty = ctx.state[DIFFICULTY]
-                        ctx.state[MAPS]!!.filter {
-                            difficulty == null || it.difficulty == difficulty
-                        }
+                        ctx.state[MAPS]!!.filter { difficulty == null || it.difficulty == difficulty }
                     }
-                    .setRenderer { it ->
-                        Distributor.get().mindustryComponentDecoder.decode(it.map.name())
-                    }
+                    .setRenderer { it -> Distributor.get().mindustryComponentDecoder.decode(it.map.name()) }
                     .setFillEmptySpace(true)
                     .setChoiceAction(
                         BiAction.from<MapWithDifficulty>(Action.hideAll()).then { window, map ->
-                            onVoteSessionStart(
-                                window.viewer, manager.session, MapSelector.Specific(map.map))
-                        }))
+                            onVoteSessionStart(window.viewer, manager.session, MapSelector.Specific(map.map))
+                        }
+                    )
+            )
 
-            addTransformer { (pane) ->
-                pane.grid.addRow(MenuOption.of(gui_back(), Action.hideAll()))
-            }
+            addTransformer { (pane) -> pane.grid.addRow(MenuOption.of(gui_back(), Action.hideAll())) }
         }
 
     @ImperiumCommand(["rtv"])
@@ -141,10 +135,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
         ImperiumScope.MAIN.launch {
             val with =
                 list.map { map ->
-                    MapWithDifficulty(
-                        map,
-                        maps.getMapStats(map.id ?: -1)?.difficulty
-                            ?: MindustryMap.Difficulty.NORMAL)
+                    MapWithDifficulty(map, maps.getMapStats(map.id ?: -1)?.difficulty ?: MindustryMap.Difficulty.NORMAL)
                 }
             runMindustryThread {
                 window.state[MAPS] = with
@@ -184,8 +175,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
             is MapSelector.Difficulty -> {
                 val result =
                     Vars.maps.customMaps().asList().filter { map ->
-                        val difficulty =
-                            maps.getMapStats(map.id ?: -1) ?: MindustryMap.Difficulty.NORMAL
+                        val difficulty = maps.getMapStats(map.id ?: -1) ?: MindustryMap.Difficulty.NORMAL
                         difficulty == selector.difficulty
                     }
                 if (result.isNotEmpty()) {

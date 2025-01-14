@@ -27,7 +27,7 @@ data class ReportMessage(
     val senderId: Int,
     val targetName: String,
     val targetId: Int,
-    val reason: Reason
+    val reason: Reason,
 ) : Message {
     enum class Reason {
         GRIEFING,

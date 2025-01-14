@@ -44,7 +44,8 @@ class DumpCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 ManagementFactory.newPlatformMXBeanProxy(
                     server,
                     "com.sun.management:type=HotSpotDiagnostic",
-                    HotSpotDiagnosticMXBean::class.java)
+                    HotSpotDiagnosticMXBean::class.java,
+                )
             val file = directory.resolve("${System.currentTimeMillis()}.hprof")
             mxBean.dumpHeap(file.toString(), live)
             sender.reply("Dumped heap to $file")

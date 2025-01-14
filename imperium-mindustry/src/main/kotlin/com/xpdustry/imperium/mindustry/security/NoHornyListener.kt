@@ -57,7 +57,8 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                         event.group.x,
                         event.group.y,
                         event.group.w,
-                        event.group.h)
+                        event.group.h,
+                    )
 
                     webhook.send(
                         WebhookMessage(
@@ -65,22 +66,18 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                                 buildString {
                                     appendLine("**Possible NSFW image detected**")
                                     append("Located at ${event.group.x}, ${event.group.y}")
-                                    val id =
-                                        event.author
-                                            ?.uuid
-                                            ?.let { users.findByUuid(it) }
-                                            ?.id
-                                            ?.let(codec::encode)
+                                    val id = event.author?.uuid?.let { users.findByUuid(it) }?.id?.let(codec::encode)
                                     if (id != null) {
                                         append(" by user `$id`")
                                     }
                                     appendLine()
                                     for ((entry, percent) in event.result.details) {
-                                        appendLine(
-                                            "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
+                                        appendLine("- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
                                     }
                                 },
-                            attachments = listOf(event.image.toUnsafeAttachment())))
+                            attachments = listOf(event.image.toUnsafeAttachment()),
+                        )
+                    )
                 }
                 NoHornyResult.Rating.UNSAFE -> {
                     logger.info(
@@ -88,7 +85,8 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                         event.group.x,
                         event.group.y,
                         event.group.w,
-                        event.group.h)
+                        event.group.h,
+                    )
 
                     val user = event.author?.uuid?.let { users.findByUuid(it) } ?: return@launch
                     val punishment =
@@ -97,21 +95,22 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                             user.id,
                             "Placing NSFW image",
                             Punishment.Type.BAN,
-                            30.days)
+                            30.days,
+                        )
 
                     webhook.send(
                         WebhookMessage(
                             content =
                                 buildString {
                                     appendLine("**NSFW image detected**")
-                                    appendLine(
-                                        "Related to punishment `${codec.encode(punishment)}`")
+                                    appendLine("Related to punishment `${codec.encode(punishment)}`")
                                     for ((entry, percent) in event.result.details) {
-                                        appendLine(
-                                            "- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
+                                        appendLine("- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
                                     }
                                 },
-                            attachments = listOf(event.image.toUnsafeAttachment())))
+                            attachments = listOf(event.image.toUnsafeAttachment()),
+                        )
+                    )
                 }
             }
         }

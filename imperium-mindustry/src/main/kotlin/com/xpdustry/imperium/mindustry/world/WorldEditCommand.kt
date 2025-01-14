@@ -57,10 +57,12 @@ class WorldEditCommand : ImperiumApplication.Listener {
         val size = block?.size ?: 1
         val x2 = x + w + (size % (x + w))
         val y2 = y + h + (size % (y + h))
-        if (x > (Vars.world.width() + 1) ||
-            y > (Vars.world.height() + 1) ||
-            x2 > (Vars.world.width() + 1) ||
-            y2 > (Vars.world.height() + 1)) {
+        if (
+            x > (Vars.world.width() + 1) ||
+                y > (Vars.world.height() + 1) ||
+                x2 > (Vars.world.width() + 1) ||
+                y2 > (Vars.world.height() + 1)
+        ) {
             sender.error("The specified coordinates and size are out of bounds.")
             return
         }
@@ -72,12 +74,10 @@ class WorldEditCommand : ImperiumApplication.Listener {
             sender.error("The block $overlay is not an overlay.")
             return
         }
-        if (block != null &&
-            !(block.isStatic ||
-                block.hasBuilding() ||
-                block.isAir ||
-                block is Prop ||
-                block is TreeBlock)) {
+        if (
+            block != null &&
+                !(block.isStatic || block.hasBuilding() || block.isAir || block is Prop || block is TreeBlock)
+        ) {
             sender.error("The block $block is not a static, placeable, prop or air block.")
             return
         }
@@ -92,9 +92,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
                     val tile = Vars.world.tile(x + ox, y + oy)
                     floor?.let { tile.setFloorNet(it.asFloor()) }
                     overlay?.let { tile.setOverlayNet(it.asFloor()) }
-                    if (block != null &&
-                        (override ||
-                            tile.getLinkedTilesAs(block, Seq()).all { it.build == null })) {
+                    if (block != null && (override || tile.getLinkedTilesAs(block, Seq()).all { it.build == null })) {
                         tile.setNet(Blocks.air)
                         tile.setNet(block, team, rotation.ordinal)
                     }
@@ -119,6 +117,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
                 if (floor != null) append("floor $floor, ")
                 if (overlay != null) append("overlay $overlay, ")
                 append("for team ${team.coloredName()}.")
-            })
+            }
+        )
     }
 }

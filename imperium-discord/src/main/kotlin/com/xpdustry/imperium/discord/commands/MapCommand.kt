@@ -93,15 +93,17 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                             "Gamemodes",
                             if (map.gamemodes.isEmpty()) "`none`"
                             else map.gamemodes.joinToString { it.name.lowercase() },
-                            false)
+                            false,
+                        )
                         image = "attachment://preview.png"
                     }
 
                     components +=
                         ActionRow.of(
-                            Button.primary(MAP_DOWNLOAD_BUTTON, "Download")
-                                .withEmoji(ImperiumEmojis.DOWN_ARROW))
-                })
+                            Button.primary(MAP_DOWNLOAD_BUTTON, "Download").withEmoji(ImperiumEmojis.DOWN_ARROW)
+                        )
+                }
+            )
             .await()
     }
 
@@ -128,7 +130,8 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                     field("Buildings Deconstructed", game.data.buildingsDeconstructed.toString())
                     field("Buildings Destroyed", game.data.buildingsDestroyed.toString())
                     field("Winner", getWinnerName(game.data.winner))
-                })
+                }
+            )
             .await()
     }
 
@@ -147,10 +150,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
     @MenuCommand(MAP_DOWNLOAD_BUTTON)
     suspend fun onMapDownload(interaction: ButtonInteraction) {
         val reply = interaction.deferReply(true).await()
-        val id =
-            interaction.message.embeds.first().getFieldValue("Identifier")?.let {
-                codec.tryDecode(it)
-            }
+        val id = interaction.message.embeds.first().getFieldValue("Identifier")?.let { codec.tryDecode(it) }
         val stream = id?.let { maps.getMapInputStream(it) }
         if (stream === null) {
             reply.sendMessage("The map is no longer available").await()
@@ -161,55 +161,38 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                 MessageCreate {
                     content = "Here you go:"
                     files += FileUpload.fromStreamSupplier("${codec.encode(id)}.msav") { stream }
-                })
+                }
+            )
             .await()
     }
 
     @ImperiumCommand(["map", "gamemode", "add"], Rank.MODERATOR)
     @AlsoAllow(Permission.MANAGE_MAP)
-    suspend fun onMapGamemodeAdd(
-        interaction: SlashCommandInteraction,
-        id: String,
-        gamemode: MindustryGamemode
-    ) {
+    suspend fun onMapGamemodeAdd(interaction: SlashCommandInteraction, id: String, gamemode: MindustryGamemode) {
         val reply = interaction.deferReply(true).await()
         val map = codec.tryDecode(id)?.let { maps.findMapById(it) }
         if (map == null) {
             reply.sendMessage("Unknown map id").await()
         } else if (gamemode in map.gamemodes) {
-            reply
-                .sendMessage(
-                    "This map is already in the **${gamemode.name.lowercase()}** server pool.")
-                .await()
+            reply.sendMessage("This map is already in the **${gamemode.name.lowercase()}** server pool.").await()
         } else {
             maps.setMapGamemodes(map.id, map.gamemodes + gamemode)
-            reply
-                .sendMessage("This map is now in the **${gamemode.name.lowercase()}** server pool.")
-                .await()
+            reply.sendMessage("This map is now in the **${gamemode.name.lowercase()}** server pool.").await()
         }
     }
 
     @ImperiumCommand(["map", "gamemode", "remove"], Rank.MODERATOR)
     @AlsoAllow(Permission.MANAGE_MAP)
-    suspend fun onMapGamemodeRemove(
-        interaction: SlashCommandInteraction,
-        id: String,
-        gamemode: MindustryGamemode
-    ) {
+    suspend fun onMapGamemodeRemove(interaction: SlashCommandInteraction, id: String, gamemode: MindustryGamemode) {
         val reply = interaction.deferReply(true).await()
         val map = codec.tryDecode(id)?.let { maps.findMapById(it) }
         if (map == null) {
             reply.sendMessage("Unknown map id").await()
         } else if (gamemode !in map.gamemodes) {
-            reply
-                .sendMessage("This map is not in the **${gamemode.name.lowercase()}** server pool.")
-                .await()
+            reply.sendMessage("This map is not in the **${gamemode.name.lowercase()}** server pool.").await()
         } else {
             maps.setMapGamemodes(map.id, map.gamemodes - gamemode)
-            reply
-                .sendMessage(
-                    "This map is no longer in the **${gamemode.name.lowercase()}** server pool.")
-                .await()
+            reply.sendMessage("This map is no longer in the **${gamemode.name.lowercase()}** server pool.").await()
         }
     }
 
@@ -229,8 +212,7 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         }
     }
 
-    private fun MessageEmbed.getFieldValue(name: String): String? =
-        fields.find { it.name == name }?.value
+    private fun MessageEmbed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
 
     companion object {
         private const val MAP_DOWNLOAD_BUTTON = "map-download:2"

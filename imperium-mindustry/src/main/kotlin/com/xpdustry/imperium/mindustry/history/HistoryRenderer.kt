@@ -35,46 +35,27 @@ import com.xpdustry.imperium.mindustry.translation.GRAY
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 
 interface HistoryRenderer {
-    suspend fun render(
-        entries: List<HistoryEntry>,
-        x: Int,
-        y: Int,
-    ): Component
+    suspend fun render(entries: List<HistoryEntry>, x: Int, y: Int): Component
 
-    suspend fun render(
-        entries: List<HistoryEntry>,
-        actor: HistoryActor,
-    ): Component
+    suspend fun render(entries: List<HistoryEntry>, actor: HistoryActor): Component
 }
 
 class SimpleHistoryRenderer(
     private val users: UserManager,
     private val codec: IdentifierCodec,
-    private val timeRenderer: TimeRenderer
+    private val timeRenderer: TimeRenderer,
 ) : HistoryRenderer {
 
-    override suspend fun render(
-        entries: List<HistoryEntry>,
-        x: Int,
-        y: Int,
-    ) =
+    override suspend fun render(entries: List<HistoryEntry>, x: Int, y: Int) =
         render0(
-            components(
-                translatable("imperium.history.header", array(ImmutablePoint(x, y).toComponent())),
-                newline(),
-            ),
+            components(translatable("imperium.history.header", array(ImmutablePoint(x, y).toComponent())), newline()),
             entries,
-            name = true)
+            name = true,
+        )
 
-    override suspend fun render(
-        entries: List<HistoryEntry>,
-        actor: HistoryActor,
-    ) =
+    override suspend fun render(entries: List<HistoryEntry>, actor: HistoryActor) =
         render0(
-            components(
-                translatable("imperium.history.header", array(getDisplayName(actor))),
-                newline(),
-            ),
+            components(translatable("imperium.history.header", array(getDisplayName(actor))), newline()),
             entries,
             location = true,
         )
@@ -88,8 +69,7 @@ class SimpleHistoryRenderer(
         components()
             .append(header)
             .apply {
-                val pairs =
-                    entries.flatMap { entry -> render0(entry).map { entry to it } }.iterator()
+                val pairs = entries.flatMap { entry -> render0(entry).map { entry to it } }.iterator()
                 if (!pairs.hasNext()) {
                     append(text(" > ", ACCENT))
                     append(translatable("imperium.history.none"))
@@ -124,37 +104,20 @@ class SimpleHistoryRenderer(
         var components =
             when (entry.type) {
                 HistoryEntry.Type.PLACING ->
-                    listOf(
-                        translatable(
-                            "imperium.history.type.placing",
-                            array(translatable(entry.block, ACCENT)),
-                        ))
+                    listOf(translatable("imperium.history.type.placing", array(translatable(entry.block, ACCENT))))
                 HistoryEntry.Type.PLACE ->
-                    listOf(
-                        translatable(
-                            "imperium.history.type.place",
-                            array(translatable(entry.block, ACCENT)),
-                        ))
+                    listOf(translatable("imperium.history.type.place", array(translatable(entry.block, ACCENT))))
                 HistoryEntry.Type.BREAKING ->
-                    listOf(
-                        translatable(
-                            "imperium.history.type.breaking",
-                            array(translatable(entry.block, ACCENT)),
-                        ))
+                    listOf(translatable("imperium.history.type.breaking", array(translatable(entry.block, ACCENT))))
                 HistoryEntry.Type.BREAK ->
-                    listOf(
-                        translatable(
-                            "imperium.history.type.break",
-                            array(translatable(entry.block, ACCENT)),
-                        ))
+                    listOf(translatable("imperium.history.type.break", array(translatable(entry.block, ACCENT))))
                 HistoryEntry.Type.ROTATE ->
                     listOf(
                         translatable(
                             "imperium.history.type.rotate",
-                            array(
-                                translatable(entry.block, ACCENT),
-                                getDisplayOrientation(entry.rotation),
-                            )))
+                            array(translatable(entry.block, ACCENT), getDisplayOrientation(entry.rotation)),
+                        )
+                    )
                 HistoryEntry.Type.CONFIGURE -> render0(entry, entry.config)
             }
         if (entry.type != HistoryEntry.Type.CONFIGURE && entry.config != null) {
@@ -163,17 +126,11 @@ class SimpleHistoryRenderer(
         return components
     }
 
-    private fun render0(
-        entry: HistoryEntry,
-        config: BlockConfig?,
-    ): List<Component> =
+    private fun render0(entry: HistoryEntry, config: BlockConfig?): List<Component> =
         when (config) {
             is BlockConfig.Composite -> config.configs.flatMap { render0(entry, it) }
             is BlockConfig.Text ->
-                listOf(
-                    translatable(
-                        "imperium.history.type.configure.text",
-                        array(translatable(entry.block, ACCENT))))
+                listOf(translatable("imperium.history.type.configure.text", array(translatable(entry.block, ACCENT))))
             is BlockConfig.Link ->
                 listOf(
                     translatable()
@@ -191,34 +148,24 @@ class SimpleHistoryRenderer(
                                     .apply {
                                         for ((i, point) in config.positions.withIndex()) {
                                             append(
-                                                point
-                                                    .copy(
-                                                        x = point.x + entry.x,
-                                                        y = point.y + entry.y)
-                                                    .toComponent())
+                                                point.copy(x = point.x + entry.x, y = point.y + entry.y).toComponent()
+                                            )
                                             if (i < config.positions.size - 1) append(text(", "))
                                         }
                                     }
-                                    .build()),
+                                    .build(),
+                            )
                         )
-                        .build(),
+                        .build()
                 )
             is BlockConfig.Canvas ->
-                listOf(
-                    translatable(
-                        "imperium.history.type.configure.canvas",
-                        array(translatable(entry.block, ACCENT)),
-                    ),
-                )
+                listOf(translatable("imperium.history.type.configure.canvas", array(translatable(entry.block, ACCENT))))
             is BlockConfig.Content ->
                 listOf(
                     translatable(
                         "imperium.history.type.configure.content",
-                        array(
-                            translatable(entry.block, ACCENT),
-                            translatable(config.value, ACCENT),
-                        ),
-                    ),
+                        array(translatable(entry.block, ACCENT), translatable(config.value, ACCENT)),
+                    )
                 )
             is BlockConfig.Enable ->
                 listOf(
@@ -229,33 +176,24 @@ class SimpleHistoryRenderer(
                             "imperium.history.type.configure.disabled"
                         },
                         array(translatable(entry.block, ACCENT)),
-                    ),
+                    )
                 )
             is BlockConfig.Light ->
                 listOf(
                     translatable(
                         "imperium.history.type.configure.light",
-                        array(
-                            translatable(entry.block, ACCENT),
-                            text("%06X".format(0xFFFFFF and config.color), ACCENT),
-                        ),
-                    ),
+                        array(translatable(entry.block, ACCENT), text("%06X".format(0xFFFFFF and config.color), ACCENT)),
+                    )
                 )
             is BlockConfig.Reset ->
-                listOf(
-                    translatable(
-                        "imperium.history.type.configure.reset",
-                        array(translatable(entry.block, ACCENT)),
-                    ),
-                )
+                listOf(translatable("imperium.history.type.configure.reset", array(translatable(entry.block, ACCENT))))
             else -> emptyList()
         }
 
     private suspend fun getDisplayName(author: HistoryActor) =
         if (author.player != null) {
             users.findByUuid(author.player)?.let {
-                components(
-                    text(it.lastName, ACCENT), space(), text("#${codec.encode(it.id)}", LIGHT_GRAY))
+                components(text(it.lastName, ACCENT), space(), text("#${codec.encode(it.id)}", LIGHT_GRAY))
             } ?: text("Unknown", ACCENT)
         } else {
             components(ACCENT, translatable(author.team), space(), translatable(author.unit))
@@ -271,6 +209,5 @@ class SimpleHistoryRenderer(
         }
 
     private fun ImmutablePoint.toComponent() =
-        components(
-            LIGHT_GRAY, text('('), number(x, ACCENT), text(", "), number(y, ACCENT), text(')'))
+        components(LIGHT_GRAY, text('('), number(x, ACCENT), text(", "), number(y, ACCENT), text(')'))
 }

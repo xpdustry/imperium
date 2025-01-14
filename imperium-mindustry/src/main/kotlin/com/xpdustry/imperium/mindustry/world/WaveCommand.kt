@@ -38,8 +38,7 @@ import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
 
 class WaveCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds),
-    ImperiumApplication.Listener {
+    AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds), ImperiumApplication.Listener {
     private val waveSkipInterface =
         MenuInterface.create(instances.get()).apply {
             addTransformer { _, pane ->
@@ -51,7 +50,8 @@ class WaveCommand(instances: InstanceManager) :
                             view.closeAll()
                             onVoteSessionStart(view.viewer, manager.session, skip)
                         }
-                    })
+                    }
+                )
                 pane.options.addRow(MenuOption("[lightgray]Cancel", View::closeAll))
             }
         }
@@ -105,10 +105,9 @@ class WaveCommand(instances: InstanceManager) :
     override fun getVoteSessionDetails(session: VoteManager.Session<Int>): String =
         "Type [accent]/ws y[] to vote to skip [accent]${session.objective}[] wave(s)."
 
-    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) =
-        runMindustryThread {
-            Vars.state.wave += session.objective
-            Vars.state.wavetime = Vars.state.rules.waveSpacing
-            Call.sendMessage("[green]Skipped ${session.objective} wave(s).")
-        }
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) = runMindustryThread {
+        Vars.state.wave += session.objective
+        Vars.state.wavetime = Vars.state.rules.waveSpacing
+        Call.sendMessage("[green]Skipped ${session.objective} wave(s).")
+    }
 }

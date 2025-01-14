@@ -40,7 +40,8 @@ class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: A
                     Then ask for an IP unblock in the [accent]#appeals[] channel.
                     [red]Warning: During the process, only share you IP address to an admin [orange](${context.address.hostAddress})[].[]
                     """
-                        .trimIndent())
+                        .trimIndent()
+                )
             else GatekeeperResult.Success
         }
         if (result is VpnDetection.Result.Failure) {
@@ -48,7 +49,8 @@ class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: A
                 "Failed to verify the vpn usage for player {} ({})",
                 context.name,
                 context.uuid,
-                result.exception)
+                result.exception,
+            )
         }
         return GatekeeperResult.Success
     }

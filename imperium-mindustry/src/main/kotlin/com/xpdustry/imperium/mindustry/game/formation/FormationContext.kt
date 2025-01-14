@@ -23,7 +23,7 @@ data class FormationContext(
     val slots: Int,
     var pattern: FormationPattern,
     val strategy: SlotAssignmentStrategy,
-    var deleted: Boolean = false
+    var deleted: Boolean = false,
 ) {
     fun remove(member: FormationMember) {
         strategy.remove(this, member)

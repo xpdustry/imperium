@@ -77,9 +77,7 @@ fun interface Action {
                 builder.append(' ').append(argument)
             }
             val input = builder.toString()
-            return Action { view: View ->
-                Vars.netServer.clientCommands.handleMessage(input, view.viewer)
-            }
+            return Action { view: View -> Vars.netServer.clientCommands.handleMessage(input, view.viewer) }
         }
     }
 }

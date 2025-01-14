@@ -27,8 +27,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import java.util.Locale
 import kotlinx.coroutines.withContext
 
-data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, val saltLength: Int) :
-    HashParams {
+data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, val saltLength: Int) : HashParams {
     init {
         require(iterations > 0) { "iterations must be positive" }
         require(length > 0) { "length must be positive" }
@@ -41,15 +40,14 @@ data class PBKDF2Params(val hmac: Hmac, val iterations: Int, val length: Int, va
         SHA224,
         SHA256,
         SHA384,
-        SHA512
+        SHA512,
     }
 }
 
 object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
 
     override suspend fun create(chars: CharArray, params: PBKDF2Params): Hash =
-        create0(
-            Password.hash(SecureString(chars)), SaltGenerator.generate(params.saltLength), params)
+        create0(Password.hash(SecureString(chars)), SaltGenerator.generate(params.saltLength), params)
 
     override suspend fun create(bytes: ByteArray, params: PBKDF2Params): Hash =
         create0(Password.hash(bytes), SaltGenerator.generate(params.saltLength), params)
@@ -65,9 +63,7 @@ object PBKDF2HashFunction : SaltyHashFunction<PBKDF2Params> {
             val result =
                 builder
                     .addSalt(salt)
-                    .with(
-                        PBKDF2Function.getInstance(
-                            params.hmac.toP4J(), params.iterations, params.length))
+                    .with(PBKDF2Function.getInstance(params.hmac.toP4J(), params.iterations, params.length))
             Hash(result.bytes, result.saltBytes, params)
         }
 

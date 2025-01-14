@@ -52,14 +52,13 @@ dependencies {
 
 spotless {
     kotlin {
-        ktfmt().dropboxStyle()
+        ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
         licenseHeader(toLongComment(rootProject.file("LICENSE_HEADER.md").readText()))
-        indentWithSpaces(4)
         trimTrailingWhitespace()
         endWithNewline()
     }
     kotlinGradle {
-        ktlint(libs.versions.ktlint.get())
+        ktlint().editorConfigOverride(mapOf("max_line_length" to "120"))
     }
 }
 

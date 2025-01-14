@@ -58,10 +58,7 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                 (getReportChannel() ?: return@consumer)
                     .sendMessage(
                         MessageCreate {
-                            val moderator =
-                                config.discord.alertsRole?.let {
-                                    discord.getMainServer().getRoleById(it)
-                                }
+                            val moderator = config.discord.alertsRole?.let { discord.getMainServer().getRoleById(it) }
                             if (moderator != null) {
                                 content += moderator.asMention
                             }
@@ -113,14 +110,17 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                                     Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
                                         .withEmoji(ImperiumEmojis.CROSS_MARK),
                                 )
-                        })
+                        }
+                    )
                     .await()
                     .createThreadChannel("Report on ${report.targetName}")
                     .setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_3_DAYS)
                     .await()
             messenger
                 .request<HistoryResponseMessage>(
-                    HistoryRequestMessage(report.serverName, report.targetId), timeout = 5.seconds)
+                    HistoryRequestMessage(report.serverName, report.targetId),
+                    timeout = 5.seconds,
+                )
                 ?.history
                 ?.lineSequence()
                 ?.chunked(10)
@@ -147,7 +147,8 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                         value = interaction.member!!.asMention
                         inline = false
                     }
-                })
+                }
+            )
             .await()
         interaction.message.disableComponents()
         reply.sendMessage("You have claimed this report, good luck!").await()
@@ -164,7 +165,8 @@ class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener 
                         value = interaction.member!!.asMention
                         inline = false
                     }
-                })
+                }
+            )
             .await()
         interaction.message.disableComponents()
         reply.sendMessage("You have ignored this report.").await()

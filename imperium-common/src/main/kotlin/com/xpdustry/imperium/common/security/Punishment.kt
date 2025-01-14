@@ -32,7 +32,7 @@ data class Punishment(
     val duration: Duration,
     val pardon: Pardon?,
     val server: String,
-    val creation: Instant
+    val creation: Instant,
 ) {
     val expired: Boolean
         get() = pardon != null || (expiration ?: Instant.MAX) < Instant.now()
@@ -51,7 +51,7 @@ data class Punishment(
     enum class Type {
         MUTE,
         BAN,
-        FREEZE
+        FREEZE,
     }
 
     @Serializable
@@ -63,7 +63,7 @@ data class Punishment(
         data class Votekick(
             val starter: MindustryUUIDAsLong,
             val yes: Set<MindustryUUIDAsLong>,
-            val nay: Set<MindustryUUIDAsLong>
+            val nay: Set<MindustryUUIDAsLong>,
         ) : Metadata
     }
 }

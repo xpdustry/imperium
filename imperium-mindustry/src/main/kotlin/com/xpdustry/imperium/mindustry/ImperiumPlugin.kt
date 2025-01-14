@@ -125,28 +125,29 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         registerService(
             RankProvider::class,
-            ImperiumRankProvider(application.instances.get(), application.instances.get())
-                .also(application::register))
+            ImperiumRankProvider(application.instances.get(), application.instances.get()).also(application::register),
+        )
 
-        registerService(
-            RankPermissionSource::class, ImperiumRankPermissionSource(application.instances.get()))
+        registerService(RankPermissionSource::class, ImperiumRankPermissionSource(application.instances.get()))
 
         registerService(
             TranslationSource::class,
-            BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language)
-                .apply {
-                    registerAll(
-                        ResourceBundles.fromClasspathDirectory(
-                            ImperiumPlugin::class.java,
-                            "com/xpdustry/imperium/mindustry/bundles/",
-                            "bundle",
-                        ),
-                        ResourceBundles::getMessageFormatTranslation)
-                })
+            BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language).apply {
+                registerAll(
+                    ResourceBundles.fromClasspathDirectory(
+                        ImperiumPlugin::class.java,
+                        "com/xpdustry/imperium/mindustry/bundles/",
+                        "bundle",
+                    ),
+                    ResourceBundles::getMessageFormatTranslation,
+                )
+            },
+        )
 
         registerService(
             ComponentRendererProvider::class,
-            ImperiumComponentRendererProvider(application.instances.get()))
+            ImperiumComponentRendererProvider(application.instances.get()),
+        )
 
         sequenceOf(
                 ConventionListener::class,
@@ -193,7 +194,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AntiGriefListener::class,
                 FlexListener::class,
                 MetricsListener::class,
-                ChangelogCommand::class)
+                ChangelogCommand::class,
+            )
             .forEach(application::register)
 
         val gamemode = application.instances.get<ImperiumConfig>().mindustry.gamemode
@@ -213,14 +215,13 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 CommandAnnotationScanner(this, application.instances.get()),
                 PluginAnnotationProcessor.tasks(this),
                 PluginAnnotationProcessor.events(this),
-                PluginAnnotationProcessor.triggers(this))
+                PluginAnnotationProcessor.triggers(this),
+            )
 
         application.listeners.forEach(processor::process)
 
         runBlocking {
-            application.instances
-                .get<WebhookMessageSender>()
-                .send(WebhookMessage(content = "The server has started."))
+            application.instances.get<WebhookMessageSender>().send(WebhookMessage(content = "The server has started."))
         }
 
         logger.info("Imperium plugin Loaded!")
@@ -231,9 +232,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     private fun <T : Any> registerService(klass: KClass<T>, instance: T) {
-        Distributor.get()
-            .serviceManager
-            .register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
+        Distributor.get().serviceManager.register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }
 
     private fun applyBackportFixes() {
@@ -288,5 +287,6 @@ private fun Application.restart() {
                 Core.settings.autosave()
                 exitProcess(2)
             }
-        })
+        }
+    )
 }

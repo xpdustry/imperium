@@ -50,7 +50,6 @@ fun MutableInstanceManager.registerDiscordModule() {
     provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
 
     provider<ImperiumVersion> {
-        ImperiumVersion.parse(
-            this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
+        ImperiumVersion.parse(this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
     }
 }

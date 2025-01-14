@@ -88,9 +88,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                                     is Punishment.Metadata.Votekick -> {
                                         field(
                                             "Votekick starter",
-                                            users
-                                                .findByUuid(metadata.starter.toCRC32Muuid())
-                                                .toLastNameWithId())
+                                            users.findByUuid(metadata.starter.toCRC32Muuid()).toLastNameWithId(),
+                                        )
                                         field("Yes votes", renderPlayerList(metadata.yes))
                                     }
                                 }
@@ -113,7 +112,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         }
 
                         footer(codec.encode(punishment.id))
-                    })
+                    }
+                )
                 .await()
         }
     }
@@ -129,16 +129,14 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     }
 
     private fun getNotificationChannel(): TextChannel? {
-        val channel =
-            discord.getMainServer().getTextChannelById(config.discord.channels.notifications)
+        val channel = discord.getMainServer().getTextChannelById(config.discord.channels.notifications)
         if (channel == null) {
             LOGGER.error("Could not find notifications channel")
         }
         return channel
     }
 
-    private fun User?.toLastNameWithId() =
-        if (this == null) "unknown" else "$lastName / `${codec.encode(id)}`"
+    private fun User?.toLastNameWithId() = if (this == null) "unknown" else "$lastName / `${codec.encode(id)}`"
 
     companion object {
         private val LOGGER by LoggerDelegate()

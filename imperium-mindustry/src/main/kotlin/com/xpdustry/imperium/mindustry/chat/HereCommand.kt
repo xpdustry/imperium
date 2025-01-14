@@ -29,6 +29,7 @@ class HereCommand : ImperiumApplication.Listener {
     @ClientSide
     fun onHereCommand(sender: CommandSender) {
         Call.sendMessage(
-            "${sender.player.coloredName()}[white] is at (${sender.player.tileX()}, ${sender.player.tileY()}).")
+            "${sender.player.coloredName()}[white] is at (${sender.player.tileX()}, ${sender.player.tileY()})."
+        )
     }
 }

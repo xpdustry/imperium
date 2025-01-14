@@ -35,7 +35,7 @@ interface PlayerTracker {
     data class Entry(
         val player: Identity.Mindustry,
         val playerId: Int,
-        val timestamp: SerializableJInstant = Instant.now()
+        val timestamp: SerializableJInstant = Instant.now(),
     )
 }
 
@@ -48,21 +48,15 @@ open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerT
         requestPlayerList(server, PlayerListRequest.Type.ONLINE)
 
     private suspend fun requestPlayerList(server: String, type: PlayerListRequest.Type) =
-        messenger
-            .request<PlayerListResponse>(PlayerListRequest(server, type), timeout = 1.seconds)
-            ?.entries
+        messenger.request<PlayerListResponse>(PlayerListRequest(server, type), timeout = 1.seconds)?.entries
 
     @Serializable
-    protected data class PlayerListRequest(
-        val server: String,
-        val type: Type,
-    ) : Message {
+    protected data class PlayerListRequest(val server: String, val type: Type) : Message {
         enum class Type {
             JOIN,
-            ONLINE
+            ONLINE,
         }
     }
 
-    @Serializable
-    protected data class PlayerListResponse(val entries: List<PlayerTracker.Entry>) : Message
+    @Serializable protected data class PlayerListResponse(val entries: List<PlayerTracker.Entry>) : Message
 }

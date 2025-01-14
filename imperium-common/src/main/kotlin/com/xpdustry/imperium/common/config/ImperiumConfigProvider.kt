@@ -41,10 +41,7 @@ object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addParameterMapper(KebabCaseParamMapper)
             .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-            .addPathSource(
-                instances.get<Path>("directory").resolve("config.yaml"),
-                optional = true,
-                allowEmpty = true)
+            .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
             .strict()
             .withReport()
@@ -52,7 +49,6 @@ object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .build()
             .loadConfig<ImperiumConfig>()
             .getOrElse {
-                if (it is ConfigFailure.UndefinedTree) ImperiumConfig()
-                else throw ConfigException(it.description())
+                if (it is ConfigFailure.UndefinedTree) ImperiumConfig() else throw ConfigException(it.description())
             }
 }

@@ -51,7 +51,8 @@ abstract class LinkableBlockConfigProvider<B : Building> : BlockConfig.Provider<
                     it as Point2
                     ImmutablePoint(it.x, it.y)
                 },
-                true)
+                true,
+            )
         } else {
             null
         }

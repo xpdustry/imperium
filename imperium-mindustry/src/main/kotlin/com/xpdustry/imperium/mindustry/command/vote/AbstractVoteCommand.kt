@@ -28,7 +28,7 @@ import mindustry.gen.Player
 abstract class AbstractVoteCommand<O>(
     protected val plugin: MindustryPlugin,
     private val name: String,
-    duration: Duration
+    duration: Duration,
 ) {
     protected val manager: VoteManager<O> =
         SimpleVoteManager(
@@ -38,14 +38,9 @@ abstract class AbstractVoteCommand<O>(
             finished = ::onVoteSessionClose,
         )
 
-    protected fun onVoteSessionStart(
-        player: Player,
-        session: VoteManager.Session<O>?,
-        objective: O,
-    ) {
+    protected fun onVoteSessionStart(player: Player, session: VoteManager.Session<O>?, objective: O) {
         if (session != null) {
-            player.sendMessage(
-                "[scarlet]There is already a vote for [orange]'$name'[] in progress!")
+            player.sendMessage("[scarlet]There is already a vote for [orange]'$name'[] in progress!")
             return
         }
         if (canParticipantStart(player, objective)) {
@@ -95,10 +90,7 @@ abstract class AbstractVoteCommand<O>(
 
     protected abstract fun getVoteSessionDetails(session: VoteManager.Session<O>): String
 
-    protected open fun canParticipantVote(
-        player: Player,
-        session: VoteManager.Session<O>
-    ): Boolean {
+    protected open fun canParticipantVote(player: Player, session: VoteManager.Session<O>): Boolean {
         if (session.getVote(player) != null) {
             player.sendMessage("[scarlet]You have already voted.")
             return false
@@ -115,8 +107,7 @@ abstract class AbstractVoteCommand<O>(
     protected open fun getParticipants(session: VoteManager.Session<O>): Sequence<Player> =
         Entities.getPlayers().asSequence()
 
-    protected open fun getRequiredVotes(session: VoteManager.Session<O>, players: Int): Int =
-        (players / 2) + 1
+    protected open fun getRequiredVotes(session: VoteManager.Session<O>, players: Int): Int = (players / 2) + 1
 
     private fun onVoteSessionClose(session: VoteManager.Session<O>) {
         when (session.status) {

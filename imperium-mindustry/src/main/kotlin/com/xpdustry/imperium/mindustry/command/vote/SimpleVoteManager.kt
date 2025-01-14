@@ -43,21 +43,13 @@ internal class SimpleVoteManager<O>(
     override val sessions: Map<UUID, VoteManager.Session<O>> = _sessions
 
     init {
-        Distributor.get().eventBus.subscribe(
-            EventType.PlayerLeave::class.java,
-            Priority.HIGH,
-            plugin,
-        ) {
+        Distributor.get().eventBus.subscribe(EventType.PlayerLeave::class.java, Priority.HIGH, plugin) {
             for (session in _sessions.values) {
                 session.required = required(session)
             }
         }
 
-        Distributor.get().eventBus.subscribe(
-            EventType.PlayerJoin::class.java,
-            Priority.HIGH,
-            plugin,
-        ) {
+        Distributor.get().eventBus.subscribe(EventType.PlayerJoin::class.java, Priority.HIGH, plugin) {
             for (session in _sessions.values) {
                 session.required = required(session)
             }
@@ -85,10 +77,8 @@ internal class SimpleVoteManager<O>(
         return session
     }
 
-    private inner class SimpleSession(
-        override val objective: O,
-        override val initiator: Player?,
-    ) : VoteManager.Session<O> {
+    private inner class SimpleSession(override val objective: O, override val initiator: Player?) :
+        VoteManager.Session<O> {
         override val duration: Duration
             get() = this@SimpleVoteManager.duration
 

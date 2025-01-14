@@ -82,8 +82,9 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .setChoiceAction(
                         BiAction.compose(
                             BiAction.with(SAVE_FILE),
-                            BiAction.from(
-                                Action.with(SAVE_PAGE, SavePage.VIEW).then(Window::show))))
+                            BiAction.from(Action.with(SAVE_PAGE, SavePage.VIEW).then(Window::show)),
+                        )
+                    )
                     .then { (pane, _) ->
                         pane.title = text("Save Manager")
                         pane.grid.addOption(
@@ -91,26 +92,28 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                             pane.grid.options.size - 1,
                             MenuOption.of(
                                 text(Iconc.add),
-                                Action.with(SAVE_PAGE, SavePage.CREATE).then(Action.show(text))))
+                                Action.with(SAVE_PAGE, SavePage.CREATE).then(Action.show(text)),
+                            ),
+                        )
                         pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
-                    }))
+                    },
+            )
+        )
 
         menu.addTransformer(
             NavigationTransformer(SAVE_PAGE, SavePage.VIEW) { (pane, state) ->
                 pane.content = renderSaveName(state[SAVE_FILE]!!)
                 pane.grid.addRow(
-                    MenuOption.of(
-                        text(Iconc.trash, ComponentColor.RED), Action.delegate(this::onDeleteSave)),
+                    MenuOption.of(text(Iconc.trash, ComponentColor.RED), Action.delegate(this::onDeleteSave)),
                     MenuOption.of(
                         text(Iconc.pencil, ORANGE),
                         Action.with(SAVE_PAGE, SavePage.RENAME).then(Action.show(text)),
                     ),
-                    MenuOption.of(
-                        text(Iconc.play, ComponentColor.GREEN), Action.delegate(this::onLoadSave)),
-                    MenuOption.of(
-                        Iconc.cancel, Action.with(SAVE_PAGE, SavePage.LIST).then(Window::show)))
+                    MenuOption.of(text(Iconc.play, ComponentColor.GREEN), Action.delegate(this::onLoadSave)),
+                    MenuOption.of(Iconc.cancel, Action.with(SAVE_PAGE, SavePage.LIST).then(Window::show)),
+                )
                 pane.exitAction = Action.with(SAVE_PAGE, SavePage.LIST).then(Window::show)
-            },
+            }
         )
 
         text.addTransformer { (pane) ->
@@ -123,7 +126,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 pane.title = text("Create a new save file")
                 pane.description = text("Only alphanumeric characters are allowed.")
                 pane.inputAction = BiAction.delegate(this::onCreateSaveAction)
-            },
+            }
         )
 
         text.addTransformer(
@@ -131,7 +134,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 pane.title = text("Rename the save file")
                 pane.description = text("Only alphanumeric characters are allowed.")
                 pane.inputAction = BiAction.delegate(this::onRenameSaveAction)
-            },
+            }
         )
     }
 
@@ -157,10 +160,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         val file = window.state[SAVE_FILE]!!
         if (!SaveIO.isSaveValid(Fi(file.toFile()))) {
             return Action(Window::show)
-                .then(
-                    Action.audience {
-                        it.sendAnnouncement(text("No valid save data found for slot.", SCARLET))
-                    })
+                .then(Action.audience { it.sendAnnouncement(text("No valid save data found for slot.", SCARLET)) })
         }
 
         Core.app.post {
@@ -170,8 +170,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     plugin.logger.info("Save {} loaded.", file.fileName)
                 }
             } catch (exception: IOException) {
-                plugin.logger.error(
-                    "Failed to load save {} (Outdated or corrupt file).", file.fileName, exception)
+                plugin.logger.error("Failed to load save {} (Outdated or corrupt file).", file.fileName, exception)
             }
         }
 
@@ -184,19 +183,18 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             Action.compose(
                 Action.with(SAVE_PAGE, SavePage.LIST),
                 Window::show,
-                Action.audience {
-                    it.sendAnnouncement(text("Save deleted.", ComponentColor.ACCENT))
-                })
+                Action.audience { it.sendAnnouncement(text("Save deleted.", ComponentColor.ACCENT)) },
+            )
         } catch (exception: IOException) {
             Action.compose(
                 Action.with(SAVE_PAGE, SavePage.LIST),
                 Action.back(),
                 Action.audience {
                     it.sendAnnouncement(
-                        text(
-                            "An error occurred while deleting the save: ${Strings.neatError(exception)}",
-                            SCARLET))
-                })
+                        text("An error occurred while deleting the save: ${Strings.neatError(exception)}", SCARLET)
+                    )
+                },
+            )
         }
 
     private fun onRenameSaveAction(window: Window, input: String) =
@@ -210,10 +208,8 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     Action.compose(
                         Action.with(SAVE_PAGE, SavePage.LIST),
                         Action.back(),
-                        Action.audience {
-                            it.sendAnnouncement(
-                                text("Save renamed to $input.", ComponentColor.ACCENT))
-                        })
+                        Action.audience { it.sendAnnouncement(text("Save renamed to $input.", ComponentColor.ACCENT)) },
+                    )
                 } catch (exception: IOException) {
                     Action.compose(
                         Action.with(SAVE_PAGE, SavePage.LIST),
@@ -222,8 +218,11 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                             it.sendAnnouncement(
                                 text(
                                     "An error occurred while renaming the save: ${Strings.neatError(exception)}",
-                                    SCARLET))
-                        })
+                                    SCARLET,
+                                )
+                            )
+                        },
+                    )
                 }
             }
         }
@@ -241,10 +240,10 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         Action.back(),
                         Action.audience {
                             it.sendAnnouncement(
-                                text(
-                                    "Current game saved to ${result.value.fileName}.",
-                                    ComponentColor.ACCENT))
-                        })
+                                text("Current game saved to ${result.value.fileName}.", ComponentColor.ACCENT)
+                            )
+                        },
+                    )
                 } catch (exception: IOException) {
                     Action.compose(
                         Action.with(SAVE_PAGE, SavePage.LIST),
@@ -253,8 +252,11 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                             it.sendAnnouncement(
                                 text(
                                     "An error occurred while creating the save: ${Strings.neatError(exception)}",
-                                    SCARLET))
-                        })
+                                    SCARLET,
+                                )
+                            )
+                        },
+                    )
                 }
             }
         }
@@ -263,22 +265,15 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         if (!SAVE_VALIDATE_REGEX.matches(name)) {
             return ImperiumResult.failure(text("Invalid name.", SCARLET))
         }
-        val path =
-            Vars.saveDirectory
-                .child("${name.replace("\\s".toRegex(), "_")}.$SAVE_EXTENSION")
-                .file()
-                .toPath()
+        val path = Vars.saveDirectory.child("${name.replace("\\s".toRegex(), "_")}.$SAVE_EXTENSION").file().toPath()
         if (path.exists()) {
-            return ImperiumResult.failure(
-                text("A save file with this name already exists.", SCARLET))
+            return ImperiumResult.failure(text("A save file with this name already exists.", SCARLET))
         }
         return ImperiumResult.success(path)
     }
 
     private fun renderSaveName(path: Path): Component {
-        val result =
-            SAVE_NAME_REGEX.find(path.nameWithoutExtension)
-                ?: return text(path.nameWithoutExtension)
+        val result = SAVE_NAME_REGEX.find(path.nameWithoutExtension) ?: return text(path.nameWithoutExtension)
         val name =
             try {
                 SaveIO.getMeta(Fi(path.toFile())).map.name()
@@ -290,14 +285,15 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             newline(),
             text(result.groups["date"]!!.value, LIGHT_GRAY),
             space(),
-            text(result.groups["time"]!!.value, LIGHT_GRAY))
+            text(result.groups["time"]!!.value, LIGHT_GRAY),
+        )
     }
 
     private enum class SavePage {
         LIST,
         VIEW,
         RENAME,
-        CREATE
+        CREATE,
     }
 
     companion object {

@@ -30,21 +30,12 @@ class NoopMessenger : Messenger, ImperiumApplication.Listener {
 
     override suspend fun publish(message: Message, local: Boolean): Boolean = false
 
-    override suspend fun <R : Message> request(
-        message: Message,
-        timeout: Duration,
-        responseKlass: KClass<R>
-    ): R? = null
+    override suspend fun <R : Message> request(message: Message, timeout: Duration, responseKlass: KClass<R>): R? = null
 
-    override fun <M : Message> consumer(
-        type: KClass<M>,
-        listener: Messenger.ConsumerListener<M>
-    ): Job = Job()
+    override fun <M : Message> consumer(type: KClass<M>, listener: Messenger.ConsumerListener<M>): Job = Job()
 
-    override fun <M : Message, R : Message> function(
-        type: KClass<M>,
-        function: Messenger.FunctionListener<M, R>
-    ): Job = Job()
+    override fun <M : Message, R : Message> function(type: KClass<M>, function: Messenger.FunctionListener<M, R>): Job =
+        Job()
 
     companion object {
         private val LOGGER by LoggerDelegate()

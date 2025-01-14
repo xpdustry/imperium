@@ -49,8 +49,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @ClientSide
     fun onAdminToggleCommand(sender: CommandSender) {
         sender.player.admin = !sender.player.admin
-        sender.player.sendMessage(
-            "[accent]Your admin status has been set to ${sender.player.admin}")
+        sender.player.sendMessage("[accent]Your admin status has been set to ${sender.player.admin}")
     }
 
     @ImperiumCommand(["ban"], Rank.MODERATOR)
@@ -60,7 +59,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         sender: CommandSender,
         player: Player,
         @Quoted reason: String = UNDEFINED_REASON,
-        duration: Duration = 3.days
+        duration: Duration = 3.days,
     ) {
         onPunishCommand("Banned", Punishment.Type.BAN, sender, player, reason, duration)
     }
@@ -72,7 +71,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         sender: CommandSender,
         player: Player,
         @Quoted reason: String = UNDEFINED_REASON,
-        duration: Duration = 3.hours
+        duration: Duration = 3.hours,
     ) {
         onPunishCommand("Frozen", Punishment.Type.FREEZE, sender, player, reason, duration)
     }
@@ -84,7 +83,7 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         sender: CommandSender,
         player: Player,
         @Quoted reason: String = UNDEFINED_REASON,
-        duration: Duration = 1.days
+        duration: Duration = 1.days,
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, sender, player, reason, duration)
     }
@@ -95,11 +94,9 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
         sender: CommandSender,
         player: Player,
         reason: String,
-        duration: Duration
+        duration: Duration,
     ) {
-        val id =
-            punishments.punish(
-                sender.identity, users.getByIdentity(player.identity).id, reason, type, duration)
+        val id = punishments.punish(sender.identity, users.getByIdentity(player.identity).id, reason, type, duration)
         sender.reply("$verb user $player (${codec.encode(id)}).")
     }
 

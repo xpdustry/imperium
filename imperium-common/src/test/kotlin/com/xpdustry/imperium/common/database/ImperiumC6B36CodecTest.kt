@@ -37,9 +37,7 @@ class ImperiumC6B36CodecTest {
     @Test
     fun `test encode validation`() {
         assertThrows<IllegalArgumentException> { ImperiumC6B36Codec.encode(-1) }
-        assertThrows<IllegalArgumentException> {
-            ImperiumC6B36Codec.encode(ImperiumC6B36Codec.MAX_VALUE)
-        }
+        assertThrows<IllegalArgumentException> { ImperiumC6B36Codec.encode(ImperiumC6B36Codec.MAX_VALUE) }
     }
 
     @Test
