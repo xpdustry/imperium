@@ -393,3 +393,5 @@ fun marked_griefer_unit(player: Player): Component =
             "imperium.marked.unit",
             TranslationArguments.array(text(player.info.plainLastName(), SCARLET))),
     )
+
+fun formation_dead(): Component = translatable("imperium.formation.dead", SCARLET)
