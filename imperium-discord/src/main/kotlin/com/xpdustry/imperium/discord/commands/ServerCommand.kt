@@ -95,7 +95,11 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     }
                 }
             }
-            reply.sendMessageEmbeds(embeds).await()
+            if (embeds.isEmpty()) {
+                reply.sendMessage("No players online at all :(").await()
+            } else {
+                reply.sendMessageEmbeds(embeds).await()
+            }
         }
     }
 
