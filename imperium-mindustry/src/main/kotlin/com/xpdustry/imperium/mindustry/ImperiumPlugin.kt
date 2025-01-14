@@ -58,15 +58,16 @@ import com.xpdustry.imperium.mindustry.game.ChangelogCommand
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
+import com.xpdustry.imperium.mindustry.game.PauseListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
 import com.xpdustry.imperium.mindustry.game.TipListener
-import com.xpdustry.imperium.mindustry.game.UnpauseListener
 import com.xpdustry.imperium.mindustry.game.formation.FormationListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
+import com.xpdustry.imperium.mindustry.misc.onEvent
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
 import com.xpdustry.imperium.mindustry.permission.ImperiumRankProvider
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
@@ -95,20 +96,20 @@ import com.xpdustry.imperium.mindustry.world.WorldEditCommand
 import kotlin.reflect.KClass
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
+import mindustry.Vars
+import mindustry.core.GameState
+import mindustry.game.EventType.SaveLoadEvent
+import mindustry.gen.Groups
 import mindustry.io.SaveVersion
+import mindustry.net.Administration
+import mindustry.server.ServerControl
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication()
 
     override fun onInit() {
-        // https://github.com/Anuken/Arc/pull/158
         if (getMindustryVersion().build < 147) {
-            Core.app =
-                object : Application by Core.app {
-                    override fun removeListener(listener: ApplicationListener) {
-                        post { synchronized(listeners) { listeners.remove(listener) } }
-                    }
-                }
+            applyBackportFixes()
         }
     }
 
@@ -185,7 +186,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 TeamCommand::class,
                 FormationListener::class,
                 ControlListener::class,
-                UnpauseListener::class,
+                PauseListener::class,
                 AchievementCommand::class,
                 LogicListener::class,
                 SaveCommand::class,
@@ -233,6 +234,28 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         Distributor.get()
             .serviceManager
             .register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
+    }
+
+    private fun applyBackportFixes() {
+        // https://github.com/Anuken/Arc/pull/158
+        Core.app =
+            object : Application by Core.app {
+                override fun removeListener(listener: ApplicationListener) {
+                    post { synchronized(listeners) { listeners.remove(listener) } }
+                }
+            }
+
+        // https://github.com/Anuken/Mindustry/issues/9422
+        onEvent<SaveLoadEvent> { _ ->
+            Core.app.post {
+                if (Administration.Config.autoPause.bool() && Groups.player.size() == 0) {
+                    Vars.state.set(GameState.State.paused)
+                    val autoPaused = ServerControl::class.java.getField("autoPaused")
+                    autoPaused.isAccessible = true
+                    autoPaused.set(ServerControl.instance, true)
+                }
+            }
+        }
     }
 
     private inner class MindustryImperiumApplication : BaseImperiumApplication(logger) {
