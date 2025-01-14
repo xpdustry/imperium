@@ -74,8 +74,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     try {
                         downloadMapFromPool(it)
                     } catch (e: Exception) {
-                        logger.error(
-                            "Failed to load map from server pool, falling back to local maps.", e)
+                        logger.error("Failed to load map from server pool, falling back to local maps.", e)
                         null
                     }
                 }
@@ -87,20 +86,14 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
         Vars.maps.all().addAll(pool)
         val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()
-        logger.info(
-            "Reloaded {} maps (added={}, removed={}).",
-            now.size,
-            (now - old).size,
-            (old - now).size)
+        logger.info("Reloaded {} maps (added={}, removed={}).", now.size, (now - old).size, (old - now).size)
     }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
         val file = cache.resolve("${map.id}_${map.lastUpdate.toEpochMilli()}.msav")
         if (file.notExists()) {
             logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map.id)
-            file.outputStream().use { output ->
-                maps.getMapInputStream(map.id)!!.use { input -> input.copyTo(output) }
-            }
+            file.outputStream().use { output -> maps.getMapInputStream(map.id)!!.use { input -> input.copyTo(output) } }
         }
         logger.debug("Loaded map {} (id={}) from server pool.", map.name, map.id)
         return MapIO.createMap(Fi(file.toFile()), true).also { it.id = map.id }

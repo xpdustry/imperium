@@ -58,20 +58,13 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         if (!Vars.state.isPlaying) return
         for (player in Entities.getPlayers()) {
             if (heatmapViewers[player] == true) {
-                for (ox in
-                    (-config.mindustry.history.heatMapRadius)..config.mindustry.history
-                            .heatMapRadius) {
-                    for (oy in
-                        (-config.mindustry.history.heatMapRadius)..config.mindustry.history
-                                .heatMapRadius) {
+                for (ox in (-config.mindustry.history.heatMapRadius)..config.mindustry.history.heatMapRadius) {
+                    for (oy in (-config.mindustry.history.heatMapRadius)..config.mindustry.history.heatMapRadius) {
                         val x = player.tileX() + ox
                         val y = player.tileY() + oy
                         val entry = historian.getHistory(x, y).lastOrNull() ?: continue
                         val minutes =
-                            Duration.between(entry.timestamp, Instant.now())
-                                .toMinutes()
-                                .toInt()
-                                .coerceAtMost(30)
+                            Duration.between(entry.timestamp, Instant.now()).toMinutes().toInt().coerceAtMost(30)
                         val progress = minutes / 30F
                         val color = Color.orange.cpy().lerp(Color.blue, progress)
                         Call.label(
@@ -79,7 +72,8 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                             "[#$color][[ $minutes ]",
                             1F,
                             x.toFloat() * Vars.tilesize,
-                            y.toFloat() * Vars.tilesize)
+                            y.toFloat() * Vars.tilesize,
+                        )
                     }
                 }
             }
@@ -91,12 +85,12 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         ImperiumScope.MAIN.launch {
             if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAP_TILE_LOG)) {
                 val last = taps[event.player]
-                if (last != null &&
-                    (System.currentTimeMillis() - last).milliseconds <
-                        config.mindustry.history.doubleClickDelay) {
+                if (
+                    last != null &&
+                        (System.currentTimeMillis() - last).milliseconds < config.mindustry.history.doubleClickDelay
+                ) {
                     taps.remove(event.player)
-                    onTileHistoryCommand(
-                        CommandSender.player(event.player), event.tile.x, event.tile.y)
+                    onTileHistoryCommand(CommandSender.player(event.player), event.tile.x, event.tile.y)
                 } else {
                     taps[event.player] = System.currentTimeMillis()
                 }
@@ -109,12 +103,14 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     suspend fun onPlayerHistoryCommand(
         sender: CommandSender,
         player: Player,
-        @Range(min = "1", max = "50") limit: Int = 10
+        @Range(min = "1", max = "50") limit: Int = 10,
     ) =
         sender.reply(
             historyRenderer.render(
                 runMindustryThread { historian.getHistory(player.uuid()).normalize(limit) },
-                HistoryActor(player)))
+                HistoryActor(player),
+            )
+        )
 
     @ImperiumCommand(["history", "tile"])
     @ClientSide
@@ -129,7 +125,9 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             historyRenderer.render(
                 runMindustryThread { historian.getHistory(x.toInt(), y.toInt()).normalize(limit) },
                 x.toInt(),
-                y.toInt()))
+                y.toInt(),
+            )
+        )
 
     @ImperiumCommand(["history", "heatmap"])
     @ClientSide

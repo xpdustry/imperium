@@ -81,7 +81,8 @@ fun main() {
             MapSubmitCommand::class,
             MindustryContentListener::class,
             HistoryCommand::class,
-            MetricsListener::class)
+            MetricsListener::class,
+        )
         .forEach(application::register)
     application.init()
 
@@ -89,7 +90,8 @@ fun main() {
         listOf(
             application.instances.get<AnnotationScanner>("slash"),
             application.instances.get<AnnotationScanner>("menu"),
-            application.instances.get<AnnotationScanner>("modal"))
+            application.instances.get<AnnotationScanner>("modal"),
+        )
 
     for (listener in application.listeners) {
         for (scanner in scanners) {

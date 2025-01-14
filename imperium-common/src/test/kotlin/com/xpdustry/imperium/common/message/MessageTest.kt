@@ -28,11 +28,7 @@ class MessageTest {
     @Test
     fun `test messages serializable`() {
         val graph =
-            ClassGraph()
-                .enableAnnotationInfo()
-                .enableClassInfo()
-                .acceptPackages("com.xpdustry.imperium.common")
-                .scan()
+            ClassGraph().enableAnnotationInfo().enableClassInfo().acceptPackages("com.xpdustry.imperium.common").scan()
         (graph.getClassesImplementing(Message::class.jvmName))
             .filter { it.isStandardClass }
             .forEach { info ->

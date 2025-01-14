@@ -29,26 +29,12 @@ sealed interface Metric {
     val labels: Labels
 }
 
-data class GaugeMetric(
-    override val name: String,
-    val value: Double,
-    override val labels: Labels = emptyMap(),
-) : Metric {
-    constructor(
-        name: String,
-        value: Number,
-        labels: Labels = emptyMap(),
-    ) : this(name, value.toDouble(), labels)
+data class GaugeMetric(override val name: String, val value: Double, override val labels: Labels = emptyMap()) :
+    Metric {
+    constructor(name: String, value: Number, labels: Labels = emptyMap()) : this(name, value.toDouble(), labels)
 }
 
-data class CounterMetric(
-    override val name: String,
-    val value: Double,
-    override val labels: Labels = emptyMap(),
-) : Metric {
-    constructor(
-        name: String,
-        value: Number,
-        labels: Labels = emptyMap(),
-    ) : this(name, value.toDouble(), labels)
+data class CounterMetric(override val name: String, val value: Double, override val labels: Labels = emptyMap()) :
+    Metric {
+    constructor(name: String, value: Number, labels: Labels = emptyMap()) : this(name, value.toDouble(), labels)
 }

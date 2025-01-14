@@ -55,9 +55,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {
-        FlexAPI.get()
-            .placeholders
-            .register("imperium", ImperiumPlaceholderProcessor(plugin, accounts))
+        FlexAPI.get().placeholders.register("imperium", ImperiumPlaceholderProcessor(plugin, accounts))
 
         FlexAPI.get()
             .templates
@@ -66,7 +64,10 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Template(
                     listOf(
                         TemplateStep(
-                            "[%imperium:rank_color%]<[white]%imperium:hours%[%imperium:rank_color%]> [%audience:color%]%audience:name_colored%"))),
+                            "[%imperium:rank_color%]<[white]%imperium:hours%[%imperium:rank_color%]> [%audience:color%]%audience:name_colored%"
+                        )
+                    )
+                ),
             )
 
         FlexAPI.get()
@@ -77,9 +78,13 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     listOf(
                         TemplateStep(
                             filter = TemplateFilter.placeholder("imperium:is_discord"),
-                            text = "[${BLURPLE.toHexString()}]<${Iconc.discord}> "),
+                            text = "[${BLURPLE.toHexString()}]<${Iconc.discord}> ",
+                        ),
                         TemplateStep(
-                            "%template:${TemplateManager.NAME_TEMPLATE_NAME}% [accent]>[white] %argument:flex:message%"))),
+                            "%template:${TemplateManager.NAME_TEMPLATE_NAME}% [accent]>[white] %argument:flex:message%"
+                        ),
+                    )
+                ),
             )
 
         FlexAPI.get()
@@ -87,9 +92,8 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
             .setDefaultTemplate(
                 "mindustry_chat_team",
                 Template(
-                    listOf(
-                        TemplateStep(
-                            "[%audience:team_color%]<T> %template:${TemplateManager.CHAT_TEMPLATE_NAME}%"))),
+                    listOf(TemplateStep("[%audience:team_color%]<T> %template:${TemplateManager.CHAT_TEMPLATE_NAME}%"))
+                ),
             )
 
         FlexAPI.get()
@@ -99,17 +103,17 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Template(
                     listOf(
                         TemplateStep(
-                            "[${config.mindustry.color.toHexString()}]<${Iconc.infoCircle}> ${config.server.name} [accent]>[white] %argument:flex_message%"))),
+                            "[${config.mindustry.color.toHexString()}]<${Iconc.infoCircle}> ${config.server.name} [accent]>[white] %argument:flex_message%"
+                        )
+                    )
+                ),
             )
 
         FlexAPI.get()
             .templates
             .setDefaultTemplate(
                 "mindustry_chat_whisper",
-                Template(
-                    listOf(
-                        TemplateStep(
-                            "[gray]<T> %template:${TemplateManager.CHAT_TEMPLATE_NAME}%"))),
+                Template(listOf(TemplateStep("[gray]<T> %template:${TemplateManager.CHAT_TEMPLATE_NAME}%"))),
             )
 
         // I don't know why but Foo client appends invisible characters to the end of messages,
@@ -118,16 +122,13 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val msg = context.message
             // https://github.com/mindustry-antigrief/mindustry-client/blob/23025185c20d102f3fbb9d9a4c20196cc871d94b/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
             CompletableFuture.completedFuture(
-                if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2)
-                else msg)
+                if (msg.takeLast(2).all { (0xF80 until 0x107F).contains(it.code) }) msg.dropLast(2) else msg
+            )
         }
 
         FlexAPI.get().messages.register("anti-links", Priority.NORMAL) { ctx ->
-            if (ctx.filter &&
-                ctx.sender != Distributor.get().audienceProvider.server &&
-                ctx.message.containsLink()) {
-                ctx.sender.sendMessage(
-                    text("You can't send discord invitations or links in the chat.", SCARLET))
+            if (ctx.filter && ctx.sender != Distributor.get().audienceProvider.server && ctx.message.containsLink()) {
+                ctx.sender.sendMessage(text("You can't send discord invitations or links in the chat.", SCARLET))
                 CompletableFuture.completedFuture("")
             } else {
                 CompletableFuture.completedFuture(ctx.message)
@@ -143,18 +144,18 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     override fun process(context: MessageContext) =
                         ImperiumScope.MAIN.future {
                             val muuid = context.sender.metadata[StandardKeys.MUUID]
-                            var sourceLocale =
-                                context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
-                            val targetLocale =
-                                context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
-                            if (sourceLocale.language != targetLocale.language &&
-                                muuid != null &&
-                                users.getSetting(
-                                    muuid.uuid, User.Setting.AUTOMATIC_LANGUAGE_DETECTION)) {
+                            var sourceLocale = context.sender.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
+                            val targetLocale = context.target.metadata[StandardKeys.LOCALE] ?: Locale.getDefault()
+                            if (
+                                sourceLocale.language != targetLocale.language &&
+                                    muuid != null &&
+                                    users.getSetting(muuid.uuid, User.Setting.AUTOMATIC_LANGUAGE_DETECTION)
+                            ) {
                                 sourceLocale = Translator.AUTO_DETECT
                             }
                             process(context, sourceLocale, targetLocale).await()
                         }
-                })
+                },
+            )
     }
 }

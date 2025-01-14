@@ -40,20 +40,21 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->
-            if (event.isWebhookMessage ||
-                event.message.author.isBot ||
-                event.message.author.isSystem) {
+            if (event.isWebhookMessage || event.message.author.isBot || event.message.author.isSystem) {
                 return@addSuspendingEventListener
             }
             val channel = (event.channel as? TextChannel) ?: return@addSuspendingEventListener
-            if (channel.parentCategoryIdLong != 0L &&
-                channel.parentCategoryIdLong == config.discord.categories.liveChat) {
+            if (
+                channel.parentCategoryIdLong != 0L && channel.parentCategoryIdLong == config.discord.categories.liveChat
+            ) {
                 messenger.publish(
                     BridgeChatMessage(
                         channel.name,
                         event.message.member?.nickname ?: event.message.author.name,
                         event.message.idLong,
-                        event.message.contentStripped))
+                        event.message.contentStripped,
+                    )
+                )
             }
         }
 
@@ -63,10 +64,8 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
                 when (val action = message.action) {
                     is MindustryPlayerMessage.Action.Join ->
                         ":green_square: **${message.player}** has joined the server."
-                    is MindustryPlayerMessage.Action.Quit ->
-                        ":red_square: **${message.player}** has left the server."
-                    is MindustryPlayerMessage.Action.Chat ->
-                        ":blue_square: **${message.player}**: ${action.message}"
+                    is MindustryPlayerMessage.Action.Quit -> ":red_square: **${message.player}** has left the server."
+                    is MindustryPlayerMessage.Action.Chat -> ":blue_square: **${message.player}**: ${action.message}"
                 }
             channel.sendMessage(text).setAllowedMentions(emptySet()).await()
         }

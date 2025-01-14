@@ -25,7 +25,5 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 class PingCommand : ImperiumApplication.Listener {
     @ImperiumCommand(["ping"])
     suspend fun onPingCommand(interaction: SlashCommandInteraction) =
-        interaction
-            .reply("pong with **${interaction.jda.restPing.await()}** milliseconds of latency!")
-            .await()
+        interaction.reply("pong with **${interaction.jda.restPing.await()}** milliseconds of latency!").await()
 }

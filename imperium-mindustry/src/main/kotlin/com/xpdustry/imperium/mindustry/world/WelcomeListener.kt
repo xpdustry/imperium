@@ -68,9 +68,10 @@ class WelcomeListener(instances: InstanceManager) : ImperiumApplication.Listener
             pane.grid.addRow(
                 MenuOption.of(
                     gui_welcome_button_discord(),
-                    Action.audience { it.openURI(DISCORD_INVITATION_LINK.toURI()) }))
-            pane.grid.addRow(
-                MenuOption.of(gui_welcome_button_changelog(), Action.command("changelog")))
+                    Action.audience { it.openURI(DISCORD_INVITATION_LINK.toURI()) },
+                )
+            )
+            pane.grid.addRow(MenuOption.of(gui_welcome_button_changelog(), Action.command("changelog")))
             pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
         }
     }

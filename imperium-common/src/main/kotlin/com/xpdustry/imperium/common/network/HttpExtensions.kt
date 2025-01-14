@@ -38,7 +38,8 @@ suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation 
                 if (continuation.isCancelled) return
                 continuation.resumeWithException(e)
             }
-        })
+        }
+    )
     continuation.invokeOnCancellation {
         try {
             cancel()

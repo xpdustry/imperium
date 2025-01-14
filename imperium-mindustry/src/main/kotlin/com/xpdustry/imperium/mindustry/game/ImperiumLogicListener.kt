@@ -30,8 +30,7 @@ class ImperiumLogicListener(instances: InstanceManager) : ImperiumApplication.Li
     private val plugin = instances.get<MindustryPlugin>()
 
     override fun onImperiumInit() {
-        Distributor.get().eventBus.subscribe(StateChangeEvent::class.java, Priority.HIGH, plugin) {
-            event ->
+        Distributor.get().eventBus.subscribe(StateChangeEvent::class.java, Priority.HIGH, plugin) { event ->
             if (event.from == GameState.State.menu && event.to == GameState.State.playing) {
                 Distributor.get().eventBus.post(MenuToPlayEvent)
             }

@@ -33,8 +33,7 @@ import kotlin.io.path.outputStream
 
 class LocalStorageBucket(private val directory: Path) : StorageBucket {
 
-    override suspend fun getObject(first: String, vararg more: String): StorageObject =
-        LocalStorageObject(first, more)
+    override suspend fun getObject(first: String, vararg more: String): StorageObject = LocalStorageObject(first, more)
 
     private inner class LocalStorageObject(first: String, more: Array<out String>) : StorageObject {
 
@@ -66,9 +65,7 @@ class LocalStorageBucket(private val directory: Path) : StorageBucket {
         override suspend fun delete() {
             file.deleteIfExists()
             var parent = file.parent
-            while (parent != null &&
-                parent != directory &&
-                parent.listDirectoryEntries().isEmpty()) {
+            while (parent != null && parent != directory && parent.listDirectoryEntries().isEmpty()) {
                 parent.deleteExisting()
                 parent = parent.parent
             }

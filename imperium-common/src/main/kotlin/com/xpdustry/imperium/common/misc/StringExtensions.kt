@@ -33,8 +33,7 @@ fun Color.toHexString(): String =
 
 fun String.toInetAddress(): InetAddress = InetAddresses.forString(this)
 
-fun String.toInetAddressOrNull(): InetAddress? =
-    if (InetAddresses.isInetAddress(this)) toInetAddress() else null
+fun String.toInetAddressOrNull(): InetAddress? = if (InetAddresses.isInetAddress(this)) toInetAddress() else null
 
 fun ByteArray.encodeBase64(): String = Base64.getEncoder().encodeToString(this)
 

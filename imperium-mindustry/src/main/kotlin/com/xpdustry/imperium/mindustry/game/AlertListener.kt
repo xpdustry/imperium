@@ -47,18 +47,18 @@ import mindustry.world.consumers.ConsumeItemExplode
 
 class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val explosives =
-        MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
+    private val explosives = MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
     private val generators = IntSet()
     private val generatorsRateLimiter =
-        SimpleRateLimiter<Int>(
-            1, instances.get<ImperiumConfig>().mindustry.world.explosiveDamageAlertDelay)
+        SimpleRateLimiter<Int>(1, instances.get<ImperiumConfig>().mindustry.world.explosiveDamageAlertDelay)
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {
-            if (((it.type == ActionType.breakBlock && it.block.isSourceBlock) ||
-                (it.type == ActionType.placeBlock && it.tile.block()?.isSourceBlock == true)) &&
-                !Vars.state.rules.infiniteResources) {
+            if (
+                ((it.type == ActionType.breakBlock && it.block.isSourceBlock) ||
+                    (it.type == ActionType.placeBlock && it.tile.block()?.isSourceBlock == true)) &&
+                    !Vars.state.rules.infiniteResources
+            ) {
                 val block =
                     when (it.type) {
                         ActionType.breakBlock -> it.block
@@ -70,7 +70,12 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     .getTeam(it.player.team())
                     .sendMessage(
                         announcement_important_block_destroy_attempt(
-                            it.player, block, it.tile.x.toInt(), it.tile.y.toInt()))
+                            it.player,
+                            block,
+                            it.tile.x.toInt(),
+                            it.tile.y.toInt(),
+                        )
+                    )
                 return@addActionFilter false
             }
             true
@@ -89,8 +94,10 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     @TriggerHandler(EventType.Trigger.update)
     fun onExplosiveGeneratorCheck() {
-        if ((!Vars.state.rules.reactorExplosions ||
-            (Vars.state.rules.infiniteResources && !Vars.state.rules.damageExplosions)))
+        if (
+            (!Vars.state.rules.reactorExplosions ||
+                (Vars.state.rules.infiniteResources && !Vars.state.rules.damageExplosions))
+        )
             return
         val iterator = generators.iterator()
         while (iterator.hasNext) {
@@ -101,9 +108,11 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val block = building.block() as ConsumeGenerator
             val consumers = block.consumers.filterIsInstance<ConsumeItemExplode>()
             for (item in explosives) {
-                if (building.items.has(item) &&
-                    consumers.any { item.explosiveness > it.threshold } &&
-                    generatorsRateLimiter.incrementAndCheck(pos)) {
+                if (
+                    building.items.has(item) &&
+                        consumers.any { item.explosiveness > it.threshold } &&
+                        generatorsRateLimiter.incrementAndCheck(pos)
+                ) {
                     Distributor.get()
                         .audienceProvider
                         .getTeam(building.team())
@@ -123,7 +132,11 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 .getTeam(event.tile.team())
                 .sendMessage(
                     announcement_important_block_destroyed(
-                        event.tile.block(), event.tile.x.toInt(), event.tile.y.toInt()))
+                        event.tile.block(),
+                        event.tile.x.toInt(),
+                        event.tile.y.toInt(),
+                    )
+                )
         }
     }
 
@@ -136,17 +149,14 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 .audienceProvider
                 .getTeam(building.team())
                 .sendMessage(
-                    announcement_important_block_destroyed(
-                        building.current, event.tile.x.toInt(), event.tile.y.toInt()))
+                    announcement_important_block_destroyed(building.current, event.tile.x.toInt(), event.tile.y.toInt())
+                )
         }
     }
 
     @EventHandler
     fun onDangerousBlockBuild(event: EventType.BlockBuildBeginEvent) {
-        if (Vars.state.rules.infiniteResources ||
-            event.breaking ||
-            event.unit == null ||
-            !event.unit.isPlayer) {
+        if (Vars.state.rules.infiniteResources || event.breaking || event.unit == null || !event.unit.isPlayer) {
             return
         }
 
@@ -156,8 +166,7 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
             block = building.current
         }
 
-        if (!(block is Incinerator ||
-            (block is NuclearReactor && Vars.state.rules.reactorExplosions))) {
+        if (!(block is Incinerator || (block is NuclearReactor && Vars.state.rules.reactorExplosions))) {
             return
         }
 
@@ -181,7 +190,9 @@ class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
                         event.unit.player.plainName(),
                         block,
                         event.tile.x.toInt(),
-                        event.tile.y.toInt()))
+                        event.tile.y.toInt(),
+                    )
+                )
         }
     }
 

@@ -76,7 +76,8 @@ private val NAMED_COLORS =
         "UNLAUNCHED",
         "HIGHLIGHT",
         "STAT",
-        "NEGSTAT")
+        "NEGSTAT",
+    )
 
 // https://github.com/Anuken/Arc/blob/eddce8f1e6b9d960a38fa4dfed3c07e3e211fca2/arc-core/src/arc/util/Strings.java#L118
 fun CharSequence.stripMindustryColors(): String {
@@ -159,8 +160,7 @@ fun String.isCRC32Muuid(): Boolean {
     val crc = CRC32()
     crc.update(bytes, 0, 8)
     return crc.value ==
-        Longs.fromBytes(
-            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15])
+        Longs.fromBytes(bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15])
 }
 
 fun MindustryUUID.toShortMuuid(): ByteArray = Base64.getDecoder().decode(this).sliceArray(0..7)

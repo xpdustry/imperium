@@ -97,8 +97,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                         player.ip().toInetAddress() in data.addresses
                 }
 
-            if (punishment.type == Punishment.Type.BAN &&
-                message.type == PunishmentMessage.Type.CREATE) {
+            if (punishment.type == Punishment.Type.BAN && message.type == PunishmentMessage.Type.CREATE) {
                 runMindustryThread {
                     Events.fire(PlayerIpBanEvent(punished.lastAddress.hostAddress))
                     targets.forEach { target ->
@@ -117,7 +116,9 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                                 announcement_ban(
                                     target.name.stripMindustryColors(),
                                     punishment.reason,
-                                    punishment.duration))
+                                    punishment.duration,
+                                )
+                            )
                     }
                 }
             } else {
@@ -131,10 +132,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         }
 
         Vars.netServer.admins.addActionFilter { action ->
-            val freeze =
-                cache[action.player]?.firstOrNull {
-                    it.type == Punishment.Type.FREEZE && !it.expired
-                }
+            val freeze = cache[action.player]?.firstOrNull { it.type == Punishment.Type.FREEZE && !it.expired }
             if (freeze != null) {
                 if (!isFooNetworking(action.block, action.tile)) {
                     action.player.sendMessageRateLimited(punishment_message(freeze, codec))
@@ -143,8 +141,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             }
             if (kicking[action.player] == true) {
                 if (!isFooNetworking(action.block, action.tile)) {
-                    action.player.sendMessageRateLimited(
-                        punishment_message_simple(Punishment.Type.FREEZE, "votekick"))
+                    action.player.sendMessageRateLimited(punishment_message_simple(Punishment.Type.FREEZE, "votekick"))
                 }
                 return@addActionFilter false
             }
@@ -156,9 +153,11 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 cache[action.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
                     ?: return@addActionFilter true
 
-            if ((action.type == Administration.ActionType.configure && action.config is String) ||
-                (action.type == Administration.ActionType.placeBlock &&
-                    (action.block is MessageBlock || action.block is LogicBlock))) {
+            if (
+                (action.type == Administration.ActionType.configure && action.config is String) ||
+                    (action.type == Administration.ActionType.placeBlock &&
+                        (action.block is MessageBlock || action.block is LogicBlock))
+            ) {
                 action.player.sendMessageRateLimited(punishment_message(mute, codec))
                 return@addActionFilter false
             }
@@ -171,9 +170,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 if (!ctx.filter) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val muted = runMindustryThread {
-                    cache[player.player]?.firstOrNull {
-                        it.type == Punishment.Type.MUTE && !it.expired
-                    }
+                    cache[player.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
                 }
                 if (muted != null) {
                     ctx.sender.sendMessage(punishment_message(muted, codec))
@@ -188,9 +185,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             ImperiumScope.MAIN.future {
                 if (!ctx.filter) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
-                val words =
-                    badWords.findBadWords(
-                        ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
+                val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
                 if (words.isNotEmpty()) {
                     if (badWordsCounter.incrementAndCheck(MUUID.from(player.player))) {
                         ctx.sender.sendMessage(warning("bad_word", words.toString()))
@@ -200,7 +195,8 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                             users.getByIdentity(player.player.identity).id,
                             "Bad words: $words",
                             Punishment.Type.MUTE,
-                            1.hours)
+                            1.hours,
+                        )
                     }
                     ""
                 } else {
@@ -212,8 +208,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
         gatekeeper.register("punishment", Priority.HIGH) { ctx ->
             val punishment =
                 punishments
-                    .findAllByIdentity(
-                        Identity.Mindustry("unknown", ctx.uuid, ctx.usid, ctx.address))
+                    .findAllByIdentity(Identity.Mindustry("unknown", ctx.uuid, ctx.usid, ctx.address))
                     .filter { !it.expired && it.type == Punishment.Type.BAN }
                     .toList()
                     .maxByOrNull { it.creation }
@@ -235,8 +230,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     }
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch { refreshPunishments(event.player) }
+    fun onPlayerJoin(event: EventType.PlayerJoin) = ImperiumScope.MAIN.launch { refreshPunishments(event.player) }
 
     private fun Player.sendMessageRateLimited(message: Component) {
         if (messageCooldowns.incrementAndCheck(uuid())) {

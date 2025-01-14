@@ -58,8 +58,7 @@ class SimpleSQLProvider(private val config: DatabaseConfig, private val director
                 if (config.memory) {
                     hikari.jdbcUrl = "jdbc:h2:mem:${config.database};MODE=MYSQL"
                 } else {
-                    hikari.jdbcUrl =
-                        "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL"
+                    hikari.jdbcUrl = "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL"
                 }
             }
             is DatabaseConfig.MariaDB -> {

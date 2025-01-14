@@ -49,20 +49,19 @@ data class Argon2Params(
     enum class Type {
         ID,
         I,
-        D
+        D,
     }
 
     enum class Version {
         V10,
-        V13
+        V13,
     }
 }
 
 object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
 
     override suspend fun create(chars: CharArray, params: Argon2Params): Hash =
-        create0(
-            Password.hash(SecureString(chars)), SaltGenerator.generate(params.saltLength), params)
+        create0(Password.hash(SecureString(chars)), SaltGenerator.generate(params.saltLength), params)
 
     override suspend fun create(bytes: ByteArray, params: Argon2Params): Hash =
         create0(Password.hash(bytes), SaltGenerator.generate(params.saltLength), params)
@@ -86,7 +85,7 @@ object Argon2HashFunction : SaltyHashFunction<Argon2Params> {
                             params.length,
                             params.type.toP4J(),
                             params.version.toP4J(),
-                        ),
+                        )
                     )
             Hash(result.bytes, salt, params)
         }

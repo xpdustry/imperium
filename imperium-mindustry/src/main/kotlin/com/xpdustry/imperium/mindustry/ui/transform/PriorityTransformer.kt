@@ -21,10 +21,8 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.mindustry.ui.Pane
 import com.xpdustry.imperium.mindustry.ui.View
 
-class PriorityTransformer<P : Pane>(
-    private val transformer: Transformer<P>,
-    private val priority: Priority,
-) : Transformer<P>, Comparable<PriorityTransformer<*>> {
+class PriorityTransformer<P : Pane>(private val transformer: Transformer<P>, private val priority: Priority) :
+    Transformer<P>, Comparable<PriorityTransformer<*>> {
 
     override fun transform(view: View, pane: P) {
         transformer.transform(view, pane)

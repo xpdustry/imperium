@@ -48,9 +48,7 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
                 .build()
 
         try {
-            if (!client
-                .bucketExists(BucketExistsArgs.builder().bucket(config.bucket).build())
-                .join()) {
+            if (!client.bucketExists(BucketExistsArgs.builder().bucket(config.bucket).build()).join()) {
                 client.makeBucket(MakeBucketArgs.builder().bucket(config.bucket).build()).join()
             }
         } catch (e: Exception) {
@@ -74,7 +72,7 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
                             .bucket(config.bucket)
                             .`object`(fullPath)
                             .stream(stream, -1, DEFAULT_PART_SIZE)
-                            .build(),
+                            .build()
                     )
                     .await()
                 update()
@@ -82,19 +80,12 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
 
         override suspend fun getData(): InputStream =
             withContext(ImperiumScope.IO.coroutineContext) {
-                client
-                    .getObject(
-                        GetObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build(),
-                    )
-                    .await()
+                client.getObject(GetObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build()).await()
             }
 
         override suspend fun delete() =
             withContext(ImperiumScope.IO.coroutineContext) {
-                client
-                    .removeObject(
-                        RemoveObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build())
-                    .await()
+                client.removeObject(RemoveObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build()).await()
                 update()
             }
 
@@ -103,12 +94,7 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
                 val stats =
                     try {
                         client
-                            .statObject(
-                                StatObjectArgs.builder()
-                                    .bucket(config.bucket)
-                                    .`object`(fullPath)
-                                    .build(),
-                            )
+                            .statObject(StatObjectArgs.builder().bucket(config.bucket).`object`(fullPath).build())
                             .await()
                     } catch (e: CompletionException) {
                         // For some reason, the real exception is wrapped withing multiple
@@ -117,8 +103,7 @@ class MinioStorageBucket(private val config: StorageConfig.Minio, private val ht
                         while (exception is CompletionException && exception.cause != null) {
                             exception = exception.cause!!
                         }
-                        if (exception is ErrorResponseException &&
-                            exception.errorResponse().code() != "NoSuchKey") {
+                        if (exception is ErrorResponseException && exception.errorResponse().code() != "NoSuchKey") {
                             throw e
                         }
                         null

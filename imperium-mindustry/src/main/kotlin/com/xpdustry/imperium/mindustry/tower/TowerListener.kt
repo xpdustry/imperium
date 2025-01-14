@@ -73,7 +73,8 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
         popup.addTransformer { ctx ->
             ctx.pane.alignementX = PopupPane.AlignementX.LEFT
             ctx.pane.setContent(
-                "Enemy health multiplier x${DECIMAL_FORMAT.format(Vars.state.rules.waveTeam.rules().unitHealthMultiplier)}")
+                "Enemy health multiplier x${DECIMAL_FORMAT.format(Vars.state.rules.waveTeam.rules().unitHealthMultiplier)}"
+            )
         }
     }
 
@@ -94,8 +95,7 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
             .forEach { type ->
                 val previous = type.controller
                 type.controller = Func { unit ->
-                    if (unit.team() == Vars.state.rules.waveTeam) GroundTowerAI()
-                    else previous.get(unit)
+                    if (unit.team() == Vars.state.rules.waveTeam) GroundTowerAI() else previous.get(unit)
                 }
             }
 
@@ -106,7 +106,8 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
                         "Duplicate downgrade for {}, got {} and {}",
                         upgrade[1].name,
                         downgrades[upgrade[1]]!!.name,
-                        upgrade[0].name)
+                        upgrade[0].name,
+                    )
                 } else {
                     downgrades[upgrade[1]] = upgrade[0]
                 }
@@ -148,22 +149,14 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
         Distributor.get()
             .audienceProvider
             .players
-            .showLabel(
-                bounty.toBountyComponent(),
-                event.unit.x(),
-                event.unit.y(),
-                2.seconds.toJavaDuration())
-        bounty.forEach { (item, count) ->
-            Vars.state.rules.defaultTeam.core()?.items()?.add(item, count)
-        }
+            .showLabel(bounty.toBountyComponent(), event.unit.x(), event.unit.y(), 2.seconds.toJavaDuration())
+        bounty.forEach { (item, count) -> Vars.state.rules.defaultTeam.core()?.items()?.add(item, count) }
 
         val downgrade = downgrades[event.unit.type()] ?: return
         val unit = downgrade.create(Vars.state.rules.waveTeam)
         unit.set(event.unit.x(), event.unit.y())
         unit.rotation(event.unit.rotation())
-        unit.apply(
-            StatusEffects.slow,
-            MindustryTimeUnit.TICKS.convert(5L, MindustryTimeUnit.SECONDS).toFloat())
+        unit.apply(StatusEffects.slow, MindustryTimeUnit.TICKS.convert(5L, MindustryTimeUnit.SECONDS).toFloat())
         unit.add()
         Call.effect(Fx.spawn, event.unit.x(), event.unit.y(), 0F, Color.red)
     }
@@ -268,7 +261,7 @@ class TowerListener(instances: InstanceManager) : ImperiumApplication.Listener {
         NOVA,
         CRAWLER,
         MONO,
-        FLARE
+        FLARE,
     }
 
     companion object {

@@ -52,8 +52,7 @@ import kotlinx.serialization.serializer
 
 private typealias MessageOrRequest<T> = Pair<T, RabbitmqMessenger.RequestData?>
 
-class RabbitmqMessenger(private val config: ImperiumConfig) :
-    Messenger, ImperiumApplication.Listener {
+class RabbitmqMessenger(private val config: ImperiumConfig) : Messenger, ImperiumApplication.Listener {
     internal val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
     private lateinit var connection: Connection
@@ -88,11 +87,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
 
     override suspend fun publish(message: Message, local: Boolean) = publish0(message, local, null)
 
-    override suspend fun <R : Message> request(
-        message: Message,
-        timeout: Duration,
-        responseKlass: KClass<R>
-    ): R? =
+    override suspend fun <R : Message> request(message: Message, timeout: Duration, responseKlass: KClass<R>): R? =
         withContext(ImperiumScope.IO.coroutineContext) {
             val request = RequestData(UUID.randomUUID(), false)
             val deferred = CompletableDeferred<R>()
@@ -119,53 +114,36 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
         withContext(ImperiumScope.IO.coroutineContext) {
             try {
                 if (local) {
-                    forEachMessageSuperclass(message::class) { klass ->
-                        handleIncomingMessage(klass, message, request)
-                    }
+                    forEachMessageSuperclass(message::class) { klass -> handleIncomingMessage(klass, message, request) }
                 }
 
                 @Suppress("UNCHECKED_CAST")
                 val json = Json.encodeToString((message::class as KClass<M>).serializer(), message)
-                logger.trace(
-                    "Publishing {} message: {}",
-                    message::class.simpleName ?: message::class.jvmName,
-                    json)
+                logger.trace("Publishing {} message: {}", message::class.simpleName ?: message::class.jvmName, json)
                 val bytes = json.encodeToByteArray()
                 val headers =
-                    mutableMapOf(
-                        SENDER_HEADER to config.server.name,
-                        JAVA_CLASS_HEADER to message::class.jvmName,
-                    )
+                    mutableMapOf(SENDER_HEADER to config.server.name, JAVA_CLASS_HEADER to message::class.jvmName)
                 if (request != null) {
                     headers[REQUEST_ID_HEADER] = request.id.toString()
                     headers[REQUEST_REPLY_HEADER] = request.reply.toString()
                 }
-                val properties =
-                    AMQP.BasicProperties.Builder().headers(headers as Map<String, Any>).build()
+                val properties = AMQP.BasicProperties.Builder().headers(headers as Map<String, Any>).build()
                 forEachMessageSuperclass(message::class) { klass ->
                     channel.basicPublish(IMPERIUM_EXCHANGE, klass.jvmName, properties, bytes)
                 }
 
                 true
             } catch (e: Exception) {
-                logger.error(
-                    "Failed to publish ${message::class.simpleName ?: message::class.jvmName} message",
-                    e)
+                logger.error("Failed to publish ${message::class.simpleName ?: message::class.jvmName} message", e)
                 false
             }
         }
 
-    override fun <M : Message> consumer(
-        type: KClass<M>,
-        listener: Messenger.ConsumerListener<M>
-    ): Job {
+    override fun <M : Message> consumer(type: KClass<M>, listener: Messenger.ConsumerListener<M>): Job {
         return handle(type) { (message, _) -> listener.onMessage(message) }
     }
 
-    override fun <M : Message, R : Message> function(
-        type: KClass<M>,
-        function: Messenger.FunctionListener<M, R>
-    ): Job {
+    override fun <M : Message, R : Message> function(type: KClass<M>, function: Messenger.FunctionListener<M, R>): Job {
         return handle(type) { (message, request) ->
             val response = function.onMessage(message) ?: return@handle
             publish0(response, false, request!!.copy(reply = true))
@@ -212,14 +190,11 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
         override fun handleCancelOk(consumerTag: String) = Unit
 
         override fun handleCancel(consumerTag: String) =
-            logger.error(
-                "Consumer for ${type.simpleName ?: type.jvmName} has been unexpectedly cancelled")
+            logger.error("Consumer for ${type.simpleName ?: type.jvmName} has been unexpectedly cancelled")
 
         override fun handleShutdownSignal(consumerTag: String, sig: ShutdownSignalException) {
             if (!sig.isInitiatedByApplication) {
-                logger.error(
-                    "Consumer for ${type.simpleName ?: type.jvmName} has been shut down unexpectedly",
-                    sig)
+                logger.error("Consumer for ${type.simpleName ?: type.jvmName} has been shut down unexpectedly", sig)
             }
         }
 
@@ -233,8 +208,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
             // Have to call toString() because it's wrapped in another object
             val sender = properties.headers[SENDER_HEADER]?.toString()
             if (sender == null) {
-                logger.warn(
-                    "Received ${type.simpleName ?: type.jvmName} message without sender header from $envelope")
+                logger.warn("Received ${type.simpleName ?: type.jvmName} message without sender header from $envelope")
                 return@runBlocking
             }
             if (sender == config.server.name) {
@@ -242,34 +216,36 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
             }
 
             if (body.isEmpty()) {
-                logger.warn(
-                    "Received empty ${type.simpleName ?: type.jvmName} message from $sender")
+                logger.warn("Received empty ${type.simpleName ?: type.jvmName} message from $sender")
                 return@runBlocking
             }
             if (body.size > MAX_OBJECT_SIZE) {
                 logger.warn(
-                    "Received ${type.simpleName ?: type.jvmName} message from $sender that is too large: ${body.size} bytes")
+                    "Received ${type.simpleName ?: type.jvmName} message from $sender that is too large: ${body.size} bytes"
+                )
                 return@runBlocking
             }
 
             val klassName = properties.headers[JAVA_CLASS_HEADER]?.toString()
             if (klassName == null) {
                 logger.warn(
-                    "Received ${type.simpleName ?: type.jvmName} message without Java class header from $sender")
+                    "Received ${type.simpleName ?: type.jvmName} message without Java class header from $sender"
+                )
                 return@runBlocking
             }
             val klass =
                 try {
-                    Class.forName(klassName, true, this@RabbitmqMessenger::class.java.classLoader)
-                        .kotlin
+                    Class.forName(klassName, true, this@RabbitmqMessenger::class.java.classLoader).kotlin
                 } catch (e: ClassNotFoundException) {
                     logger.trace(
-                        "Received ${type.simpleName ?: type.jvmName} message with unknown Java class from $sender: $klassName")
+                        "Received ${type.simpleName ?: type.jvmName} message with unknown Java class from $sender: $klassName"
+                    )
                     return@runBlocking
                 }
             if (!type.isSuperclassOf(klass)) {
                 logger.warn(
-                    "Received ${type.simpleName ?: type.jvmName} message with an unexpected Java superclass from $sender: $klassName")
+                    "Received ${type.simpleName ?: type.jvmName} message with an unexpected Java superclass from $sender: $klassName"
+                )
                 return@runBlocking
             }
 
@@ -279,9 +255,7 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
                     @Suppress("UNCHECKED_CAST")
                     Json.decodeFromString(klass.serializer(), body.decodeToString()) as T
                 } catch (e: Exception) {
-                    logger.error(
-                        "Failed to parse ${type.simpleName ?: type.jvmName} message from $sender",
-                        e)
+                    logger.error("Failed to parse ${type.simpleName ?: type.jvmName} message from $sender", e)
                     return@runBlocking
                 }
 
@@ -297,19 +271,14 @@ class RabbitmqMessenger(private val config: ImperiumConfig) :
         }
     }
 
-    private suspend fun <T : Message> handleIncomingMessage(
-        klass: KClass<out T>,
-        message: T,
-        request: RequestData?
-    ) {
+    private suspend fun <T : Message> handleIncomingMessage(klass: KClass<out T>, message: T, request: RequestData?) {
         val flow = flows[klass] ?: return
-        @Suppress("UNCHECKED_CAST")
-        (flow.inner as MutableSharedFlow<MessageOrRequest<T>>).emit(message to request)
+        @Suppress("UNCHECKED_CAST") (flow.inner as MutableSharedFlow<MessageOrRequest<T>>).emit(message to request)
     }
 
     private suspend fun forEachMessageSuperclass(
         klass: KClass<out Message>,
-        callback: suspend (KClass<out Message>) -> Unit
+        callback: suspend (KClass<out Message>) -> Unit,
     ) {
         callback(klass)
         klass.allSuperclasses.forEach {

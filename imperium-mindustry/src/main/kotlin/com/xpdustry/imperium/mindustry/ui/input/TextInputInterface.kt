@@ -33,9 +33,8 @@ interface TextInputInterface : TransformerInterface<TextInputPane> {
     }
 }
 
-private class SimpleTextInputInterface(
-    plugin: MindustryPlugin,
-) : AbstractTransformerInterface<TextInputPane>(plugin, ::TextInputPane), TextInputInterface {
+private class SimpleTextInputInterface(plugin: MindustryPlugin) :
+    AbstractTransformerInterface<TextInputPane>(plugin, ::TextInputPane), TextInputInterface {
     private val visible: MutableSet<MUUID> = HashSet()
 
     private val id: Int =

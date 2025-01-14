@@ -34,8 +34,7 @@ interface AddressWhitelist {
     suspend fun removeAddress(address: InetAddress)
 }
 
-class SimpleAddressWhitelist(private val provider: SQLProvider) :
-    AddressWhitelist, ImperiumApplication.Listener {
+class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhitelist, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         provider.newTransaction { SchemaUtils.create(AddressWhitelistTable) }
@@ -43,9 +42,7 @@ class SimpleAddressWhitelist(private val provider: SQLProvider) :
 
     override suspend fun addAddress(address: InetAddress): Unit =
         provider.newSuspendTransaction {
-            AddressWhitelistTable.insertIgnore {
-                it[AddressWhitelistTable.address] = address.address
-            }
+            AddressWhitelistTable.insertIgnore { it[AddressWhitelistTable.address] = address.address }
         }
 
     override suspend fun containsAddress(address: InetAddress) =

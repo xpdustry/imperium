@@ -28,13 +28,13 @@ data class MindustryMap(
     val width: Int,
     val height: Int,
     val lastUpdate: Instant,
-    val gamemodes: Set<MindustryGamemode>
+    val gamemodes: Set<MindustryGamemode>,
 ) {
     enum class Difficulty {
         EASY,
         NORMAL,
         HARD,
-        EXPERT
+        EXPERT,
     }
 
     data class Rating(val user: Int, val score: Int, val difficulty: Difficulty)
@@ -44,7 +44,7 @@ data class MindustryMap(
         val difficulty: Difficulty,
         val games: Int,
         val playtime: Duration,
-        val record: Int?
+        val record: Int?,
     )
 
     data class PlayThrough(val id: Int, val map: Int, val data: Data) {
@@ -58,7 +58,7 @@ data class MindustryMap(
             val buildingsConstructed: Int,
             val buildingsDeconstructed: Int,
             val buildingsDestroyed: Int,
-            val winner: UByte
+            val winner: UByte,
         )
     }
 

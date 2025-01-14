@@ -76,8 +76,6 @@ class MinioStorageBucketTest {
     }
 
     private fun MutableInstanceManager.registerStorageTestModule() {
-        provider<ImperiumConfig> {
-            ImperiumConfig(storage = StorageConfig.Minio(port = minio.firstMappedPort))
-        }
+        provider<ImperiumConfig> { ImperiumConfig(storage = StorageConfig.Minio(port = minio.firstMappedPort)) }
     }
 }

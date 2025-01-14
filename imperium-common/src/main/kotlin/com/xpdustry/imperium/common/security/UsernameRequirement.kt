@@ -25,8 +25,7 @@ sealed interface UsernameRequirement {
     }
 
     data class InvalidSymbol(val allowed: Set<Char>) : UsernameRequirement {
-        override fun check(username: String) =
-            username.all { it.isLetterOrDigit() || it in allowed }
+        override fun check(username: String) = username.all { it.isLetterOrDigit() || it in allowed }
     }
 
     data class Length(val min: Int, val max: Int) : UsernameRequirement {
@@ -40,9 +39,7 @@ sealed interface UsernameRequirement {
     }
 }
 
-fun List<UsernameRequirement>.findMissingUsernameRequirements(
-    username: String
-): List<UsernameRequirement> {
+fun List<UsernameRequirement>.findMissingUsernameRequirements(username: String): List<UsernameRequirement> {
     return filter { !it.check(username) }
 }
 
@@ -58,6 +55,6 @@ val DEFAULT_USERNAME_REQUIREMENTS =
                 .bufferedReader()
                 .use { it.readLines() }
                 .filter { it.isNotBlank() && !it.startsWith('#') }
-                .toSet(),
+                .toSet()
         ),
     )

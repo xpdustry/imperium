@@ -24,8 +24,7 @@ import kotlin.time.Duration
 
 fun duration(duration: Duration, textStyle: TextStyle) = DurationComponent(duration, textStyle)
 
-fun duration(duration: Duration, textColor: ComponentColor) =
-    DurationComponent(duration, TextStyle.of(textColor))
+fun duration(duration: Duration, textColor: ComponentColor) = DurationComponent(duration, TextStyle.of(textColor))
 
 data class DurationComponent(val duration: Duration, private val textStyle: TextStyle) : Component {
     override fun getTextStyle() = textStyle

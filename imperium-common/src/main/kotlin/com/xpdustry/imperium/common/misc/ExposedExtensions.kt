@@ -27,11 +27,9 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 
-fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean =
-    !selectAll().where(where).empty()
+fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean = !selectAll().where(where).empty()
 
-fun Table.mediumblob(name: String): Column<ExposedBlob> =
-    registerColumn(name, MediumBlobColumnType())
+fun Table.mediumblob(name: String): Column<ExposedBlob> = registerColumn(name, MediumBlobColumnType())
 
 private class MediumBlobColumnType : IColumnType<ExposedBlob> by BlobColumnType() {
     override fun sqlType(): String = "MEDIUMBLOB"

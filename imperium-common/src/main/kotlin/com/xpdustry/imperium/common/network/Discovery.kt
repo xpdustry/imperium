@@ -53,7 +53,7 @@ interface Discovery {
             enum class State {
                 PLAYING,
                 PAUSED,
-                STOPPED
+                STOPPED,
             }
 
             enum class Gamemode {

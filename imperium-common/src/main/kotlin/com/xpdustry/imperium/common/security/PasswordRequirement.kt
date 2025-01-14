@@ -41,9 +41,7 @@ sealed interface PasswordRequirement {
     }
 }
 
-fun List<PasswordRequirement>.findMissingPasswordRequirements(
-    password: CharArray
-): List<PasswordRequirement> {
+fun List<PasswordRequirement>.findMissingPasswordRequirements(password: CharArray): List<PasswordRequirement> {
     return filter { !it.check(password) }
 }
 

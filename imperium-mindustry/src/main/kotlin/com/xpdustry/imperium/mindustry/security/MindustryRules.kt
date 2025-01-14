@@ -22,5 +22,5 @@ enum class MindustryRules {
     VOTEKICK_ABUSE,
     ADVERTISING,
     NSFW,
-    AUTOMATION
+    AUTOMATION,
 }

@@ -24,7 +24,7 @@ import okhttp3.MediaType
 data class WebhookMessage(
     val content: String? = "",
     val embeds: List<Embed> = emptyList(),
-    val attachments: List<Attachment> = emptyList()
+    val attachments: List<Attachment> = emptyList(),
 ) {
     data class Embed(
         val title: String? = null,
@@ -40,6 +40,6 @@ data class WebhookMessage(
         val filename: String,
         val description: String,
         val type: MediaType,
-        val stream: () -> InputStream
+        val stream: () -> InputStream,
     )
 }

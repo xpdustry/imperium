@@ -82,8 +82,10 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .setRenderer { player -> text(player.info.plainLastName()) }
                     .setHeight(10)
                     .setChoiceAction(
-                        BiAction.with(REPORT_PLAYER)
-                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.REASON))))))
+                        BiAction.with(REPORT_PLAYER).then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.REASON)))
+                    ),
+            )
+        )
 
         reportInterface.addTransformer(
             NavigationTransformer(
@@ -96,7 +98,10 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     .setRenderNavigation(false)
                     .setChoiceAction(
                         BiAction.with(REPORT_REASON)
-                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.CONFIRM))))))
+                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.CONFIRM)))
+                    ),
+            )
+        )
 
         reportInterface.addTransformer { (pane, state) ->
             val page = state[REPORT_PAGE]!!
@@ -105,8 +110,7 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 when (page) {
                     ReportPage.PLAYER -> gui_report_content_player()
                     ReportPage.REASON -> gui_report_content_reason()
-                    ReportPage.CONFIRM ->
-                        gui_report_content_confirm(state[REPORT_PLAYER]!!, state[REPORT_REASON]!!)
+                    ReportPage.CONFIRM -> gui_report_content_confirm(state[REPORT_PLAYER]!!, state[REPORT_REASON]!!)
                 }
             val back =
                 when (page) {
@@ -128,27 +132,30 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                                     success = { window, sent ->
                                         if (sent) {
                                             limiter.increment(window.viewer.ip().toInetAddress())
-                                            window.viewer.asAudience.sendAnnouncement(
-                                                gui_report_success())
+                                            window.viewer.asAudience.sendAnnouncement(gui_report_success())
                                         } else {
-                                            window.viewer.asAudience.sendAnnouncement(
-                                                gui_report_failure())
+                                            window.viewer.asAudience.sendAnnouncement(gui_report_failure())
                                         }
-                                    }) {
-                                        val sender = runMindustryThread { it.viewer.info }
-                                        val target = runMindustryThread {
-                                            it.state[REPORT_PLAYER]!!.info
-                                        }
-                                        messenger.publish(
-                                            ReportMessage(
-                                                config.server.name,
-                                                sender.plainLastName(),
-                                                users.findByUuid(sender.id)!!.id,
-                                                target.plainLastName(),
-                                                users.findByUuid(target.id)!!.id,
-                                                it.state[REPORT_REASON]!!))
-                                    })))
-            })
+                                    }
+                                ) {
+                                    val sender = runMindustryThread { it.viewer.info }
+                                    val target = runMindustryThread { it.state[REPORT_PLAYER]!!.info }
+                                    messenger.publish(
+                                        ReportMessage(
+                                            config.server.name,
+                                            sender.plainLastName(),
+                                            users.findByUuid(sender.id)!!.id,
+                                            target.plainLastName(),
+                                            users.findByUuid(target.id)!!.id,
+                                            it.state[REPORT_REASON]!!,
+                                        )
+                                    )
+                                }
+                            ),
+                    )
+                )
+            }
+        )
     }
 
     @ImperiumCommand(["report"])
@@ -159,10 +166,7 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         } else if (!limiter.check(sender.player.ip().toInetAddress())) {
             sender.error(gui_report_rate_limit())
         } else {
-            reportInterface
-                .create(sender.player)
-                .apply { state[REPORT_PAGE] = ReportPage.PLAYER }
-                .show()
+            reportInterface.create(sender.player).apply { state[REPORT_PAGE] = ReportPage.PLAYER }.show()
         }
     }
 

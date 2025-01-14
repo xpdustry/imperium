@@ -31,11 +31,8 @@ import com.xpdustry.imperium.mindustry.misc.identity
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
-class MindustryPlayerTracker(
-    messenger: Messenger,
-    private val config: ImperiumConfig,
-    private val users: UserManager
-) : RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
+class MindustryPlayerTracker(messenger: Messenger, private val config: ImperiumConfig, private val users: UserManager) :
+    RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
     private val joins = LimitedList<PlayerTracker.Entry>(30)
     private val online = mutableMapOf<Int, PlayerTracker.Entry>()
@@ -47,7 +44,8 @@ class MindustryPlayerTracker(
                 when (it.type) {
                     PlayerListRequest.Type.JOIN -> joins
                     PlayerListRequest.Type.ONLINE -> online.values.toList()
-                })
+                }
+            )
         }
     }
 

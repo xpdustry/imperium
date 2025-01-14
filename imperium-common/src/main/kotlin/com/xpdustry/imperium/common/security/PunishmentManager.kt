@@ -53,7 +53,7 @@ interface PunishmentManager {
         reason: String,
         type: Punishment.Type,
         duration: Duration,
-        metadata: Punishment.Metadata = Punishment.Metadata.None
+        metadata: Punishment.Metadata = Punishment.Metadata.None,
     ): Int
 
     suspend fun pardon(author: Identity, punishment: Int, reason: String): PardonResult
@@ -62,7 +62,7 @@ interface PunishmentManager {
 enum class PardonResult {
     SUCCESS,
     NOT_FOUND,
-    ALREADY_PARDONED
+    ALREADY_PARDONED,
 }
 
 @Serializable
@@ -71,12 +71,12 @@ data class PunishmentMessage(
     val type: Type,
     val identifier: Int,
     val server: String,
-    val metadata: Punishment.Metadata
+    val metadata: Punishment.Metadata,
 ) : Message {
     enum class Type {
         CREATE,
         PARDON,
-        MODIFY
+        MODIFY,
     }
 }
 
@@ -84,7 +84,7 @@ class SimplePunishmentManager(
     private val provider: SQLProvider,
     private val messenger: Messenger,
     private val users: UserManager,
-    private val config: ImperiumConfig
+    private val config: ImperiumConfig,
 ) : PunishmentManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -93,10 +93,7 @@ class SimplePunishmentManager(
 
     override suspend fun findById(id: Int): Punishment? =
         provider.newSuspendTransaction {
-            PunishmentTable.selectAll()
-                .where { PunishmentTable.id eq id }
-                .firstOrNull()
-                ?.toPunishment()
+            PunishmentTable.selectAll().where { PunishmentTable.id eq id }.firstOrNull()?.toPunishment()
         }
 
     override suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment> =
@@ -109,7 +106,8 @@ class SimplePunishmentManager(
                     UserAddressTable,
                     JoinType.LEFT,
                     onColumn = PunishmentTable.target,
-                    otherColumn = UserAddressTable.user)
+                    otherColumn = UserAddressTable.user,
+                )
                 .selectAll()
                 .where(query)
                 .map { it.toPunishment() }
@@ -117,10 +115,7 @@ class SimplePunishmentManager(
 
     override suspend fun findAllByUser(id: Int): List<Punishment> =
         provider.newSuspendTransaction {
-            (PunishmentTable leftJoin UserTable)
-                .selectAll()
-                .where { UserTable.id eq id }
-                .map { it.toPunishment() }
+            (PunishmentTable leftJoin UserTable).selectAll().where { UserTable.id eq id }.map { it.toPunishment() }
         }
 
     override suspend fun punish(
@@ -129,18 +124,14 @@ class SimplePunishmentManager(
         reason: String,
         type: Punishment.Type,
         duration: Duration,
-        metadata: Punishment.Metadata
+        metadata: Punishment.Metadata,
     ): Int {
-        val latest =
-            findAllByUser(user)
-                .filter { !it.expired && it.type == type }
-                .maxByOrNull { it.duration }
+        val latest = findAllByUser(user).filter { !it.expired && it.type == type }.maxByOrNull { it.duration }
         val identifier: Int
         if (latest != null) {
             provider.newSuspendTransaction {
                 PunishmentTable.update({ PunishmentTable.id eq latest.id }) {
-                    it[PunishmentTable.duration] =
-                        if (duration.isInfinite()) null else duration.toJavaDuration()
+                    it[PunishmentTable.duration] = if (duration.isInfinite()) null else duration.toJavaDuration()
                     it[PunishmentTable.reason] = reason
                 }
             }
@@ -162,12 +153,13 @@ class SimplePunishmentManager(
         messenger.publish(
             PunishmentMessage(
                 author,
-                if (latest == null) PunishmentMessage.Type.CREATE
-                else PunishmentMessage.Type.MODIFY,
+                if (latest == null) PunishmentMessage.Type.CREATE else PunishmentMessage.Type.MODIFY,
                 identifier,
                 config.server.name,
-                metadata),
-            local = true)
+                metadata,
+            ),
+            local = true,
+        )
         return identifier
     }
 
@@ -197,8 +189,10 @@ class SimplePunishmentManager(
                         PunishmentMessage.Type.PARDON,
                         punishment,
                         config.server.name,
-                        Punishment.Metadata.None),
-                    local = true)
+                        Punishment.Metadata.None,
+                    ),
+                    local = true,
+                )
             }
 
     private fun ResultRow.toPunishment(): Punishment {
@@ -206,8 +200,7 @@ class SimplePunishmentManager(
             if (this[PunishmentTable.pardonTimestamp] == null) {
                 null
             } else {
-                Punishment.Pardon(
-                    this[PunishmentTable.pardonTimestamp]!!, this[PunishmentTable.pardonReason]!!)
+                Punishment.Pardon(this[PunishmentTable.pardonTimestamp]!!, this[PunishmentTable.pardonReason]!!)
             }
         return Punishment(
             id = this[PunishmentTable.id].value,
@@ -217,6 +210,7 @@ class SimplePunishmentManager(
             duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
             pardon = pardon,
             server = this[PunishmentTable.server],
-            creation = this[PunishmentTable.creation])
+            creation = this[PunishmentTable.creation],
+        )
     }
 }

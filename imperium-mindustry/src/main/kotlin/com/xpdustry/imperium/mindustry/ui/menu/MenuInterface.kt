@@ -68,9 +68,7 @@ private class MenuInterfaceImpl(plugin: MindustryPlugin) :
             id,
             view.pane.title,
             view.pane.content,
-            view.pane.options.grid
-                .map { row -> row.map { option -> option.content }.toTypedArray() }
-                .toTypedArray(),
+            view.pane.options.grid.map { row -> row.map { option -> option.content }.toTypedArray() }.toTypedArray(),
         )
     }
 

@@ -44,11 +44,13 @@ class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     @ImperiumCommand(["t"])
     @ClientSide
     suspend fun onTeamChatCommand(sender: CommandSender, @Greedy message: String) {
-        if (FlexAPI.get()
-            .messages
-            .pump(MessageContext(sender.audience, sender.audience, message, filter = true))
-            .await()
-            .isBlank()) {
+        if (
+            FlexAPI.get()
+                .messages
+                .pump(MessageContext(sender.audience, sender.audience, message, filter = true))
+                .await()
+                .isBlank()
+        ) {
             return
         }
         FlexAPI.get()
@@ -69,11 +71,13 @@ class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             sender.error("You can't whisper to yourself.")
             return
         }
-        if (FlexAPI.get()
-            .messages
-            .pump(MessageContext(sender.audience, sender.audience, message, filter = true))
-            .await()
-            .isBlank()) {
+        if (
+            FlexAPI.get()
+                .messages
+                .pump(MessageContext(sender.audience, sender.audience, message, filter = true))
+                .await()
+                .isBlank()
+        ) {
             return
         }
         FlexAPI.get()
@@ -95,11 +99,7 @@ class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
 
-        val forServer =
-            FlexAPI.get()
-                .messages
-                .pump(MessageContext(sender.audience, sender.audience, message))
-                .await()
+        val forServer = FlexAPI.get().messages.pump(MessageContext(sender.audience, sender.audience, message)).await()
         if (forServer.isBlank()) {
             return
         }

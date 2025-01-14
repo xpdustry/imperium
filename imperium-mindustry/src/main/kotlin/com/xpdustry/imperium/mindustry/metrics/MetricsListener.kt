@@ -100,17 +100,11 @@ class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener
             .groupingBy { it.team() }
             .eachCount()
             .forEach { (team, count) ->
-                result +=
-                    GaugeMetric(
-                        "mindustry_players_count", count, labels = mapOf("team" to team.name))
+                result += GaugeMetric("mindustry_players_count", count, labels = mapOf("team" to team.name))
             }
         Team.all.forEach { team ->
             if (!team.active()) return@forEach
-            result +=
-                GaugeMetric(
-                    "mindustry_buildings_count",
-                    team.data().buildings.size,
-                    mapOf("team" to team.name))
+            result += GaugeMetric("mindustry_buildings_count", team.data().buildings.size, mapOf("team" to team.name))
             team
                 .data()
                 .units
@@ -118,10 +112,7 @@ class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener
                 .eachCount()
                 .forEach { (type, count) ->
                     result +=
-                        GaugeMetric(
-                            "mindustry_units_count",
-                            count,
-                            mapOf("type" to type.name, "team" to team.name))
+                        GaugeMetric("mindustry_units_count", count, mapOf("type" to type.name, "team" to team.name))
                 }
         }
         result += GaugeMetric("mindustry_tps", Core.graphics.framesPerSecond)

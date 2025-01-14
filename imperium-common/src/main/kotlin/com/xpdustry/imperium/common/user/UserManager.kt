@@ -68,9 +68,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
     private val userCreateMutex = Mutex()
 
     override fun onImperiumInit() {
-        provider.newTransaction {
-            SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable)
-        }
+        provider.newTransaction { SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable) }
     }
 
     override suspend fun getByIdentity(identity: Identity.Mindustry): User =
@@ -111,30 +109,24 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
                     lastName = identity.name.stripMindustryColors(),
                     lastAddress = identity.address,
                     lastJoin = Instant.EPOCH,
-                    firstJoin = now)
+                    firstJoin = now,
+                )
             }
         }
 
     override suspend fun findById(id: Int): User? =
-        provider.newSuspendTransaction {
-            UserTable.selectAll().where { UserTable.id eq id }.firstOrNull()?.toUser()
-        }
+        provider.newSuspendTransaction { UserTable.selectAll().where { UserTable.id eq id }.firstOrNull()?.toUser() }
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? {
         if (!uuid.isCRC32Muuid()) return null
         return provider.newSuspendTransaction {
-            UserTable.selectAll()
-                .where { UserTable.uuid eq uuid.toLongMuuid() }
-                .firstOrNull()
-                ?.toUser()
+            UserTable.selectAll().where { UserTable.uuid eq uuid.toLongMuuid() }.firstOrNull()?.toUser()
         }
     }
 
     override suspend fun findByLastAddress(address: InetAddress): List<User> =
         provider.newSuspendTransaction {
-            UserTable.selectAll()
-                .where { UserTable.lastAddress eq address.address }
-                .map { it.toUser() }
+            UserTable.selectAll().where { UserTable.lastAddress eq address.address }.map { it.toUser() }
         }
 
     override suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses =
@@ -146,9 +138,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
             val addresses =
                 UserAddressTable.selectAll()
                     .where { UserAddressTable.user eq id }
-                    .mapTo(mutableSetOf()) {
-                        InetAddress.getByAddress(it[UserAddressTable.address])
-                    }
+                    .mapTo(mutableSetOf()) { InetAddress.getByAddress(it[UserAddressTable.address]) }
             User.NamesAndAddresses(names, addresses)
         }
 
@@ -186,8 +176,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
     override suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
         getSettings0(uuid)[setting] ?: setting.default
 
-    override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> =
-        getSettings0(uuid)
+    override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> = getSettings0(uuid)
 
     private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> =
         provider.newSuspendTransaction {
@@ -197,11 +186,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
                 .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
         }
 
-    override suspend fun setSetting(
-        uuid: MindustryUUID,
-        setting: User.Setting,
-        value: Boolean
-    ): Unit =
+    override suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean): Unit =
         provider.newSuspendTransaction {
             val user = findByUuid(uuid) ?: return@newSuspendTransaction
             UserSettingTable.upsert {
@@ -219,5 +204,6 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
             lastAddress = InetAddress.getByAddress(this[UserTable.lastAddress]),
             timesJoined = this[UserTable.timesJoined],
             lastJoin = this[UserTable.lastJoin],
-            firstJoin = this[UserTable.firstJoin])
+            firstJoin = this[UserTable.firstJoin],
+        )
 }

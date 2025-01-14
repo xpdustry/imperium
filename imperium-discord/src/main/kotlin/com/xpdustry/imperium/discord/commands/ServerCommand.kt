@@ -52,16 +52,13 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             .replyEmbeds(
                 Embed {
                     title = "Server List"
-                    description =
-                        discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
-                })
+                    description = discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
+                }
+            )
             .await()
 
     @ImperiumCommand(["player", "joins"])
-    suspend fun onServerPlayerJoin(
-        interaction: SlashCommandInteraction,
-        @Lowercase server: String
-    ) {
+    suspend fun onServerPlayerJoin(interaction: SlashCommandInteraction, @Lowercase server: String) {
         val reply = interaction.deferReply(false).await()
         val joins = tracker.getPlayerJoins(server)
         if (joins == null) {
@@ -72,10 +69,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     @ImperiumCommand(["player", "online"])
-    suspend fun onServerPlayerOnline(
-        interaction: SlashCommandInteraction,
-        @Lowercase server: String? = null
-    ) {
+    suspend fun onServerPlayerOnline(interaction: SlashCommandInteraction, @Lowercase server: String? = null) {
         val reply = interaction.deferReply(false).await()
         if (server != null) {
             val online = tracker.getOnlinePlayers(server)
@@ -90,8 +84,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 if (value.data is Discovery.Data.Mindustry) {
                     val players = tracker.getOnlinePlayers(key) ?: emptyList()
                     if (players.isNotEmpty()) {
-                        embeds +=
-                            createPlayerListEmbed(players, "Online", time = false, server = key)
+                        embeds += createPlayerListEmbed(players, "Online", time = false, server = key)
                     }
                 }
             }
@@ -109,7 +102,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         interaction: SlashCommandInteraction,
         action: RemoteActionMessage.Action,
         @Lowercase server: String? = null,
-        immediate: Boolean = false
+        immediate: Boolean = false,
     ) {
         val reply = interaction.deferReply(false).await()
         if (server == "discord") {
@@ -125,7 +118,8 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         reply
             .sendMessage(
                 "Sent ${action.name.lowercase()} request to " +
-                    if (server == null) "**all servers**" else "server **$server**.")
+                    if (server == null) "**all servers**" else "server **$server**."
+            )
             .await()
     }
 
@@ -139,7 +133,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         list: List<PlayerTracker.Entry>,
         name: String,
         time: Boolean = true,
-        server: String? = null
+        server: String? = null,
     ) = Embed {
         title = "Player $name List"
         if (server != null) {

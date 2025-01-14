@@ -62,13 +62,13 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                             Audience.empty(),
                             Distributor.get().audienceProvider.server,
                             it.message,
-                            filter = true))
+                            filter = true,
+                        )
+                    )
                     .await()
 
             if (forServer.isNotBlank()) {
-                ROOT_LOGGER.info(
-                    "&fi&lcDiscord ({}&fi&lc): &fr&lw${forServer.stripMindustryColors()}",
-                    it.senderName)
+                ROOT_LOGGER.info("&fi&lcDiscord ({}&fi&lc): &fr&lw${forServer.stripMindustryColors()}", it.senderName)
             }
 
             val account = accounts.selectByDiscord(it.discord)
@@ -79,9 +79,11 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                         it.senderName,
                         account?.rank ?: Rank.EVERYONE,
                         account?.playtime?.inWholeHours?.toInt(),
-                        config.language),
+                        config.language,
+                    ),
                     Distributor.get().audienceProvider.players,
-                    it.message)
+                    it.message,
+                )
                 .await()
         }
     }
@@ -93,7 +95,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                 MindustryPlayerMessage(
                     config.server.name,
                     event.player.info.plainLastName(),
-                    MindustryPlayerMessage.Action.Join))
+                    MindustryPlayerMessage.Action.Join,
+                )
+            )
         }
 
     @EventHandler
@@ -103,7 +107,9 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                 MindustryPlayerMessage(
                     config.server.name,
                     event.player.info.plainLastName(),
-                    MindustryPlayerMessage.Action.Quit))
+                    MindustryPlayerMessage.Action.Quit,
+                )
+            )
         }
 
     @EventHandler
@@ -113,7 +119,8 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                 MindustryPlayerMessage(
                     config.server.name,
                     event.player.player.info.plainLastName(),
-                    MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message))),
+                    MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message)),
+                )
             )
         }
 

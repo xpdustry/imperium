@@ -112,10 +112,10 @@ fun MutableInstanceManager.registerCommonModule() {
                     // The default executor blocks the exit in Mindustry
                     Executors.newFixedThreadPool(
                         Runtime.getRuntime().availableProcessors(),
-                        ThreadFactoryBuilder()
-                            .setDaemon(true)
-                            .setNameFormat("imperium-okhttp-%d")
-                            .build())))
+                        ThreadFactoryBuilder().setDaemon(true).setNameFormat("imperium-okhttp-%d").build(),
+                    )
+                )
+            )
             .build()
     }
 
@@ -132,8 +132,7 @@ fun MutableInstanceManager.registerCommonModule() {
     provider<WebhookMessageSender> {
         when (val webhookConfig = get<ImperiumConfig>().webhook) {
             is WebhookConfig.None -> WebhookMessageSender.None
-            is WebhookConfig.Discord ->
-                DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
+            is WebhookConfig.Discord -> DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
         }
     }
 

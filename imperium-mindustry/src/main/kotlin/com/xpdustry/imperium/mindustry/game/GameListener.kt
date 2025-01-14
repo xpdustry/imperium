@@ -65,9 +65,11 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
             while (isActive) {
                 delay(1.minutes)
                 runMindustryThread {
-                    if (Vars.state.state == GameState.State.playing &&
-                        Administration.Config.autosave.bool() &&
-                        getMindustryVersion().type != MindustryVersion.Type.BLEEDING_EDGE) {
+                    if (
+                        Vars.state.state == GameState.State.playing &&
+                            Administration.Config.autosave.bool() &&
+                            getMindustryVersion().type != MindustryVersion.Type.BLEEDING_EDGE
+                    ) {
                         SaveIO.save(autoSave)
                         logger.debug("Saved current game")
                     }
@@ -75,9 +77,7 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
             }
         }
 
-        if (Vars.state.state == GameState.State.menu &&
-            Administration.Config.autosave.bool() &&
-            autoSave.exists()) {
+        if (Vars.state.state == GameState.State.menu && Administration.Config.autosave.bool() && autoSave.exists()) {
             MapLoader().use { loader -> loader.load(autoSave.file()) }
             logger.info("Loaded Imperium AutoSave")
         }
@@ -111,7 +111,9 @@ class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
                     buildingsConstructed = stats.buildingsBuilt,
                     buildingsDeconstructed = stats.buildingsDeconstructed,
                     buildingsDestroyed = stats.buildingsDestroyed,
-                    winner = event.winner.id.toUByte()))
+                    winner = event.winner.id.toUByte(),
+                ),
+            )
         }
         Vars.state.map.playtime = ZERO
         Vars.state.map.start = null

@@ -48,7 +48,7 @@ class DiscordWebhookMessageSender(
     private val http: OkHttpClient,
     private val config: ImperiumConfig,
     private val webhookConfig: WebhookConfig.Discord,
-    private val version: ImperiumVersion
+    private val version: ImperiumVersion,
 ) : WebhookMessageSender {
     override suspend fun send(message: WebhookMessage): Unit =
         withContext(ImperiumScope.IO.coroutineContext) {
@@ -67,14 +67,10 @@ class DiscordWebhookMessageSender(
                 for (embed in message.embeds) {
                     addJsonObject {
                         put("title", embed.title)
-                        embed.thumbnail?.let { media ->
-                            putJsonObject("thumbnail") { put("url", media.url) }
-                        }
+                        embed.thumbnail?.let { media -> putJsonObject("thumbnail") { put("url", media.url) } }
                         put("description", embed.description)
                         put("color", embed.color?.rgb)
-                        embed.image?.let { media ->
-                            putJsonObject("image") { put("url", media.url) }
-                        }
+                        embed.image?.let { media -> putJsonObject("image") { put("url", media.url) } }
                     }
                 }
             }
@@ -95,26 +91,26 @@ class DiscordWebhookMessageSender(
                 .addFormDataPart(
                     "payload_json",
                     null,
-                    payload.toString().toRequestBody("application/json".toMediaType()))
+                    payload.toString().toRequestBody("application/json".toMediaType()),
+                )
         for ((index, attachment) in message.attachments.withIndex()) {
             form.addFormDataPart(
                 "files[$index]",
                 attachment.filename,
-                attachment.stream().use(InputStream::readAllBytes).toRequestBody(attachment.type))
+                attachment.stream().use(InputStream::readAllBytes).toRequestBody(attachment.type),
+            )
         }
 
         val request =
             Request.Builder()
-                .addHeader(
-                    "User-Agent", "Imperium (https://github.com/xpdustry/imperium, v$version)")
+                .addHeader("User-Agent", "Imperium (https://github.com/xpdustry/imperium, v$version)")
                 .url(webhookConfig.discordWebhookUrl)
                 .post(form.build())
                 .build()
 
         http.newCall(request).await().use { response ->
             if (response.code / 100 != 2) {
-                logger.error(
-                    "Failed to send webhook message $message: ${response.body?.charStream()?.readText()}")
+                logger.error("Failed to send webhook message $message: ${response.body?.charStream()?.readText()}")
             }
         }
     }

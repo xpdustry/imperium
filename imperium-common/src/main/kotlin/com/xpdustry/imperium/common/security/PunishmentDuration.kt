@@ -30,5 +30,5 @@ enum class PunishmentDuration(val value: Duration) {
     THREE_DAYS(3.days),
     ONE_WEEK(7.days),
     ONE_MONTH(30.days),
-    PERMANENT(Duration.INFINITE)
+    PERMANENT(Duration.INFINITE),
 }

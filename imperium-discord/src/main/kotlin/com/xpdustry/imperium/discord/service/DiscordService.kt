@@ -73,7 +73,8 @@ class SimpleDiscordService(
                     GatewayIntent.GUILD_MESSAGES,
                     GatewayIntent.GUILD_MESSAGE_REACTIONS,
                     GatewayIntent.DIRECT_MESSAGES,
-                    GatewayIntent.GUILD_EXPRESSIONS)
+                    GatewayIntent.GUILD_EXPRESSIONS,
+                )
                 .setToken(config.discord.token.value)
                 .setMemberCachePolicy(MemberCachePolicy.ALL)
                 .build()
@@ -139,7 +140,8 @@ class SimpleDiscordService(
                     role.name,
                     achievement,
                     member.effectiveName,
-                    member.idLong)
+                    member.idLong,
+                )
             } else {
                 if (roleId !in current.keys) continue
                 getMainServer().removeRoleFromMember(member.snowflake, role).awaitVoid()
@@ -148,7 +150,8 @@ class SimpleDiscordService(
                     role.name,
                     achievement,
                     member.effectiveName,
-                    member.idLong)
+                    member.idLong,
+                )
             }
         }
 
@@ -164,7 +167,8 @@ class SimpleDiscordService(
                     role.name,
                     rank,
                     member.effectiveName,
-                    member.idLong)
+                    member.idLong,
+                )
             } else {
                 if (roleId !in current) continue
                 getMainServer().removeRoleFromMember(member.snowflake, role).awaitVoid()
@@ -173,7 +177,8 @@ class SimpleDiscordService(
                     role.name,
                     rank,
                     member.effectiveName,
-                    member.idLong)
+                    member.idLong,
+                )
             }
         }
     }
