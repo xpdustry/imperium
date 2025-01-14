@@ -36,7 +36,7 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
     }
 
     override fun updateUnit() {
-        if (leader.dead || context.deleted) {
+        if (leader.dead || context.deleted || !context.members.contains(this)) {
             context.remove(this)
             unit.resetController()
             return
@@ -118,4 +118,6 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
     override fun isBeingControlled(player: Unit) = leader == player
 
     override fun isLogicControllable() = false
+
+    override fun isValid() = unit().controller() == this
 }
