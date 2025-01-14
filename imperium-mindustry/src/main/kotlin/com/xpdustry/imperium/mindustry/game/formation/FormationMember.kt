@@ -22,4 +22,6 @@ import arc.math.geom.Vec2
 interface FormationMember {
     val targetVector: Vec2
     val id: Int
+
+    fun isValid(): Boolean
 }

@@ -20,11 +20,16 @@ package com.xpdustry.imperium.mindustry.game.formation
 import arc.math.geom.Vec2
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import kotlin.collections.set
 import kotlin.math.min
 import mindustry.Vars
@@ -35,8 +40,9 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.gen.Unit
 
-class FormationListener : ImperiumApplication.Listener {
+class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
+    private val accounts = instances.get<AccountManager>()
     private val formations = mutableMapOf<Int, FormationContext>()
 
     @TriggerHandler(Trigger.update)
@@ -45,10 +51,25 @@ class FormationListener : ImperiumApplication.Listener {
         while (iterator.hasNext()) {
             val (id, context) = iterator.next()
             val player = Groups.player.getByID(id)
-            if (player == null) {
+            if (player == null || context.members.isEmpty()) {
                 context.deleted = true
                 iterator.remove()
                 continue
+            }
+            for (member in context.members.toList()) {
+                if (!member.isValid()) {
+                    context.remove(member)
+                }
+            }
+            if (context.slots > context.members.size) {
+                val eligible =
+                    findEligibleFormationUnits(player, context.slots - context.members.size)
+                for (unit in eligible) {
+                    val a = FormationAI(player.unit(), context)
+                    unit.controller(a)
+                    context.members.add(a)
+                }
+                context.strategy.update(context)
             }
             val anchor = Vec2(player.x(), player.y())
             for (member in context.members) {
@@ -65,26 +86,47 @@ class FormationListener : ImperiumApplication.Listener {
     @ImperiumCommand(["group|g"])
     @RequireAchievement(Achievement.ACTIVE)
     @ClientSide
-    fun onFormationCommand(sender: CommandSender) {
-        if (sender.player.id() in formations) {
-            formations.remove(sender.player.id())!!.deleted = true
-            sender.reply("Formation disabled.")
-        } else {
+    suspend fun onFormationCommand(sender: CommandSender) {
+        val valid = runMindustryThread {
+            if (sender.player.id() in formations) {
+                formations.remove(sender.player.id())!!.deleted = true
+                sender.reply("Formation disabled.")
+                return@runMindustryThread false
+            }
             if (sender.player.unit().dead()) {
                 sender.reply("You must be alive to enable formation.")
-                return
+                return@runMindustryThread false
             }
-            val context =
-                FormationContext(
-                    mutableListOf(),
-                    mutableMapOf(),
-                    8,
-                    CircleFormationPattern,
-                    DistanceAssignmentStrategy)
-            val eligible = findEligibleFormationUnits(sender.player, context)
+            true
+        }
+
+        if (!valid) {
+            return
+        }
+        val account = accounts.selectBySession(sender.player.sessionKey)?.id
+        var slots = 4
+        if (account != null) {
+            slots =
+                accounts.selectMetadata(account, "formation_slots_max")?.toIntOrNull()
+                    ?: when {
+                        Achievement.HYPER in accounts.selectAchievements(account) -> 16
+                        Achievement.ACTIVE in accounts.selectAchievements(account) -> 8
+                        else -> 4
+                    }
+        }
+        val context =
+            FormationContext(
+                mutableListOf(),
+                mutableMapOf(),
+                slots,
+                CircleFormationPattern,
+                DistanceAssignmentStrategy)
+
+        runMindustryThread {
+            val eligible = findEligibleFormationUnits(sender.player, context.slots)
             if (eligible.isEmpty()) {
                 sender.reply("No eligible units found.")
-                return
+                return@runMindustryThread
             }
             for (unit in eligible) {
                 val a = FormationAI(sender.player.unit(), context)
@@ -112,21 +154,25 @@ class FormationListener : ImperiumApplication.Listener {
         sender.reply("Formation pattern set to ${pattern.name.lowercase()}.")
     }
 
-    private fun findEligibleFormationUnits(player: Player, context: FormationContext): List<Unit> {
+    private fun findEligibleFormationUnits(player: Player, slots: Int): List<Unit> {
         val leader = player.unit()
-        val result = mutableListOf<Unit>()
+        val result = ArrayDeque<Unit>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) {
             if (it.isAI &&
                 it.type != UnitTypes.mono &&
                 it.type.flying == leader.type.flying &&
                 leader.type.buildSpeed > 0 == it.type.buildSpeed > 0 &&
                 it != leader &&
-                it.hitSize <= leader.hitSize * 1.1f &&
+                (it.hitSize <= leader.hitSize * 1.5F) &&
                 it.controller() !is FormationAI) {
-                result.add(it)
+                if (it.type() == leader.type()) {
+                    result.addFirst(it)
+                } else {
+                    result.addLast(it)
+                }
             }
         }
-        return result.take(context.slots)
+        return result.take(slots)
     }
 
     enum class FormationPatternEntry(val pattern: FormationPattern) {
