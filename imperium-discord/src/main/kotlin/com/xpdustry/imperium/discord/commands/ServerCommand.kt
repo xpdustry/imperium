@@ -89,10 +89,17 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             for ((key, value) in discovery.servers) {
                 if (value.data is Discovery.Data.Mindustry) {
                     val players = tracker.getOnlinePlayers(key) ?: emptyList()
-                    embeds += createPlayerListEmbed(players, "Online", time = false, server = key)
+                    if (players.isNotEmpty()) {
+                        embeds +=
+                            createPlayerListEmbed(players, "Online", time = false, server = key)
+                    }
                 }
             }
-            reply.sendMessageEmbeds(embeds).await()
+            if (embeds.isEmpty()) {
+                reply.sendMessage("No players online at all :(").await()
+            } else {
+                reply.sendMessageEmbeds(embeds).await()
+            }
         }
     }
 
@@ -143,18 +150,16 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             if (list.isEmpty()) {
                 append("No players found.\n")
             }
-            if (list.isNotEmpty()) {
-                for (entry in list) {
-                    if (time) {
-                        append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
-                        append(" ")
-                    }
-                    append("#")
-                    append(codec.encode(entry.playerId))
+            for (entry in list) {
+                if (time) {
+                    append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
                     append(" ")
-                    append(entry.player.name)
-                    append("\n")
                 }
+                append("#")
+                append(codec.encode(entry.playerId))
+                append(" ")
+                append(entry.player.name)
+                append("\n")
             }
             append("```")
         }
