@@ -267,9 +267,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             }
 
         onEvent<SaveLoadEvent> { _ ->
-            println("sAve " + Groups.player.size())
             Core.app.post {
-                println("sAve 2" + Groups.player.size())
                 if (Administration.Config.autoPause.bool() && Groups.player.size() == 0) {
                     autopause = true
                     Vars.state.set(GameState.State.paused)
