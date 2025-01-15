@@ -26,6 +26,7 @@ import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
 import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.translation.BundleTranslationSource
 import com.xpdustry.distributor.api.translation.ResourceBundles
 import com.xpdustry.distributor.api.translation.TranslationSource
@@ -58,6 +59,7 @@ import com.xpdustry.imperium.mindustry.game.ChangelogCommand
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.game.PauseListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
@@ -93,7 +95,9 @@ import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
 import com.xpdustry.imperium.mindustry.world.WorldEditCommand
+import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
@@ -245,13 +249,43 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             }
 
         // https://github.com/Anuken/Mindustry/issues/9422
+
+        // Typical java overengineering
+        var autopause by
+            object : ReadWriteProperty<Any?, Boolean> {
+                private val field = ServerControl::class.java.getDeclaredField("autoPaused")
+
+                init {
+                    field.isAccessible = true
+                }
+
+                override fun getValue(thisRef: Any?, property: KProperty<*>): Boolean =
+                    field.getBoolean(ServerControl.instance)
+
+                override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) =
+                    field.setBoolean(ServerControl.instance, value)
+            }
+
         onEvent<SaveLoadEvent> { _ ->
+            println("sAve " + Groups.player.size())
             Core.app.post {
+                println("sAve 2" + Groups.player.size())
                 if (Administration.Config.autoPause.bool() && Groups.player.size() == 0) {
+                    autopause = true
                     Vars.state.set(GameState.State.paused)
-                    val autoPaused = ServerControl::class.java.getDeclaredField("autoPaused")
-                    autoPaused.isAccessible = true
-                    autoPaused.set(ServerControl.instance, true)
+                }
+            }
+        }
+
+        // Additional fix because if you stay in-game after game-over, it re-pauses until someone joins...
+        onEvent<MenuToPlayEvent> { _ ->
+            Distributor.get().pluginScheduler.schedule(this).repeat(1, MindustryTimeUnit.SECONDS).execute { c ->
+                if (Vars.state.isMenu || Groups.player.size() > 0) {
+                    c.cancel()
+                } else if (autopause) {
+                    autopause = false
+                    Vars.state.set(GameState.State.playing)
+                    c.cancel()
                 }
             }
         }
