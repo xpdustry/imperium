@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.mindustry.game.formation
+package com.xpdustry.imperium.mindustry.formation
 
 import arc.math.Mathf
 import arc.math.geom.Vec2
