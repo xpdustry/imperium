@@ -24,7 +24,7 @@ import mindustry.entities.units.AIController
 import mindustry.gen.Call
 import mindustry.gen.Unit as MindustryUnit
 
-class FormationAI(private val context: FormationContext) : AIController(), FormationMember {
+class FormationAI(val context: FormationContext) : AIController(), FormationMember {
 
     override var id: Int = -1
     override val targetVector = Vec2()

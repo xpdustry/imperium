@@ -81,7 +81,9 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     unit.controller(ai)
                     context.members.add(ai)
                 }
-                context.strategy.update(context)
+                if (eligible.isNotEmpty()) {
+                    context.strategy.update(context)
+                }
             }
             val anchor = Vec2(player.x(), player.y())
             for (member in context.members) {
@@ -89,7 +91,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     member.targetVector,
                     context.assignments[member.id] ?: 0,
                     min(context.slots, context.members.size),
-                    player.unit().hitSize * 2F,
+                    player.unit().hitSize * 1.8F,
                 )
                 member.targetVector.add(anchor)
             }
@@ -198,7 +200,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             leader.type.buildSpeed > 0 == unit.type.buildSpeed > 0 &&
             unit != leader &&
             (unit.hitSize <= leader.hitSize * 1.5F) &&
-            (formation || unit.controller() !is FormationAI)
+            (unit.controller() !is FormationAI ||
+                (formation && (unit.controller() as FormationAI).context.leader == leader))
 
     enum class FormationPatternEntry(val value: FormationPattern) {
         CIRCLE(CircleFormationPattern),
