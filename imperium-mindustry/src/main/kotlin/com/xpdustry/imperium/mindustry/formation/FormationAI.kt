@@ -22,20 +22,22 @@ import arc.math.geom.Vec2
 import arc.util.Time
 import mindustry.entities.units.AIController
 import mindustry.gen.Call
-import mindustry.gen.Unit
+import mindustry.gen.Unit as MindustryUnit
 
-class FormationAI(private val leader: Unit, private val context: FormationContext) : AIController(), FormationMember {
+class FormationAI(private val context: FormationContext) : AIController(), FormationMember {
 
     override var id: Int = -1
     override val targetVector = Vec2()
+    override lateinit var backingUnit: MindustryUnit
 
     override fun init() {
         id = unit.id
         targetVector.set(unit.x, unit.y)
+        backingUnit = unit
     }
 
     override fun updateUnit() {
-        if (leader.dead || context.deleted || !context.members.contains(this)) {
+        if (context.leader.dead() || context.deleted || !context.members.contains(this)) {
             context.remove(this)
             unit.resetController()
             return
@@ -45,28 +47,27 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
             unit.elevation =
                 Mathf.approachDelta(
                     unit.elevation,
-                    if (unit.onSolid()) 1f
-                    else // definitely cannot land
-                    if (unit.isFlying && !unit.canLand()) unit.elevation
-                    else // try to maintain altitude
-                    if (leader.type.canBoost) leader.elevation
-                    else // follow leader
-                     0f,
+                    when {
+                        unit.onSolid() -> 1f // definitely cannot land
+                        unit.isFlying && !unit.canLand() -> unit.elevation // try to maintain altitude
+                        context.leader.type.canBoost -> context.leader.elevation // follow leader
+                        else -> 0f
+                    },
                     unit.type.riseSpeed,
                 )
         }
 
-        unit.controlWeapons(true, leader.isShooting)
+        unit.controlWeapons(true, context.leader.isShooting)
 
-        unit.aim(leader.aimX(), leader.aimY())
+        unit.aim(context.leader.aimX(), context.leader.aimY())
 
         if (unit.type.faceTarget) {
-            unit.lookAt(leader.aimX(), leader.aimY())
+            unit.lookAt(context.leader.aimX(), context.leader.aimY())
         } else if (unit.moving()) {
             unit.lookAt(unit.vel.angle())
         }
 
-        val realTarget = vec.set(targetVector).add(leader.vel)
+        val realTarget = vec.set(targetVector).add(context.leader.vel)
 
         val speed = unit.speed() * Time.delta
         unit.approach(
@@ -74,21 +75,20 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
                 .scl(1f / Time.delta)
         )
 
-        if (unit.canMine() && leader.canMine()) {
-            if (leader.mineTile != null && unit.validMine(leader.mineTile)) {
-                unit.mineTile(leader.mineTile)
+        if (unit.canMine() && context.leader.canMine()) {
+            if (context.leader.mineTile != null && unit.validMine(context.leader.mineTile)) {
+                unit.mineTile(context.leader.mineTile)
 
                 val core = unit.team.core()
 
                 if (
                     core != null &&
-                        leader.mineTile.drop() != null &&
+                        context.leader.mineTile.drop() != null &&
                         unit.within(core, unit.type.range) &&
-                        !unit.acceptsItem(leader.mineTile.drop())
+                        !unit.acceptsItem(context.leader.mineTile.drop())
                 ) {
                     if (core.acceptStack(unit.stack.item, unit.stack.amount, unit) > 0) {
                         Call.transferItemTo(unit, unit.stack.item, unit.stack.amount, unit.x, unit.y, core)
-
                         unit.clearItem()
                     }
                 }
@@ -97,20 +97,17 @@ class FormationAI(private val leader: Unit, private val context: FormationContex
             }
         }
 
-        if (unit.canBuild() && leader.canBuild() && leader.activelyBuilding()) {
+        if (unit.canBuild() && context.leader.canBuild() && context.leader.activelyBuilding()) {
             unit.clearBuilding()
-            unit.addBuild(leader.buildPlan())
+            unit.addBuild(context.leader.buildPlan())
         }
     }
 
-    override fun removed(unit: Unit) {
-        context.remove(this)
-        unit.resetController()
-    }
+    override fun removed(unit: MindustryUnit) = context.remove(this)
 
-    override fun isBeingControlled(player: Unit) = leader == player
+    override fun isBeingControlled(player: MindustryUnit) = context.leader == player
 
     override fun isLogicControllable() = false
 
-    override fun isValid() = unit().controller() == this
+    override fun isValid() = !unit().dead() && unit().controller() == this
 }

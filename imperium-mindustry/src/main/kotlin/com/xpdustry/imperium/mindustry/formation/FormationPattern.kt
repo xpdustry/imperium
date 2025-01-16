@@ -54,6 +54,6 @@ object SquareFormationPattern : FormationPattern {
             cy = slots / side
         }
 
-        location.set(cx - (side / 2f - 0.5f), cy - (side / 2f - 0.5f)).scl(spacing)
+        location.set(cx - (side / 2f - 0.5f), cy - (side / 2f - 0.5f)).scl(spacing * 2F)
     }
 }

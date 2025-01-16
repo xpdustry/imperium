@@ -45,6 +45,7 @@ import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.duration
+import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.Tip
 import com.xpdustry.imperium.mindustry.security.MindustryRules
 import java.time.temporal.ChronoUnit
@@ -393,3 +394,49 @@ fun marked_griefer_unit(player: Player): Component =
         text(">>> ", CYAN),
         translatable("imperium.marked.unit", TranslationArguments.array(text(player.info.plainLastName(), SCARLET))),
     )
+
+fun formation_failure_no_valid_unit(): Component =
+    components(SCARLET, text(">>> ", CYAN), translatable("imperium.formation.failure.no-valid-units", ACCENT))
+
+fun formation_failure_dead(): Component =
+    components(SCARLET, text(">>> ", CYAN), translatable("imperium.formation.failure.dead", ACCENT))
+
+fun formation_failure_require_enabled(): Component =
+    components(SCARLET, text(">>> ", CYAN), translatable("imperium.formation.failure.require-enabled", ACCENT))
+
+fun formation_toggle(enabled: Boolean): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable("imperium.formation.toggle", TranslationArguments.array(status(enabled))),
+    )
+
+fun formation_pattern_change(pattern: FormationListener.FormationPatternEntry): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable(
+            "imperium.formation.pattern.change",
+            TranslationArguments.array(
+                translatable("imperium.formation.pattern.entry.${pattern.name.lowercase()}", ACCENT)
+            ),
+        ),
+    )
+
+fun formation_pattern_list(): Component =
+    components()
+        .setTextStyle(TextStyle.of(WHITE))
+        .append(text(">>> ", CYAN), translatable("imperium.formation.pattern.list.header", ACCENT), newline())
+        .apply {
+            FormationListener.FormationPatternEntry.entries.forEach {
+                append(
+                    text("> ", CYAN),
+                    translatable("imperium.formation.pattern.entry.${it.name.lowercase()}", WHITE),
+                    space(),
+                    components(LIGHT_GRAY, text('('), text(it.name.lowercase()), text(')')),
+                    newline(),
+                )
+            }
+        }
+        .append(translatable("imperium.formation.pattern.list.footer", GRAY))
+        .build()

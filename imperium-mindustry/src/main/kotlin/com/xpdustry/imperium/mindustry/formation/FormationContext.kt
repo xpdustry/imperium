@@ -17,15 +17,19 @@
  */
 package com.xpdustry.imperium.mindustry.formation
 
+import mindustry.gen.Unit as MindustryUnit
+
 data class FormationContext(
-    val members: MutableList<FormationMember>,
-    val assignments: MutableMap<Int, Int>,
+    var leader: MindustryUnit,
+    val members: MutableList<FormationMember> = arrayListOf(),
+    val assignments: MutableMap<Int, Int> = hashMapOf(),
     val slots: Int,
-    var pattern: FormationPattern,
-    val strategy: SlotAssignmentStrategy,
+    var pattern: FormationPattern = CircleFormationPattern,
+    val strategy: SlotAssignmentStrategy = DistanceAssignmentStrategy,
     var deleted: Boolean = false,
 ) {
     fun remove(member: FormationMember) {
-        strategy.remove(this, member)
+        assignments.remove(member.id)
+        members.remove(member)
     }
 }
