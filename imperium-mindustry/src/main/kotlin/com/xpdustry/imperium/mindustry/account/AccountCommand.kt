@@ -79,7 +79,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val loginInterface = createLoginInterface(instances.get(), manager)
     private val registerInterface = createRegisterInterface(instances.get(), manager)
     private val migrateInterface = createMigrateInterface(instances.get(), manager)
-    private val changePasswordInterface = createPasswordChangeInterface(instances.get(), manager)
+    private val changePassword = ChangePasswordWindow(instances.get(), manager)
     private val verifications =
         CacheBuilder.newBuilder().expireAfterWrite(10.minutes.toJavaDuration()).build<Int, Int>()
 
@@ -123,7 +123,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["change-password"])
     @ClientSide
     fun onChangePasswordCommand(sender: CommandSender) {
-        changePasswordInterface.open(sender.player)
+        changePassword.create(sender.player).show()
     }
 
     @ImperiumCommand(["verify"])
@@ -343,67 +343,6 @@ fun createMigrateInterface(plugin: MindustryPlugin, manager: AccountManager): In
     }
 
     return oldUsernameInterface
-}
-
-private fun createPasswordChangeInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
-    val oldPasswordInterface = TextInputInterface.create(plugin)
-    val newPasswordInterface = TextInputInterface.create(plugin)
-    val confirmPasswordInterface = TextInputInterface.create(plugin)
-
-    oldPasswordInterface.addTransformer { view, pane ->
-        pane.title = "Change Password (1/3)"
-        pane.description = "Enter your old password"
-        pane.placeholder = view.state[OLD_PASSWORD] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[OLD_PASSWORD] = value
-            newPasswordInterface.open(view)
-        }
-    }
-
-    newPasswordInterface.addTransformer { view, pane ->
-        pane.title = "Change Password (2/3)"
-        pane.description = "Enter your new password"
-        pane.placeholder = view.state[PASSWORD] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[PASSWORD] = value
-            confirmPasswordInterface.open(view)
-        }
-    }
-
-    confirmPasswordInterface.addTransformer { view, pane ->
-        pane.title = "Change Password (3/3)"
-        pane.description = "Confirm your new password"
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            if (value != view.state[PASSWORD]) {
-                view.back()
-                view.viewer.showInfoMessage("[red]Passwords do not match")
-                return@BiAction
-            }
-            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
-                val account = manager.selectBySession(view.viewer.sessionKey)!!
-                when (
-                    val result =
-                        manager.updatePassword(
-                            account.id,
-                            view.state[OLD_PASSWORD]!!.toCharArray(),
-                            value.toCharArray(),
-                        )
-                ) {
-                    is AccountResult.Success -> {
-                        view.viewer.sendMessage("Your password have been changed!")
-                    }
-                    else -> {
-                        handleAccountResult(result, view)
-                    }
-                }
-            }
-        }
-    }
-
-    return oldPasswordInterface
 }
 
 private suspend fun handleAccountResult(result: AccountResult, view: View) = runMindustryThread {
