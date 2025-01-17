@@ -61,8 +61,6 @@ private val logger = logger<AccountCommand>()
 
 private val USERNAME = stateKey<String>("username")
 private val PASSWORD = stateKey<String>("password")
-private val OLD_USERNAME = stateKey<String>("old_username")
-private val OLD_PASSWORD = stateKey<String>("old_password")
 
 private val ACCOUNT_LOGIN_WARNING =
     """
@@ -78,7 +76,6 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val messenger = instances.get<Messenger>()
     private val loginInterface = createLoginInterface(instances.get(), manager)
     private val registerInterface = createRegisterInterface(instances.get(), manager)
-    private val migrateInterface = createMigrateInterface(instances.get(), manager)
     private val changePassword = ChangePasswordWindow(instances.get(), manager)
     private val verifications =
         CacheBuilder.newBuilder().expireAfterWrite(10.minutes.toJavaDuration()).build<Int, Int>()
@@ -99,12 +96,6 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ClientSide
     fun onRegisterCommand(sender: CommandSender) {
         registerInterface.open(sender.player)
-    }
-
-    @ImperiumCommand(["migrate"])
-    @ClientSide
-    fun onMigrateCommand(sender: CommandSender) {
-        migrateInterface.open(sender.player)
     }
 
     @ImperiumCommand(["logout"])
@@ -290,59 +281,6 @@ private fun createRegisterInterface(plugin: MindustryPlugin, manager: AccountMan
     }
 
     return usernameInterface
-}
-
-fun createMigrateInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
-    val oldUsernameInterface = TextInputInterface.create(plugin)
-    val oldPasswordInterface = TextInputInterface.create(plugin)
-    val newUsernameInterface = TextInputInterface.create(plugin)
-
-    oldUsernameInterface.addTransformer { view, pane ->
-        pane.title = "Migrate (1/3)"
-        pane.description = "Enter your old username"
-        pane.placeholder = view.state[OLD_USERNAME] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[OLD_USERNAME] = value
-            oldPasswordInterface.open(view)
-        }
-    }
-
-    oldPasswordInterface.addTransformer { view, pane ->
-        pane.title = "Migrate (2/3)"
-        pane.description = "Enter your old password"
-        pane.placeholder = view.state[PASSWORD] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[PASSWORD] = value
-            newUsernameInterface.open(view)
-        }
-    }
-
-    newUsernameInterface.addTransformer { view, pane ->
-        pane.title = "Migrate (3/3)"
-        pane.description = "Enter your new username"
-        pane.placeholder = view.state[USERNAME] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[USERNAME] = value
-            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
-                when (
-                    val result =
-                        manager.migrate(view.state[OLD_USERNAME]!!, value, view.state[PASSWORD]!!.toCharArray())
-                ) {
-                    is AccountResult.Success -> {
-                        view.viewer.sendMessage("Your account have been migrated! You can do /login now.")
-                    }
-                    else -> {
-                        handleAccountResult(result, view)
-                    }
-                }
-            }
-        }
-    }
-
-    return oldUsernameInterface
 }
 
 private suspend fun handleAccountResult(result: AccountResult, view: View) = runMindustryThread {
