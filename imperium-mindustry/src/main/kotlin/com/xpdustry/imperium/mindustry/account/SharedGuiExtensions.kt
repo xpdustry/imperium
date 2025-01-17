@@ -22,8 +22,17 @@ import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.security.PasswordRequirement
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import mindustry.gen.Player
 
 fun handleAccountResult(result: AccountResult, window: Window) {
+    handleAccountResult(result, window.viewer, window)
+}
+
+fun handleAccountResult(result: AccountResult, player: Player) {
+    handleAccountResult(result, player, null)
+}
+
+private fun handleAccountResult(result: AccountResult, player: Player, window: Window?) {
     val message =
         when (result) {
             is AccountResult.Success -> "Success!"
@@ -36,8 +45,8 @@ fun handleAccountResult(result: AccountResult, window: Window) {
                 "The username does not meet the requirements:\n ${result.missing.joinToString("\n- ", transform = ::getErrorMessage)}"
             is AccountResult.AlreadyLogged -> "You are already logged in."
         }
-    window.show()
-    window.viewer.showInfoMessage("[red]$message")
+    window?.show()
+    player.showInfoMessage("[red]$message")
 }
 
 private fun getErrorMessage(requirement: PasswordRequirement) =

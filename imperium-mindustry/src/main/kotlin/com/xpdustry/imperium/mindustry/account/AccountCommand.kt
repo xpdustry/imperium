@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.mindustry.account
 
 import com.google.common.cache.CacheBuilder
-import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
@@ -55,26 +54,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mindustry.gen.Player
 
-// TODO
-//  - Replace sequential interfaces with a proper form interface
 private val logger = logger<AccountCommand>()
 
 private val USERNAME = stateKey<String>("username")
 private val PASSWORD = stateKey<String>("password")
 
-private val ACCOUNT_LOGIN_WARNING =
-    """
-    [red]CN HAS BEEN MIGRATED TO A COMPLETELY NEW INFRASTRUCTURE.[]
-    IF YOU WANT TO LOGIN TO YOUR OLD ACCOUNT,
-    MIGRATE IT FIRST USING THE [accent]/migrate[] COMMAND.
-    [lightgray]THANK YOU FOR YOUR UNDERSTANDING.
-    """
-        .trimIndent()
-
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val manager = instances.get<AccountManager>()
     private val messenger = instances.get<Messenger>()
-    private val loginInterface = createLoginInterface(instances.get(), manager)
+    private val login = LoginWindow(instances.get(), manager)
     private val registerInterface = createRegisterInterface(instances.get(), manager)
     private val changePassword = ChangePasswordWindow(instances.get(), manager)
     private val verifications =
@@ -82,15 +70,16 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
 
     @ImperiumCommand(["login"])
     @ClientSide
-    suspend fun onLoginCommand(sender: CommandSender) =
-        withContext(PlayerCoroutineExceptionHandler(sender.player)) {
-            val account = manager.selectBySession(sender.player.sessionKey)
+    suspend fun onLoginCommand(sender: CommandSender) {
+        val account = manager.selectBySession(sender.player.sessionKey)
+        runMindustryThread {
             if (account == null) {
-                runMindustryThread { loginInterface.open(sender.player) }
+                login.create(sender.player).show()
             } else {
-                sender.player.showInfoMessage("You are already logged in!")
+                handleAccountResult(AccountResult.AlreadyLogged, sender.player)
             }
         }
+    }
 
     @ImperiumCommand(["register"])
     @ClientSide
@@ -182,52 +171,6 @@ private class PlayerCoroutineExceptionHandler(private val player: Player, privat
         view?.closeAll()
         player.showInfoMessage("[red]A critical error occurred in the server, please report this to the server owners.")
     }
-}
-
-private fun createLoginInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
-    val usernameInterface = TextInputInterface.create(plugin)
-    val passwordInterface = TextInputInterface.create(plugin)
-
-    usernameInterface.addTransformer { view, pane ->
-        pane.title = "Login (1/2)"
-        pane.description = "Enter your username\n\n$ACCOUNT_LOGIN_WARNING"
-        pane.placeholder = view.state[USERNAME] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[USERNAME] = value
-            passwordInterface.open(view)
-        }
-    }
-
-    passwordInterface.addTransformer { view, pane ->
-        pane.title = "Login (2/2)"
-        pane.description = "Enter your password\n\n$ACCOUNT_LOGIN_WARNING"
-        pane.placeholder = view.state[PASSWORD] ?: ""
-        pane.inputAction = BiAction { _, value ->
-            view.close()
-            view.state[PASSWORD] = value
-            ImperiumScope.MAIN.launch(PlayerCoroutineExceptionHandler(view)) {
-                when (val result = manager.login(view.viewer.sessionKey, view.state[USERNAME]!!, value.toCharArray())) {
-                    is AccountResult.Success -> {
-                        view.viewer.sendMessage("You have been logged in!")
-                        view.viewer.tryGrantAdmin(manager)
-                        val account = manager.selectBySession(view.viewer.sessionKey)!!
-                        runMindustryThread { Distributor.get().eventBus.post(PlayerLoginEvent(view.viewer, account)) }
-                    }
-                    is AccountResult.WrongPassword,
-                    AccountResult.NotFound -> {
-                        view.open()
-                        view.viewer.showInfoMessage("The username or password is incorrect!")
-                    }
-                    else -> {
-                        handleAccountResult(result, view)
-                    }
-                }
-            }
-        }
-    }
-
-    return usernameInterface
 }
 
 private fun createRegisterInterface(plugin: MindustryPlugin, manager: AccountManager): Interface {
