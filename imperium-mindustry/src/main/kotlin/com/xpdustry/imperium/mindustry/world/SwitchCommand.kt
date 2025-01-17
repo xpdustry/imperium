@@ -17,7 +17,13 @@
  */
 package com.xpdustry.imperium.mindustry.world
 
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.Window
+import com.xpdustry.distributor.api.gui.WindowManager
+import com.xpdustry.distributor.api.gui.menu.ListTransformer
+import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -26,22 +32,19 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.menu.ListTransformer
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import mindustry.gen.Call
 import mindustry.gen.Player
 
 class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
     private val plugin = instances.get<MindustryPlugin>()
-    private val switchInterface = createServerSwitchInterface()
+    private val menu = SwitchWindowManager(plugin, discovery)
 
     @ImperiumCommand(["switch"])
     @ClientSide
     fun onSwitchCommand(sender: CommandSender, server: String? = null) {
         if (server == null) {
-            switchInterface.open(sender.player)
+            menu.create(sender.player).show()
             return
         }
         val data = discovery.servers[server]?.data
@@ -61,7 +64,7 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             sender.error("[accent]Server is not running the same version of Mindustry.")
             return
         }
-        switchToServer(sender.player, data)
+        switch(sender.player, data)
     }
 
     @ImperiumCommand(["hub"])
@@ -69,36 +72,37 @@ class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onHubCommand(sender: CommandSender) {
         onSwitchCommand(sender, "hub")
     }
+}
 
-    private fun createServerSwitchInterface(): Interface {
-        val switchInterface = MenuInterface.create(plugin)
-        switchInterface.addTransformer(
-            ListTransformer(
-                provider = {
-                    discovery.servers.values
-                        .asSequence()
-                        .map(Discovery.Server::data)
-                        .filterIsInstance(Discovery.Data.Mindustry::class.java)
-                        .filter {
-                            it.state != Discovery.Data.Mindustry.State.STOPPED &&
-                                it.gameVersion == getMindustryVersion()
-                        }
-                        .sortedBy(Discovery.Data.Mindustry::name)
-                        .toList()
-                },
-                renderer = { it.name },
-                height = 8,
-                onChoice = { view, server ->
-                    view.closeAll()
-                    switchToServer(view.viewer, server)
-                },
+@Suppress("FunctionName")
+private fun SwitchWindowManager(plugin: MindustryPlugin, discovery: Discovery): WindowManager {
+    val manager = MenuManager.create(plugin)
+    manager.addTransformer(
+        ListTransformer<Discovery.Data.Mindustry>()
+            .setProvider {
+                discovery.servers.values
+                    .asSequence()
+                    .map(Discovery.Server::data)
+                    .filterIsInstance(Discovery.Data.Mindustry::class.java)
+                    .filter {
+                        it.state != Discovery.Data.Mindustry.State.STOPPED && it.gameVersion == getMindustryVersion()
+                    }
+                    .sortedBy(Discovery.Data.Mindustry::name)
+                    .toList()
+            }
+            .setRenderer { element -> Distributor.get().mindustryComponentDecoder.decode(element.name) }
+            .setHeight(20)
+            .setChoiceAction(
+                BiAction.compose(
+                    BiAction.from(Window::hide),
+                    BiAction { window, server -> switch(window.viewer, server) },
+                )
             )
-        )
-        return switchInterface
-    }
+    )
+    return manager
+}
 
-    private fun switchToServer(player: Player, server: Discovery.Data.Mindustry) {
-        Call.connect(player.con, server.host.hostAddress, server.port)
-        Call.sendMessage("[accent]${player.plainName()}[] switched to the [cyan]${server.name}[accent].")
-    }
+private fun switch(player: Player, server: Discovery.Data.Mindustry) {
+    Call.connect(player.con, server.host.hostAddress, server.port)
+    Call.sendMessage("[accent]${player.plainName()}[] switched to the [cyan]${server.name}[accent].")
 }
