@@ -163,6 +163,7 @@ data class MindustryConfig(
         val displayCoreId: Boolean = true,
         val displayResourceTracker: Boolean = true,
         val explosiveDamageAlertDelay: Duration = 15.seconds,
+        val dayNightCycleDuration: Duration = 20.minutes,
     )
 
     data class Security(
