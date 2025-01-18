@@ -22,7 +22,9 @@ package com.xpdustry.imperium.mindustry.account
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
@@ -30,45 +32,36 @@ import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
-import com.xpdustry.imperium.mindustry.misc.sessionKey
-import com.xpdustry.imperium.mindustry.translation.SCARLET
+import com.xpdustry.imperium.mindustry.translation.gui_failure_password_mismatch
 
-fun LoginWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowManager =
-    TextFormWindowManager<LoginPage>(
+fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowManager =
+    TextFormWindowManager<RegisterPage>(
         plugin,
-        "login",
-        footer = true,
+        "register",
         submit =
             BiAction.delegate { _, data ->
-                CoroutineAction(success = LoginResultAction()) { window ->
-                    accounts.login(
-                        window.viewer.sessionKey,
-                        data[LoginPage.USERNAME]!!,
-                        data[LoginPage.PASSWORD]!!.toCharArray(),
-                    )
+                if (data[RegisterPage.PASSWORD]!! != data[RegisterPage.CONFIRM_PASSWORD]!!) {
+                    return@delegate Action(Window::show)
+                        .then(Action.audience { it.sendAnnouncement(gui_failure_password_mismatch()) })
+                }
+                CoroutineAction(success = RegisterResultAction()) { _ ->
+                    accounts.register(data[RegisterPage.USERNAME]!!, data[RegisterPage.PASSWORD]!!.toCharArray())
                 }
             },
     )
 
-private enum class LoginPage {
+private enum class RegisterPage {
     USERNAME,
     PASSWORD,
+    CONFIRM_PASSWORD,
 }
 
-private fun LoginResultAction() =
+private fun RegisterResultAction() =
     BiAction<AccountResult> { window, result ->
         when (result) {
-            is AccountResult.Success -> window.viewer.asAudience.sendAnnouncement(gui_login_success())
-            AccountResult.WrongPassword,
-            AccountResult.NotFound -> {
-                window.show()
-                window.viewer.asAudience.sendAnnouncement(gui_login_failure_invalid_credentials())
-            }
+            is AccountResult.Success -> window.viewer.asAudience.sendAnnouncement(gui_register_success())
             else -> handleAccountResult(result, window)
         }
     }
 
-private fun gui_login_success(): Component = translatable("imperium.gui.login.success", ComponentColor.GREEN)
-
-private fun gui_login_failure_invalid_credentials(): Component =
-    translatable("imperium.gui.login.failure.invalid-credentials", SCARLET)
+private fun gui_register_success(): Component = translatable("imperium.gui.register.success", ComponentColor.GREEN)

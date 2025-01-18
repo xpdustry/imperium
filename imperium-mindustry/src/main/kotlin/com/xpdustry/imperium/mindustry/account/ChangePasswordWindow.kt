@@ -33,7 +33,7 @@ import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.sessionKey
-import com.xpdustry.imperium.mindustry.translation.SCARLET
+import com.xpdustry.imperium.mindustry.translation.gui_failure_password_mismatch
 
 fun ChangePasswordWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowManager =
     TextFormWindowManager<ChangePwdPage>(
@@ -41,9 +41,9 @@ fun ChangePasswordWindow(plugin: MindustryPlugin, accounts: AccountManager): Win
         "change-password",
         submit =
             BiAction.delegate { _, data ->
-                if (data[ChangePwdPage.NEW_PWD]!! != data[ChangePwdPage.CONFIRM]!!) {
+                if (data[ChangePwdPage.NEW_PASSWORD]!! != data[ChangePwdPage.CONFIRM_NEW_PASSWORD]!!) {
                     return@delegate Action(Window::show)
-                        .then(Action.audience { it.sendAnnouncement(gui_change_password_failure_mismatch()) })
+                        .then(Action.audience { it.sendAnnouncement(gui_failure_password_mismatch()) })
                 }
                 CoroutineAction(success = ChangePasswordResultAction()) { window ->
                     val account =
@@ -51,17 +51,17 @@ fun ChangePasswordWindow(plugin: MindustryPlugin, accounts: AccountManager): Win
                             ?: return@CoroutineAction AccountResult.NotFound
                     accounts.updatePassword(
                         account.id,
-                        data[ChangePwdPage.OLD_PWD]!!.toCharArray(),
-                        data[ChangePwdPage.NEW_PWD]!!.toCharArray(),
+                        data[ChangePwdPage.OLD_PASSWORD]!!.toCharArray(),
+                        data[ChangePwdPage.NEW_PASSWORD]!!.toCharArray(),
                     )
                 }
             },
     )
 
 private enum class ChangePwdPage {
-    OLD_PWD,
-    NEW_PWD,
-    CONFIRM,
+    OLD_PASSWORD,
+    NEW_PASSWORD,
+    CONFIRM_NEW_PASSWORD,
 }
 
 private fun ChangePasswordResultAction() =
@@ -71,9 +71,6 @@ private fun ChangePasswordResultAction() =
             else -> handleAccountResult(result, window)
         }
     }
-
-private fun gui_change_password_failure_mismatch(): Component =
-    translatable("imperium.gui.change-password.failure.mismatch", SCARLET)
 
 private fun gui_change_password_success(): Component =
     translatable("imperium.gui.change-password.success", ComponentColor.GREEN)

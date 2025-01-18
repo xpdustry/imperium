@@ -440,3 +440,5 @@ fun formation_pattern_list(): Component =
         }
         .append(translatable("imperium.formation.pattern.list.footer", GRAY))
         .build()
+
+fun gui_failure_password_mismatch(): Component = translatable("imperium.gui.failure.password-mismatch", SCARLET)
