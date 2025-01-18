@@ -60,7 +60,6 @@ import com.xpdustry.imperium.mindustry.game.ChangelogCommand
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
-import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.game.PauseListener
 import com.xpdustry.imperium.mindustry.game.RatingListener
 import com.xpdustry.imperium.mindustry.game.TeamCommand
@@ -276,15 +275,10 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         }
 
         // Additional fix because if you stay in-game after game-over, it re-pauses until someone joins...
-        onEvent<MenuToPlayEvent> { _ ->
-            Distributor.get().pluginScheduler.schedule(this).repeat(1, MindustryTimeUnit.SECONDS).execute { c ->
-                if (Vars.state.isMenu || Groups.player.size() > 0) {
-                    c.cancel()
-                } else if (autopause) {
-                    autopause = false
-                    Vars.state.set(GameState.State.playing)
-                    c.cancel()
-                }
+        Distributor.get().pluginScheduler.schedule(this).repeat(2, MindustryTimeUnit.SECONDS).execute { _ ->
+            if (autopause && Groups.player.size() > 0) {
+                autopause = false
+                Vars.state.set(GameState.State.playing)
             }
         }
     }
