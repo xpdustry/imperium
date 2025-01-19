@@ -17,8 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.formation
 
-import arc.math.geom.Vec2
-import com.xpdustry.distributor.api.annotation.EventHandler
+import arc.math.Mathf
+import arc.util.Interval
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.AccountManager
@@ -39,12 +39,12 @@ import com.xpdustry.imperium.mindustry.translation.formation_failure_require_ena
 import com.xpdustry.imperium.mindustry.translation.formation_pattern_change
 import com.xpdustry.imperium.mindustry.translation.formation_pattern_list
 import com.xpdustry.imperium.mindustry.translation.formation_toggle
+import java.util.ArrayDeque
 import kotlin.collections.set
 import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
-import mindustry.game.EventType
 import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
 import mindustry.gen.Nulls
@@ -52,6 +52,7 @@ import mindustry.gen.Unit as MindustryUnit
 
 class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
+    private val interval = Interval()
     private val accounts = instances.get<AccountManager>()
     private val formations = mutableMapOf<Int, FormationContext>()
 
@@ -60,32 +61,59 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         val iterator = formations.iterator()
         while (iterator.hasNext()) {
             val (id, context) = iterator.next()
+
             val player = Groups.player.getByID(id)
             if (player == null) {
                 context.deleted = true
                 iterator.remove()
                 continue
             }
+
             if (context.leader != player.unit()) {
                 context.leader = player.unit()
             }
+
+            var updated = false
             for (member in context.members.toList()) {
-                if (!member.isValid()) {
+                if (
+                    !member.isValid() ||
+                        !isEligibleFormationUnit(context.leader, member.backingUnit, acceptsFormationMembers = true)
+                ) {
+                    updated = true
                     context.remove(member)
                 }
             }
-            if (context.slots > context.members.size) {
-                val eligible = findEligibleFormationUnits(player.unit(), context.slots - context.members.size)
-                for (unit in eligible) {
-                    val ai = FormationAI(context)
-                    unit.controller(ai)
-                    context.members.add(ai)
+
+            if (interval.get(60F) || context.members.isEmpty()) {
+                val replaceable =
+                    context.members
+                        .asSequence()
+                        .map { it to calculateScore(context.leader, it.backingUnit) }
+                        .filter { (_, score) -> score < 1F }
+                        .sortedByDescending { (_, score) -> score }
+                        .toList()
+                val eligible = ArrayDeque(findEligibleFormationUnits(player.unit()))
+                for ((replacing, score1) in replaceable) {
+                    val (unit, score2) = eligible.poll() ?: break
+                    if (score1 < score2) {
+                        updated = true
+                        context.remove(replacing)
+                        context.add(unit)
+                    } else {
+                        break
+                    }
                 }
-                if (eligible.isNotEmpty()) {
-                    context.strategy.update(context)
+                while (context.open > 0 && eligible.isNotEmpty()) {
+                    updated = true
+                    val (unit, _) = eligible.pop()
+                    context.add(unit)
                 }
             }
-            val anchor = Vec2(player.x(), player.y())
+
+            if (updated) {
+                context.strategy.update(context)
+            }
+
             for (member in context.members) {
                 context.pattern.calculate(
                     member.targetVector,
@@ -93,23 +121,13 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     min(context.slots, context.members.size),
                     player.unit().hitSize * 1.8F,
                 )
-                member.targetVector.add(anchor)
+                member.targetVector.add(player)
             }
+
             if (context.members.isEmpty()) {
                 context.deleted = true
                 iterator.remove()
                 player.asAudience.sendMessage(formation_failure_no_valid_unit())
-            }
-        }
-    }
-
-    @EventHandler
-    fun onUnitControlEvent(event: EventType.UnitControlEvent) {
-        val context = formations[event.player.id()] ?: return
-        context.leader = event.unit
-        context.members.toList().forEach { member ->
-            if (!isEligibleFormationUnit(event.unit, member.backingUnit, formation = true)) {
-                context.remove(member)
             }
         }
     }
@@ -147,15 +165,13 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
 
         runMindustryThread {
             val context = FormationContext(leader = sender.player.unit(), slots = slots)
-            val eligible = findEligibleFormationUnits(sender.player.unit(), context.slots)
+            val eligible = findEligibleFormationUnits(sender.player.unit()).take(context.slots)
             if (eligible.isEmpty()) {
                 sender.error(formation_failure_no_valid_unit())
                 return@runMindustryThread
             }
-            for (unit in eligible) {
-                val ai = FormationAI(context)
-                unit.controller(ai)
-                context.members.add(ai)
+            for ((unit, _) in eligible) {
+                context.add(unit)
             }
             context.strategy.update(context)
             formations[sender.player.id()] = context
@@ -181,30 +197,44 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         sender.reply(formation_pattern_change(pattern))
     }
 
-    private fun findEligibleFormationUnits(leader: MindustryUnit, slots: Int): List<MindustryUnit> {
-        val result = arrayListOf<MindustryUnit>()
+    private fun findEligibleFormationUnits(leader: MindustryUnit): MutableList<UnitWithScore> {
+        val result = arrayListOf<Pair<MindustryUnit, Float>>()
         Units.nearby(leader.team(), leader.x, leader.y, 30F * Vars.tilesize) { unit ->
             if (isEligibleFormationUnit(leader, unit)) {
-                result += unit
+                result += unit to calculateScore(leader, unit)
             }
         }
-        result.sortWith(compareBy({ leader.type == it.type }, { it.healthf() }))
-        val available = min(result.size, slots)
-        return result.subList(result.size - available, result.size)
+        result.sortByDescending(Pair<MindustryUnit, Float>::second)
+        return result
     }
 
-    private fun isEligibleFormationUnit(leader: MindustryUnit, unit: MindustryUnit, formation: Boolean = false) =
+    private fun isEligibleFormationUnit(
+        leader: MindustryUnit,
+        unit: MindustryUnit,
+        acceptsFormationMembers: Boolean = false,
+    ) =
         unit.isAI &&
+            unit.team() == leader.team() &&
             unit.type != UnitTypes.mono &&
             unit.type.flying == leader.type.flying &&
             leader.type.buildSpeed > 0 == unit.type.buildSpeed > 0 &&
             unit != leader &&
             (unit.hitSize <= leader.hitSize * 1.5F) &&
             (unit.controller() !is FormationAI ||
-                (formation && (unit.controller() as FormationAI).context.leader == leader))
+                (acceptsFormationMembers && (unit.controller() as FormationAI).context.leader == leader))
+
+    private fun calculateScore(leader: MindustryUnit, unit: MindustryUnit): Float {
+        var score = 0F
+        // TODO replace with JDK 21 Math#clamp when possible
+        score += Mathf.clamp(unit.healthf() / 2F, 0F, 0.5F)
+        score += if (leader.type() == unit.type()) 0.5F else 0F
+        return score
+    }
 
     enum class FormationPatternEntry(val value: FormationPattern) {
         CIRCLE(CircleFormationPattern),
         SQUARE(SquareFormationPattern),
     }
 }
+
+private typealias UnitWithScore = Pair<MindustryUnit, Float>

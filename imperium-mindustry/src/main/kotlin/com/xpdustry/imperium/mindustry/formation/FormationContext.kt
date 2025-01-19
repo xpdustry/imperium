@@ -28,6 +28,15 @@ data class FormationContext(
     val strategy: SlotAssignmentStrategy = DistanceAssignmentStrategy,
     var deleted: Boolean = false,
 ) {
+    val open: Int
+        get() = slots - members.size
+
+    fun add(unit: MindustryUnit) {
+        val ai = FormationAI(this)
+        unit.controller(ai)
+        members.add(ai)
+    }
+
     fun remove(member: FormationMember) {
         assignments.remove(member.id)
         members.remove(member)
