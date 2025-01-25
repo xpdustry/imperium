@@ -20,6 +20,8 @@ package com.xpdustry.imperium.mindustry.world
 import arc.Core
 import arc.files.Fi
 import arc.util.Strings
+import com.xpdustry.distributor.api.Distributor
+import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
@@ -34,18 +36,23 @@ import com.xpdustry.distributor.api.gui.input.TextInputManager
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.functional.ImperiumResult
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.map.MapLoader
 import com.xpdustry.imperium.mindustry.misc.NavigationTransformer
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
+import com.xpdustry.imperium.mindustry.misc.component3
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.then
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
@@ -54,8 +61,12 @@ import com.xpdustry.imperium.mindustry.translation.SCARLET
 import com.xpdustry.imperium.mindustry.translation.gui_close
 import java.io.IOException
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import kotlin.io.path.deleteExisting
 import kotlin.io.path.exists
+import kotlin.io.path.getLastModifiedTime
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
@@ -69,6 +80,8 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val plugin = instances.get<MindustryPlugin>()
     private val text = TextInputManager.create(instances.get())
     private val menu = MenuManager.create(instances.get())
+    private val renderer = instances.get<TimeRenderer>()
+    private val config = instances.get<ImperiumConfig>()
 
     init {
         menu.addTransformer(
@@ -76,7 +89,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 SAVE_PAGE,
                 SavePage.LIST,
                 ListTransformer<Path>()
-                    .setRenderer(::renderSaveName)
+                    .setRenderer { ctx, path -> renderSaveName(ctx.viewer.asAudience, path) }
                     .setProvider { getSaveFiles() }
                     .setFillEmptySpace(true)
                     .setChoiceAction(
@@ -101,8 +114,8 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         )
 
         menu.addTransformer(
-            NavigationTransformer(SAVE_PAGE, SavePage.VIEW) { (pane, state) ->
-                pane.content = renderSaveName(state[SAVE_FILE]!!)
+            NavigationTransformer(SAVE_PAGE, SavePage.VIEW) { (pane, state, viewer) ->
+                pane.content = renderSaveName(viewer.asAudience, state[SAVE_FILE]!!)
                 pane.grid.addRow(
                     MenuOption.of(text(Iconc.trash, ComponentColor.RED), Action.delegate(this::onDeleteSave)),
                     MenuOption.of(
@@ -153,7 +166,7 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                 it.name.endsWith(SAVE_EXTENSION, ignoreCase = true) &&
                     !it.name.endsWith(SAVE_BACKUP_EXTENSION, ignoreCase = true)
             }
-            .sortedBy { it.nameWithoutExtension }
+            .sortedByDescending { it.getLastModifiedTime() }
             .toList()
 
     private fun onLoadSave(window: Window): Action {
@@ -272,21 +285,26 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         return ImperiumResult.success(path)
     }
 
-    private fun renderSaveName(path: Path): Component {
-        val result = SAVE_NAME_REGEX.find(path.nameWithoutExtension) ?: return text(path.nameWithoutExtension)
+    private fun renderSaveName(viewer: Audience, path: Path): Component {
         val name =
             try {
-                SaveIO.getMeta(Fi(path.toFile())).map.name()
+                Distributor.get().mindustryComponentDecoder.decode(SaveIO.getMeta(Fi(path.toFile())).map.name())
             } catch (exception: Exception) {
-                result.groups["name"]!!.value
+                return text(path.nameWithoutExtension)
             }
-        return components(
-            text(name, ComponentColor.ACCENT),
-            newline(),
-            text(result.groups["date"]!!.value, LIGHT_GRAY),
-            space(),
-            text(result.groups["time"]!!.value, LIGHT_GRAY),
-        )
+        val result = AUTO_SAVE_NAME_REGEX.find(path.nameWithoutExtension) ?: return name
+        return components()
+            .append(text("AUTO", LIGHT_GRAY), space(), name)
+            .apply {
+                try {
+                    val extracted = result.groups["datetime"]!!.value
+                    val datetime = LocalDateTime.parse(extracted, AUTO_SAVE_DATETIME_PARSER).toInstant(ZoneOffset.UTC)
+                    val locale = viewer.metadata[StandardKeys.LOCALE] ?: config.language
+                    val relative = renderer.renderRelativeInstant(datetime, locale)
+                    append(newline(), text(relative, LIGHT_GRAY))
+                } catch (ignored: Exception) {}
+            }
+            .build()
     }
 
     private enum class SavePage {
@@ -301,8 +319,9 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         private const val SAVE_BACKUP_EXTENSION = "msav-backup.msav"
         private val SAVE_PAGE = key<SavePage>("save_page")
         private val SAVE_FILE = key<Path>("choice")
-        private val SAVE_NAME_REGEX =
-            Regex("^auto_(?<name>.+)_(?<date>\\d{2}-\\d{2}-\\d{4})_(?<time>\\d{2}-\\d{2}-\\d{2})$")
+        private val AUTO_SAVE_NAME_REGEX =
+            Regex("^auto_(?<name>.+)_(?<datetime>\\d{2}-\\d{2}-\\d{4}_\\d{2}-\\d{2}-\\d{2})$")
+        private val AUTO_SAVE_DATETIME_PARSER = DateTimeFormatter.ofPattern("MM-dd-yyyy_HH-mm-ss")
         private val SAVE_VALIDATE_REGEX = Regex("^[a-zA-Z0-9_\\-\\s]+$")
     }
 }
