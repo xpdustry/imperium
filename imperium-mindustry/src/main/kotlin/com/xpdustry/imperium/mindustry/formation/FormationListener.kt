@@ -41,6 +41,7 @@ import com.xpdustry.imperium.mindustry.translation.formation_pattern_list
 import com.xpdustry.imperium.mindustry.translation.formation_toggle
 import java.util.ArrayDeque
 import kotlin.collections.set
+import kotlin.math.max
 import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
@@ -161,6 +162,10 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     account.rank >= Rank.VERIFIED -> 8
                     else -> slots
                 }
+            val manual = accounts.selectMetadata(account.id, "formation_max_slots")?.toIntOrNull()
+            if (manual != null) {
+                slots = max(slots, manual)
+            }
         }
 
         runMindustryThread {
