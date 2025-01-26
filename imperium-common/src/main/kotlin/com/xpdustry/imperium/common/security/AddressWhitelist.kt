@@ -24,15 +24,19 @@ import java.net.InetAddress
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertIgnore
+import org.jetbrains.exposed.sql.upsert
 
 interface AddressWhitelist {
-    suspend fun addAddress(address: InetAddress)
+    suspend fun addAddress(address: InetAddress, reason: String)
 
     suspend fun containsAddress(address: InetAddress): Boolean
 
     suspend fun removeAddress(address: InetAddress)
+
+    suspend fun listAdresses(): List<AddressWithReason>
 }
+
+typealias AddressWithReason = Pair<InetAddress, String>
 
 class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhitelist, ImperiumApplication.Listener {
 
@@ -40,9 +44,12 @@ class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhiteli
         provider.newTransaction { SchemaUtils.create(AddressWhitelistTable) }
     }
 
-    override suspend fun addAddress(address: InetAddress): Unit =
+    override suspend fun addAddress(address: InetAddress, reason: String): Unit =
         provider.newSuspendTransaction {
-            AddressWhitelistTable.insertIgnore { it[AddressWhitelistTable.address] = address.address }
+            AddressWhitelistTable.upsert {
+                it[AddressWhitelistTable.address] = address.address
+                it[AddressWhitelistTable.reason] = reason
+            }
         }
 
     override suspend fun containsAddress(address: InetAddress) =
@@ -53,5 +60,12 @@ class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhiteli
     override suspend fun removeAddress(address: InetAddress): Unit =
         provider.newSuspendTransaction {
             AddressWhitelistTable.deleteWhere { AddressWhitelistTable.address eq address.address }
+        }
+
+    override suspend fun listAdresses() =
+        provider.newSuspendTransaction {
+            AddressWhitelistTable.select(AddressWhitelistTable.address, AddressWhitelistTable.reason).map {
+                InetAddress.getByAddress(it[AddressWhitelistTable.address]) to it[AddressWhitelistTable.reason]
+            }
         }
 }
