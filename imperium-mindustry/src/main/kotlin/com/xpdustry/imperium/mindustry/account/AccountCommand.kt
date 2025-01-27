@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
@@ -33,7 +34,6 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
-import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.minutes
@@ -75,6 +75,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             manager.logout(sender.player.sessionKey)
             sender.player.admin = false
             sender.player.sendMessage("You have been logged out!")
+            runMindustryThread { Distributor.get().eventBus.post(PlayerLogoutEvent(sender.player)) }
         }
     }
 
@@ -132,7 +133,6 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
                     Entities.getPlayersAsync().find { it.uuid() == message.uuid && it.usid() == message.usid }
                         ?: return@consumer
                 player.showInfoMessage("You have been verified!")
-                player.tryGrantAdmin(manager)
             }
         }
     }

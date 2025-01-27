@@ -19,6 +19,7 @@
 
 package com.xpdustry.imperium.mindustry.account
 
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
@@ -58,7 +59,10 @@ private enum class LoginPage {
 private fun LoginResultAction() =
     BiAction<AccountResult> { window, result ->
         when (result) {
-            is AccountResult.Success -> window.viewer.asAudience.sendAnnouncement(gui_login_success())
+            is AccountResult.Success -> {
+                window.viewer.asAudience.sendAnnouncement(gui_login_success())
+                Distributor.get().eventBus.post(PlayerLoginEvent(window.viewer))
+            }
             AccountResult.WrongPassword,
             AccountResult.NotFound -> {
                 window.show()

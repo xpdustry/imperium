@@ -17,7 +17,8 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
-import com.xpdustry.imperium.common.account.Account
 import mindustry.gen.Player
 
-data class PlayerLoginEvent(val player: Player, val account: Account)
+data class PlayerLoginEvent(val player: Player)
+
+data class PlayerLogoutEvent(val player: Player)

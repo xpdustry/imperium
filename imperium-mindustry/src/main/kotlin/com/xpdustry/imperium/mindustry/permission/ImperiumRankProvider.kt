@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
+import com.xpdustry.imperium.mindustry.account.PlayerLogoutEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -49,6 +50,9 @@ class ImperiumRankProvider(plugin: MindustryPlugin, private val accounts: Accoun
 
     @EventHandler(priority = Priority.HIGH) fun onPLayerLogin(event: PlayerLoginEvent) = updatePlayerRanks(event.player)
 
+    @EventHandler(priority = Priority.HIGH)
+    fun onPlayerLogout(event: PlayerLogoutEvent) = updatePlayerRanks(event.player)
+
     @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
     fun refreshPlayerRank() = Entities.getPlayers().forEach(::updatePlayerRanks)
 
@@ -59,8 +63,12 @@ class ImperiumRankProvider(plugin: MindustryPlugin, private val accounts: Accoun
             val account = accounts.selectBySession(player.sessionKey)
             val achievements = account?.let { accounts.selectAchievements(it.id) }.orEmpty()
             val nodes = ArrayList<RankNode>()
-            nodes += EnumRankNode.linear(account?.rank ?: Rank.EVERYONE, "imperium", true)
+            val rank = account?.rank ?: Rank.EVERYONE
+            nodes += EnumRankNode.linear(rank, "imperium", true)
             nodes += achievements.filterValues { it }.map { EnumRankNode.singular(it.key, "imperium") }
-            runMindustryThread { ranks[player] = Collections.unmodifiableList(nodes) }
+            runMindustryThread {
+                ranks[player] = Collections.unmodifiableList(nodes)
+                player.admin = rank >= Rank.OVERSEER
+            }
         }
 }

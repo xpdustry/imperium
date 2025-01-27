@@ -35,7 +35,6 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.sessionKey
-import com.xpdustry.imperium.mindustry.misc.tryGrantAdmin
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -84,10 +83,7 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
-        ImperiumScope.MAIN.launch {
-            users.incrementJoins(event.player.identity)
-            event.player.tryGrantAdmin(accounts)
-        }
+        ImperiumScope.MAIN.launch { users.incrementJoins(event.player.identity) }
     }
 
     @EventHandler
