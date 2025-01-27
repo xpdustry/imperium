@@ -55,6 +55,7 @@ class SimpleSQLProvider(private val config: DatabaseConfig, private val director
 
         when (config) {
             is DatabaseConfig.H2 -> {
+                hikari.driverClassName = "org.h2.Driver"
                 if (config.memory) {
                     hikari.jdbcUrl = "jdbc:h2:mem:${config.database};MODE=MYSQL"
                 } else {
