@@ -45,12 +45,14 @@ class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listen
     private val config = instances.get<ImperiumConfig>()
     private val codec = instances.get<IdentifierCodec>()
 
+    /* TODO Implement proper undercover admins
     @ImperiumCommand(["admin"], Rank.OVERSEER)
     @ClientSide
     fun onAdminToggleCommand(sender: CommandSender) {
         sender.player.admin = !sender.player.admin
         sender.player.sendMessage("[accent]Your admin status has been set to ${sender.player.admin}")
     }
+     */
 
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     @ClientSide
