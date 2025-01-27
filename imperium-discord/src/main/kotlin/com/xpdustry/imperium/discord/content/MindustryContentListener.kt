@@ -38,8 +38,7 @@ import mindustry.ctype.MappableContent
 import mindustry.game.Schematic
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.channel.ChannelType
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.utils.FileUpload
 
@@ -52,13 +51,11 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
             if (event.author.isBot || event.author.isSystem || event.isWebhookMessage) {
                 return@addSuspendingEventListener
             }
-            if (event.isFromType(ChannelType.TEXT)) {
-                onMindustryContent(event.channel.asTextChannel(), event.message, event.member!!)
-            }
+            onMindustryContent(event.channel, event.message, event.member!!)
         }
     }
 
-    private suspend fun onMindustryContent(channel: TextChannel, message: Message, member: Member) {
+    private suspend fun onMindustryContent(channel: MessageChannel, message: Message, member: Member) {
         val maps = mutableListOf<Triple<MapMetadata, BufferedImage, Message.Attachment>>()
         val schematics = mutableListOf<Schematic>()
         var delete = false
