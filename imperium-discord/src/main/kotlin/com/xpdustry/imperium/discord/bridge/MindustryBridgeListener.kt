@@ -51,7 +51,7 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
                     BridgeChatMessage(
                         channel.name,
                         event.message.member?.nickname ?: event.message.author.name,
-                        event.message.idLong,
+                        event.author.idLong,
                         event.message.contentStripped,
                     )
                 )
