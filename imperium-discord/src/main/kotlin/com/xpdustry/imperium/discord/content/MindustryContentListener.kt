@@ -197,7 +197,7 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                 .sendMessage(
                     MessageCreate {
                         files +=
-                            FileUpload.fromStreamSupplier(meta.name.stripMindustryColors() + ".msch") {
+                            FileUpload.fromStreamSupplier(meta.name.stripMindustryColors() + ".msav") {
                                 attachement.proxy.download().join()
                             }
                         files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
