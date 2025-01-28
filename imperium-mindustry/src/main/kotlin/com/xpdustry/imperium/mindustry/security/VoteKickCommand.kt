@@ -21,8 +21,10 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.player.MUUID
+import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -43,6 +45,7 @@ import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -56,6 +59,7 @@ import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
@@ -81,6 +85,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val config = instances.get<ImperiumConfig>()
     private val users = instances.get<UserManager>()
     private val marks = instances.get<MarkedPlayerManager>()
+    private val accounts = instances.get<AccountManager>()
     private val recentBans =
         Collections.newSetFromMap(buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
 
@@ -99,8 +104,15 @@ class VoteKickCommand(instances: InstanceManager) :
 
     @EventHandler
     internal fun onPlayerLogin(event: PlayerLoginEvent) {
-        if (event.account.rank >= Rank.OVERSEER) {
-            manager.sessions.values.filter { it.objective.target == event.player }.forEach { it.failure(event.player) }
+        ImperiumScope.MAIN.launch {
+            val rank = accounts.selectBySession(event.player.sessionKey)?.rank
+            if (rank != null && rank >= Rank.OVERSEER) {
+                runMindustryThread {
+                    manager.sessions.values
+                        .filter { it.objective.target == event.player }
+                        .forEach { it.failure(event.player) }
+                }
+            }
         }
     }
 
