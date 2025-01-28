@@ -44,6 +44,7 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.rank.Rank
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.Tip
@@ -423,12 +424,13 @@ fun formation_pattern_change(pattern: FormationListener.FormationPatternEntry): 
         ),
     )
 
-fun formation_pattern_list(): Component =
+fun formation_pattern_list(rank: Rank): Component =
     components()
         .setTextStyle(TextStyle.of(WHITE))
         .append(text(">>> ", CYAN), translatable("imperium.formation.pattern.list.header", ACCENT), newline())
         .apply {
             FormationListener.FormationPatternEntry.entries.forEach {
+                if(it.rank == Rank.OVERSEER && rank < Rank.OVERSEER) return@forEach
                 append(
                     text("> ", CYAN),
                     translatable("imperium.formation.pattern.entry.${it.name.lowercase()}", WHITE),
@@ -440,5 +442,16 @@ fun formation_pattern_list(): Component =
         }
         .append(translatable("imperium.formation.pattern.list.footer", GRAY))
         .build()
+
+fun formation_pattern_rejection(pattern: FormationListener.FormationPatternEntry): Component =
+    components(
+        SCARLET,
+        translatable(
+            "imperium.formation.pattern.rejection",
+            TranslationArguments.array(
+                translatable("imperium.formation.pattern.entry.${pattern.name.lowercase()}", ACCENT)
+            ),
+        ),
+    )
 
 fun gui_failure_password_mismatch(): Component = translatable("imperium.gui.failure.password-mismatch", SCARLET)
