@@ -45,6 +45,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.functional.ImperiumResult
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.map.MapLoader
@@ -286,13 +287,14 @@ class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private fun renderSaveName(viewer: Audience, path: Path): Component {
+        val raw = path.nameWithoutExtension.stripMindustryColors()
         val name =
             try {
                 Distributor.get().mindustryComponentDecoder.decode(SaveIO.getMeta(Fi(path.toFile())).map.name())
             } catch (exception: Exception) {
-                return text(path.nameWithoutExtension)
+                return text(raw)
             }
-        val result = AUTO_SAVE_NAME_REGEX.find(path.nameWithoutExtension) ?: return name
+        val result = AUTO_SAVE_NAME_REGEX.find(raw) ?: return components(text(raw), space(), text('('), name, text(')'))
         return components()
             .append(text("AUTO", LIGHT_GRAY), space(), name)
             .apply {
