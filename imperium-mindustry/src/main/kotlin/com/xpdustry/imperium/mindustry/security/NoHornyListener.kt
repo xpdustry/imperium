@@ -30,6 +30,7 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.nohorny.image.NoHornyResult
@@ -61,6 +62,7 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                     )
 
                     webhook.send(
+                        WebhookChannel.NOHORNY,
                         WebhookMessage(
                             content =
                                 buildString {
@@ -76,7 +78,7 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                                     }
                                 },
                             attachments = listOf(event.image.toUnsafeAttachment()),
-                        )
+                        ),
                     )
                 }
                 NoHornyResult.Rating.UNSAFE -> {
@@ -99,6 +101,7 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                         )
 
                     webhook.send(
+                        WebhookChannel.NOHORNY,
                         WebhookMessage(
                             content =
                                 buildString {
@@ -109,7 +112,7 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                                     }
                                 },
                             attachments = listOf(event.image.toUnsafeAttachment()),
-                        )
+                        ),
                     )
                 }
             }

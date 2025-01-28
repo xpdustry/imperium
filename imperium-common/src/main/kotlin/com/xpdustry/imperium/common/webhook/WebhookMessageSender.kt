@@ -19,11 +19,12 @@ package com.xpdustry.imperium.common.webhook
 
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.WebhookConfig
+import com.xpdustry.imperium.common.config.WebhookBackendConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.io.InputStream
+import java.util.EnumMap
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -37,19 +38,38 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
 interface WebhookMessageSender {
-    suspend fun send(message: WebhookMessage)
 
-    object None : WebhookMessageSender {
-        override suspend fun send(message: WebhookMessage) = Unit
+    suspend fun send(channel: WebhookChannel, message: WebhookMessage)
+}
+
+class WebhookMessageSenderImpl(config: ImperiumConfig, http: OkHttpClient, version: ImperiumVersion) :
+    WebhookMessageSender {
+    private val channels = EnumMap<WebhookChannel, WebhookBackend>(WebhookChannel::class.java)
+
+    init {
+        config.webhooks.entries.forEach { (channel, backend) ->
+            channels[channel] =
+                when (backend) {
+                    is WebhookBackendConfig.Discord -> DiscordWebhookBackend(http, config, backend, version)
+                }
+        }
+    }
+
+    override suspend fun send(channel: WebhookChannel, message: WebhookMessage) {
+        channels[channel]?.send(message)
     }
 }
 
-class DiscordWebhookMessageSender(
+private interface WebhookBackend {
+    suspend fun send(message: WebhookMessage)
+}
+
+private class DiscordWebhookBackend(
     private val http: OkHttpClient,
     private val config: ImperiumConfig,
-    private val webhookConfig: WebhookConfig.Discord,
+    private val webhookConfig: WebhookBackendConfig.Discord,
     private val version: ImperiumVersion,
-) : WebhookMessageSender {
+) : WebhookBackend {
     override suspend fun send(message: WebhookMessage): Unit =
         withContext(ImperiumScope.IO.coroutineContext) {
             try {

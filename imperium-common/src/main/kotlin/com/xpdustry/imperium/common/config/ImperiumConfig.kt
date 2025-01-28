@@ -25,6 +25,7 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.security.Identity
+import com.xpdustry.imperium.common.webhook.WebhookChannel
 import java.awt.Color
 import java.net.InetAddress
 import java.net.URL
@@ -53,7 +54,7 @@ data class ImperiumConfig(
     val server: ServerConfig = ServerConfig("unknown"),
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,
-    val webhook: WebhookConfig = WebhookConfig.None,
+    val webhooks: Map<WebhookChannel, WebhookBackendConfig> = emptyMap(),
     val discord: DiscordConfig = DiscordConfig(),
     val mindustry: MindustryConfig = MindustryConfig(),
     val webserver: WebserverConfig = WebserverConfig(),
@@ -109,10 +110,8 @@ data class ServerConfig(val name: String, val displayName: String = name.capital
     }
 }
 
-sealed interface WebhookConfig {
-    data object None : WebhookConfig
-
-    data class Discord(val discordWebhookUrl: URL) : WebhookConfig
+sealed interface WebhookBackendConfig {
+    data class Discord(val discordWebhookUrl: URL) : WebhookBackendConfig
 }
 
 // TODO Cleanup roles (ranks, permission, special) listing and lookup

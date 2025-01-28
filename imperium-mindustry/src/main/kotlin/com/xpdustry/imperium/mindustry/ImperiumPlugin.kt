@@ -36,6 +36,7 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
+import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
@@ -217,7 +218,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.listeners.forEach(processor::process)
 
         runBlocking {
-            application.instances.get<WebhookMessageSender>().send(WebhookMessage(content = "The server has started."))
+            application.instances
+                .get<WebhookMessageSender>()
+                .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server has started."))
         }
 
         logger.info("Imperium plugin Loaded!")
@@ -285,7 +288,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             runBlocking {
                 instances
                     .get<WebhookMessageSender>()
-                    .send(WebhookMessage(content = "The server is exiting with $status code."))
+                    .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server is exiting with $status code."))
             }
             super.exit(status)
             when (status) {

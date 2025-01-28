@@ -30,7 +30,6 @@ import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
 import com.xpdustry.imperium.common.config.StorageConfig
-import com.xpdustry.imperium.common.config.WebhookConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
@@ -61,8 +60,8 @@ import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.SimpleUserManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
-import com.xpdustry.imperium.common.webhook.DiscordWebhookMessageSender
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
+import com.xpdustry.imperium.common.webhook.WebhookMessageSenderImpl
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -129,12 +128,7 @@ fun MutableInstanceManager.registerCommonModule() {
 
     provider<TimeRenderer> { SimpleTimeRenderer(get()) }
 
-    provider<WebhookMessageSender> {
-        when (val webhookConfig = get<ImperiumConfig>().webhook) {
-            is WebhookConfig.None -> WebhookMessageSender.None
-            is WebhookConfig.Discord -> DiscordWebhookMessageSender(get(), get(), webhookConfig, get())
-        }
-    }
+    provider<WebhookMessageSender> { WebhookMessageSenderImpl(get(), get(), get()) }
 
     provider<AddressWhitelist> { SimpleAddressWhitelist(get()) }
 
