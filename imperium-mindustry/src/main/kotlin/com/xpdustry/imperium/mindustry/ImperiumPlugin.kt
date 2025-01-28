@@ -23,8 +23,6 @@ import arc.Core
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
-import com.xpdustry.distributor.api.permission.rank.RankPermissionSource
-import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.translation.BundleTranslationSource
@@ -70,8 +68,7 @@ import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.misc.onEvent
-import com.xpdustry.imperium.mindustry.permission.ImperiumRankPermissionSource
-import com.xpdustry.imperium.mindustry.permission.ImperiumRankProvider
+import com.xpdustry.imperium.mindustry.permission.ImperiumPermissionListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
@@ -126,13 +123,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             registerMindustryModule(this@ImperiumPlugin)
             createAll()
         }
-
-        registerService(
-            RankProvider::class,
-            ImperiumRankProvider(application.instances.get(), application.instances.get()).also(application::register),
-        )
-
-        registerService(RankPermissionSource::class, ImperiumRankPermissionSource(application.instances.get()))
 
         registerService(
             TranslationSource::class,
@@ -200,6 +190,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 MetricsListener::class,
                 ChangelogCommand::class,
                 DayNighCycleListener::class,
+                ImperiumPermissionListener::class,
             )
             .forEach(application::register)
 

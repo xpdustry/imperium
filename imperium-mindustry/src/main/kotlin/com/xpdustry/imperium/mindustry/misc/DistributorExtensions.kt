@@ -153,3 +153,8 @@ fun <T : Any> CoroutineAction(
         }
     }
 }
+
+inline fun <reified T : Any> registerDistributorService(plugin: MindustryPlugin, instance: T) {
+    @Suppress("UNCHECKED_CAST") val token = TypeToken.of(typeOf<T>().javaType) as TypeToken<T>
+    Distributor.get().serviceManager.register(plugin, token, instance, Priority.NORMAL)
+}

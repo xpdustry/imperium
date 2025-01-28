@@ -55,7 +55,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val users = instances.get<UserManager>()
 
     override fun onImperiumInit() {
-        FlexAPI.get().placeholders.register("imperium", ImperiumPlaceholderProcessor(plugin, accounts))
+        FlexAPI.get().placeholders.register("imperium", ImperiumPlaceholderProcessor(plugin, accounts, users))
 
         FlexAPI.get()
             .templates

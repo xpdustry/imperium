@@ -25,6 +25,8 @@ import com.xpdustry.flex.processor.Processor
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
@@ -38,19 +40,24 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mindustry.graphics.Pal
 
-class ImperiumPlaceholderProcessor(plugin: MindustryPlugin, private val accounts: AccountManager) :
-    Processor<PlaceholderContext, String?> {
-
+class ImperiumPlaceholderProcessor(
+    plugin: MindustryPlugin,
+    private val accounts: AccountManager,
+    private val users: UserManager,
+) : Processor<PlaceholderContext, String?> {
     private val ranks = PlayerMap<Rank>(plugin)
     private val hours = PlayerMap<Int>(plugin)
+    private val hidden = PlayerMap<Boolean>(plugin)
 
     init {
         ImperiumScope.MAIN.launch {
             while (isActive) {
-                delay(10.seconds)
+                delay(2.seconds)
                 Entities.getPlayersAsync().forEach { player ->
                     val account = accounts.selectBySession(player.sessionKey)
+                    val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
                     runMindustryThread {
+                        hidden[player] = undercover
                         if (account == null) {
                             hours.remove(player)
                             ranks.remove(player)
@@ -69,7 +76,10 @@ class ImperiumPlaceholderProcessor(plugin: MindustryPlugin, private val accounts
             "hours" ->
                 when (val audience = context.subject) {
                     is DiscordAudience -> audience.hours?.let(CHAOTIC_HOUR_FORMAT::format) ?: ""
-                    is PlayerAudience -> hours[audience.player]?.let(CHAOTIC_HOUR_FORMAT::format) ?: ""
+                    is PlayerAudience -> {
+                        if (hidden[audience.player] == true) ""
+                        else hours[audience.player]?.let(CHAOTIC_HOUR_FORMAT::format) ?: ""
+                    }
                     else -> ""
                 }
             "is_discord" ->
@@ -80,7 +90,10 @@ class ImperiumPlaceholderProcessor(plugin: MindustryPlugin, private val accounts
             "rank_color" ->
                 when (val audience = context.subject) {
                     is DiscordAudience -> audience.rank.toColor().toHexString()
-                    is PlayerAudience -> (ranks[audience.player] ?: Rank.EVERYONE).toColor().toHexString()
+                    is PlayerAudience -> {
+                        if (hidden[audience.player] == true) Rank.EVERYONE.toColor().toHexString()
+                        else (ranks[audience.player] ?: Rank.EVERYONE).toColor().toHexString()
+                    }
                     else -> Rank.EVERYONE.toColor().toHexString()
                 }
             else -> null

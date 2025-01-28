@@ -40,5 +40,6 @@ data class User(
         ANTI_BAN_EVADE(false),
         CHAT_TRANSLATOR(true, deprecated = true),
         AUTOMATIC_LANGUAGE_DETECTION(true),
+        UNDERCOVER(false),
     }
 }
