@@ -37,6 +37,7 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.from
 import com.xpdustry.distributor.api.component.style.TextStyle
 import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.account.Achievement
+import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
@@ -44,7 +45,6 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.time.truncatedTo
 import com.xpdustry.imperium.common.user.User
-import com.xpdustry.imperium.common.user.rank.Rank
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.Tip

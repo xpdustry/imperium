@@ -188,10 +188,10 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @ImperiumCommand(["group|g", "pattern|p"])
     @RequireAchievement(Achievement.ACTIVE)
     @ClientSide
-    fun onFormationPatternCommand(sender: CommandSender, pattern: FormationPatternEntry? = null) {
+    suspend fun onFormationPatternCommand(sender: CommandSender, pattern: FormationPatternEntry? = null) {
         val account = accounts.selectBySession(sender.player.sessionKey)
         if (pattern == null) {
-            sender.reply(formation_pattern_list(account.rank))
+            sender.reply(formation_pattern_list(account!!.rank))
             return
         }
         val context = formations[sender.player.id()]
@@ -199,7 +199,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             sender.reply(formation_failure_require_enabled())
             return
         }
-        if (pattern == ROTATING_CIRCLE && !(account.rank <= Rank.OVERSEER)) {
+        if (pattern == FormationPatternEntry.ROTATING_CIRCLE && !(account!!.rank <= Rank.OVERSEER)) {
             return sender.reply(formation_pattern_rejection(pattern))
         }
         context.pattern = pattern.value
