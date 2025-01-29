@@ -16,7 +16,8 @@ open class GenerateImperiumChangelog : DefaultTask() {
 
     fun onlyIfHasUpstream() {
         onlyIf("run only if upstream repo is available") { task ->
-            return@onlyIf task.property("generateChangelog").toString().toBoolean()
+            return@onlyIf task.project.hasProperty("generateChangelog")
+                    && task.project.property("generateChangelog").toString().toBoolean()
         }
     }
 
