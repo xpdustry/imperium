@@ -27,7 +27,7 @@ jobs:
 
       - name: Build Artifacts
         run: gradle build
-        with:
+        env:
           ORG_GRADLE_PROJECT_generateChangelog: "${{ github.repository == 'xpdustry/imperium' }}"
 
       - name: Upload Test Summary

@@ -35,7 +35,7 @@ jobs:
 
       - name: Build Artifact
         run: gradle build -x spotlessCheck
-        with:
+        env:
           ORG_GRADLE_PROJECT_generateChangelog: "${{ github.repository == 'xpdustry/imperium' }}"
 
       - name: Upload Test Summary
