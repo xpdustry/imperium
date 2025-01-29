@@ -42,16 +42,19 @@ class ChangelogCommand(instances: InstanceManager) : ImperiumApplication.Listene
     init {
         val features = ArrayList<String>()
         val bugfixes = ArrayList<String>()
-        javaClass.classLoader.getResourceAsStream("imperium-changelog.txt")!!.reader().use(Reader::readLines).forEach {
-            entry ->
-            val (verb, scope, message) = entry.split('/', limit = 3)
-            if (scope == "common" || scope == "mindustry") {
-                when (verb) {
-                    "feat" -> features += message
-                    "fix" -> bugfixes += message
+        javaClass.classLoader
+            .getResourceAsStream("imperium-changelog.txt")
+            ?.reader()
+            ?.use(Reader::readLines)
+            ?.forEach { entry ->
+                val (verb, scope, message) = entry.split('/', limit = 3)
+                if (scope == "common" || scope == "mindustry") {
+                    when (verb) {
+                        "feat" -> features += message
+                        "fix" -> bugfixes += message
+                    }
                 }
             }
-        }
 
         val builder = components()
         val none = text("None", GRAY)
