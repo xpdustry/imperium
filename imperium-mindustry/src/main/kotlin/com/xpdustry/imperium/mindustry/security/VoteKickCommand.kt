@@ -198,8 +198,19 @@ class VoteKickCommand(instances: InstanceManager) :
         } else if (objective.target.team() != player.team() && Vars.state.rules.pvp) {
             player.sendMessage("[scarlet]You can't start a votekick on players from other teams.")
             return false
-        } else if (objective.target.admin) {
+        } else if (objective.target.admin()) {
             player.sendMessage("[scarlet]You can't start a votekick on an admin.")
+            objective.target.sendMessage(player.name() + " [scarlet]tried to votekick you.")
+            return false
+        } else if (
+            Distributor.get()
+                .playerPermissionProvider
+                .getPermissions(objective.target)
+                .getPermission("imperium.rank.overseer")
+                .asBoolean()
+        ) {
+            player.sendMessage("[scarlet]You can't start a votekick this player.")
+            objective.target.sendMessage(player.name() + " [scarlet]tried to votekick you.")
             return false
         } else if (!limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage("[scarlet]You are limited to one votekick per minute. Please try again later.")
