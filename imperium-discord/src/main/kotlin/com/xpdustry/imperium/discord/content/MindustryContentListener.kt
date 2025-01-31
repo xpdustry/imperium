@@ -77,6 +77,10 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
             delete = true
         }
 
+        if (message.startedThread != null) {
+            delete = false
+        }
+
         message.attachments.forEach { attachment ->
             try {
                 if (attachment.fileExtension == "txt") {
