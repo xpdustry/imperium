@@ -209,7 +209,7 @@ class VoteKickCommand(instances: InstanceManager) :
                 .getPermission("imperium.rank.overseer")
                 .asBoolean()
         ) {
-            player.sendMessage("[scarlet]You can't start a votekick this player.")
+            player.sendMessage("[scarlet]You can't start a votekick on this player.")
             objective.target.sendMessage(player.name() + " [scarlet]tried to votekick you.")
             return false
         } else if (!limiter.incrementAndCheck(player.ip().toInetAddress())) {
