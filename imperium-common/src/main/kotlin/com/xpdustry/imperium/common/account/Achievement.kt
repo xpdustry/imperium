@@ -24,4 +24,5 @@ enum class Achievement {
     DAY,
     WEEK,
     MONTH,
+    SUPPORTER,
 }
