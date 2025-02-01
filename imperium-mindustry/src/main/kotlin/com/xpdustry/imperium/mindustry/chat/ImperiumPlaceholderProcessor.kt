@@ -108,9 +108,7 @@ class ImperiumPlaceholderProcessor(
                 }
             "name_colored" -> {
                 val audience = context.subject
-                if (
-                    audience is PlayerAudience && rainbow[audience.player] == true && hidden[audience.player] != true
-                ) {
+                if (audience is PlayerAudience && rainbow[audience.player] == true && hidden[audience.player] != true) {
                     context.subject.metadata[StandardKeys.DECORATED_NAME]?.let {
                         buildString {
                             val plain = ComponentStringBuilder.plain(context.subject.metadata).append(it).toString()
