@@ -134,10 +134,10 @@ class ImperiumPlaceholderProcessor(
 
     private fun Rank.toColor() =
         when (this) {
-            Rank.EVERYONE -> Color.gray
+            Rank.EVERYONE -> Color.lightGray
             Rank.VERIFIED -> Pal.accent
             Rank.OVERSEER -> Color.green
-            Rank.MODERATOR -> Color.blue
+            Rank.MODERATOR -> Color.royal
             Rank.ADMIN,
             Rank.OWNER -> Color.scarlet
         }
