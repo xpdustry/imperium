@@ -79,7 +79,6 @@ import com.xpdustry.imperium.mindustry.security.PunishmentListener
 import com.xpdustry.imperium.mindustry.security.ReportCommand
 import com.xpdustry.imperium.mindustry.security.VoteKickCommand
 import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
-import com.xpdustry.imperium.mindustry.tower.TowerListener
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
@@ -200,9 +199,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             application.register(HubListener::class)
         } else {
             Core.settings.remove("totalPlayers")
-        }
-        if (gamemode == MindustryGamemode.TOWER_DEFENSE) {
-            application.register(TowerListener::class)
         }
 
         application.init()
