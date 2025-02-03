@@ -430,7 +430,7 @@ fun formation_pattern_list(rank: Rank): Component =
         .append(text(">>> ", CYAN), translatable("imperium.formation.pattern.list.header", ACCENT), newline())
         .apply {
             FormationListener.FormationPatternEntry.entries.forEach {
-                if(it.rank == Rank.OVERSEER && rank < Rank.OVERSEER) return@forEach
+                if(it.requiredRank == Rank.OVERSEER && rank < Rank.OVERSEER) return@forEach
                 append(
                     text("> ", CYAN),
                     translatable("imperium.formation.pattern.entry.${it.name.lowercase()}", WHITE),

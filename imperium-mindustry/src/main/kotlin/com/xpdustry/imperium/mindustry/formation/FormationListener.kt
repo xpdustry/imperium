@@ -121,7 +121,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     member.targetVector,
                     context.assignments[member.id] ?: 0,
                     min(context.slots, context.members.size),
-                    (if (player.unit().hitSize <= 15) player.unit().hitSize * 1.7F else player.unit().hitSize * 1.35F),
+                    (if (player.unit().hitSize <= 15) player.unit().hitSize * 1.6F else player.unit().hitSize * 1.35F),
                 )
                 member.targetVector.add(player)
             }
@@ -199,7 +199,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             sender.reply(formation_failure_require_enabled())
             return
         }
-        if (pattern == FormationPatternEntry.ROTATING_CIRCLE && !(account!!.rank <= Rank.OVERSEER)) {
+        if (pattern == FormationPatternEntry.ROTATING_CIRCLE && !(account!!.rank >= Rank.OVERSEER)) {
             return sender.reply(formation_pattern_rejection(pattern))
         }
         context.pattern = pattern.value
