@@ -37,8 +37,8 @@ import com.xpdustry.imperium.mindustry.translation.formation_failure_dead
 import com.xpdustry.imperium.mindustry.translation.formation_failure_no_valid_unit
 import com.xpdustry.imperium.mindustry.translation.formation_failure_require_enabled
 import com.xpdustry.imperium.mindustry.translation.formation_pattern_change
+import com.xpdustry.imperium.mindustry.translation.formation_pattern_failure_no_permission
 import com.xpdustry.imperium.mindustry.translation.formation_pattern_list
-import com.xpdustry.imperium.mindustry.translation.formation_pattern_rejection
 import com.xpdustry.imperium.mindustry.translation.formation_toggle
 import java.util.ArrayDeque
 import kotlin.collections.set
@@ -121,7 +121,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     member.targetVector,
                     context.assignments[member.id] ?: 0,
                     min(context.slots, context.members.size),
-                    (if (player.unit().hitSize <= 15) player.unit().hitSize * 1.6F else player.unit().hitSize * 1.35F),
+                    (if (context.leader.hitSize <= 15) context.leader.hitSize * 1.6F
+                    else context.leader.hitSize * 1.35F),
                 )
                 member.targetVector.add(player)
             }
@@ -189,9 +190,9 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @RequireAchievement(Achievement.ACTIVE)
     @ClientSide
     suspend fun onFormationPatternCommand(sender: CommandSender, pattern: FormationPatternEntry? = null) {
-        val account = accounts.selectBySession(sender.player.sessionKey)
+        val rank = accounts.selectBySession(sender.player.sessionKey)?.rank ?: error("That ain't supposed to happen.")
         if (pattern == null) {
-            sender.reply(formation_pattern_list(account!!.rank))
+            sender.reply(formation_pattern_list(rank))
             return
         }
         val context = formations[sender.player.id()]
@@ -199,8 +200,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             sender.reply(formation_failure_require_enabled())
             return
         }
-        if (pattern == FormationPatternEntry.ROTATING_CIRCLE && !(account!!.rank >= Rank.OVERSEER)) {
-            return sender.reply(formation_pattern_rejection(pattern))
+        if (rank < pattern.rank) {
+            return sender.reply(formation_pattern_failure_no_permission(pattern))
         }
         context.pattern = pattern.value
         context.strategy.update(context)
@@ -241,9 +242,9 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         return score
     }
 
-    enum class FormationPatternEntry(val value: FormationPattern, val requiredRank: Rank) {
-        CIRCLE(CircleFormationPattern, Rank.EVERYONE),
-        SQUARE(SquareFormationPattern, Rank.EVERYONE),
+    enum class FormationPatternEntry(val value: FormationPattern, val rank: Rank = Rank.EVERYONE) {
+        CIRCLE(CircleFormationPattern),
+        SQUARE(SquareFormationPattern),
         ROTATING_CIRCLE(RotatingCircleFormationPattern, Rank.OVERSEER),
     }
 }

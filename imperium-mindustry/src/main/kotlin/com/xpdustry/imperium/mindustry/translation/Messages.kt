@@ -418,9 +418,7 @@ fun formation_pattern_change(pattern: FormationListener.FormationPatternEntry): 
         text(">>> ", CYAN),
         translatable(
             "imperium.formation.pattern.change",
-            TranslationArguments.array(
-                translatable("imperium.formation.pattern.entry.${pattern.name.lowercase()}", ACCENT)
-            ),
+            TranslationArguments.array(formation_pattern_name(pattern, ACCENT)),
         ),
     )
 
@@ -430,10 +428,10 @@ fun formation_pattern_list(rank: Rank): Component =
         .append(text(">>> ", CYAN), translatable("imperium.formation.pattern.list.header", ACCENT), newline())
         .apply {
             FormationListener.FormationPatternEntry.entries.forEach {
-                if (it.requiredRank > rank) return@forEach
+                if (it.rank > rank) return@forEach
                 append(
                     text("> ", CYAN),
-                    translatable("imperium.formation.pattern.entry.${it.name.lowercase()}", WHITE),
+                    formation_pattern_name(it, WHITE),
                     space(),
                     components(LIGHT_GRAY, text('('), text(it.name.lowercase()), text(')')),
                     newline(),
@@ -443,15 +441,16 @@ fun formation_pattern_list(rank: Rank): Component =
         .append(translatable("imperium.formation.pattern.list.footer", GRAY))
         .build()
 
-fun formation_pattern_rejection(pattern: FormationListener.FormationPatternEntry): Component =
+fun formation_pattern_failure_no_permission(pattern: FormationListener.FormationPatternEntry): Component =
     components(
         SCARLET,
         translatable(
-            "imperium.formation.pattern.rejection",
-            TranslationArguments.array(
-                translatable("imperium.formation.pattern.entry.${pattern.name.lowercase()}", ACCENT)
-            ),
+            "imperium.formation.pattern.failure.no-permission",
+            TranslationArguments.array(formation_pattern_name(pattern, ACCENT)),
         ),
     )
+
+fun formation_pattern_name(pattern: FormationListener.FormationPatternEntry, color: ComponentColor): Component =
+    translatable("imperium.formation.pattern.entry.${pattern.name.lowercase()}", color)
 
 fun gui_failure_password_mismatch(): Component = translatable("imperium.gui.failure.password-mismatch", SCARLET)
