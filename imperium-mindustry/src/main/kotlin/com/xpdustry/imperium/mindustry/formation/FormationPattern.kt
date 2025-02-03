@@ -67,4 +67,3 @@ object RotatingCircleFormationPattern : FormationPattern {
         location.set(Angles.trnsx(angle, radius), Angles.trnsy(angle, radius))
     }
 }
-    
