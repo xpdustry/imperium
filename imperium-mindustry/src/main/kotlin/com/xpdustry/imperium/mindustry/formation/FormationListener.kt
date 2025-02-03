@@ -116,13 +116,15 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 context.strategy.update(context)
             }
 
+            val spacing =
+                if (context.leader.hitSize <= 15) context.leader.hitSize * 1.6F else context.leader.hitSize * 1.35F
             for (member in context.members) {
                 context.pattern.calculate(
                     member.targetVector,
                     context.assignments[member.id] ?: 0,
                     min(context.slots, context.members.size),
-                    (if (context.leader.hitSize <= 15) context.leader.hitSize * 1.6F
-                    else context.leader.hitSize * 1.35F),
+                    spacing,
+                    context.leader.speed(),
                 )
                 member.targetVector.add(player)
             }

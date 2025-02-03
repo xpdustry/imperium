@@ -26,11 +26,11 @@ import kotlin.math.sqrt
 
 interface FormationPattern {
 
-    fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float = 20F)
+    fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float = 20F, speed: Float = 0.5F)
 }
 
 object CircleFormationPattern : FormationPattern {
-    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float) {
+    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float, speed: Float) {
         if (slots > 1) {
             val angle = (360f * slot) / slots
             val radius = spacing / sin((180f / slots * Mathf.degRad).toDouble()).toFloat()
@@ -42,7 +42,7 @@ object CircleFormationPattern : FormationPattern {
 }
 
 object SquareFormationPattern : FormationPattern {
-    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float) {
+    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float, speed: Float) {
         // side of each square of formation
         val side = ceil(sqrt((slots + 1).toFloat())).toInt()
         var cx = slot % side
@@ -59,10 +59,10 @@ object SquareFormationPattern : FormationPattern {
 }
 
 object RotatingCircleFormationPattern : FormationPattern {
-    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float) {
-        val currentTime = System.currentTimeMillis() % 45000L // 45 seconds cycle
-        val angleOffset = (currentTime / 45000F) * 360f
-        val angle = ((360f * slot) / slots) + angleOffset
+    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float, speed: Float) {
+        val cycle = 30000L / speed
+        val offset = ((System.currentTimeMillis() % cycle.toLong()) / cycle) * 360f
+        val angle = ((360f * slot) / slots) + offset
         val radius = spacing / sin((180f / slots * Mathf.degRad).toDouble()).toFloat()
         location.set(Angles.trnsx(angle, radius), Angles.trnsy(angle, radius))
     }
