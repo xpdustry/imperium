@@ -112,10 +112,10 @@ class ImperiumPlaceholderProcessor(
                     context.subject.metadata[StandardKeys.DECORATED_NAME]?.let {
                         buildString {
                             val plain = ComponentStringBuilder.plain(context.subject.metadata).append(it).toString()
-                            val initial = (((System.currentTimeMillis() / 1000L) % 20) / 20F) * 360F
+                            val initial = (((System.currentTimeMillis() / 1000L) % 60) / 60F) * 360F
                             val color = Color().a(1F)
                             for ((index, char) in plain.withIndex()) {
-                                color.fromHsv(initial + (index * 3F), 0.9F, 0.9F)
+                                color.fromHsv(initial + (index * 8F), 0.55F, 0.9F)
                                 append("[#")
                                 append(color)
                                 append(']')
