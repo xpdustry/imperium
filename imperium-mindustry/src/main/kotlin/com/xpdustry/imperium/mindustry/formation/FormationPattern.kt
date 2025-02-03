@@ -57,3 +57,13 @@ object SquareFormationPattern : FormationPattern {
         location.set(cx - (side / 2f - 0.5f), cy - (side / 2f - 0.5f)).scl(spacing * 2F)
     }
 }
+
+object RotatingCircleFormationPattern : FormationPattern {
+    override fun calculate(location: Vec2, slot: Int, slots: Int, spacing: Float) {
+        val currentTime = System.currentTimeMillis() % 45000L // 45 seconds cycle
+        val angleOffset = (currentTime / 45000F) * 360f
+        val angle = ((360f * slot) / slots) + angleOffset
+        val radius = spacing / sin((180f / slots * Mathf.degRad).toDouble()).toFloat()
+        location.set(Angles.trnsx(angle, radius), Angles.trnsy(angle, radius))
+    }
+}
