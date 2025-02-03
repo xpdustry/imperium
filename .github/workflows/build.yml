@@ -35,6 +35,8 @@ jobs:
 
       - name: Build Artifact
         run: gradle build -x spotlessCheck
+        env:
+          ORG_GRADLE_PROJECT_generateChangelog: "${{ github.repository == 'xpdustry/imperium' }}"
 
       - name: Upload Test Summary
         uses: EnricoMi/publish-unit-test-result-action@v2

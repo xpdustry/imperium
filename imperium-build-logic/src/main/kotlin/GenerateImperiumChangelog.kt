@@ -2,7 +2,6 @@ import java.util.regex.Pattern
 import net.kyori.indra.git.IndraGitExtension
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.lib.Constants
-import org.eclipse.jgit.transport.URIish
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.file.RegularFileProperty
@@ -17,7 +16,8 @@ open class GenerateImperiumChangelog : DefaultTask() {
 
     fun onlyIfHasUpstream() {
         onlyIf("run only if upstream repo is available") { task ->
-            task.git.remoteList().call().any { remote -> remote.urIs.contains(UPSTREAM_URI_1) || remote.urIs.contains(UPSTREAM_URI_2) }
+            return@onlyIf task.project.hasProperty("generateChangelog")
+                    && task.project.property("generateChangelog").toString().toBoolean()
         }
     }
 
@@ -44,8 +44,6 @@ open class GenerateImperiumChangelog : DefaultTask() {
     companion object {
         private val ACCEPTED_SUFFIX =
             Pattern.compile("^(?<verb>feat|fix)(\\((?<scope>mindustry|discord)\\))?:", Pattern.CASE_INSENSITIVE)
-        private val UPSTREAM_URI_1 = URIish("https://github.com/xpdustry/imperium.git")
-        private val UPSTREAM_URI_2 = URIish("https://github.com/xpdustry/imperium")
         private val Task.git: Git
             get() = project.rootProject.extensions.getByType<IndraGitExtension>().git()!!
     }

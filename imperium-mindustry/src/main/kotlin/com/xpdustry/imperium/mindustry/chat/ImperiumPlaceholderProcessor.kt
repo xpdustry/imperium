@@ -19,10 +19,13 @@ package com.xpdustry.imperium.mindustry.chat
 
 import arc.graphics.Color
 import com.xpdustry.distributor.api.audience.PlayerAudience
+import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.flex.placeholder.PlaceholderContext
 import com.xpdustry.flex.processor.Processor
 import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.user.User
@@ -48,16 +51,23 @@ class ImperiumPlaceholderProcessor(
     private val ranks = PlayerMap<Rank>(plugin)
     private val hours = PlayerMap<Int>(plugin)
     private val hidden = PlayerMap<Boolean>(plugin)
+    private val rainbow = PlayerMap<Boolean>(plugin)
 
     init {
         ImperiumScope.MAIN.launch {
             while (isActive) {
+                // TODO That block of code makes me cry, polling is cringe, reactive is king
                 delay(2.seconds)
                 Entities.getPlayersAsync().forEach { player ->
                     val account = accounts.selectBySession(player.sessionKey)
                     val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
+                    val rainbow =
+                        users.getSetting(player.uuid(), User.Setting.RAINBOW_NAME) &&
+                            account != null &&
+                            accounts.selectAchievement(account.id, Achievement.SUPPORTER)
                     runMindustryThread {
                         hidden[player] = undercover
+                        this@ImperiumPlaceholderProcessor.rainbow[player] = rainbow
                         if (account == null) {
                             hours.remove(player)
                             ranks.remove(player)
@@ -96,6 +106,29 @@ class ImperiumPlaceholderProcessor(
                     }
                     else -> Rank.EVERYONE.toColor().toHexString()
                 }
+            "name_colored" -> {
+                val audience = context.subject
+                if (audience is PlayerAudience && rainbow[audience.player] == true && hidden[audience.player] != true) {
+                    context.subject.metadata[StandardKeys.DECORATED_NAME]?.let {
+                        buildString {
+                            val plain = ComponentStringBuilder.plain(context.subject.metadata).append(it).toString()
+                            val initial = (((System.currentTimeMillis() / 1000L) % 20) / 20F) * 360F
+                            val color = Color().a(1F)
+                            for ((index, char) in plain.withIndex()) {
+                                color.fromHsv(initial + (index * 3F), 0.9F, 0.9F)
+                                append("[#")
+                                append(color)
+                                append(']')
+                                append(char)
+                            }
+                        }
+                    }
+                } else {
+                    context.subject.metadata[StandardKeys.NAME]?.let {
+                        ComponentStringBuilder.mindustry(context.subject.metadata).append(it).toString()
+                    }
+                }
+            }
             else -> null
         }
 

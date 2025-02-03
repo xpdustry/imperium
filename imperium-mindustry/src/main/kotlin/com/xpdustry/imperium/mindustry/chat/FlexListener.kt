@@ -64,7 +64,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
                 Template(
                     listOf(
                         TemplateStep(
-                            "[%imperium:rank_color%]<[white]%imperium:hours%[%imperium:rank_color%]> [%audience:color%]%audience:name_colored%"
+                            "[%imperium:rank_color%]<[white]%imperium:hours%[%imperium:rank_color%]> [%audience:color%]%imperium:name_colored%"
                         )
                     )
                 ),

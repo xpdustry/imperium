@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.discord.command
 
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -85,6 +86,7 @@ class SlashCommandRegistry(private val discord: DiscordService, private val conf
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
+        registerHandler(Achievement::class, EnumTypeHandler(Achievement::class))
         registerHandler(Rank::class, EnumTypeHandler(Rank::class))
         registerHandler(RemoteActionMessage.Action::class, EnumTypeHandler(RemoteActionMessage.Action::class))
     }
