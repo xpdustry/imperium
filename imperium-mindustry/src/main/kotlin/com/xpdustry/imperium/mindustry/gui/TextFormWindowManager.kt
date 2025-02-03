@@ -28,6 +28,8 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.gui.input.TextInputManager
+import com.xpdustry.distributor.api.gui.input.TextInputPane
+import com.xpdustry.distributor.api.gui.transform.Transformer
 import com.xpdustry.distributor.api.key.Key
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.mindustry.translation.GRAY
@@ -39,6 +41,7 @@ inline fun <reified P : Enum<P>> TextFormWindowManager(
     plugin: MindustryPlugin,
     name: String,
     footer: Boolean = false,
+    extra: Transformer<TextInputPane> = Transformer { _ -> },
     submit: BiAction<Map<P, String>>,
 ): WindowManager {
     val input = TextInputManager.create(plugin)
@@ -88,6 +91,8 @@ inline fun <reified P : Enum<P>> TextFormWindowManager(
                 Action.back()
             }
     }
+
+    input.addTransformer(extra)
 
     return input
 }

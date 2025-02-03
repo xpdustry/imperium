@@ -29,6 +29,8 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.VerificationMessage
+import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -40,20 +42,24 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val manager = instances.get<AccountManager>()
+    private val accounts = instances.get<AccountManager>()
+    private val users = instances.get<UserManager>()
     private val messenger = instances.get<Messenger>()
-    private val login = LoginWindow(instances.get(), manager)
-    private val register = RegisterWindow(instances.get(), manager)
-    private val changePassword = ChangePasswordWindow(instances.get(), manager)
+    private val login = LoginWindow(instances.get(), accounts)
+    private val register = RegisterWindow(instances.get(), accounts)
+    private val changePassword = ChangePasswordWindow(instances.get(), accounts)
     private val verifications = buildCache<Int, Int> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     @ImperiumCommand(["login"])
     @ClientSide
     suspend fun onLoginCommand(sender: CommandSender) {
-        val account = manager.selectBySession(sender.player.sessionKey)
+        val account = accounts.selectBySession(sender.player.sessionKey)
+        val remember = users.getSetting(sender.player.uuid(), User.Setting.REMEMBER_LOGIN)
         runMindustryThread {
             if (account == null) {
-                login.create(sender.player).show()
+                val window = login.create(sender.player)
+                window.state[REMEMBER_LOGIN_WARNING] = !remember
+                window.show()
             } else {
                 handleAccountResult(AccountResult.AlreadyLogged, sender.player)
             }
@@ -69,10 +75,10 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["logout"])
     @ClientSide
     suspend fun onLogoutCommand(sender: CommandSender) {
-        if (manager.selectBySession(sender.player.sessionKey) == null) {
+        if (accounts.selectBySession(sender.player.sessionKey) == null) {
             sender.player.sendMessage("You are not logged in!")
         } else {
-            manager.logout(sender.player.sessionKey)
+            accounts.logout(sender.player.sessionKey)
             sender.player.admin = false
             sender.player.sendMessage("You have been logged out!")
             runMindustryThread { Distributor.get().eventBus.post(PlayerLogoutEvent(sender.player)) }
@@ -88,7 +94,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["verify"])
     @ClientSide
     suspend fun onVerifyCommand(sender: CommandSender) {
-        val account = manager.selectBySession(sender.player.sessionKey)
+        val account = accounts.selectBySession(sender.player.sessionKey)
         if (account == null) {
             sender.error("You are not logged in!")
             return
