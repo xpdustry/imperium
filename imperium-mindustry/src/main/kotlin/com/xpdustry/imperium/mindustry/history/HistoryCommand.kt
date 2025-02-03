@@ -129,7 +129,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             )
         )
 
-    @ImperiumCommand(["history", "heatmap"])
+    @ImperiumCommand(["inspector"])
     @ClientSide
     fun onHeatmapHistoryCommand(sender: CommandSender) {
         val viewing = !(heatmapViewers[sender.player] ?: false)
