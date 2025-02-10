@@ -19,7 +19,11 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
+import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
@@ -33,8 +37,10 @@ import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.translation.cyan_prefix
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -83,7 +89,18 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
-        ImperiumScope.MAIN.launch { users.incrementJoins(event.player.identity) }
+        ImperiumScope.MAIN.launch {
+            users.incrementJoins(event.player.identity)
+            val account = accounts.selectBySession(event.player.sessionKey) ?: return@launch
+            event.player.asAudience.sendMessage(
+                cyan_prefix(
+                    translatable()
+                        .setKey("imperium.notification.login")
+                        .setParameters(TranslationArguments.array(text(account.username, ComponentColor.ACCENT)))
+                        .build()
+                )
+            )
+        }
     }
 
     @EventHandler

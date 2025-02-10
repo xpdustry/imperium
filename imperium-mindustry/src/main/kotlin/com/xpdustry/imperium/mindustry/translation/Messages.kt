@@ -454,3 +454,7 @@ fun formation_pattern_name(pattern: FormationListener.FormationPatternEntry, col
     translatable("imperium.formation.pattern.entry.${pattern.name.lowercase()}", color)
 
 fun gui_failure_password_mismatch(): Component = translatable("imperium.gui.failure.password-mismatch", SCARLET)
+
+private val CYAN_PREFIX = text(">>> ", CYAN)
+
+fun cyan_prefix(component: Component): Component = components(CYAN_PREFIX, space(), component)
