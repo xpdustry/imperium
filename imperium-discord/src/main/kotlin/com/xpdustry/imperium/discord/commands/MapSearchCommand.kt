@@ -57,7 +57,7 @@ class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listene
     private val states =
         buildCache<Long, MapSearchState> {
             expireAfterWrite(1.minutes.toJavaDuration())
-            expireAfterAccess(1.minutes.toJavaDuration())
+            expireAfterAccess(5.minutes.toJavaDuration())
             scheduler(Scheduler.systemScheduler())
             removalListener<Long, MapSearchState> { key, value, cause ->
                 if (key == null || value == null || !(cause == RemovalCause.EXPLICIT || cause == RemovalCause.EXPIRED))
