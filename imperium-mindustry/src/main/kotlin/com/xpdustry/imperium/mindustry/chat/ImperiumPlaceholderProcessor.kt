@@ -124,7 +124,7 @@ class ImperiumPlaceholderProcessor(
                         }
                     }
                 } else {
-                    context.subject.metadata[StandardKeys.NAME]?.let {
+                    context.subject.metadata[StandardKeys.DECORATED_NAME]?.let {
                         ComponentStringBuilder.mindustry(context.subject.metadata).append(it).toString()
                     }
                 }
