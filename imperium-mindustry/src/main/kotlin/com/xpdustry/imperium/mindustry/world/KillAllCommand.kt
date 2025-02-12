@@ -107,7 +107,7 @@ class KillAllCommand(instances: InstanceManager) :
             var counter = count
             for (unit in Entities.getUnits().toList()) {
                 if (!unit.isPlayer && unit.controller() !is FormationAI && (if (team != null) team == unit.team() else false)) {
-                    if (unit && unit.type == unit) {
+                    if (unit != null && unit.type == unit) {
                         Call.unitDespawn(unit)
                         counter--
                     } else {
