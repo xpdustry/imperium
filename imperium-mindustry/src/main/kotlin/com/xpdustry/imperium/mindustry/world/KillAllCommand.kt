@@ -44,10 +44,7 @@ class KillAllCommand(instances: InstanceManager) :
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
-    fun onKillAllUnitsCommand(
-        sender: CommandSender,
-        @Flag("u") unit: UnitType? = null
-        ) {
+    fun onKillAllUnitsCommand(sender: CommandSender, @Flag("u") unit: UnitType? = null) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
@@ -74,11 +71,7 @@ class KillAllCommand(instances: InstanceManager) :
 
     @ImperiumCommand(["killall|ku", "team|t"], Rank.MODERATOR)
     @ClientSide
-    fun onKillUnitsTeamCommand(
-        sender: CommandSender,
-        team: Team,
-        @Flag("u") unit: UnitType
-        ) {
+    fun onKillUnitsTeamCommand(sender: CommandSender, team: Team, @Flag("u") unit: UnitType) {
         var count = 0
         for (unit in Entities.getUnits().toList()) {
             if (!unit.isPlayer && unit.controller() !is FormationAI && team == unit.team()) {
@@ -89,7 +82,6 @@ class KillAllCommand(instances: InstanceManager) :
                     Call.unitDespawn(unit)
                     count++
                 }
-                
             }
         }
         // TODO: make this translatable
@@ -98,28 +90,29 @@ class KillAllCommand(instances: InstanceManager) :
 
     @ImperiumCommand(["kill|k"], Rank.MODERATOR)
     @ClientSide
-    fun onKillUnitsCommand(
-        sender: CommandSender,
-        unit: UnitType,
-        @Flag("c") count: Int = 1,
-        @Flag("t") team: Team,
-        ) {
-            var counter = count
-            for (unit in Entities.getUnits().toList()) {
-                if (!unit.isPlayer && unit.controller() !is FormationAI && (if (team != null) team == unit.team() else false)) {
-                    if (unit != null && unit.type == unit) {
-                        Call.unitDespawn(unit)
-                        counter--
-                    } else {
-                        Call.unitDespawn(unit)
-                        counter--
-                    }
-                    if (count <= 0) break
+    fun onKillUnitsCommand(sender: CommandSender, unit: UnitType, @Flag("c") count: Int = 1, @Flag("t") team: Team) {
+        var counter = count
+        for (unit in Entities.getUnits().toList()) {
+            if (
+                !unit.isPlayer &&
+                    unit.controller() !is FormationAI &&
+                    (if (team != null) team == unit.team() else false)
+            ) {
+                if (unit != null && unit.type == unit) {
+                    Call.unitDespawn(unit)
+                    counter--
+                } else {
+                    Call.unitDespawn(unit)
+                    counter--
                 }
+                if (count <= 0) break
             }
-            // TODO: translate this
-            sender.reply("Killed $count ${unit?.localizedName ?: "unit"}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}")
         }
+        // TODO: translate this
+        sender.reply(
+            "Killed $count ${unit?.localizedName ?: "unit"}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}"
+        )
+    }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Unit>): String =
         // TODO: this to
@@ -127,7 +120,9 @@ class KillAllCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Unit>) {
         runMindustryThread {
-            Entities.getUnits().toList().forEach { unit -> if (!unit.isPlayer && unit.controller() !is FormationAI) Call.unitDespawn(unit) }
+            Entities.getUnits().toList().forEach { unit ->
+                if (!unit.isPlayer && unit.controller() !is FormationAI) Call.unitDespawn(unit)
+            }
         }
     }
 }
