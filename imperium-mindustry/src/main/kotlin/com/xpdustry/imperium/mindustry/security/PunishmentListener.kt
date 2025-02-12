@@ -25,6 +25,7 @@ import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.FlexAPI
+import com.xpdustry.flex.message.MessageContext
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetOf
@@ -167,7 +168,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         FlexAPI.get().messages.register("mute", Priority.HIGH) { ctx ->
             ImperiumScope.MAIN.future {
-                if (!ctx.filter) return@future ctx.message
+                if (!ctx.filter || ctx.kind == MessageContext.Kind.COMMAND) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val muted = runMindustryThread {
                     cache[player.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
