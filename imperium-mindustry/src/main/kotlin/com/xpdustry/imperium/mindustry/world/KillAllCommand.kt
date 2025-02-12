@@ -90,7 +90,12 @@ class KillAllCommand(instances: InstanceManager) :
 
     @ImperiumCommand(["kill|k"], Rank.MODERATOR)
     @ClientSide
-    fun onKillUnitsCommand(sender: CommandSender, unittype: UnitType, @Flag("c") count: Int = 1, @Flag("t") team: Team) {
+    fun onKillUnitsCommand(
+        sender: CommandSender,
+        unittype: UnitType,
+        @Flag("c") count: Int = 1,
+        @Flag("t") team: Team,
+    ) {
         var counter = count
         for (unit in Entities.getUnits().toList()) {
             if (
