@@ -82,7 +82,7 @@ class KillAllCommand(instances: InstanceManager) :
         var count = 0
         for (unit in Entities.getUnits().toList()) {
             if (!unit.isPlayer && unit.controller() !is FormationAI && team == unit.team()) {
-                if (unit && unit.type == unit) {
+                if (unit != null && unit.type == unit) {
                     Call.unitDespawn(unit)
                     count++
                 } else {
@@ -106,7 +106,7 @@ class KillAllCommand(instances: InstanceManager) :
         ) {
             var counter = count
             for (unit in Entities.getUnits().toList()) {
-                if (!unit.isPlayer && unit.controller() !is FormationAI && (if (team) team == unit.team())) {
+                if (!unit.isPlayer && unit.controller() !is FormationAI && (if (team != null) team == unit.team() else false)) {
                     if (unit && unit.type == unit) {
                         Call.unitDespawn(unit)
                         counter--
@@ -118,7 +118,7 @@ class KillAllCommand(instances: InstanceManager) :
                 }
             }
             // TODO: translate this
-            sender.reply("Killed $count ${unit?.localizedName ?: "unit"}(s) ${if (team) "from team ${team.coloredName()}" else ""}")
+            sender.reply("Killed $count ${unit?.localizedName ?: "unit"}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}")
         }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Unit>): String =
