@@ -33,7 +33,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val accounts = instances.get<AccountManager>()
     private val codec = instances.get<IdentifierCodec>()
 
-    @ImperiumCommand(["account", "edit", "rank"], Rank.OWNER)
+    @ImperiumCommand(["account", "edit", "rank"], Rank.MANAGER)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
         val reply = interaction.deferReply(true).await()
         if (rank == Rank.OWNER) {
