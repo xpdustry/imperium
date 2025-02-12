@@ -110,7 +110,7 @@ class KillAllCommand(instances: InstanceManager) :
                     Call.unitDespawn(unit)
                     counter--
                 }
-                if (count <= 0) break
+                if (counter <= 0) break
             }
         }
         // TODO: translate this
