@@ -139,6 +139,7 @@ class ImperiumPlaceholderProcessor(
             Rank.OVERSEER -> Color.green
             Rank.MODERATOR -> Color.royal
             Rank.ADMIN,
+            Rank.MANAGER,
             Rank.OWNER -> Color.scarlet
         }
 
