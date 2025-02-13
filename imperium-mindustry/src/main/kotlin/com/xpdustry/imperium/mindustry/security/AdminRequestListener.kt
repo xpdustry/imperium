@@ -258,15 +258,14 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 requester.con,
                 target,
                 TraceInfo(
-                    if (canSeeInfo) target.con.address
-                    else "Don't have permission to view addresses. | ${codec.encode(user.id)}", // fix foos autotrace
+                    if (canSeeInfo) target.con.address else "Don't have permission to view addresses.",
                     if (canSeeInfo) target.uuid() else codec.encode(user.id),
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,
                     punishments.findAllByIdentity(target.identity).count(),
                     if (canSeeInfo) historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
-                    else arrayOf("Don't have permission to view addresses | ${codec.encode(user.id)}"),
+                    else arrayOf("Don't have permission to view addresses"),
                     historic.names.toTypedArray(),
                 ),
             )
