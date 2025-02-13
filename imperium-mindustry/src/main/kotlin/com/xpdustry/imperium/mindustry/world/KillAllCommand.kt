@@ -44,7 +44,7 @@ class KillAllCommand(instances: InstanceManager) :
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
-    fun onKillAllUnitsCommand(sender: CommandSender, @Flag("u") unit: UnitType? = null) {
+    fun onKillAllUnitsCommand(sender: CommandSender) {
         onVoteSessionStart(sender.player, manager.session, Unit)
     }
 
