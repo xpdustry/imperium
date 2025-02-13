@@ -120,7 +120,6 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                             }
                         )
 
-                    addDuration("[green]1 minutes", 1.minutes)
                     addDuration("[green]15 minutes", 15.minutes)
                     addDuration("[green]1 hour", 1.hours)
                     addDuration("[green]3 hour", 3.hours)
