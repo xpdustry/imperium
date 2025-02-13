@@ -88,17 +88,19 @@ class KillAllCommand(instances: InstanceManager) :
         sender.reply("Killed $count ${unittype?.localizedName ?: "unit"}(s) from team ${team.coloredName()}")
     }
 
-    @ImperiumCommand(["kill|k"], Rank.MODERATOR)
+    // Kill individual units
+    // TODO: merge with the above command? Make team optional?
+    @ImperiumCommand(["kill|k", "unittype|u"], Rank.MODERATOR)
     @ClientSide
     fun onKillUnitsCommand(
         sender: CommandSender,
         unittype: UnitType,
-        @Flag("c") count: Int = 1,
+        @Flag("c") count: Int? = null,
         @Flag("t") team: Team? = null,
     ) {
-        var counter = count
+        var amount = 0
         for (unit in Entities.getUnits().toList()) {
-            if (counter <= 0) break
+            if (amount == count) break
             if (
                 !unit.isPlayer &&
                     unit.controller() !is FormationAI &&
@@ -106,13 +108,13 @@ class KillAllCommand(instances: InstanceManager) :
             ) {
                 if (unit.type == unittype) {
                     Call.unitDespawn(unit)
-                    counter--
+                    amount++
                 }
             }
         }
         // TODO: translate this
         sender.reply(
-            "Killed $count ${unittype.localizedName}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}"
+            "Killed $amount ${unittype.localizedName}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}"
         )
     }
 
