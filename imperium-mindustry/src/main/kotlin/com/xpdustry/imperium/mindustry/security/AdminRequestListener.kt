@@ -257,14 +257,17 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 requester.con,
                 target,
                 TraceInfo(
-                    if (canSeeInfo) target.con.address else "Don't have permission to view addresses.",
+                    if (canSeeInfo) target.con.address
+                    else "Don't have permission to view addresses. | ${codec.encode(user.id)}", 
+                    // fix foos autotrace complaining about ips being the same
+                    // https://github.com/mindustry-antigrief/mindustry-client/blob/cd7df920b49c167674392e6837cba1812d5b19dc/core/src/mindustry/client/antigrief/Moderation.kt#L116
                     if (canSeeInfo) target.uuid() else codec.encode(user.id),
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,
                     punishments.findAllByIdentity(target.identity).count(),
                     if (canSeeInfo) historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
-                    else arrayOf("Don't have permission to view addresses."),
+                    else arrayOf("Don't have permission to view addresses | ${codec.encode(user.id)}"),
                     historic.names.toTypedArray(),
                 ),
             )
