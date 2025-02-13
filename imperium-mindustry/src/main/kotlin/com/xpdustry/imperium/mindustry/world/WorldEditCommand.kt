@@ -37,6 +37,7 @@ import mindustry.world.blocks.environment.Prop
 import mindustry.world.blocks.environment.TreeBlock
 import org.incendo.cloud.annotation.specifier.Range
 
+// TODO: Translate these
 class WorldEditCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["wedit"], Rank.MODERATOR)

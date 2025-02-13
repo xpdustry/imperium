@@ -71,21 +71,21 @@ class KillAllCommand(instances: InstanceManager) :
 
     @ImperiumCommand(["killall|ku", "team|t"], Rank.MODERATOR)
     @ClientSide
-    fun onKillUnitsTeamCommand(sender: CommandSender, team: Team, @Flag("u") unittype: UnitType) {
+    fun onKillUnitsTeamCommand(sender: CommandSender, team: Team, @Flag("u") unittype: UnitType? = null) {
         var count = 0
         for (unit in Entities.getUnits().toList()) {
             if (!unit.isPlayer && unit.controller() !is FormationAI && team == unit.team()) {
-                if (unit.type == unittype) {
+                if (unittype == null) {
                     Call.unitDespawn(unit)
                     count++
-                } else {
+                } else if (unit.type == unittype) {
                     Call.unitDespawn(unit)
                     count++
                 }
             }
         }
         // TODO: make this translatable
-        sender.reply("Killed $count ${unittype.localizedName ?: "unit"}(s) from team ${team.coloredName()}")
+        sender.reply("Killed $count ${unittype?.localizedName ?: "unit"}(s) from team ${team.coloredName()}")
     }
 
     @ImperiumCommand(["kill|k"], Rank.MODERATOR)
@@ -94,14 +94,14 @@ class KillAllCommand(instances: InstanceManager) :
         sender: CommandSender,
         unittype: UnitType,
         @Flag("c") count: Int = 1,
-        @Flag("t") team: Team,
+        @Flag("t") team: Team? = null,
     ) {
         var counter = count
         for (unit in Entities.getUnits().toList()) {
             if (
                 !unit.isPlayer &&
                     unit.controller() !is FormationAI &&
-                    (if (team != null) team == unit.team() else false)
+                    (if (team != null) team == unit.team() else if (team == null) true else false)
             ) {
                 if (unit.type == unittype) {
                     Call.unitDespawn(unit)
@@ -115,7 +115,7 @@ class KillAllCommand(instances: InstanceManager) :
         }
         // TODO: translate this
         sender.reply(
-            "Killed $count ${unittype.localizedName ?: "unit"}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}"
+            "Killed $count ${unittype.localizedName}(s) ${if (team != null) "from team ${team.coloredName()}" else ""}"
         )
     }
 
