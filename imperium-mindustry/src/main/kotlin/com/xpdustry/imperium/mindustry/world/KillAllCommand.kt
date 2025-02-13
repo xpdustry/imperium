@@ -98,19 +98,16 @@ class KillAllCommand(instances: InstanceManager) :
     ) {
         var counter = count
         for (unit in Entities.getUnits().toList()) {
+            if (counter <= 0) break
             if (
                 !unit.isPlayer &&
                     unit.controller() !is FormationAI &&
-                    (if (team != null) team == unit.team() else if (team == null) true else false)
+                    (team == null || team == unit.team())
             ) {
                 if (unit.type == unittype) {
                     Call.unitDespawn(unit)
                     counter--
-                } else {
-                    Call.unitDespawn(unit)
-                    counter--
                 }
-                if (counter <= 0) break
             }
         }
         // TODO: translate this
