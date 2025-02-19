@@ -27,7 +27,11 @@ data class FormationContext(
     var pattern: FormationPattern = CircleFormationPattern,
     val strategy: SlotAssignmentStrategy = DistanceAssignmentStrategy,
     var deleted: Boolean = false,
+    var progress: Float = 0F,
 ) {
+    val spacing: Float
+        get() = if (leader.hitSize <= 15) leader.hitSize * 1.6F else leader.hitSize * 1.35F
+
     val open: Int
         get() = slots - members.size
 

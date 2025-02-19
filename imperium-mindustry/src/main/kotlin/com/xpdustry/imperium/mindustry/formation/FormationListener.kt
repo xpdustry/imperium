@@ -19,6 +19,7 @@ package com.xpdustry.imperium.mindustry.formation
 
 import arc.math.Mathf
 import arc.util.Interval
+import arc.util.Time
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.AccountManager
@@ -43,7 +44,6 @@ import com.xpdustry.imperium.mindustry.translation.formation_toggle
 import java.util.ArrayDeque
 import kotlin.collections.set
 import kotlin.math.max
-import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
@@ -86,6 +86,14 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 }
             }
 
+            // Avoids issues with rotating formations
+            if (
+                !(context.leader.isFlying && context.leader.moving()) &&
+                    context.members.none { it.backingUnit.isShooting() }
+            ) {
+                context.progress += Time.delta
+            }
+
             if (interval.get(60F) || context.members.isEmpty()) {
                 val replaceable =
                     context.members
@@ -116,16 +124,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 context.strategy.update(context)
             }
 
-            val spacing =
-                if (context.leader.hitSize <= 15) context.leader.hitSize * 1.6F else context.leader.hitSize * 1.35F
             for (member in context.members) {
-                context.pattern.calculate(
-                    member.targetVector,
-                    context.assignments[member.id] ?: 0,
-                    min(context.slots, context.members.size),
-                    spacing,
-                    context.leader.speed(),
-                )
+                context.pattern.calculate(context, member.targetVector, context.assignments[member.id] ?: 0)
                 member.targetVector.add(player)
             }
 
