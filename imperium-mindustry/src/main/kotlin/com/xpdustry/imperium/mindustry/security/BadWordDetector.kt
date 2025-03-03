@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.collection.CharTrieMap
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.io.path.inputStream
@@ -29,7 +30,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.ahocorasick.trie.PayloadTrie
 
 interface BadWordDetector {
 
@@ -44,7 +44,7 @@ enum class Category {
 
 class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, ImperiumApplication.Listener {
 
-    private lateinit var trie: PayloadTrie<Category>
+    private val trie = CharTrieMap.create<Category>()
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun onImperiumInit() {
@@ -59,7 +59,6 @@ class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, I
                 }
                 val temp = Files.createTempFile("imperium", ".zip")
                 temp.outputStream().use { out -> response.body!!.byteStream().copyTo(out) }
-                val builder = PayloadTrie.builder<Category>().ignoreCase()
                 FileSystems.newFileSystem(temp, null as ClassLoader?).use { fs ->
                     fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach { entry ->
                         entry.inputStream().use {
@@ -71,25 +70,24 @@ class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, I
                                         "strong" -> Category.STRONG_LANGUAGE
                                         else -> continue
                                     }
-                                category.words.forEach { word -> builder.addKeyword(word, parsed) }
+                                category.words.forEach { word -> trie.put(word.lowercase().toCharArray(), parsed) }
                             }
                         }
                     }
                 }
-                trie = builder.build()
             }
     }
 
     override fun findBadWords(text: String, categories: Set<Category>) =
         trie
-            .parseText(text)
+            .search(text.lowercase())
             .filter {
-                it.payload in categories &&
-                    (it.keyword.length >= 5 ||
-                        (text.getOrNull(it.start - 1)?.isWhitespace() ?: true &&
-                            text.getOrNull(it.end + 1)?.isWhitespace() ?: true))
+                it.value in categories &&
+                    (it.word.length >= 5 ||
+                        (text.getOrNull(it.index - 1)?.isWhitespace() ?: true &&
+                            text.getOrNull(it.index + it.word.length)?.isWhitespace() ?: true))
             }
-            .map { it.keyword }
+            .map { it.word }
 
     @Serializable private data class BadWordCategory(val category: String, val words: Set<String>)
 }
