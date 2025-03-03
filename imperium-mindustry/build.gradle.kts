@@ -140,6 +140,10 @@ tasks.register<MindustryExec>("runMindustryDesktop2") {
     configureDesktop()
 }
 
+tasks.withType<MindustryExec> {
+    jvmArguments.add("--enable-preview")
+}
+
 val pluginLibs = fileTree("libs") { include("*.jar") }
 
 tasks.runMindustryServer {
