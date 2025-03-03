@@ -17,15 +17,15 @@
  */
 package com.xpdustry.imperium.common.user
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Identity
+import jakarta.inject.Inject
 import java.net.InetAddress
 import java.time.Instant
 import kotlinx.coroutines.sync.Mutex
@@ -63,8 +63,7 @@ interface UserManager {
     suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean)
 }
 
-class SimpleUserManager(private val provider: SQLProvider, private val messenger: Messenger) :
-    UserManager, ImperiumApplication.Listener {
+class SimpleUserManager @Inject constructor(private val provider: SQLProvider) : UserManager, LifecycleListener {
     private val userCreateMutex = Mutex()
 
     override fun onImperiumInit() {

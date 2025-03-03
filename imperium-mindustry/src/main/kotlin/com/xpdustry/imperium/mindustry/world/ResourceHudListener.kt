@@ -23,13 +23,12 @@ import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.popup.PopupManager
 import com.xpdustry.distributor.api.gui.popup.PopupPane.AlignementX
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
@@ -40,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.component3
 import com.xpdustry.imperium.mindustry.misc.getItemIcon
+import jakarta.inject.Inject
 import java.awt.Color
 import kotlin.math.abs
 import kotlin.math.absoluteValue
@@ -52,11 +52,12 @@ import mindustry.gen.Player
 import mindustry.type.Item
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 
-class ResourceHudListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val users = instances.get<UserManager>()
+class ResourceHudListener
+@Inject
+constructor(private val users: UserManager, private val config: ImperiumConfig, plugin: MindustryPlugin) :
+    LifecycleListener {
     private val teams = mutableMapOf<Team, ResourceTracker>()
-    private val config = instances.get<ImperiumConfig>()
-    private val popup = PopupManager.create(instances.get())
+    private val popup = PopupManager.create(plugin)
 
     init {
         popup.addTransformer { (pane, _, viewer) ->

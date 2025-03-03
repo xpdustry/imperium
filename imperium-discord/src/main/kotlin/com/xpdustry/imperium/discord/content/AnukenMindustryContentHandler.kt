@@ -41,10 +41,12 @@ import arc.util.io.Reads
 import arc.util.io.Writes
 import arc.util.serialization.Base64Coder
 import com.google.common.cache.CacheBuilder
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import jakarta.inject.Inject
+import jakarta.inject.Named
 import java.awt.Graphics2D
 import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
@@ -99,8 +101,10 @@ import mindustry.world.blocks.legacy.LegacyBlock
 
 // The base code is from Anuken/CoreBot, rewritten in kotlin and modified to be able to run in a
 // multithreaded environment.
-class AnukenMindustryContentHandler(directory: Path, private val config: ImperiumConfig) :
-    MindustryContentHandler, ImperiumApplication.Listener {
+class AnukenMindustryContentHandler
+@Inject
+constructor(@Named("directory") directory: Path, private val config: ImperiumConfig) :
+    MindustryContentHandler, LifecycleListener {
     private var currentSchematicGraphics: Graphics2D? = null
     private var currentSchematicImage: BufferedImage? = null
 

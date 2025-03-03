@@ -22,11 +22,11 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
 import com.xpdustry.distributor.api.key.KeyContainer
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.function
 import com.xpdustry.imperium.common.misc.MindustryUUID
@@ -45,6 +45,7 @@ import com.xpdustry.imperium.mindustry.history.config.POWER_NODE_CONFIGURATION_F
 import com.xpdustry.imperium.mindustry.history.config.UNIT_FACTORY_CONFIGURATION_FACTORY
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import jakarta.inject.Inject
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.superclasses
@@ -81,13 +82,15 @@ fun List<HistoryEntry>.normalize(limit: Int) =
         .take(limit)
         .toList()
 
-class SimpleHistorian(
+class SimpleHistorian
+@Inject
+constructor(
     private val imperium: ImperiumConfig,
     private val config: ImperiumConfig,
     private val users: UserManager,
     private val renderer: HistoryRenderer,
     private val messenger: Messenger,
-) : Historian, ImperiumApplication.Listener {
+) : Historian, LifecycleListener {
     private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
     private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()
     private val providers = mutableMapOf<KClass<out Building>, BlockConfig.Provider<*>>()

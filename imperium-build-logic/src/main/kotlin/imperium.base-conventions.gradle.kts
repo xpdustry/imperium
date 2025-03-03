@@ -51,6 +51,10 @@ dependencies {
 }
 
 spotless {
+    java {
+        palantirJavaFormat()
+        formatAnnotations()
+    }
     kotlin {
         ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
         licenseHeader(toLongComment(rootProject.file("LICENSE_HEADER.md").readText()))

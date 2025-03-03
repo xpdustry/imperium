@@ -46,6 +46,7 @@ private val SUPPORTED_LANGUAGE =
         Locale.forLanguageTag("hr"),
     )
 
+@JvmRecord
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
@@ -62,6 +63,7 @@ data class ImperiumConfig(
     val metrics: MetricConfig = MetricConfig.None,
 )
 
+@JvmRecord
 data class NetworkConfig(
     val vpnDetection: VpnDetectionConfig = VpnDetectionConfig.None,
     val discoveryInterval: Duration = 10.seconds,
