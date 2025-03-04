@@ -9,8 +9,6 @@ public interface ObjectFactory {
         return new GuiceObjectFactory(modules);
     }
 
-    void initialize() throws ObjectFactoryInitializationException;
-
     List<Object> objects();
 
     <T> T get(final Class<T> type, final @Nullable String name);

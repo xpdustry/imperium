@@ -24,8 +24,9 @@ import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.lifecycle.ExitService
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.lifecycle.LifecycleService
+import com.xpdustry.imperium.common.lifecycle.PlatformExitCode
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.misc.Embed
@@ -43,7 +44,7 @@ class ServerCommand
 constructor(
     private val discovery: Discovery,
     private val tracker: PlayerTracker,
-    private val exit: ExitService,
+    private val lifecycle: LifecycleService,
     private val messenger: Messenger,
     private val codec: IdentifierCodec,
 ) : LifecycleListener {
@@ -109,7 +110,7 @@ constructor(
         val reply = interaction.deferReply(false).await()
         if (server == "discord") {
             reply.sendMessage("Restarting discord bot.").await()
-            exit.exit(action.toExitStatus())
+            lifecycle.exit(action.toExitStatus())
             return
         }
         if (server != null && discovery.servers[server] == null) {
@@ -128,7 +129,7 @@ constructor(
     @ImperiumCommand(["exit"], Rank.OWNER)
     suspend fun onExit(interaction: SlashCommandInteraction) {
         interaction.reply("Exiting...").await()
-        exit.exit(ExitService.Code.SUCCESS)
+        lifecycle.exit(PlatformExitCode.SUCCESS)
     }
 
     private fun createPlayerListEmbed(

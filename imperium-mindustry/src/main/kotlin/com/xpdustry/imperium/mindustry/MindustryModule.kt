@@ -22,7 +22,7 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.factory.ObjectBinder
 import com.xpdustry.imperium.common.factory.ObjectModule
-import com.xpdustry.imperium.common.lifecycle.ExitService
+import com.xpdustry.imperium.common.lifecycle.PlatformExitService
 import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
@@ -45,7 +45,7 @@ import java.util.concurrent.Executor
 
 class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
     override fun configure(binder: ObjectBinder) {
-        binder.bind(ExitService::class.java).toImpl(MindustryExitService::class.java)
+        binder.bind(PlatformExitService::class.java).toImpl(MindustryExitService::class.java)
         binder.bind(MindustryPlugin::class.java).toInst(plugin)
         binder.bind(ImperiumVersion::class.java).toInst(ImperiumVersion.parse(plugin.metadata.version))
         binder.bind(Historian::class.java).toImpl(SimpleHistorian::class.java)
