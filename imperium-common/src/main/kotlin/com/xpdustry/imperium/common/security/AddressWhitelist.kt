@@ -17,9 +17,10 @@
  */
 package com.xpdustry.imperium.common.security
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.exists
+import jakarta.inject.Inject
 import java.net.InetAddress
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
@@ -38,7 +39,8 @@ interface AddressWhitelist {
 
 typealias AddressWithReason = Pair<InetAddress, String>
 
-class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhitelist, ImperiumApplication.Listener {
+class SimpleAddressWhitelist @Inject constructor(private val provider: SQLProvider) :
+    AddressWhitelist, LifecycleListener {
 
     override fun onImperiumInit() {
         provider.newTransaction { SchemaUtils.create(AddressWhitelistTable) }

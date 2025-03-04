@@ -1,8 +1,7 @@
 package com.xpdustry.imperium.common.collection;
 
-import org.jspecify.annotations.Nullable;
-
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 public interface CharTrieMap<V> {
 
@@ -16,7 +15,7 @@ public interface CharTrieMap<V> {
 
     List<Token<V>> search(final String text);
 
-    record Token<V>(String word, int index, V value) { }
+    record Token<V>(String word, int index, V value) {}
 
     interface Mutable<V> extends CharTrieMap<V> {
 

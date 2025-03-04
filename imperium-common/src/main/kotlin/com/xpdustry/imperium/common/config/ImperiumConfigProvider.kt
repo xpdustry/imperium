@@ -17,22 +17,23 @@
  */
 package com.xpdustry.imperium.common.config
 
+import com.google.inject.name.Named
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigFailure
 import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.sksamuel.hoplite.fp.getOrElse
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.InstanceProvider
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import jakarta.inject.Inject
 import java.nio.file.Path
 
-object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
+class ImperiumConfigProvider @Inject constructor(@param:Named("directory") private val directory: Path) :
+    com.google.inject.Provider<ImperiumConfig> {
+
     private val logger by LoggerDelegate()
 
-    override fun create(instances: InstanceManager) =
+    override fun get() =
         ConfigLoaderBuilder.empty()
             .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
             .addDefaultDecoders()
@@ -41,7 +42,7 @@ object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addParameterMapper(KebabCaseParamMapper)
             .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-            .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
+            .addPathSource(directory.resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
             .strict()
             .withReport()

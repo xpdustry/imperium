@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.common.account
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -32,6 +32,7 @@ import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
+import jakarta.inject.Inject
 import java.security.MessageDigest
 import java.time.Instant
 import kotlin.time.Duration
@@ -96,11 +97,10 @@ interface AccountManager {
 
 @Serializable data class AchievementCompletedMessage(val account: Int, val achievement: Achievement) : Message
 
-class SimpleAccountManager(
-    private val provider: SQLProvider,
-    private val messenger: Messenger,
-    private val config: ImperiumConfig,
-) : AccountManager, ImperiumApplication.Listener {
+class SimpleAccountManager
+@Inject
+constructor(private val provider: SQLProvider, private val messenger: Messenger, private val config: ImperiumConfig) :
+    AccountManager, LifecycleListener {
 
     override fun onImperiumInit() {
         provider.newTransaction {

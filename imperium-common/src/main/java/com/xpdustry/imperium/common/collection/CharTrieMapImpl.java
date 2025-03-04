@@ -2,7 +2,6 @@ package com.xpdustry.imperium.common.collection;
 
 import gnu.trove.map.TCharObjectMap;
 import gnu.trove.map.hash.TCharObjectHashMap;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -89,9 +88,7 @@ final class CharTrieMapImpl<V> implements CharTrieMap.Mutable<V> {
             while (iterator.hasNext()) {
                 final var accumulator = iterator.next();
 
-                final var child = accumulator.node.children == null
-                        ? null
-                        : accumulator.node.children.get(c);
+                final var child = accumulator.node.children == null ? null : accumulator.node.children.get(c);
                 if (child == null) {
                     iterator.remove();
                     continue;
@@ -113,6 +110,7 @@ final class CharTrieMapImpl<V> implements CharTrieMap.Mutable<V> {
         private CharTrieMapImpl<V> node;
         private final int index;
         private final StringBuilder buffer = new StringBuilder();
+
         private Accumulator(final CharTrieMapImpl<V> node, final int index) {
             this.node = node;
             this.index = index;

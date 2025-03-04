@@ -24,12 +24,12 @@ import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializablePolygon
@@ -57,7 +57,7 @@ import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.WorldLabel
 
-class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class HubListener(instances: InstanceManager) : LifecycleListener {
 
     private val config = instances.get<ImperiumConfig>().mindustry.hub
     private val directory = instances.get<Path>("directory").resolve("hub")

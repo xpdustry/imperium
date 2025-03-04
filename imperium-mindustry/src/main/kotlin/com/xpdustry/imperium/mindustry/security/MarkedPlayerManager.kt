@@ -18,8 +18,9 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import jakarta.inject.Inject
 import mindustry.gen.Player
 
 interface MarkedPlayerManager {
@@ -28,7 +29,7 @@ interface MarkedPlayerManager {
     fun mark(player: Player)
 }
 
-class SimpleMarkedPlayerManager(plugin: MindustryPlugin) : MarkedPlayerManager, ImperiumApplication.Listener {
+class SimpleMarkedPlayerManager @Inject constructor(plugin: MindustryPlugin) : MarkedPlayerManager, LifecycleListener {
     private val marked = PlayerMap<Boolean>(plugin)
 
     override fun isMarked(player: Player): Boolean = marked[player] ?: false

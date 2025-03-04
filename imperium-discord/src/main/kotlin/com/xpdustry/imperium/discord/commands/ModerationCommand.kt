@@ -18,12 +18,10 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -33,14 +31,18 @@ import com.xpdustry.imperium.discord.command.annotation.Range
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.identity
+import jakarta.inject.Inject
 import kotlin.time.Duration
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
-    private val renderer = instances.get<TimeRenderer>()
-    private val codec = instances.get<IdentifierCodec>()
+class ModerationCommand
+@Inject
+constructor(
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val renderer: TimeRenderer,
+    private val codec: IdentifierCodec,
+) : LifecycleListener {
 
     @ImperiumCommand(["punishment", "list"], Rank.MODERATOR)
     suspend fun onPunishmentListCommand(

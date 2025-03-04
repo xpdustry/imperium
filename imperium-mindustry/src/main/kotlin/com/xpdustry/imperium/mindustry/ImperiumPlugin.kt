@@ -29,13 +29,13 @@ import com.xpdustry.distributor.api.translation.BundleTranslationSource
 import com.xpdustry.distributor.api.translation.ResourceBundles
 import com.xpdustry.distributor.api.translation.TranslationSource
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.application.BaseImperiumApplication
-import com.xpdustry.imperium.common.application.ExitStatus
+import com.xpdustry.imperium.common.CommonModule
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.registerApplication
-import com.xpdustry.imperium.common.registerCommonModule
+import com.xpdustry.imperium.common.factory.ObjectFactory
+import com.xpdustry.imperium.common.factory.ObjectFactoryInitializationException
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
@@ -95,7 +95,6 @@ import com.xpdustry.imperium.mindustry.world.WorldEditCommand
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
-import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.core.GameState
@@ -106,7 +105,7 @@ import mindustry.net.Administration
 import mindustry.server.ServerControl
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
-    private val application = MindustryImperiumApplication()
+    private val listeners = mutableListOf<LifecycleListener>()
 
     override fun onInit() {
         if (getMindustryVersion().build < 147) {
@@ -117,16 +116,25 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        with(application.instances) {
-            registerApplication(application)
-            registerCommonModule()
-            registerMindustryModule(this@ImperiumPlugin)
-            createAll()
+        val factory = ObjectFactory.create(CommonModule(), MindustryModule(this))
+
+        try {
+            factory.initialize()
+            for (obj in factory.objects()) {
+                if (obj is LifecycleListener) {
+                    obj.onImperiumInit()
+                    listeners += obj
+                }
+            }
+        } catch (e: ObjectFactoryInitializationException) {
+            logger.error("Failed to initialize object factory", e)
+            Core.app.exit()
+            return
         }
 
         registerService(
             TranslationSource::class,
-            BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language).apply {
+            BundleTranslationSource.create(factory.get(ImperiumConfig::class.java).language).apply {
                 registerAll(
                     ResourceBundles.fromClasspathDirectory(
                         ImperiumPlugin::class.java,
@@ -140,7 +148,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         registerService(
             ComponentRendererProvider::class,
-            ImperiumComponentRendererProvider(application.instances.get()),
+            ImperiumComponentRendererProvider(factory.get(TimeRenderer::class.java)),
         )
 
         sequenceOf(
@@ -192,30 +200,28 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 DayNighCycleListener::class,
                 ImperiumPermissionListener::class,
             )
-            .forEach(application::register)
+            .forEach { listeners += factory.get(it.java).apply { onImperiumInit() } }
 
-        val gamemode = application.instances.get<ImperiumConfig>().mindustry.gamemode
+        val gamemode = factory.get(ImperiumConfig::class.java).mindustry.gamemode
         if (gamemode == MindustryGamemode.HUB) {
-            application.register(HubListener::class)
+            listeners += factory.get(HubListener::class.java).apply { onImperiumInit() }
         } else {
             Core.settings.remove("totalPlayers")
         }
 
-        application.init()
-
         val processor =
             PluginAnnotationProcessor.compose(
-                CommandAnnotationScanner(this, application.instances.get()),
+                CommandAnnotationScanner(this, factory.get(ImperiumConfig::class.java)),
                 PluginAnnotationProcessor.tasks(this),
                 PluginAnnotationProcessor.events(this),
                 PluginAnnotationProcessor.triggers(this),
             )
 
-        application.listeners.forEach(processor::process)
+        listeners.forEach(processor::process)
 
         runBlocking {
-            application.instances
-                .get<WebhookMessageSender>()
+            factory
+                .get(WebhookMessageSender::class.java)
                 .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server has started."))
         }
 
@@ -223,7 +229,9 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     }
 
     override fun onExit() {
-        application.exit(ExitStatus.EXIT)
+        for (listener in listeners.reversed()) {
+            listener.onImperiumExit()
+        }
     }
 
     private fun <T : Any> registerService(klass: KClass<T>, instance: T) {
@@ -274,37 +282,4 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             }
         }
     }
-
-    private inner class MindustryImperiumApplication : BaseImperiumApplication(logger) {
-        private var exited = false
-
-        override fun exit(status: ExitStatus) {
-            if (exited) return
-            exited = true
-            runBlocking {
-                instances
-                    .get<WebhookMessageSender>()
-                    .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server is exiting with $status code."))
-            }
-            super.exit(status)
-            when (status) {
-                ExitStatus.EXIT,
-                ExitStatus.INIT_FAILURE -> Core.app.exit()
-                ExitStatus.RESTART -> Core.app.restart()
-            }
-        }
-    }
-}
-
-// Very hacky way to restart the server
-private fun Application.restart() {
-    exit()
-    addListener(
-        object : ApplicationListener {
-            override fun dispose() {
-                Core.settings.autosave()
-                exitProcess(2)
-            }
-        }
-    )
 }

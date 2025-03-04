@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
+import com.google.inject.Inject
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.component.TextComponent.text
@@ -28,10 +29,8 @@ import com.xpdustry.imperium.common.account.Account
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.user.User
@@ -53,11 +52,11 @@ import mindustry.gen.Call
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 
-class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val accounts = instances.get<AccountManager>()
-    private val users = instances.get<UserManager>()
+class AccountListener
+@Inject
+constructor(private val accounts: AccountManager, private val users: UserManager, private val messenger: Messenger) :
+    LifecycleListener {
     private val playtime = ConcurrentHashMap<Player, Long>()
-    private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
         messenger.consumer<AchievementCompletedMessage> { message ->
