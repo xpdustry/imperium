@@ -17,10 +17,10 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.collection.CharTrieMap
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.string.StringTrieMap
 import jakarta.inject.Inject
 import java.nio.file.FileSystems
 import java.nio.file.Files
@@ -48,7 +48,7 @@ enum class Category {
 class SimpleBadWordDetector @Inject constructor(private val http: OkHttpClient, private val config: ImperiumConfig) :
     BadWordDetector, LifecycleListener {
 
-    private val trie = CharTrieMap.create<Category>()
+    private val trie = StringTrieMap.create<Category>()
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun onImperiumInit() {
@@ -75,7 +75,7 @@ class SimpleBadWordDetector @Inject constructor(private val http: OkHttpClient, 
                                             "strong" -> Category.STRONG_LANGUAGE
                                             else -> continue
                                         }
-                                    category.words.forEach { word -> trie.put(word.lowercase().toCharArray(), parsed) }
+                                    category.words.forEach { word -> trie.put(word.lowercase(), parsed) }
                                 }
                             }
                         }
