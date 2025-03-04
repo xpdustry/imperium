@@ -159,6 +159,7 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
         if (account != null) {
             slots =
                 when {
+                    accounts.selectAchievement(account.id, Achievement.SUPPORTER) -> 18
                     accounts.selectAchievement(account.id, Achievement.HYPER) -> 18
                     accounts.selectAchievement(account.id, Achievement.ACTIVE) -> 12
                     account.rank >= Rank.VERIFIED -> 8
