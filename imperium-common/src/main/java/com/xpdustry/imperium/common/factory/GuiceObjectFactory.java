@@ -1,6 +1,5 @@
 package com.xpdustry.imperium.common.factory;
 
-import com.google.common.base.Preconditions;
 import com.google.inject.*;
 import com.google.inject.Binder;
 import com.google.inject.Module;
@@ -10,38 +9,28 @@ import com.google.inject.name.Names;
 import com.google.inject.spi.ProvisionListener;
 import jakarta.inject.Provider;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 final class GuiceObjectFactory implements ObjectFactory {
 
-    private final List<ObjectModule> modules;
-    private List<Object> objects = List.of();
-    private @Nullable Injector injector = null;
+    private final Injector injector;
+    private final List<Object> objects;
 
     public GuiceObjectFactory(final ObjectModule... modules) {
-        this.modules = List.of(modules);
-    }
-
-    @Override
-    public <T> T get(final Class<T> clazz, final String name) {
-        Preconditions.checkState(this.injector != null, "Objects are not linked yet");
-        final var key = name == null ? Key.get(clazz) : Key.get(clazz, Names.named(name));
-        return this.injector.getInstance(key);
-    }
-
-    @Override
-    public void initialize() throws ObjectFactoryInitializationException {
-        Preconditions.checkState(this.injector == null, "The factory is already initialized");
         final var collector = new ResolvedObjectCollector();
         try {
-            this.injector = Guice.createInjector(Stage.PRODUCTION, new ModuleProxy(this.modules, collector));
-        } catch (final CreationException e) {
-            throw new ObjectFactoryInitializationException(e);
-        } finally {
+            this.injector = Guice.createInjector(Stage.PRODUCTION, new ModuleProxy(Arrays.asList(modules), collector));
             this.objects = List.copyOf(collector.resolved);
+        } finally {
             collector.close();
         }
+    }
+
+    @Override
+    public <T> T get(final Class<T> type, final String name) {
+        return this.injector.getInstance(name == null ? Key.get(type) : Key.get(type, Names.named(name)));
     }
 
     @Override
@@ -62,8 +51,8 @@ final class GuiceObjectFactory implements ObjectFactory {
         }
 
         public void close() {
-            this.resolved.clear();
             this.closed = true;
+            this.resolved.clear();
         }
     }
 
@@ -99,8 +88,8 @@ final class GuiceObjectFactory implements ObjectFactory {
             }
 
             @Override
-            public void toImpl(final Class<? extends T> clazz) {
-                this.builder().to(clazz).asEagerSingleton();
+            public void toImpl(final Class<? extends T> type) {
+                this.builder().to(type).asEagerSingleton();
             }
 
             @Override
@@ -109,8 +98,8 @@ final class GuiceObjectFactory implements ObjectFactory {
             }
 
             @Override
-            public void toProv(final Class<? extends Provider<? extends T>> clazz) {
-                this.builder().toProvider(clazz).asEagerSingleton();
+            public void toProv(final Class<? extends Provider<? extends T>> type) {
+                this.builder().toProvider(type).asEagerSingleton();
             }
 
             @Override

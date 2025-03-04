@@ -139,6 +139,7 @@ data class DiscordConfig(
     data class Channels(val notifications: Long = 0, val maps: Long = 0, val reports: Long = 0)
 }
 
+@JvmRecord
 data class MindustryConfig(
     val gamemode: MindustryGamemode = MindustryGamemode.SURVIVAL,
     val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),

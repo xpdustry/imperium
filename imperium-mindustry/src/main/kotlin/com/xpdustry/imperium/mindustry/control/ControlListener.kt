@@ -23,8 +23,8 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
-import com.xpdustry.imperium.common.lifecycle.ExitService
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.lifecycle.LifecycleService
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -42,8 +42,11 @@ import mindustry.game.EventType.GameOverEvent
 
 class ControlListener
 @Inject
-constructor(private val config: ImperiumConfig, private val messenger: Messenger, private val exit: ExitService) :
-    LifecycleListener {
+constructor(
+    private val config: ImperiumConfig,
+    private val messenger: Messenger,
+    private val lifecycle: LifecycleService,
+) : LifecycleListener {
 
     private var job: Job? = null
         set(value) {
@@ -67,7 +70,7 @@ constructor(private val config: ImperiumConfig, private val messenger: Messenger
             job =
                 ImperiumScope.MAIN.launch {
                     delay(10.seconds)
-                    exit.exit(action.toExitStatus())
+                    lifecycle.exit(action.toExitStatus())
                 }
         } else if (config.mindustry.gamemode.pvp) {
             everyone.sendMessage(server_restart_game_over(reason))
@@ -75,7 +78,7 @@ constructor(private val config: ImperiumConfig, private val messenger: Messenger
                 job =
                     ImperiumScope.MAIN.launch {
                         delay(5.seconds)
-                        exit.exit(action.toExitStatus())
+                        lifecycle.exit(action.toExitStatus())
                     }
             }
         } else if (config.mindustry.gamemode == MindustryGamemode.HUB) {
@@ -83,14 +86,14 @@ constructor(private val config: ImperiumConfig, private val messenger: Messenger
             job =
                 ImperiumScope.MAIN.launch {
                     delay(10.seconds)
-                    exit.exit(action.toExitStatus())
+                    lifecycle.exit(action.toExitStatus())
                 }
         } else {
             everyone.sendMessage(server_restart_delay(reason, 5.minutes))
             job =
                 ImperiumScope.MAIN.launch {
                     delay(5.minutes)
-                    exit.exit(action.toExitStatus())
+                    lifecycle.exit(action.toExitStatus())
                 }
         }
     }

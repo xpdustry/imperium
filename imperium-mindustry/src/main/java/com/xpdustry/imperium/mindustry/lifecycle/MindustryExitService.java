@@ -2,14 +2,15 @@ package com.xpdustry.imperium.mindustry.lifecycle;
 
 import arc.ApplicationListener;
 import arc.Core;
-import com.xpdustry.imperium.common.lifecycle.ExitService;
+import com.xpdustry.imperium.common.lifecycle.PlatformExitCode;
+import com.xpdustry.imperium.common.lifecycle.PlatformExitService;
 
-public final class MindustryExitService implements ExitService {
+public final class MindustryExitService implements PlatformExitService {
 
     @Override
-    public synchronized void exit(final Code code) {
+    public void exit(final PlatformExitCode code) {
         Core.app.exit();
-        if (code == Code.RESTART) {
+        if (code == PlatformExitCode.RESTART) {
             Core.app.addListener(new ApplicationListener() {
                 @Override
                 public void dispose() {
@@ -18,12 +19,5 @@ public final class MindustryExitService implements ExitService {
                 }
             });
         }
-        /*
-           runBlocking {
-               instances
-                   .get<WebhookMessageSender>()
-                   .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server is exiting with $status code."))
-           }
-        */
     }
 }

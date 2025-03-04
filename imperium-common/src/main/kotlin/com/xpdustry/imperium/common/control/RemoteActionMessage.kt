@@ -17,7 +17,7 @@
  */
 package com.xpdustry.imperium.common.control
 
-import com.xpdustry.imperium.common.lifecycle.ExitService.Code
+import com.xpdustry.imperium.common.lifecycle.PlatformExitCode
 import com.xpdustry.imperium.common.message.Message
 import kotlinx.serialization.Serializable
 
@@ -31,6 +31,6 @@ data class RemoteActionMessage(val target: String?, val action: Action, val imme
 
 fun RemoteActionMessage.Action.toExitStatus() =
     when (this) {
-        RemoteActionMessage.Action.EXIT -> Code.SUCCESS
-        RemoteActionMessage.Action.RESTART -> Code.RESTART
+        RemoteActionMessage.Action.EXIT -> PlatformExitCode.SUCCESS
+        RemoteActionMessage.Action.RESTART -> PlatformExitCode.RESTART
     }

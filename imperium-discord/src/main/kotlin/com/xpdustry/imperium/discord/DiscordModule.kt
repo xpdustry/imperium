@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.discord
 
-import com.xpdustry.imperium.backend.lifecycle.BackendExitService
+import com.xpdustry.imperium.backend.lifecycle.SystemExitService
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.factory.ObjectBinder
 import com.xpdustry.imperium.common.factory.ObjectModule
-import com.xpdustry.imperium.common.lifecycle.ExitService
+import com.xpdustry.imperium.common.lifecycle.PlatformExitService
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.version.ImperiumVersion
@@ -39,7 +39,7 @@ import kotlin.io.path.Path
 
 class DiscordModule : ObjectModule {
     override fun configure(binder: ObjectBinder) {
-        binder.bind(ExitService::class.java).toImpl(BackendExitService::class.java)
+        binder.bind(PlatformExitService::class.java).toImpl(SystemExitService::class.java)
         binder.bind(PlayerTracker::class.java).toImpl(RequestingPlayerTracker::class.java)
         binder.bind(DiscordService::class.java).toImpl(SimpleDiscordService::class.java)
         binder.bind(Path::class.java).named("directory").toInst(Path("."))
