@@ -13,13 +13,13 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jspecify.annotations.Nullable;
 
-final class GuavaObjectFactory implements ObjectFactory {
+final class GuiceObjectFactory implements ObjectFactory {
 
     private final List<ObjectModule> modules;
     private List<Object> objects = List.of();
     private @Nullable Injector injector = null;
 
-    public GuavaObjectFactory(final ObjectModule... modules) {
+    public GuiceObjectFactory(final ObjectModule... modules) {
         this.modules = List.of(modules);
     }
 
@@ -33,13 +33,14 @@ final class GuavaObjectFactory implements ObjectFactory {
     @Override
     public void initialize() throws ObjectFactoryInitializationException {
         Preconditions.checkState(this.injector == null, "The factory is already initialized");
-        final var collector = new ResolvedInstanceCollector();
+        final var collector = new ResolvedObjectCollector();
         try {
             this.injector = Guice.createInjector(Stage.PRODUCTION, new ModuleProxy(this.modules, collector));
         } catch (final CreationException e) {
             throw new ObjectFactoryInitializationException(e);
         } finally {
             this.objects = List.copyOf(collector.resolved);
+            collector.close();
         }
     }
 
@@ -48,13 +49,21 @@ final class GuavaObjectFactory implements ObjectFactory {
         return this.objects;
     }
 
-    private static final class ResolvedInstanceCollector implements ProvisionListener {
+    private static final class ResolvedObjectCollector implements ProvisionListener {
 
         private final List<Object> resolved = new ArrayList<>();
+        private boolean closed = false;
 
         @Override
         public <T> void onProvision(final ProvisionInvocation<T> provision) {
-            this.resolved.add(provision.provision());
+            if (!this.closed) {
+                this.resolved.add(provision.provision());
+            }
+        }
+
+        public void close() {
+            this.resolved.clear();
+            this.closed = true;
         }
     }
 
@@ -64,27 +73,27 @@ final class GuavaObjectFactory implements ObjectFactory {
         public void configure(final Binder binder) {
             binder.disableCircularProxies();
             binder.bindListener(Matchers.any(), this.listener);
-            final var guice = new GuavaObjectBinder(binder);
+            final var guice = new GuiceObjectBinder(binder);
             for (final var module : this.modules) {
                 module.configure(guice);
             }
         }
     }
 
-    private record GuavaObjectBinder(Binder binder) implements ObjectBinder {
+    private record GuiceObjectBinder(Binder binder) implements ObjectBinder {
 
         @Override
         public <T> BindingBuilder<T> bind(final Class<T> type) {
-            return new GuavaBindingBuilder<>(this.binder, type);
+            return new GuiceBindingBuilder<>(this.binder, type);
         }
 
-        private static final class GuavaBindingBuilder<T> implements ObjectBinder.BindingBuilder<T> {
+        private static final class GuiceBindingBuilder<T> implements ObjectBinder.BindingBuilder<T> {
 
             private final Binder binder;
             private final Class<T> type;
             private @Nullable String name;
 
-            private GuavaBindingBuilder(final Binder binder, final Class<T> type) {
+            private GuiceBindingBuilder(final Binder binder, final Class<T> type) {
                 this.binder = binder;
                 this.type = type;
             }

@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
 public interface ObjectFactory {
 
     static ObjectFactory create(final ObjectModule... modules) {
-        return new GuavaObjectFactory(modules);
+        return new GuiceObjectFactory(modules);
     }
 
     void initialize() throws ObjectFactoryInitializationException;
