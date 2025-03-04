@@ -27,11 +27,8 @@ import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.password.ImperiumHashFunctionV1
 import com.xpdustry.imperium.common.password.PasswordHash
 import com.xpdustry.imperium.common.password.PasswordHashFunction
-import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
-import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
-import com.xpdustry.imperium.common.security.UsernameRequirement
-import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
-import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
+import com.xpdustry.imperium.common.string.CharArrayString
+import com.xpdustry.imperium.common.string.StringRequirement
 import jakarta.inject.Inject
 import java.security.MessageDigest
 import java.time.Instant
@@ -201,7 +198,10 @@ constructor(private val provider: SQLProvider, private val messenger: Messenger,
                 return@newSuspendTransaction AccountResult.WrongPassword
             }
 
-            val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(newPassword)
+            val missing =
+                StringRequirement.DEFAULT_PASSWORD_REQUIREMENTS.filterNot {
+                    it.isSatisfiedBy(CharArrayString(oldPassword))
+                }
             if (missing.isNotEmpty()) {
                 return@newSuspendTransaction AccountResult.InvalidPassword(missing)
             }
@@ -291,17 +291,19 @@ constructor(private val provider: SQLProvider, private val messenger: Messenger,
 
             val hashUsr = MessageDigest.getInstance("SHA-256").digest(username.toByteArray())
             if (LegacyAccountTable.exists { LegacyAccountTable.usernameHash eq hashUsr }) {
-                return@newSuspendTransaction AccountResult.InvalidUsername(
-                    listOf(UsernameRequirement.Reserved(username))
-                )
+                return@newSuspendTransaction AccountResult.AlreadyRegistered
             }
 
-            val missingPwdRequirements = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
+            val missingPwdRequirements =
+                StringRequirement.DEFAULT_PASSWORD_REQUIREMENTS.filterNot {
+                    it.isSatisfiedBy(CharArrayString(password))
+                }
             if (missingPwdRequirements.isNotEmpty()) {
                 return@newSuspendTransaction AccountResult.InvalidPassword(missingPwdRequirements)
             }
 
-            val missingUsrRequirements = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(username)
+            val missingUsrRequirements =
+                StringRequirement.DEFAULT_USERNAME_REQUIREMENTS.filterNot { it.isSatisfiedBy(username) }
             if (missingUsrRequirements.isNotEmpty()) {
                 return@newSuspendTransaction AccountResult.InvalidUsername(missingUsrRequirements)
             }
