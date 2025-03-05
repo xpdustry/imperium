@@ -165,7 +165,7 @@ constructor(private val plugin: MindustryPlugin, private val config: ImperiumCon
 
         if (annotation.rank != Rank.OWNER) {
             permission =
-                Permission.anyOf(permission, Permission.permission("imperium.rank.${Rank.HEAD_ADMIN.name.lowercase()}"))
+                Permission.anyOf(permission, Permission.permission("imperium.rank.${Rank.ADMIN.name.lowercase()}"))
         }
 
         return permission
