@@ -31,7 +31,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 class AccountCommand @Inject constructor(private val accounts: AccountManager, private val codec: IdentifierCodec) :
     LifecycleListener {
 
-    @ImperiumCommand(["account", "edit", "rank"], Rank.OWNER)
+    @ImperiumCommand(["account", "edit", "rank"], Rank.ADMIN)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
         val reply = interaction.deferReply(true).await()
         if (rank == Rank.OWNER) {
