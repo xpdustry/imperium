@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.database
 
-import com.google.inject.name.Named
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -25,6 +24,7 @@ import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import jakarta.inject.Inject
+import jakarta.inject.Named
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlinx.coroutines.CoroutineScope

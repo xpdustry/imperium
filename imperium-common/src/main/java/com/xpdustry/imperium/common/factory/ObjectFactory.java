@@ -9,7 +9,7 @@ public interface ObjectFactory {
         return new GuiceObjectFactory(modules);
     }
 
-    List<Object> objects();
+    <T> List<T> collect(final Class<T> type);
 
     <T> T get(final Class<T> type, final @Nullable String name);
 

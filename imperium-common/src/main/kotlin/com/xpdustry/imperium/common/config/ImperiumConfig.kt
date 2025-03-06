@@ -76,8 +76,9 @@ data class NetworkConfig(
 }
 
 sealed interface DatabaseConfig {
-    data class H2(val memory: Boolean = false, val database: String = "imperium") : DatabaseConfig
+    @JvmRecord data class H2(val memory: Boolean = false, val database: String = "imperium") : DatabaseConfig
 
+    @JvmRecord
     data class MariaDB(
         val host: String = "localhost",
         val port: Short = 3306,
@@ -99,6 +100,7 @@ sealed interface MessengerConfig {
     ) : MessengerConfig
 }
 
+@JvmRecord
 data class ServerConfig(val name: String, val displayName: String = name.capitalize()) {
     val identity: Identity.Server
         get() = Identity.Server(name)

@@ -1,5 +1,6 @@
 package com.xpdustry.imperium.common.lifecycle;
 
+import com.xpdustry.imperium.common.factory.ObjectFactory;
 import com.xpdustry.imperium.common.webhook.WebhookChannel;
 import com.xpdustry.imperium.common.webhook.WebhookMessage;
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender;
@@ -20,11 +21,14 @@ final class LifecycleServiceImpl implements LifecycleService {
     private final AtomicBoolean exited = new AtomicBoolean(false);
 
     private final PlatformExitService exit;
+    private final ObjectFactory factory;
     private final WebhookMessageSender webhook;
 
     @Inject
-    public LifecycleServiceImpl(final PlatformExitService exit, final WebhookMessageSender webhook) {
+    public LifecycleServiceImpl(
+            final PlatformExitService exit, final ObjectFactory factory, final WebhookMessageSender webhook) {
         this.exit = exit;
+        this.factory = factory;
         this.webhook = webhook;
     }
 
@@ -34,7 +38,15 @@ final class LifecycleServiceImpl implements LifecycleService {
     }
 
     @Override
+    public void addListener(final Class<? extends LifecycleListener> listener) {
+        this.toLoad.add(this.factory.get(listener));
+    }
+
+    @Override
     public void load() {
+        for (final var listener : this.factory.collect(LifecycleListener.class).reversed()) {
+            this.toLoad.addFirst(listener);
+        }
         try {
             while (!this.toLoad.isEmpty()) {
                 final var listener = this.toLoad.removeFirst();
