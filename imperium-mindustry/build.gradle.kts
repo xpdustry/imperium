@@ -147,6 +147,7 @@ val pluginLibs = fileTree("libs") { include("*.jar") }
 
 tasks.runMindustryServer {
     mods.from(
+        tasks.shadowJar,
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,

@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.common.config
 
-import com.google.inject.name.Named
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigFailure
 import com.sksamuel.hoplite.ConfigLoaderBuilder
@@ -26,6 +25,7 @@ import com.sksamuel.hoplite.addPathSource
 import com.sksamuel.hoplite.fp.getOrElse
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import jakarta.inject.Inject
+import jakarta.inject.Named
 import java.nio.file.Path
 
 class ImperiumConfigProvider @Inject constructor(@param:Named("directory") private val directory: Path) :

@@ -72,74 +72,75 @@ import mindustry.io.SaveVersion;
 
 public final class ImperiumPlugin extends AbstractMindustryPlugin {
 
-    private LifecycleService lifecycle;
     private ObjectFactory factory;
+    private LifecycleService lifecycle;
 
     @Override
     public void onInit() {
+        this.factory = ObjectFactory.create(new CommonModule(), new MindustryModule(this), new LifecycleModule());
+        this.lifecycle = this.factory.get(LifecycleService.class);
+
         this.addListener(new EnforceAutopauseOnLoadBackport(this));
         this.addListener(new NoApplicationListenerSkipBackport());
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader.INSTANCE);
 
-        // TODO Move factory and lifecycle creation to fields
-        this.factory = ObjectFactory.create(new CommonModule(), new LifecycleModule(), new MindustryModule(this));
-        this.lifecycle = this.factory.get(LifecycleService.class);
-        for (final var object : this.factory.objects()) {
-            if (object instanceof LifecycleListener listener) {
-                this.lifecycle.addListener(listener);
-            }
-        }
-
-        this.addListener(ConventionListener.class);
-        this.addListener(GatekeeperListener.class);
-        this.addListener(AccountListener.class);
-        this.addListener(AccountCommand.class);
-        this.addListener(ChatCommand.class);
-        this.addListener(HistoryCommand.class);
-        this.addListener(BridgeChatMessageListener.class);
-        this.addListener(ReportCommand.class);
-        this.addListener(NoHornyListener.class);
-        this.addListener(AdminRequestListener.class);
-        this.addListener(PunishmentListener.class);
-        this.addListener(MapListener.class);
-        this.addListener(VoteKickCommand.class);
-        this.addListener(ExcavateCommand.class);
-        this.addListener(RockTheVoteCommand.class);
-        this.addListener(CoreBlockListener.class);
-        this.addListener(HelpCommand.class);
-        this.addListener(WaveCommand.class);
-        this.addListener(KillAllCommand.class);
-        this.addListener(DumpCommand.class);
-        this.addListener(SwitchCommand.class);
-        this.addListener(UserSettingsCommand.class);
-        this.addListener(WelcomeListener.class);
-        this.addListener(ResourceHudListener.class);
-        this.addListener(ImperiumLogicListener.class);
-        this.addListener(AntiEvadeListener.class);
-        this.addListener(GameListener.class);
-        this.addListener(TipListener.class);
-        this.addListener(RatingListener.class);
-        this.addListener(SpawnCommand.class);
-        this.addListener(WorldEditCommand.class);
-        this.addListener(HereCommand.class);
-        this.addListener(ModerationCommand.class);
-        this.addListener(AlertListener.class);
-        this.addListener(TeamCommand.class);
-        this.addListener(FormationListener.class);
-        this.addListener(ControlListener.class);
-        this.addListener(PauseListener.class);
-        this.addListener(AchievementCommand.class);
-        this.addListener(LogicListener.class);
-        this.addListener(SaveCommand.class);
-        this.addListener(AntiGriefListener.class);
-        this.addListener(FlexListener.class);
-        this.addListener(MetricsListener.class);
-        this.addListener(ChangelogCommand.class);
-        this.addListener(DayNighCycleListener.class);
-        this.addListener(ImperiumPermissionListener.class);
+        this.lifecycle.addListener(ConventionListener.class);
+        this.lifecycle.addListener(GatekeeperListener.class);
+        this.lifecycle.addListener(AccountListener.class);
+        this.lifecycle.addListener(AccountCommand.class);
+        this.lifecycle.addListener(ChatCommand.class);
+        this.lifecycle.addListener(HistoryCommand.class);
+        this.lifecycle.addListener(BridgeChatMessageListener.class);
+        this.lifecycle.addListener(ReportCommand.class);
+        this.lifecycle.addListener(NoHornyListener.class);
+        this.lifecycle.addListener(AdminRequestListener.class);
+        this.lifecycle.addListener(PunishmentListener.class);
+        this.lifecycle.addListener(MapListener.class);
+        this.lifecycle.addListener(VoteKickCommand.class);
+        this.lifecycle.addListener(ExcavateCommand.class);
+        this.lifecycle.addListener(RockTheVoteCommand.class);
+        this.lifecycle.addListener(CoreBlockListener.class);
+        this.lifecycle.addListener(HelpCommand.class);
+        this.lifecycle.addListener(WaveCommand.class);
+        this.lifecycle.addListener(KillAllCommand.class);
+        this.lifecycle.addListener(DumpCommand.class);
+        this.lifecycle.addListener(SwitchCommand.class);
+        this.lifecycle.addListener(UserSettingsCommand.class);
+        this.lifecycle.addListener(WelcomeListener.class);
+        this.lifecycle.addListener(ResourceHudListener.class);
+        this.lifecycle.addListener(ImperiumLogicListener.class);
+        this.lifecycle.addListener(AntiEvadeListener.class);
+        this.lifecycle.addListener(GameListener.class);
+        this.lifecycle.addListener(TipListener.class);
+        this.lifecycle.addListener(RatingListener.class);
+        this.lifecycle.addListener(SpawnCommand.class);
+        this.lifecycle.addListener(WorldEditCommand.class);
+        this.lifecycle.addListener(HereCommand.class);
+        this.lifecycle.addListener(ModerationCommand.class);
+        this.lifecycle.addListener(AlertListener.class);
+        this.lifecycle.addListener(TeamCommand.class);
+        this.lifecycle.addListener(FormationListener.class);
+        this.lifecycle.addListener(ControlListener.class);
+        this.lifecycle.addListener(PauseListener.class);
+        this.lifecycle.addListener(AchievementCommand.class);
+        this.lifecycle.addListener(LogicListener.class);
+        this.lifecycle.addListener(SaveCommand.class);
+        this.lifecycle.addListener(AntiGriefListener.class);
+        this.lifecycle.addListener(FlexListener.class);
+        this.lifecycle.addListener(MetricsListener.class);
+        this.lifecycle.addListener(ChangelogCommand.class);
+        this.lifecycle.addListener(DayNighCycleListener.class);
+        this.lifecycle.addListener(ImperiumPermissionListener.class);
 
         final var config = factory.get(ImperiumConfig.class);
 
+        if (config.mindustry().gamemode() == MindustryGamemode.HUB) {
+            this.lifecycle.addListener(HubListener.class);
+        } else {
+            Core.settings.remove("totalPlayers");
+        }
+
+        // TODO Separate listener ?
         final var bundle = BundleTranslationSource.create(config.language());
         bundle.registerAll(
                 ResourceBundles.fromClasspathDirectory(
@@ -151,12 +152,6 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
         Distributor.get()
                 .getServiceManager()
                 .register(this, ComponentRendererProvider.class, renderer, Priority.NORMAL);
-
-        if (config.mindustry().gamemode() == MindustryGamemode.HUB) {
-            this.addListener(HubListener.class);
-        } else {
-            Core.settings.remove("totalPlayers");
-        }
     }
 
     @Override
@@ -171,15 +166,12 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
         }
 
         this.lifecycle.load();
+        // TODO The logging should be inside load
         this.getLogger().info("Imperium plugin Loaded!");
     }
 
     @Override
     public void onExit() {
         this.lifecycle.exit(PlatformExitCode.SUCCESS);
-    }
-
-    private void addListener(final Class<? extends LifecycleListener> listener) {
-        this.lifecycle.addListener(this.factory.get(listener));
     }
 }

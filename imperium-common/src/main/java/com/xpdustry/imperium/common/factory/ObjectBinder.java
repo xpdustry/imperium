@@ -1,6 +1,7 @@
 package com.xpdustry.imperium.common.factory;
 
 import jakarta.inject.Provider;
+import org.jspecify.annotations.Nullable;
 
 public interface ObjectBinder {
 
@@ -8,14 +9,16 @@ public interface ObjectBinder {
 
     interface BindingBuilder<T> {
 
-        BindingBuilder<T> named(final String name);
+        BindingBuilder<T> named(final @Nullable String name);
 
-        void toImpl(final Class<? extends T> type);
+        BindingBuilder<T> visible(final boolean visible);
 
-        void toInst(final T instance);
+        void toImpl(final Class<? extends T> impl);
 
-        void toProv(final Class<? extends Provider<? extends T>> type);
+        void toInst(final T inst);
 
-        void toProv(final Provider<? extends T> provider);
+        void toProv(final Class<? extends Provider<? extends T>> prov);
+
+        void toProv(final Provider<? extends T> prov);
     }
 }

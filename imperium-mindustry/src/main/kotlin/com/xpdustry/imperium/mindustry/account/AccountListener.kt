@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
-import com.google.inject.Inject
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.component.TextComponent.text
@@ -40,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.cyan_prefix
+import jakarta.inject.Inject
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days

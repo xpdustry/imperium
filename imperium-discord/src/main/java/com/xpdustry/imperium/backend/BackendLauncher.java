@@ -3,7 +3,6 @@ package com.xpdustry.imperium.backend;
 import com.xpdustry.imperium.common.CommonModule;
 import com.xpdustry.imperium.common.annotation.AnnotationScanner;
 import com.xpdustry.imperium.common.factory.ObjectFactory;
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener;
 import com.xpdustry.imperium.common.lifecycle.LifecycleModule;
 import com.xpdustry.imperium.common.lifecycle.LifecycleService;
 import com.xpdustry.imperium.discord.DiscordModule;
@@ -22,45 +21,39 @@ public final class BackendLauncher {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(BackendLauncher.class);
 
-    private final ObjectFactory factory =
-            ObjectFactory.create(new CommonModule(), new LifecycleModule(), new DiscordModule());
-    private final LifecycleService lifecycle = this.factory.get(LifecycleService.class);
+    public static void main(final String[] ignored) {
+        final var factory = ObjectFactory.create(new CommonModule(), new LifecycleModule(), new DiscordModule());
+        final var lifecycle = factory.get(LifecycleService.class);
 
-    {
-        for (final var object : this.factory.objects()) {
-            if (object instanceof LifecycleListener listener) {
-                this.lifecycle.addListener(listener);
-            }
-        }
+        lifecycle.addListener(MindustryBridgeListener.class);
+        lifecycle.addListener(PingCommand.class);
+        lifecycle.addListener(ServerCommand.class);
+        lifecycle.addListener(ReportListener.class);
+        lifecycle.addListener(MapCommand.class);
+        lifecycle.addListener(VerifyCommand.class);
+        lifecycle.addListener(ModerationCommand.class);
+        lifecycle.addListener(PunishmentListener.class);
+        lifecycle.addListener(RoleSyncListener.class);
+        lifecycle.addListener(PlayerCommand.class);
+        lifecycle.addListener(AccountCommand.class);
+        lifecycle.addListener(WhitelistCommand.class);
+        lifecycle.addListener(RestListener.class);
+        lifecycle.addListener(MapSearchCommand.class);
+        lifecycle.addListener(MapSubmitCommand.class);
+        lifecycle.addListener(MindustryContentListener.class);
+        lifecycle.addListener(HistoryCommand.class);
+        lifecycle.addListener(MetricsListener.class);
 
-        this.addListener(MindustryBridgeListener.class);
-        this.addListener(PingCommand.class);
-        this.addListener(ServerCommand.class);
-        this.addListener(ReportListener.class);
-        this.addListener(MapCommand.class);
-        this.addListener(VerifyCommand.class);
-        this.addListener(ModerationCommand.class);
-        this.addListener(PunishmentListener.class);
-        this.addListener(RoleSyncListener.class);
-        this.addListener(PlayerCommand.class);
-        this.addListener(AccountCommand.class);
-        this.addListener(WhitelistCommand.class);
-        this.addListener(RestListener.class);
-        this.addListener(MapSearchCommand.class);
-        this.addListener(MapSubmitCommand.class);
-        this.addListener(MindustryContentListener.class);
-        this.addListener(HistoryCommand.class);
-        this.addListener(MetricsListener.class);
-
+        // Make them use ObjectFactory.collect
         final var scanners = new AnnotationScanner[] {
-            this.factory.get(AnnotationScanner.class, "slash"),
-            this.factory.get(AnnotationScanner.class, "menu"),
-            this.factory.get(AnnotationScanner.class, "modal"),
+            factory.get(AnnotationScanner.class, "slash"),
+            factory.get(AnnotationScanner.class, "menu"),
+            factory.get(AnnotationScanner.class, "modal"),
         };
 
-        this.lifecycle.load();
+        lifecycle.load();
 
-        for (final var listener : this.lifecycle.listeners()) {
+        for (final var listener : lifecycle.listeners()) {
             for (final var scanner : scanners) {
                 scanner.scan(listener);
             }
@@ -71,13 +64,5 @@ public final class BackendLauncher {
         }
 
         LOGGER.info("Imperium backend loaded.");
-    }
-
-    public static void main(final String[] args) {
-        new BackendLauncher();
-    }
-
-    private void addListener(final Class<? extends LifecycleListener> listener) {
-        this.lifecycle.addListener(this.factory.get(listener));
     }
 }

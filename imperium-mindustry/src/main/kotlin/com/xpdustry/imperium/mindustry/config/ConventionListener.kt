@@ -17,12 +17,12 @@
  */
 package com.xpdustry.imperium.mindustry.config
 
-import com.google.inject.Inject
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.toHexString
+import jakarta.inject.Inject
 import mindustry.net.Administration
 
 class ConventionListener @Inject constructor(private val config: ImperiumConfig) : LifecycleListener {

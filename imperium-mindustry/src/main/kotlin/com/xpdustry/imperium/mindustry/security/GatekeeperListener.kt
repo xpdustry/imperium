@@ -21,7 +21,6 @@ import arc.Events
 import arc.util.Time
 import arc.util.io.Writes
 import com.google.common.net.InetAddresses
-import com.google.inject.Inject
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
@@ -41,6 +40,7 @@ import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gatekeeper_failure
+import jakarta.inject.Inject
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.time.Duration

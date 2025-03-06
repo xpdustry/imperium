@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry.account
 
-import com.google.inject.Inject
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
@@ -36,6 +35,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import jakarta.inject.Inject
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.minutes
