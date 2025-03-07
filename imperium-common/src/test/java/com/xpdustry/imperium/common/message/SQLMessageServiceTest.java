@@ -29,18 +29,24 @@ final class SQLMessageServiceTest {
     @Test
     void test_simple(final @TempDir Path temp) {
         this.withTestContext(temp, (service1, service2) -> {
-            final var future1 = new CompletableFuture<AMessage>();
-            final var future2 = new CompletableFuture<AMessage>();
-            service1.subscribe(AMessage.class, future1::complete);
-            service2.subscribe(AMessage.class, future2::complete);
+            final var subscriber1 = new AwaitSubscriber<AMessage>();
+            final var subscriber2 = new AwaitSubscriber<AMessage>();
+            service1.subscribe(AMessage.class, subscriber1);
+            service2.subscribe(AMessage.class, subscriber2);
 
             final var message1 = new AMessage("hello1");
             service1.broadcast(message1);
-            assertThat(future2).succeedsWithin(LATENCY).isEqualTo(message1);
+            assertThat(subscriber1.future).succeedsWithin(LATENCY).isEqualTo(message1);
+            assertThat(subscriber2.future).succeedsWithin(LATENCY).isEqualTo(message1);
+            subscriber1.reset();
+            subscriber2.reset();
 
             final var message2 = new AMessage("hello2");
             service2.broadcast(message2);
-            assertThat(future1).succeedsWithin(LATENCY).isEqualTo(message2);
+            assertThat(subscriber1.future).succeedsWithin(LATENCY).isEqualTo(message2);
+            assertThat(subscriber2.future).succeedsWithin(LATENCY).isEqualTo(message2);
+            subscriber1.reset();
+            subscriber2.reset();
         });
     }
 
@@ -91,4 +97,18 @@ final class SQLMessageServiceTest {
     }
 
     private record AMessage(String value) implements Message {}
+
+    private static final class AwaitSubscriber<M extends Message> implements MessageService.Subscriber<M> {
+
+        private CompletableFuture<M> future = new CompletableFuture<>();
+
+        @Override
+        public void onMessage(final M message) {
+            this.future.complete(message);
+        }
+
+        private void reset() {
+            this.future = new CompletableFuture<>();
+        }
+    }
 }

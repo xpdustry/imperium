@@ -46,22 +46,23 @@ final class SQLMessageService implements MessageService, LifecycleListener {
         this.database.withConsumerHandle(ignored -> {
             this.database.executeScript(
                     """
-                    CREATE TABLE IF NOT EXISTS `message_queue_sender` (
-                        `name`          VARCHAR(32)         NOT NULL,
-                        `last_poll`     TIMESTAMP(6)        NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                    CREATE TABLE IF NOT EXISTS `message_queue_client` (
+                        `name`          VARCHAR(32)     NOT NULL,
+                        `last_poll`     TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                         CONSTRAINT `pk_message_queue_sender`
                             PRIMARY KEY (`name`)
                     ) ENGINE = MEMORY;
 
                     CREATE TABLE IF NOT EXISTS `message_queue` (
-                        `sender_name`   VARCHAR(32)         NOT NULL,
-                        `topic`         VARCHAR(128)        NOT NULL,
-                        `payload`       VARCHAR(16384)      NOT NULL,
-                        `timestamp`     TIMESTAMP(6)        NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+                        `receiver`      VARCHAR(32)     NOT NULL,
+                        `topic`         VARCHAR(128)    NOT NULL,
+                        -- Limitation of the MEMORY engine of MariaDB, no mediumblob :(
+                        `payload`       VARCHAR(16384)  NOT NULL,
+                        `timestamp`     TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
                         CONSTRAINT `pk_message_queue`
-                            PRIMARY KEY (`sender_name`, `topic`, `timestamp`),
+                            PRIMARY KEY (`receiver`, `topic`, `timestamp`),
                         CONSTRAINT `fk_message_queue__sender_name`
-                            FOREIGN KEY (`sender_name`) REFERENCES `message_queue_sender` (`name`)
+                            FOREIGN KEY (`receiver`) REFERENCES `message_queue_client` (`name`)
                             ON DELETE CASCADE
                     ) ENGINE = MEMORY;
                     """);
@@ -87,26 +88,25 @@ final class SQLMessageService implements MessageService, LifecycleListener {
 
     @Override
     public <M extends Message> void broadcast(final M message) {
+        final var topic = message.getClass().getName();
         final var json = this.gson.toJson(message);
-        this.database.withConsumerHandle(transaction -> {
-            final var topic = message.getClass().getName();
-            final var rows = transaction
-                    .prepareStatement(
-                            """
-                            INSERT INTO `message_queue` (`sender_name`, `topic`, `payload`)
-                            SELECT `name`, ?, ?
-                            FROM `message_queue_sender`
-                            WHERE
-                                TIMESTAMPDIFF(SECOND, CURRENT_TIMESTAMP(6), `last_poll`) <= 30
-                                AND
-                                `name` != ?
-                            """)
-                    .push(topic)
-                    .push(json.getBytes(StandardCharsets.UTF_8))
-                    .push(this.config.server().name())
-                    .executeUpdate();
-            LOGGER.debug("Broadcast {} message to {} receivers: {}", topic, rows, json);
-        });
+        final int rows = this.database.withFunctionHandle(transaction -> transaction
+                .prepareStatement(
+                        """
+                        INSERT INTO `message_queue` (`receiver`, `topic`, `payload`)
+                        SELECT `name`, ?, ?
+                        FROM `message_queue_client`
+                        WHERE
+                            TIMESTAMPDIFF(SECOND, CURRENT_TIMESTAMP(6), `last_poll`) <= 30
+                            AND
+                            `name` != ?
+                        """)
+                .push(topic)
+                .push(json.getBytes(StandardCharsets.UTF_8))
+                .push(this.config.server().name())
+                .executeUpdate());
+        this.dispatch(message);
+        LOGGER.debug("Broadcast {} message to {} receivers: {}", topic, rows, json);
     }
 
     @SuppressWarnings("unchecked")
@@ -126,7 +126,7 @@ final class SQLMessageService implements MessageService, LifecycleListener {
                                 """
                                 SELECT `topic`, `payload`
                                 FROM `message_queue`
-                                WHERE `sender_name` = ?
+                                WHERE `receiver` = ?
                                 ORDER BY `timestamp` DESC
                                 """)
                         .push(this.config.server().name())
@@ -191,7 +191,7 @@ final class SQLMessageService implements MessageService, LifecycleListener {
         this.database.withConsumerHandle(transaction -> Preconditions.checkState(transaction
                 .prepareStatement(
                         """
-                        INSERT INTO `message_queue_sender` (`name`)
+                        INSERT INTO `message_queue_client` (`name`)
                         VALUES (?)
                         ON DUPLICATE KEY UPDATE `last_poll` = CURRENT_TIMESTAMP(6);
                         """)
@@ -204,7 +204,7 @@ final class SQLMessageService implements MessageService, LifecycleListener {
                 .prepareStatement(
                         """
                         DELETE FROM `message_queue`
-                        WHERE `sender_name` = ?
+                        WHERE `receiver` = ?
                         """)
                 .push(this.config.server().name())
                 .executeUpdate());

@@ -17,7 +17,6 @@
  */
 package com.xpdustry.imperium.mindustry
 
-import arc.Core
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.factory.ObjectBinder
@@ -41,7 +40,6 @@ import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
 import java.nio.file.Path
-import java.util.concurrent.Executor
 
 class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
     override fun configure(binder: ObjectBinder) {
@@ -53,7 +51,6 @@ class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
         binder.bind(Path::class.java).named("directory").toInst(plugin.directory)
         binder.bind(DiscoveryDataSupplier::class.java).toInst(DiscoveryDataSupplier(::getMindustryServerInfo))
         binder.bind(PlayerTracker::class.java).toImpl(MindustryPlayerTracker::class.java)
-        binder.bind(Executor::class.java).named("main").toInst(Executor(Core.app::post))
         binder.bind(ClientDetector::class.java).toImpl(SimpleClientDetector::class.java)
         binder.bind(BadWordDetector::class.java).toImpl(SimpleBadWordDetector::class.java)
         binder.bind(HistoryRenderer::class.java).toImpl(SimpleHistoryRenderer::class.java)

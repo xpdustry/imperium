@@ -15,6 +15,12 @@ public sealed interface StringRequirement {
 
     boolean isSatisfiedBy(final CharSequence string);
 
+    default boolean isSatisfiedBy(final char[] string) {
+        try (final var wrapped = new CharArrayString(string)) {
+            return this.isSatisfiedBy(wrapped);
+        }
+    }
+
     enum Letter implements StringRequirement {
         HAS_LOWERCASE(Character::isLowerCase, false),
         HAS_UPPERCASE(Character::isUpperCase, false),
