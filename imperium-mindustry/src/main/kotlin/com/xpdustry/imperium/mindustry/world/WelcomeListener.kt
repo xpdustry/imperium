@@ -29,7 +29,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.component1
@@ -90,7 +90,7 @@ class WelcomeListener @Inject constructor(private val users: UserManager, plugin
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
         ImperiumScope.MAIN.launch {
-            if (users.getSetting(event.player.uuid(), User.Setting.SHOW_WELCOME_MESSAGE)) {
+            if (users.getSetting(event.player.uuid(), Setting.SHOW_WELCOME_MESSAGE)) {
                 runMindustryThread { welcomeInterface.create(event.player).show() }
             }
         }

@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -58,7 +58,7 @@ constructor(
     @ClientSide
     suspend fun onLoginCommand(sender: CommandSender) {
         val account = accounts.selectBySession(sender.player.sessionKey)
-        val remember = users.getSetting(sender.player.uuid(), User.Setting.REMEMBER_LOGIN)
+        val remember = users.getSetting(sender.player.uuid(), Setting.REMEMBER_LOGIN)
         runMindustryThread {
             if (account == null) {
                 val window = login.create(sender.player)

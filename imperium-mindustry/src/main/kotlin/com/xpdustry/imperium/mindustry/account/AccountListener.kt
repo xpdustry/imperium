@@ -32,7 +32,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -46,6 +46,7 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Call
@@ -123,7 +124,7 @@ constructor(private val accounts: AccountManager, private val users: UserManager
                 accounts.incrementPlaytime(account.id, playtime)
                 checkPlaytimeAchievements(account, playtime)
             }
-            if (!users.getSetting(event.player.uuid(), User.Setting.REMEMBER_LOGIN)) {
+            if (!users.getSetting(event.player.uuid(), Setting.REMEMBER_LOGIN)) {
                 accounts.logout(event.player.sessionKey)
             }
         }
@@ -135,7 +136,7 @@ constructor(private val accounts: AccountManager, private val users: UserManager
         }
         checkDailyLoginAchievement(account, playtime, Achievement.ACTIVE)
         checkDailyLoginAchievement(account, playtime, Achievement.HYPER)
-        val total = playtime + account.playtime
+        val total = playtime + account.playtime().toKotlinDuration()
         if (total >= 1.days) {
             accounts.updateAchievement(account.id, Achievement.DAY, true)
         }
