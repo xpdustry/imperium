@@ -9,7 +9,6 @@ public enum Rank {
     OVERSEER,
     MODERATOR,
     ADMIN,
-    HEAD_ADMIN,
     OWNER;
 
     public Set<Rank> getRanksBelow() {
