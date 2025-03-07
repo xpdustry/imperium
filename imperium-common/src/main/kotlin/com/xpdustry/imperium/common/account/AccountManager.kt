@@ -35,7 +35,6 @@ import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.ResultRow
@@ -382,14 +381,13 @@ constructor(private val provider: SQLProvider, private val messenger: Messenger,
 
     private fun ResultRow.toAccount() =
         Account(
-            id = this[AccountTable.id].value,
-            username = this[AccountTable.username],
-            discord = this[AccountTable.discord],
-            games = this[AccountTable.games],
-            playtime = this[AccountTable.playtime].toKotlinDuration(),
-            creation = this[AccountTable.creation],
-            legacy = this[AccountTable.legacy],
-            rank = this[AccountTable.rank],
+            this[AccountTable.id].value,
+            this[AccountTable.username],
+            this[AccountTable.playtime],
+            this[AccountTable.creation],
+            this[AccountTable.legacy],
+            this[AccountTable.rank],
+            this[AccountTable.discord],
         )
 
     companion object {

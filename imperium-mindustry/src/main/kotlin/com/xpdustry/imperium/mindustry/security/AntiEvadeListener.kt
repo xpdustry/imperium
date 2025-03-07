@@ -23,7 +23,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildCache
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import jakarta.inject.Inject
@@ -46,7 +46,7 @@ class AntiEvadeListener @Inject constructor(private val users: UserManager) : Li
             for (player in Entities.getPlayers()) {
                 if (player.uuid() == event.player.uuid()) continue
                 ImperiumScope.MAIN.launch {
-                    if (users.getSetting(player.uuid(), User.Setting.ANTI_BAN_EVADE)) {
+                    if (users.getSetting(player.uuid(), Setting.ANTI_BAN_EVADE)) {
                         player.sendMessage(
                             "[orange]Warning, the player [accent]${event.player.info.plainLastName()}[] has changed his name. He was [accent]$previous[]."
                         )

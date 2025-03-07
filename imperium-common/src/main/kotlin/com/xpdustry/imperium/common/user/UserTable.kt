@@ -46,7 +46,7 @@ object UserAddressTable : Table("user_address") {
 
 object UserSettingTable : Table("user_setting") {
     val user = reference("user_id", UserTable, onDelete = ReferenceOption.CASCADE)
-    val setting = enumerationByName<User.Setting>("setting", 64)
+    val setting = enumerationByName<Setting>("setting", 64)
     val value = bool("value")
     override val primaryKey = PrimaryKey(user, setting)
 }

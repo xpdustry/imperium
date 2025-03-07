@@ -39,6 +39,7 @@ import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
 import jakarta.inject.Inject
+import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -80,7 +81,7 @@ constructor(
                     DiscordAudience(
                         it.senderName,
                         account?.rank ?: Rank.EVERYONE,
-                        account?.playtime?.inWholeHours?.toInt(),
+                        account?.playtime?.toKotlinDuration()?.inWholeHours?.toInt(),
                         config.language,
                     ),
                     Distributor.get().audienceProvider.players,

@@ -34,7 +34,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
 import com.xpdustry.imperium.mindustry.account.PlayerLogoutEvent
@@ -92,7 +92,7 @@ constructor(
             val rank = account?.rank ?: Rank.EVERYONE
             nodes += EnumRankNode.linear(rank, "imperium", true)
             nodes += achievements.filterValues { it }.map { EnumRankNode.singular(it.key, "imperium") }
-            val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
+            val undercover = users.getSetting(player.uuid(), Setting.UNDERCOVER)
             runMindustryThread {
                 ranks[player] = Collections.unmodifiableList(nodes)
                 player.admin = if (undercover) false else rank >= Rank.OVERSEER

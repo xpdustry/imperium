@@ -15,8 +15,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-package com.xpdustry.imperium.common.inject
+package com.xpdustry.imperium.common.account
 
-fun interface InstanceProvider<T> {
-    fun create(instances: InstanceManager): T?
-}
+import com.xpdustry.imperium.common.message.Message
+import kotlinx.serialization.Serializable
+
+@Serializable data class RankChangeEvent(val account: Int) : Message

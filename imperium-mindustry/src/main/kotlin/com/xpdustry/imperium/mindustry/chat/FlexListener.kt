@@ -37,7 +37,7 @@ import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.toHexString
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.translation.SCARLET
 import jakarta.inject.Inject
@@ -151,7 +151,7 @@ constructor(
                             if (
                                 sourceLocale.language != targetLocale.language &&
                                     muuid != null &&
-                                    users.getSetting(muuid.uuid, User.Setting.AUTOMATIC_LANGUAGE_DETECTION)
+                                    users.getSetting(muuid.uuid, Setting.AUTOMATIC_LANGUAGE_DETECTION)
                             ) {
                                 sourceLocale = Translator.AUTO_DETECT
                             }

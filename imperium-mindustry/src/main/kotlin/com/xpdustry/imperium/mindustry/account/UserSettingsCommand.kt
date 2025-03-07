@@ -27,7 +27,7 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
@@ -89,9 +89,9 @@ constructor(private val users: UserManager, private val accounts: AccountManager
             }
         }
 
-    private suspend fun loadUserSettings(player: Player): Map<User.Setting, Boolean> {
+    private suspend fun loadUserSettings(player: Player): Map<Setting, Boolean> {
         val settings = users.getSettings(player.uuid()).toMutableMap()
-        for (setting in User.Setting.entries) settings.putIfAbsent(setting, setting.default)
+        for (setting in Setting.entries) settings.putIfAbsent(setting, setting.def())
         val achievements =
             accounts
                 .selectBySession(player.sessionKey)
@@ -99,11 +99,11 @@ constructor(private val users: UserManager, private val accounts: AccountManager
                 .orEmpty()
                 .filterValues { it }
                 .keys
-        settings.keys.removeAll { it.deprecated || (it.achievement != null && it.achievement !in achievements) }
+        settings.keys.removeAll { it.deprecated() || (it.achievement() != null && it.achievement() !in achievements) }
         return settings
     }
 
     companion object {
-        private val SETTINGS = key<Map<User.Setting, Boolean>>("settings")
+        private val SETTINGS = key<Map<Setting, Boolean>>("settings")
     }
 }
