@@ -18,6 +18,7 @@ import com.xpdustry.imperium.common.factory.ObjectFactory;
 import com.xpdustry.imperium.common.lifecycle.*;
 import com.xpdustry.imperium.common.message.MessageModule;
 import com.xpdustry.imperium.common.password.PasswordModule;
+import com.xpdustry.imperium.common.session.MindustrySessionModule;
 import com.xpdustry.imperium.common.time.TimeRenderer;
 import com.xpdustry.imperium.mindustry.account.*;
 import com.xpdustry.imperium.mindustry.backport.EnforceAutopauseOnLoadBackport;
@@ -86,7 +87,8 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
                 new AccountModule(),
                 new DatabaseModule(),
                 new MessageModule(),
-                new PasswordModule());
+                new PasswordModule(),
+                new MindustrySessionModule());
         this.lifecycle = this.factory.get(LifecycleService.class);
 
         this.addListener(new EnforceAutopauseOnLoadBackport(this));

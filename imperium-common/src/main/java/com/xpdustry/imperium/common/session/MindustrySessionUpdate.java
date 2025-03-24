@@ -1,4 +1,4 @@
-package com.xpdustry.imperium.common.account;
+package com.xpdustry.imperium.common.session;
 
 import com.xpdustry.imperium.common.message.Message;
 
