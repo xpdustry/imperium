@@ -10,7 +10,7 @@ public interface AccountService {
 
     boolean register(final String username, final char[] password);
 
-    boolean updatePassword(final int id, final char[] password);
+    boolean updatePassword(final int id, final char[] oldPassword, final char[] newPassword);
 
     Optional<Account> selectById(final int id);
 

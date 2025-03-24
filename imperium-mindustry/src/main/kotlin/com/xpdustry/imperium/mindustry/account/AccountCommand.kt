@@ -21,15 +21,12 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.VerificationMessage
-import com.xpdustry.imperium.common.user.Setting
-import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -43,32 +40,11 @@ import kotlin.time.toJavaDuration
 
 class AccountCommand
 @Inject
-constructor(
-    private val accounts: AccountManager,
-    private val users: UserManager,
-    private val messenger: Messenger,
-    plugin: MindustryPlugin,
-) : LifecycleListener {
-    private val login = LoginWindow(plugin, accounts)
+constructor(private val accounts: AccountManager, private val messenger: Messenger, plugin: MindustryPlugin) :
+    LifecycleListener {
     private val register = RegisterWindow(plugin, accounts)
     private val changePassword = ChangePasswordWindow(plugin, accounts)
     private val verifications = buildCache<Int, Int> { expireAfterWrite(10.minutes.toJavaDuration()) }
-
-    @ImperiumCommand(["login"])
-    @ClientSide
-    suspend fun onLoginCommand(sender: CommandSender) {
-        val account = accounts.selectBySession(sender.player.sessionKey)
-        val remember = users.getSetting(sender.player.uuid(), Setting.REMEMBER_LOGIN)
-        runMindustryThread {
-            if (account == null) {
-                val window = login.create(sender.player)
-                window.state[REMEMBER_LOGIN_WARNING] = !remember
-                window.show()
-            } else {
-                handleAccountResult(AccountResult.AlreadyLogged, sender.player)
-            }
-        }
-    }
 
     @ImperiumCommand(["register"])
     @ClientSide

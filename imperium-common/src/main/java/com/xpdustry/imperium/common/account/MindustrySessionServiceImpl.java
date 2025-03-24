@@ -50,9 +50,9 @@ final class MindustrySessionServiceImpl implements MindustrySessionService, Life
                     `createdAt`     TIMESTAMP(0)    NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
                     `lastLogin`     TIMESTAMP(0)    NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
                     `expiresAt`     TIMESTAMP(0)    NOT NULL DEFAULT TIMESTAMPADD(DAY, 7, CURRENT_TIMESTAMP(0)),
-                    CONSTRAINT `pk_account_session`
+                    CONSTRAINT `pk_account_mindustry_session`
                         PRIMARY KEY (`account_id`, `uuid`, `usid`, `address`),
-                    CONSTRAINT `fk_account_session__account_id`
+                    CONSTRAINT `fk_account_mindustry_session__account_id`
                         FOREIGN KEY (`account_id`)
                         REFERENCES `account`(`id`)
                         ON DELETE CASCADE
@@ -143,9 +143,9 @@ final class MindustrySessionServiceImpl implements MindustrySessionService, Life
         return this.database.withFunctionHandle(transaction -> transaction
                         .prepareStatement(
                                 """
-                        DELETE FROM `account_mindustry_session`
-                        WHERE `account_id` = ?
-                        """)
+                                DELETE FROM `account_mindustry_session`
+                                WHERE `account_id` = ?
+                                """)
                         .push(account)
                         .executeUpdate()
                 > 0);

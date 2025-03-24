@@ -31,6 +31,7 @@ import com.xpdustry.imperium.mindustry.history.Historian
 import com.xpdustry.imperium.mindustry.history.HistoryRenderer
 import com.xpdustry.imperium.mindustry.history.SimpleHistorian
 import com.xpdustry.imperium.mindustry.history.SimpleHistoryRenderer
+import com.xpdustry.imperium.mindustry.lifecycle.ExecutorWithLifecycle
 import com.xpdustry.imperium.mindustry.lifecycle.MindustryExitService
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.security.BadWordDetector
@@ -40,6 +41,7 @@ import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
 import java.nio.file.Path
+import java.util.concurrent.Executor
 
 class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
     override fun configure(binder: ObjectBinder) {
@@ -55,5 +57,6 @@ class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
         binder.bind(BadWordDetector::class.java).toImpl(SimpleBadWordDetector::class.java)
         binder.bind(HistoryRenderer::class.java).toImpl(SimpleHistoryRenderer::class.java)
         binder.bind(MarkedPlayerManager::class.java).toImpl(SimpleMarkedPlayerManager::class.java)
+        binder.bind(Executor::class.java).named("work").toImpl(ExecutorWithLifecycle::class.java)
     }
 }

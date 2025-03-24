@@ -53,13 +53,13 @@ import mindustry.gen.Entityc
 import mindustry.gen.Player
 import org.slf4j.LoggerFactory
 
-fun <T> Seq<T>.asList(): List<T> = MindustryCollections.immutableList(this)
+fun <T : Any> Seq<T>.asList(): List<T> = MindustryCollections.immutableList(this)
 
 fun <T : Entityc> EntityGroup<T>.asList(): List<T> = MindustryCollections.immutableList(this)
 
-fun <K, V> ObjectMap<K, V>.asMap(): Map<K, V> = MindustryCollections.immutableMap(this)
+fun <K : Any, V : Any> ObjectMap<K, V>.asMap(): Map<K, V> = MindustryCollections.immutableMap(this)
 
-fun <T> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this)
+fun <T : Any> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this)
 
 // https://stackoverflow.com/a/73494554
 suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T =

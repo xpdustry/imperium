@@ -1,6 +1,7 @@
 package com.xpdustry.imperium.common.account;
 
 import com.google.common.base.Preconditions;
+import com.xpdustry.imperium.common.config.ImperiumConfig;
 import com.xpdustry.imperium.common.database.SQLDatabase;
 import com.xpdustry.imperium.common.functional.ThrowingFunction;
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener;
@@ -17,19 +18,28 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class AccountServiceImpl implements AccountService, LifecycleListener {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccountServiceImpl.class);
 
     private final SQLDatabase database;
     private final PasswordHashFunction function;
     private final MessageService messenger;
+    private final ImperiumConfig config;
 
     @Inject
     public AccountServiceImpl(
-            final SQLDatabase database, final PasswordHashFunction function, final MessageService messenger) {
+            final SQLDatabase database,
+            final PasswordHashFunction function,
+            final MessageService messenger,
+            final ImperiumConfig config) {
         this.database = database;
         this.messenger = messenger;
         this.function = function;
+        this.config = config;
     }
 
     @Override
@@ -81,6 +91,26 @@ final class AccountServiceImpl implements AccountService, LifecycleListener {
                         ON DELETE CASCADE
                 );
                 """);
+
+        if (this.config.testing()) {
+            LOGGER.warn("Testing mode enabled, creating test account, with credentials {}", "test:test");
+            final var password = this.function.hash("test".toCharArray());
+            this.database.withConsumerHandle(transaction -> transaction
+                    .prepareStatement(
+                            """
+                            INSERT INTO `account` (`username`, `password_hash`, `password_salt`, `rank`)
+                            VALUES (?, ?, ?, ?)
+                            ON DUPLICATE KEY UPDATE
+                                `password_salt` = VALUES(`password_salt`),
+                                `password_hash` = VALUES(`password_hash`),
+                                `rank` = VALUES(`rank`)
+                            """)
+                    .push("test")
+                    .push(password.hash())
+                    .push(password.salt())
+                    .push(Rank.OWNER.name())
+                    .executeSingleUpdate());
+        }
     }
 
     @Override
@@ -92,18 +122,24 @@ final class AccountServiceImpl implements AccountService, LifecycleListener {
                 return null;
             }
             final var hash = this.function.hash(password);
-            return transaction
+            final var registered = transaction
                     .prepareStatement(
                             """
                             INSERT INTO `account` (`username`, `password_hash`, `password_salt`) VALUES (?, ?, ?)
-                            RETURNING `id`
                             """)
                     .push(username)
                     .push(hash.hash())
                     .push(hash.salt())
-                    .executeSelect((result) -> result.getInt("id"))
-                    .findFirst()
-                    .orElseThrow();
+                    .executeSingleUpdate();
+            if (registered) {
+                return transaction
+                        .prepareStatement("SELECT LAST_INSERT_ID()")
+                        .executeSelect(result -> result.getInt(1))
+                        .findFirst()
+                        .orElseThrow();
+            } else {
+                throw new IllegalStateException("Failed to register account with username " + username);
+            }
         });
         if (identifier != null) {
             this.messenger.broadcast(new AccountUpdate(identifier));
@@ -112,14 +148,14 @@ final class AccountServiceImpl implements AccountService, LifecycleListener {
     }
 
     @Override
-    public boolean updatePassword(final int id, final char[] password) {
-        this.checkPasswordRequirements(password);
+    public boolean updatePassword(final int id, final char[] oldPassword, final char[] newPassword) {
+        this.checkPasswordRequirements(newPassword);
         return this.database.withFunctionHandle(transaction -> {
             final var oldHash = this.selectPasswordById(id).orElse(null);
-            if (oldHash == null || !oldHash.equals(this.function.hash(password, oldHash.salt()))) {
+            if (oldHash == null || !oldHash.equals(this.function.hash(oldPassword, oldHash.salt()))) {
                 return false;
             }
-            final var newHash = this.function.hash(password);
+            final var newHash = this.function.hash(newPassword);
             final var updated = transaction
                     .prepareStatement(
                             """
@@ -141,7 +177,7 @@ final class AccountServiceImpl implements AccountService, LifecycleListener {
         return this.database.withFunctionHandle(transaction -> transaction
                 .prepareStatement(
                         """
-                        SELECT `id`, `username`, `discord`, `games`, `playtime`, `creation`, `legacy`, `rank`
+                        SELECT `id`, `username`, `discord`, `playtime`, `creation`, `legacy`, `rank`
                         FROM `account`
                         WHERE `id` = ?
                         """)
@@ -170,7 +206,7 @@ final class AccountServiceImpl implements AccountService, LifecycleListener {
         return this.database.withFunctionHandle(transaction -> transaction
                 .prepareStatement(
                         """
-                        SELECT `id`, `username`, `discord`, `games`, `playtime`, `creation`, `legacy`, `rank`
+                        SELECT `id`, `username`, `discord`, `playtime`, `creation`, `legacy`, `rank`
                         FROM `account`
                         WHERE `username` = ?
                         """)
@@ -199,7 +235,7 @@ final class AccountServiceImpl implements AccountService, LifecycleListener {
         return this.database.withFunctionHandle(transaction -> transaction
                 .prepareStatement(
                         """
-                        SELECT `id`, `username`, `discord`, `games`, `playtime`, `creation`, `legacy`, `rank`
+                        SELECT `id`, `username`, `discord`, `playtime`, `creation`, `legacy`, `rank`
                         FROM `account`
                         WHERE `discord` = ?
                         """)

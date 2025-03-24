@@ -10,15 +10,16 @@ import com.xpdustry.distributor.api.translation.ResourceBundles;
 import com.xpdustry.distributor.api.translation.TranslationSource;
 import com.xpdustry.distributor.api.util.Priority;
 import com.xpdustry.imperium.common.CommonModule;
+import com.xpdustry.imperium.common.account.AccountModule;
 import com.xpdustry.imperium.common.config.ImperiumConfig;
 import com.xpdustry.imperium.common.content.MindustryGamemode;
+import com.xpdustry.imperium.common.database.DatabaseModule;
 import com.xpdustry.imperium.common.factory.ObjectFactory;
 import com.xpdustry.imperium.common.lifecycle.*;
+import com.xpdustry.imperium.common.message.MessageModule;
+import com.xpdustry.imperium.common.password.PasswordModule;
 import com.xpdustry.imperium.common.time.TimeRenderer;
-import com.xpdustry.imperium.mindustry.account.AccountCommand;
-import com.xpdustry.imperium.mindustry.account.AccountListener;
-import com.xpdustry.imperium.mindustry.account.AchievementCommand;
-import com.xpdustry.imperium.mindustry.account.UserSettingsCommand;
+import com.xpdustry.imperium.mindustry.account.*;
 import com.xpdustry.imperium.mindustry.backport.EnforceAutopauseOnLoadBackport;
 import com.xpdustry.imperium.mindustry.backport.NoApplicationListenerSkipBackport;
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener;
@@ -77,7 +78,15 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
 
     @Override
     public void onInit() {
-        this.factory = ObjectFactory.create(new CommonModule(), new MindustryModule(this), new LifecycleModule());
+        this.factory = ObjectFactory.create(
+                new CommonModule(),
+                new MindustryModule(this),
+                new LifecycleModule(),
+                new CachedAccountModule(),
+                new AccountModule(),
+                new DatabaseModule(),
+                new MessageModule(),
+                new PasswordModule());
         this.lifecycle = this.factory.get(LifecycleService.class);
 
         this.addListener(new EnforceAutopauseOnLoadBackport(this));
@@ -131,6 +140,7 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
         this.lifecycle.addListener(ChangelogCommand.class);
         this.lifecycle.addListener(DayNighCycleListener.class);
         this.lifecycle.addListener(ImperiumPermissionListener.class);
+        this.lifecycle.addListener(LoginCommand.class);
 
         final var config = factory.get(ImperiumConfig.class);
 
@@ -156,6 +166,8 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
 
     @Override
     public void onLoad() {
+        this.lifecycle.load();
+
         final var processor = PluginAnnotationProcessor.compose(
                 this.factory.get(CommandAnnotationScanner.class),
                 PluginAnnotationProcessor.tasks(this),
@@ -165,7 +177,6 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
             processor.process(listener);
         }
 
-        this.lifecycle.load();
         // TODO The logging should be inside load
         this.getLogger().info("Imperium plugin Loaded!");
     }
