@@ -64,7 +64,8 @@ constructor(private val config: ImperiumConfig, @param:Named("directory") privat
                 if (config.memory) {
                     hikari.jdbcUrl = "jdbc:h2:mem:${config.database};MODE=MYSQL"
                 } else {
-                    hikari.jdbcUrl = "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL"
+                    hikari.jdbcUrl =
+                        "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL;AUTO_SERVER=TRUE"
                 }
             }
             is DatabaseConfig.MariaDB -> {

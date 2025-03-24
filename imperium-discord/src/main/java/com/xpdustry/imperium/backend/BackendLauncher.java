@@ -1,10 +1,14 @@
 package com.xpdustry.imperium.backend;
 
 import com.xpdustry.imperium.common.CommonModule;
+import com.xpdustry.imperium.common.account.AccountModule;
 import com.xpdustry.imperium.common.annotation.AnnotationScanner;
+import com.xpdustry.imperium.common.database.DatabaseModule;
 import com.xpdustry.imperium.common.factory.ObjectFactory;
 import com.xpdustry.imperium.common.lifecycle.LifecycleModule;
 import com.xpdustry.imperium.common.lifecycle.LifecycleService;
+import com.xpdustry.imperium.common.message.MessageModule;
+import com.xpdustry.imperium.common.password.PasswordModule;
 import com.xpdustry.imperium.discord.DiscordModule;
 import com.xpdustry.imperium.discord.account.RoleSyncListener;
 import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener;
@@ -22,7 +26,14 @@ public final class BackendLauncher {
     private static final Logger LOGGER = LoggerFactory.getLogger(BackendLauncher.class);
 
     public static void main(final String[] ignored) {
-        final var factory = ObjectFactory.create(new CommonModule(), new LifecycleModule(), new DiscordModule());
+        final var factory = ObjectFactory.create(
+                new CommonModule(),
+                new LifecycleModule(),
+                new DiscordModule(),
+                new AccountModule(),
+                new DatabaseModule(),
+                new MessageModule(),
+                new PasswordModule());
         final var lifecycle = factory.get(LifecycleService.class);
 
         lifecycle.addListener(MindustryBridgeListener.class);

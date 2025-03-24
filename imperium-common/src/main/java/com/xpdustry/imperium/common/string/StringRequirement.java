@@ -77,7 +77,7 @@ public sealed interface StringRequirement {
 
         @Override
         public boolean isSatisfiedBy(final CharSequence value) {
-            return this.reserved.contains(value, false);
+            return !this.reserved.contains(value, false);
         }
     }
 

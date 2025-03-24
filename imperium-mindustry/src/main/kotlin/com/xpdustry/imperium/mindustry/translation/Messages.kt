@@ -235,9 +235,9 @@ fun gui_rate_map_failure(): Component = translatable("imperium.gui.rate-map.fail
 
 fun gui_error(): Component = translatable("imperium.gui.error", SCARLET)
 
-fun gui_close(): Component = translatable("imperium.gui.close")
+fun gui_close(): Component = translatable("imperium.gui.shared.close")
 
-fun gui_back(): Component = translatable("imperium.gui.back", LIGHT_GRAY)
+fun gui_back(): Component = translatable("imperium.gui.shared.back", LIGHT_GRAY)
 
 fun gui_submit(): Component = translatable("imperium.gui.submit", ACCENT)
 
