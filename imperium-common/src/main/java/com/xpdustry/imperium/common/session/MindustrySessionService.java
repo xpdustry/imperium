@@ -1,4 +1,4 @@
-package com.xpdustry.imperium.common.account;
+package com.xpdustry.imperium.common.session;
 
 import java.util.List;
 import java.util.Optional;

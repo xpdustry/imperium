@@ -1,5 +1,6 @@
-package com.xpdustry.imperium.common.account;
+package com.xpdustry.imperium.common.session;
 
+import com.xpdustry.imperium.common.account.AccountService;
 import com.xpdustry.imperium.common.config.ImperiumConfig;
 import com.xpdustry.imperium.common.database.SQLDatabase;
 import com.xpdustry.imperium.common.lifecycle.LifecycleListener;
@@ -47,9 +48,9 @@ final class MindustrySessionServiceImpl implements MindustrySessionService, Life
                     `usid`          BIGINT          NOT NULL,
                     `address`       VARBINARY(16)   NOT NULL,
                     `server`        VARCHAR(32)     NOT NULL,
-                    `createdAt`     TIMESTAMP(0)    NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
+                    `creation`      TIMESTAMP(0)    NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
                     `lastLogin`     TIMESTAMP(0)    NOT NULL DEFAULT CURRENT_TIMESTAMP(0),
-                    `expiresAt`     TIMESTAMP(0)    NOT NULL DEFAULT TIMESTAMPADD(DAY, 7, CURRENT_TIMESTAMP(0)),
+                    `expiration`    TIMESTAMP(0)    NOT NULL DEFAULT TIMESTAMPADD(DAY, 7, CURRENT_TIMESTAMP(0)),
                     CONSTRAINT `pk_account_mindustry_session`
                         PRIMARY KEY (`account_id`, `uuid`, `usid`, `address`),
                     CONSTRAINT `fk_account_mindustry_session__account_id`
@@ -65,7 +66,7 @@ final class MindustrySessionServiceImpl implements MindustrySessionService, Life
         return this.database.withFunctionHandle(transaction -> transaction
                 .prepareStatement(
                         """
-                        SELECT `account_id`, `uuid`, `usid`, `address`, `server`, `createdAt`, `expiresAt`, `lastLogin`
+                        SELECT `account_id`, `uuid`, `usid`, `address`, `server`, `creation`, `expiration`, `lastLogin`
                         FROM `account_mindustry_session`
                         WHERE `uuid` = ? AND `usid` = ? AND `address` = ?
                         """)
@@ -82,7 +83,7 @@ final class MindustrySessionServiceImpl implements MindustrySessionService, Life
         return this.database.withFunctionHandle(transaction -> transaction
                 .prepareStatement(
                         """
-                        SELECT `account_id`, `uuid`, `usid`, `address`, `server`, `createdAt`, `expiresAt`, `lastLogin`
+                        SELECT `account_id`, `uuid`, `usid`, `address`, `server`, `creation`, `expiration`, `lastLogin`
                         FROM `account_mindustry_session`
                         WHERE `account_id` = ?
                         """)
@@ -174,14 +175,14 @@ final class MindustrySessionServiceImpl implements MindustrySessionService, Life
         return new MindustrySession(
                 new MindustrySession.Key(result.getLong("uuid"), result.getLong("usid"), address),
                 result.getInt("account"),
-                result.getTimestamp("createdAt").toInstant(),
-                result.getTimestamp("expiresAt").toInstant(),
+                result.getTimestamp("creation").toInstant(),
+                result.getTimestamp("expiration").toInstant(),
                 result.getTimestamp("lastLogin").toInstant());
     }
 
     private boolean validate(final MindustrySession session) {
         final var now = Instant.now();
-        if (session.expiresAt().isAfter(now)
+        if (session.expiration().isAfter(now)
                 || session.lastLogin().plus(Duration.ofDays(7)).isAfter(now)) {
             return true;
         } else {
