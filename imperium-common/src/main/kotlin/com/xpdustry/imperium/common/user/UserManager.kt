@@ -17,15 +17,15 @@
  */
 package com.xpdustry.imperium.common.user
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Identity
+import jakarta.inject.Inject
 import java.net.InetAddress
 import java.time.Instant
 import kotlinx.coroutines.sync.Mutex
@@ -56,15 +56,14 @@ interface UserManager {
 
     suspend fun incrementJoins(identity: Identity.Mindustry)
 
-    suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean
+    suspend fun getSetting(uuid: MindustryUUID, setting: Setting): Boolean
 
-    suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean>
+    suspend fun getSettings(uuid: MindustryUUID): Map<Setting, Boolean>
 
-    suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean)
+    suspend fun setSetting(uuid: MindustryUUID, setting: Setting, value: Boolean)
 }
 
-class SimpleUserManager(private val provider: SQLProvider, private val messenger: Messenger) :
-    UserManager, ImperiumApplication.Listener {
+class SimpleUserManager @Inject constructor(private val provider: SQLProvider) : UserManager, LifecycleListener {
     private val userCreateMutex = Mutex()
 
     override fun onImperiumInit() {
@@ -173,12 +172,12 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
             }
         }
 
-    override suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
-        getSettings0(uuid)[setting] ?: setting.default
+    override suspend fun getSetting(uuid: MindustryUUID, setting: Setting): Boolean =
+        getSettings0(uuid)[setting] ?: setting.def()
 
-    override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> = getSettings0(uuid)
+    override suspend fun getSettings(uuid: MindustryUUID): Map<Setting, Boolean> = getSettings0(uuid)
 
-    private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> =
+    private suspend fun getSettings0(uuid: MindustryUUID): Map<Setting, Boolean> =
         provider.newSuspendTransaction {
             (UserSettingTable leftJoin UserTable)
                 .select(UserSettingTable.setting, UserSettingTable.value)
@@ -186,7 +185,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
                 .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
         }
 
-    override suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean): Unit =
+    override suspend fun setSetting(uuid: MindustryUUID, setting: Setting, value: Boolean): Unit =
         provider.newSuspendTransaction {
             val user = findByUuid(uuid) ?: return@newSuspendTransaction
             UserSettingTable.upsert {

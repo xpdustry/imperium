@@ -26,6 +26,8 @@ data class WebhookMessage(
     val embeds: List<Embed> = emptyList(),
     val attachments: List<Attachment> = emptyList(),
 ) {
+    constructor(content: String?) : this(content, emptyList(), emptyList())
+
     data class Embed(
         val title: String? = null,
         val thumbnail: Media? = null,

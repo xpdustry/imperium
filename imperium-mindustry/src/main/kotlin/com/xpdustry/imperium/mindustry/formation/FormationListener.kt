@@ -19,15 +19,14 @@ package com.xpdustry.imperium.mindustry.formation
 
 import arc.math.Mathf
 import arc.util.Interval
+import arc.util.Time
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -40,10 +39,10 @@ import com.xpdustry.imperium.mindustry.translation.formation_pattern_change
 import com.xpdustry.imperium.mindustry.translation.formation_pattern_failure_no_permission
 import com.xpdustry.imperium.mindustry.translation.formation_pattern_list
 import com.xpdustry.imperium.mindustry.translation.formation_toggle
+import jakarta.inject.Inject
 import java.util.ArrayDeque
 import kotlin.collections.set
 import kotlin.math.max
-import kotlin.math.min
 import mindustry.Vars
 import mindustry.content.UnitTypes
 import mindustry.entities.Units
@@ -52,10 +51,9 @@ import mindustry.gen.Groups
 import mindustry.gen.Nulls
 import mindustry.gen.Unit as MindustryUnit
 
-class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class FormationListener @Inject constructor(private val accounts: AccountManager) : LifecycleListener {
 
     private val interval = Interval()
-    private val accounts = instances.get<AccountManager>()
     private val formations = mutableMapOf<Int, FormationContext>()
 
     @TriggerHandler(Trigger.update)
@@ -84,6 +82,14 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                     updated = true
                     context.remove(member)
                 }
+            }
+
+            // Avoids issues with rotating formations
+            if (
+                !(context.leader.isFlying && context.leader.moving()) &&
+                    context.members.none { it.backingUnit.isShooting() }
+            ) {
+                context.progress += Time.delta
             }
 
             if (interval.get(60F) || context.members.isEmpty()) {
@@ -116,16 +122,8 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 context.strategy.update(context)
             }
 
-            val spacing =
-                if (context.leader.hitSize <= 15) context.leader.hitSize * 1.6F else context.leader.hitSize * 1.35F
             for (member in context.members) {
-                context.pattern.calculate(
-                    member.targetVector,
-                    context.assignments[member.id] ?: 0,
-                    min(context.slots, context.members.size),
-                    spacing,
-                    context.leader.speed(),
-                )
+                context.pattern.calculate(context, member.targetVector, context.assignments[member.id] ?: 0)
                 member.targetVector.add(player)
             }
 
@@ -161,6 +159,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
         if (account != null) {
             slots =
                 when {
+                    accounts.selectAchievement(account.id, Achievement.SUPPORTER) -> 18
                     accounts.selectAchievement(account.id, Achievement.HYPER) -> 18
                     accounts.selectAchievement(account.id, Achievement.ACTIVE) -> 12
                     account.rank >= Rank.VERIFIED -> 8

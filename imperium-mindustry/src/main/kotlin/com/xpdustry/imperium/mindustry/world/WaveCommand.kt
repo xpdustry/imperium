@@ -18,11 +18,10 @@
 package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -31,16 +30,17 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
+import jakarta.inject.Inject
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import mindustry.Vars
 import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
 
-class WaveCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds), ImperiumApplication.Listener {
+class WaveCommand @Inject constructor(plugin: MindustryPlugin) :
+    AbstractVoteCommand<Int>(plugin, "wave-skip", 45.seconds), LifecycleListener {
     private val waveSkipInterface =
-        MenuInterface.create(instances.get()).apply {
+        MenuInterface.create(plugin).apply {
             addTransformer { _, pane ->
                 pane.title = "Skip Wave"
                 pane.content = "How many waves do you want to skip?"

@@ -21,20 +21,20 @@ import arc.graphics.Color
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import jakarta.inject.Inject
 import java.time.Duration
 import java.time.Instant
 import kotlin.time.Duration.Companion.milliseconds
@@ -45,13 +45,17 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Range
 
-class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val historian = instances.get<Historian>()
-    private val taps = PlayerMap<Long>(instances.get())
-    private val users = instances.get<UserManager>()
-    private val config = instances.get<ImperiumConfig>()
-    private val historyRenderer = instances.get<HistoryRenderer>()
-    private val heatmapViewers = PlayerMap<Boolean>(instances.get())
+class HistoryCommand
+@Inject
+constructor(
+    private val historian: Historian,
+    private val users: UserManager,
+    private val config: ImperiumConfig,
+    private val historyRenderer: HistoryRenderer,
+    plugin: MindustryPlugin,
+) : LifecycleListener {
+    private val taps = PlayerMap<Long>(plugin)
+    private val heatmapViewers = PlayerMap<Boolean>(plugin)
 
     @TaskHandler(interval = 1L, delay = 1L, unit = MindustryTimeUnit.SECONDS)
     internal fun onHeatmapViewUpdate() {
@@ -83,7 +87,7 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @EventHandler
     internal fun onPlayerTapEvent(event: EventType.TapEvent) =
         ImperiumScope.MAIN.launch {
-            if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAP_TILE_LOG)) {
+            if (users.getSetting(event.player.uuid(), Setting.DOUBLE_TAP_TILE_LOG)) {
                 val last = taps[event.player]
                 if (
                     last != null &&

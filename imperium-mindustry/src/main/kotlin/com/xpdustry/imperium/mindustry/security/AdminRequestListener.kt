@@ -21,11 +21,9 @@ import arc.Events
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
@@ -42,6 +40,7 @@ import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
+import jakarta.inject.Inject
 import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -64,12 +63,15 @@ private val PUNISHMENT_REASON = stateKey<String>("punishment_reason")
 private val PUNISHMENT_TARGET = stateKey<Identity.Mindustry>("punishment_target")
 private val PUNISHMENT_TYPE = stateKey<Punishment.Type>("punishment_type")
 
-class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
-    private val accounts = instances.get<AccountManager>()
-    private val codec = instances.get<IdentifierCodec>()
+class AdminRequestListener
+@Inject
+constructor(
+    private val plugin: MindustryPlugin,
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val accounts: AccountManager,
+    private val codec: IdentifierCodec,
+) : LifecycleListener {
     private lateinit var adminActionInterface: Interface
 
     override fun onImperiumInit() {
@@ -257,14 +259,17 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 requester.con,
                 target,
                 TraceInfo(
-                    if (canSeeInfo) target.con.address else "Don't have permission to view addresses.",
+                    if (canSeeInfo) target.con.address
+                    else "Don't have permission to view addresses. | ${codec.encode(user.id)}",
+                    // fix foos autotrace complaining about ips being the same
+                    // https://github.com/mindustry-antigrief/mindustry-client/blob/cd7df920b49c167674392e6837cba1812d5b19dc/core/src/mindustry/client/antigrief/Moderation.kt#L116
                     if (canSeeInfo) target.uuid() else codec.encode(user.id),
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,
                     punishments.findAllByIdentity(target.identity).count(),
                     if (canSeeInfo) historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
-                    else arrayOf("Don't have permission to view addresses."),
+                    else arrayOf("Don't have permission to view addresses | ${codec.encode(user.id)}"),
                     historic.names.toTypedArray(),
                 ),
             )

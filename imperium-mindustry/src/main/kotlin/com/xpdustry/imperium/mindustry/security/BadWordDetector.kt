@@ -17,7 +17,11 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.string.StringTrieMap
+import jakarta.inject.Inject
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.io.path.inputStream
@@ -29,7 +33,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromStream
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.ahocorasick.trie.PayloadTrie
 
 interface BadWordDetector {
 
@@ -42,54 +45,65 @@ enum class Category {
     HATE_SPEECH,
 }
 
-class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, ImperiumApplication.Listener {
+class SimpleBadWordDetector @Inject constructor(private val http: OkHttpClient, private val config: ImperiumConfig) :
+    BadWordDetector, LifecycleListener {
 
-    private lateinit var trie: PayloadTrie<Category>
+    private val trie = StringTrieMap.create<Category>()
 
     @OptIn(ExperimentalSerializationApi::class)
     override fun onImperiumInit() {
-        http
-            .newCall(
-                Request.Builder().url("https://github.com/xpdustry/bad-words/archive/refs/heads/master.zip").build()
-            )
-            .execute()
-            .use { response ->
-                if (response.code != 200) {
-                    error("Failed to download bad words list")
-                }
-                val temp = Files.createTempFile("imperium", ".zip")
-                temp.outputStream().use { out -> response.body!!.byteStream().copyTo(out) }
-                val builder = PayloadTrie.builder<Category>().ignoreCase()
-                FileSystems.newFileSystem(temp, null as ClassLoader?).use { fs ->
-                    fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach { entry ->
-                        entry.inputStream().use {
-                            for (category in Json.decodeFromStream<List<BadWordCategory>>(it)) {
-                                val parsed =
-                                    when (category.category) {
-                                        "hate" -> Category.HATE_SPEECH
-                                        "sexual" -> Category.SEXUAL
-                                        "strong" -> Category.STRONG_LANGUAGE
-                                        else -> continue
-                                    }
-                                category.words.forEach { word -> builder.addKeyword(word, parsed) }
+        try {
+            http
+                .newCall(
+                    Request.Builder().url("https://github.com/xpdustry/bad-words/archive/refs/heads/master.zip").build()
+                )
+                .execute()
+                .use { response ->
+                    if (response.code != 200) {
+                        error("Failed to download bad words list")
+                    }
+                    val temp = Files.createTempFile("imperium", ".zip")
+                    temp.outputStream().use { out -> response.body!!.byteStream().copyTo(out) }
+                    FileSystems.newFileSystem(temp, null as ClassLoader?).use { fs ->
+                        fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach { entry ->
+                            entry.inputStream().use {
+                                for (category in Json.decodeFromStream<List<BadWordCategory>>(it)) {
+                                    val parsed =
+                                        when (category.category) {
+                                            "hate" -> Category.HATE_SPEECH
+                                            "sexual" -> Category.SEXUAL
+                                            "strong" -> Category.STRONG_LANGUAGE
+                                            else -> continue
+                                        }
+                                    category.words.forEach { word -> trie.put(word.lowercase(), parsed) }
+                                }
                             }
                         }
                     }
                 }
-                trie = builder.build()
+        } catch (e: Exception) {
+            if (config.testing) {
+                logger.warn("Failed to download bad words list", e)
+            } else {
+                throw e
             }
+        }
     }
 
     override fun findBadWords(text: String, categories: Set<Category>) =
         trie
-            .parseText(text)
+            .search(text.lowercase())
             .filter {
-                it.payload in categories &&
-                    (it.keyword.length >= 5 ||
-                        (text.getOrNull(it.start - 1)?.isWhitespace() ?: true &&
-                            text.getOrNull(it.end + 1)?.isWhitespace() ?: true))
+                it.value in categories &&
+                    (it.word.length >= 5 ||
+                        (text.getOrNull(it.index - 1)?.isWhitespace() ?: true &&
+                            text.getOrNull(it.index + it.word.length)?.isWhitespace() ?: true))
             }
-            .map { it.keyword }
+            .map { it.word }
 
     @Serializable private data class BadWordCategory(val category: String, val words: Set<String>)
+
+    companion object {
+        private val logger by LoggerDelegate()
+    }
 }

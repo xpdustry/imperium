@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.misc
 
+import arc.Core
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
@@ -34,8 +35,10 @@ class PlayerMap<V>(plugin: MindustryPlugin) {
                 .filter { it.first != null } as Sequence<Pair<Player, V>>
 
     init {
-        Distributor.get().eventBus.subscribe(PlayerLeave::class.java, Priority.LOWEST, plugin) {
-            players.remove(it.player.id())
+        Core.app.post {
+            Distributor.get().eventBus.subscribe(PlayerLeave::class.java, Priority.LOWEST, plugin) {
+                players.remove(it.player.id())
+            }
         }
     }
 

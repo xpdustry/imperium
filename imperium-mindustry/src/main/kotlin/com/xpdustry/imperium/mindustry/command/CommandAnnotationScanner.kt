@@ -36,6 +36,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import io.leangen.geantyref.TypeToken
+import jakarta.inject.Inject
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 import kotlin.jvm.optionals.getOrNull
@@ -67,8 +68,9 @@ import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
 import org.incendo.cloud.translations.TranslationBundle
 
-class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val config: ImperiumConfig) :
-    PluginAnnotationProcessor<Void> {
+class CommandAnnotationScanner
+@Inject
+constructor(private val plugin: MindustryPlugin, private val config: ImperiumConfig) : PluginAnnotationProcessor<Void> {
     private lateinit var clientCommandManager: MindustryCommandManager<CommandSender>
     private lateinit var serverCommandManager: MindustryCommandManager<CommandSender>
     private var initialized = false

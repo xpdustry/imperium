@@ -23,10 +23,8 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.collection.MindustryCollections
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.misc.isCoreBuilding
 import com.xpdustry.imperium.mindustry.misc.isSourceBlock
@@ -34,6 +32,7 @@ import com.xpdustry.imperium.mindustry.translation.announcement_dangerous_block_
 import com.xpdustry.imperium.mindustry.translation.announcement_impending_explosion_alert
 import com.xpdustry.imperium.mindustry.translation.announcement_important_block_destroy_attempt
 import com.xpdustry.imperium.mindustry.translation.announcement_important_block_destroyed
+import jakarta.inject.Inject
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.net.Administration.ActionType
@@ -45,12 +44,11 @@ import mindustry.world.blocks.power.NuclearReactor
 import mindustry.world.blocks.production.Incinerator
 import mindustry.world.consumers.ConsumeItemExplode
 
-class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class AlertListener @Inject constructor(config: ImperiumConfig) : LifecycleListener {
 
     private val explosives = MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
     private val generators = IntSet()
-    private val generatorsRateLimiter =
-        SimpleRateLimiter<Int>(1, instances.get<ImperiumConfig>().mindustry.world.explosiveDamageAlertDelay)
+    private val generatorsRateLimiter = SimpleRateLimiter<Int>(1, config.mindustry.world.explosiveDamageAlertDelay)
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {

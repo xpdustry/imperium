@@ -36,7 +36,6 @@ dependencies {
     compileOnly(libs.nohorny)
     compileOnly(libs.flex)
     implementation(libs.jsoup)
-    implementation(libs.ahocorasick)
 }
 
 val generateResources by tasks.registering {
@@ -140,18 +139,23 @@ tasks.register<MindustryExec>("runMindustryDesktop2") {
     configureDesktop()
 }
 
+tasks.withType<MindustryExec> {
+    jvmArguments.add("--enable-preview")
+}
+
 val pluginLibs = fileTree("libs") { include("*.jar") }
 
 tasks.runMindustryServer {
     mods.from(
+        tasks.shadowJar,
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
         downloadFlex,
         pluginLibs,
         downloadSql4md,
-        downloadDistributorCommon,
-        downloadDistributorPermissionRank,
+        // downloadDistributorCommon,
+        // downloadDistributorPermissionRank,
     )
 }
 
@@ -167,7 +171,7 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadFlex,
         pluginLibs,
         downloadSql4md,
-        downloadDistributorCommon,
-        downloadDistributorPermissionRank,
+        // downloadDistributorCommon,
+        // downloadDistributorPermissionRank,
     )
 }

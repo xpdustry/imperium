@@ -25,11 +25,9 @@ import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.user.User
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.user.Setting
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
@@ -43,12 +41,14 @@ import com.xpdustry.imperium.mindustry.translation.gui_user_settings_description
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_entry
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_title
 import com.xpdustry.imperium.mindustry.translation.user_setting_description
+import jakarta.inject.Inject
 import mindustry.gen.Player
 
-class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val users = instances.get<UserManager>()
-    private val playerSettingsInterface = createPlayerSettingsInterface(instances.get())
-    private val accounts = instances.get<AccountManager>()
+class UserSettingsCommand
+@Inject
+constructor(private val users: UserManager, private val accounts: AccountManager, plugin: MindustryPlugin) :
+    LifecycleListener {
+    private val playerSettingsInterface = createPlayerSettingsInterface(plugin)
 
     @ImperiumCommand(["settings"])
     @ClientSide
@@ -89,9 +89,9 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
             }
         }
 
-    private suspend fun loadUserSettings(player: Player): Map<User.Setting, Boolean> {
+    private suspend fun loadUserSettings(player: Player): Map<Setting, Boolean> {
         val settings = users.getSettings(player.uuid()).toMutableMap()
-        for (setting in User.Setting.entries) settings.putIfAbsent(setting, setting.default)
+        for (setting in Setting.entries) settings.putIfAbsent(setting, setting.def())
         val achievements =
             accounts
                 .selectBySession(player.sessionKey)
@@ -99,11 +99,11 @@ class UserSettingsCommand(instances: InstanceManager) : ImperiumApplication.List
                 .orEmpty()
                 .filterValues { it }
                 .keys
-        settings.keys.removeAll { it.deprecated || (it.achievement != null && it.achievement !in achievements) }
+        settings.keys.removeAll { it.deprecated() || (it.achievement() != null && it.achievement() !in achievements) }
         return settings
     }
 
     companion object {
-        private val SETTINGS = key<Map<User.Setting, Boolean>>("settings")
+        private val SETTINGS = key<Map<Setting, Boolean>>("settings")
     }
 }

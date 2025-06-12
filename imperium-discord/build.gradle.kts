@@ -33,8 +33,8 @@ dependencies {
 }
 
 application {
-    applicationName = "ImperiumDiscord"
-    mainClass = "com.xpdustry.imperium.discord.ImperiumDiscordKt"
+    applicationName = "ImperiumBackend"
+    mainClass = "com.xpdustry.imperium.backend.BackendLauncher"
 }
 
 tasks.shadowJar {
