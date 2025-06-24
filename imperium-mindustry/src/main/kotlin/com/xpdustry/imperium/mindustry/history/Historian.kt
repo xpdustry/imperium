@@ -51,7 +51,6 @@ import kotlin.reflect.full.superclasses
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.gen.Building
-import mindustry.gen.Nulls
 import mindustry.world.Block
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.distribution.ItemBridge
@@ -110,7 +109,7 @@ class SimpleHistorian(
             val (team, unit) =
                 runMindustryThread {
                     val player = Entities.getPlayers().firstOrNull { it.uuid() == user.uuid }
-                    (player?.team() ?: Team.sharded) to (player?.unit()?.type ?: Nulls.unit.type)
+                    (player?.team() ?: Team.sharded) to player?.unit()?.type
                 }
             HistoryResponseMessage(
                 ComponentStringBuilder.plain(KeyContainer.empty())
@@ -171,7 +170,7 @@ class SimpleHistorian(
         if (event.player == null) {
             return
         }
-        this.addEntry(event.tile, event.tile.block(), event.player.unit(), HistoryEntry.Type.CONFIGURE, event.value)
+        this.addEntry(event.tile, event.tile.block, event.player.unit(), HistoryEntry.Type.CONFIGURE, event.value)
     }
 
     @EventHandler(priority = Priority.HIGH)
@@ -185,12 +184,12 @@ class SimpleHistorian(
         if (event.unit == null || event.build.rotation == event.previous) {
             return
         }
-        this.addEntry(event.build, event.build.block(), event.unit, HistoryEntry.Type.ROTATE, event.build.config())
+        this.addEntry(event.build, event.build.block, event.unit, HistoryEntry.Type.ROTATE, event.build.config())
     }
 
     @Suppress("UNCHECKED_CAST")
     private fun <B : Building> getConfiguration(building: B, type: HistoryEntry.Type, config: Any?): BlockConfig? {
-        if (building.block().configurations.isEmpty) {
+        if (building.block.configurations.isEmpty) {
             return null
         }
         var clazz: KClass<*> = building::class

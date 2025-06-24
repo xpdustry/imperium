@@ -49,7 +49,6 @@ import mindustry.content.UnitTypes
 import mindustry.entities.Units
 import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
-import mindustry.gen.Nulls
 import mindustry.gen.Unit as MindustryUnit
 
 class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
@@ -146,7 +145,7 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
                 sender.reply(formation_toggle(enabled = false))
                 return@runMindustryThread false
             }
-            if (sender.player.unit().dead() || sender.player.unit() == Nulls.unit) {
+            if (sender.player.unit().dead() || sender.player.unit() == null) {
                 sender.error(formation_failure_dead())
                 return@runMindustryThread false
             }

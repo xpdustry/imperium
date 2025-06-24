@@ -160,6 +160,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
         Lines.useLegacyLine = true
         Core.atlas.setErrorRegion("error")
         Draw.scl = 1f / 4f
+        // TODO Begin bindings for mindus, I hate this shi
         Core.batch =
             object : SpriteBatch(0) {
                 override fun draw(
@@ -192,9 +193,9 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
                     )
                     currentSchematicGraphics!!.transform = affine
                     var image = getImage((region as AtlasRegion).name)
-                    if (color != Color.white) {
-                        image = tint(image, color)
-                    }
+                    // if (this != Color.white) {
+                    //     image = tint(image, color)
+                    // }
                     currentSchematicGraphics!!.drawImage(image, 0, 0, sw.toInt(), sh.toInt(), null)
                 }
 

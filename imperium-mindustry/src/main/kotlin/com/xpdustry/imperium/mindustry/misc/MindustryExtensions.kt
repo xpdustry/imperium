@@ -91,7 +91,7 @@ private fun getVersionType(): MindustryVersion.Type =
         }
 
 val Building.isCoreBuilding: Boolean
-    get() = block() is CoreBlock || (this is StorageBlock.StorageBuild && linkedCore != null)
+    get() = block is CoreBlock || (this is StorageBlock.StorageBuild && linkedCore != null)
 
 val Block.isSourceBlock: Boolean
     get() = this is ItemSource || this is LiquidSource || this is PowerSource

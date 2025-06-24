@@ -105,8 +105,6 @@ class FormationAI(val context: FormationContext) : AIController(), FormationMemb
 
     override fun removed(unit: MindustryUnit) = context.remove(this)
 
-    override fun isBeingControlled(player: MindustryUnit) = context.leader == player
-
     override fun isLogicControllable() = false
 
     override fun isValid() = !unit().dead() && unit().controller() == this

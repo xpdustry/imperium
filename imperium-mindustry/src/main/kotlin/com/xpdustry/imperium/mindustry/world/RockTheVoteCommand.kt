@@ -116,7 +116,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
                         ctx.state[MAPS]!!.filter { difficulty == null || it.difficulty == difficulty }
                     }
                     .setRenderer { it -> Distributor.get().mindustryComponentDecoder.decode(it.map.name()) }
-                    .setFillEmptySpace(true)
+                    .setFillEmptyHeight(true)
                     .setChoiceAction(
                         BiAction.from<MapWithDifficulty>(Action.hideAll()).then { window, map ->
                             onVoteSessionStart(window.viewer, manager.session, MapSelector.Specific(map.map))
