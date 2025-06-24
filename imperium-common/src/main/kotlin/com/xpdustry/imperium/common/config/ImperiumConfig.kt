@@ -46,7 +46,6 @@ private val SUPPORTED_LANGUAGE =
         Locale.forLanguageTag("hr"),
     )
 
-@JvmRecord
 data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
@@ -63,7 +62,6 @@ data class ImperiumConfig(
     val metrics: MetricConfig = MetricConfig.None,
 )
 
-@JvmRecord
 data class NetworkConfig(
     val vpnDetection: VpnDetectionConfig = VpnDetectionConfig.None,
     val discoveryInterval: Duration = 10.seconds,
@@ -76,9 +74,8 @@ data class NetworkConfig(
 }
 
 sealed interface DatabaseConfig {
-    @JvmRecord data class H2(val memory: Boolean = false, val database: String = "imperium") : DatabaseConfig
+    data class H2(val memory: Boolean = false, val database: String = "imperium") : DatabaseConfig
 
-    @JvmRecord
     data class MariaDB(
         val host: String = "localhost",
         val port: Short = 3306,
@@ -100,7 +97,6 @@ sealed interface MessengerConfig {
     ) : MessengerConfig
 }
 
-@JvmRecord
 data class ServerConfig(val name: String, val displayName: String = name.capitalize()) {
     val identity: Identity.Server
         get() = Identity.Server(name)
@@ -141,7 +137,6 @@ data class DiscordConfig(
     data class Channels(val notifications: Long = 0, val maps: Long = 0, val reports: Long = 0)
 }
 
-@JvmRecord
 data class MindustryConfig(
     val gamemode: MindustryGamemode = MindustryGamemode.SURVIVAL,
     val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),

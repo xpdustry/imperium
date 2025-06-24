@@ -18,7 +18,7 @@
 package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.Distributor
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.util.zip.InflaterInputStream
@@ -29,7 +29,7 @@ import mindustry.logic.LUnitControl
 import mindustry.net.Administration
 import mindustry.world.blocks.logic.LogicBlock
 
-class LogicListener : LifecycleListener {
+class LogicListener : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter { action ->

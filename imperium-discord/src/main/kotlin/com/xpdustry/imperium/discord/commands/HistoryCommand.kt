@@ -17,23 +17,26 @@
  */
 package com.xpdustry.imperium.discord.commands
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.request
 import com.xpdustry.imperium.discord.misc.await
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
-class HistoryCommand @Inject constructor(private val messenger: Messenger, private val codec: IdentifierCodec) :
-    LifecycleListener {
+class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val messenger = instances.get<Messenger>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["history"])
     suspend fun onHistoryCommand(

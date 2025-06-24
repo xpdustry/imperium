@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.user.Setting
+import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -38,7 +38,6 @@ import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.toHexString
 import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -61,9 +60,9 @@ class ImperiumPlaceholderProcessor(
                 delay(2.seconds)
                 Entities.getPlayersAsync().forEach { player ->
                     val account = accounts.selectBySession(player.sessionKey)
-                    val undercover = users.getSetting(player.uuid(), Setting.UNDERCOVER)
+                    val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
                     val rainbow =
-                        users.getSetting(player.uuid(), Setting.RAINBOW_NAME) &&
+                        users.getSetting(player.uuid(), User.Setting.RAINBOW_NAME) &&
                             account != null &&
                             accounts.selectAchievement(account.id, Achievement.SUPPORTER)
                     runMindustryThread {
@@ -73,7 +72,7 @@ class ImperiumPlaceholderProcessor(
                             hours.remove(player)
                             ranks.remove(player)
                         } else {
-                            hours[player] = account.playtime.toKotlinDuration().inWholeHours.toInt()
+                            hours[player] = account.playtime.inWholeHours.toInt()
                             ranks[player] = account.rank
                         }
                     }
@@ -140,6 +139,7 @@ class ImperiumPlaceholderProcessor(
             Rank.OVERSEER -> Color.green
             Rank.MODERATOR -> Color.royal
             Rank.ADMIN,
+            Rank.HEAD_ADMIN,
             Rank.OWNER -> Color.scarlet
         }
 

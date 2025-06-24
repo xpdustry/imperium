@@ -17,9 +17,11 @@
  */
 package com.xpdustry.imperium.discord.content
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.image.inputStream
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.misc.Embed
@@ -28,7 +30,6 @@ import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.future.await
@@ -41,9 +42,9 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.utils.FileUpload
 
-class MindustryContentListener
-@Inject
-constructor(private val discord: DiscordService, private val content: MindustryContentHandler) : LifecycleListener {
+class MindustryContentListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val discord = instances.get<DiscordService>()
+    private val content = instances.get<MindustryContentHandler>()
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->

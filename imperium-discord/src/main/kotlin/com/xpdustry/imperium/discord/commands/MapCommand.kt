@@ -18,13 +18,15 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.image.inputStream
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.time.TimeRenderer
@@ -35,7 +37,7 @@ import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
-import jakarta.inject.Inject
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
@@ -44,14 +46,11 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
-internal class MapCommand
-@Inject
-constructor(
-    private val maps: MindustryMapManager,
-    private val content: MindustryContentHandler,
-    private val renderer: TimeRenderer,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val maps = instances.get<MindustryMapManager>()
+    private val content = instances.get<MindustryContentHandler>()
+    private val renderer = instances.get<TimeRenderer>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["map", "info"])
     suspend fun onMapInfo(interaction: SlashCommandInteraction, id: String) {

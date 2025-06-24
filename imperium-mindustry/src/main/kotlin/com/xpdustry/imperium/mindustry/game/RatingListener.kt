@@ -26,13 +26,14 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
@@ -55,21 +56,18 @@ import com.xpdustry.imperium.mindustry.translation.gui_rate_map_success
 import com.xpdustry.imperium.mindustry.translation.gui_rate_map_title
 import com.xpdustry.imperium.mindustry.translation.gui_submit
 import com.xpdustry.imperium.mindustry.translation.selected
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-class RatingListener
-@Inject
-constructor(private val users: UserManager, private val maps: MindustryMapManager, plugin: MindustryPlugin) :
-    LifecycleListener {
-    private val delays = PlayerMap<Long>(plugin)
-
+class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val users = instances.get<UserManager>()
+    private val maps = instances.get<MindustryMapManager>()
+    private val delays = PlayerMap<Long>(instances.get())
     private val menu =
-        MenuManager.create(plugin).apply {
+        MenuManager.create(instances.get()).apply {
             addTransformer { (pane, state) ->
                 pane.title = gui_rate_map_title()
 

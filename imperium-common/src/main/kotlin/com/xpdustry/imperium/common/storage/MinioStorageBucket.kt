@@ -17,9 +17,9 @@
  */
 package com.xpdustry.imperium.common.storage
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.StorageConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import io.minio.BucketExistsArgs
 import io.minio.GetObjectArgs
 import io.minio.MakeBucketArgs
@@ -36,7 +36,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 
 class MinioStorageBucket(private val config: StorageConfig.Minio, private val http: OkHttpClient) :
-    StorageBucket, LifecycleListener {
+    StorageBucket, ImperiumApplication.Listener {
     private lateinit var client: MinioAsyncClient
 
     override fun onImperiumInit() {

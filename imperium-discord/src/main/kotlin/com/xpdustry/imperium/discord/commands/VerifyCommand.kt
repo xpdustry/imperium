@@ -19,9 +19,11 @@ package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -32,20 +34,16 @@ import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class VerifyCommand
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val discord: DiscordService,
-    private val accounts: AccountManager,
-    private val messenger: Messenger,
-) : LifecycleListener {
+class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val config = instances.get<ImperiumConfig>()
+    private val discord = instances.get<DiscordService>()
+    private val accounts = instances.get<AccountManager>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
+    private val messenger = instances.get<Messenger>()
     private val pending = buildCache<Int, Verification> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     override fun onImperiumInit() {

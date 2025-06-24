@@ -18,12 +18,11 @@
 package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
@@ -38,8 +37,7 @@ import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction
 
-class ModalCommandRegistry @Inject constructor(private val discord: DiscordService) :
-    AnnotationScanner, LifecycleListener {
+class ModalCommandRegistry(private val discord: DiscordService) : AnnotationScanner, ImperiumApplication.Listener {
 
     private val handlers = mutableMapOf<String, ModalHandler>()
 

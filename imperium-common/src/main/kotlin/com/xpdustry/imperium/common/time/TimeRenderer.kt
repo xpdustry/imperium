@@ -18,7 +18,6 @@
 package com.xpdustry.imperium.common.time
 
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import jakarta.inject.Inject
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -37,7 +36,7 @@ interface TimeRenderer {
     fun renderRelativeInstant(instant: Instant, locale: Locale? = null): String
 }
 
-class SimpleTimeRenderer @Inject constructor(private val config: ImperiumConfig) : TimeRenderer {
+class SimpleTimeRenderer(private val config: ImperiumConfig) : TimeRenderer {
 
     override fun renderDuration(duration: Duration, locale: Locale?): String =
         if (duration.isInfinite()) "∞"

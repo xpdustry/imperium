@@ -20,11 +20,9 @@ package com.xpdustry.imperium.common.message
 import io.github.classgraph.ClassGraph
 import kotlin.reflect.jvm.jvmName
 import kotlinx.serialization.Serializable
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 
-@Disabled("No longer works since we have mixed kotlin and java. Should be integrated to MessageService tests")
 class MessageTest {
 
     @Test

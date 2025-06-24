@@ -22,22 +22,24 @@ import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.message.MessageContext
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.asAudience
-import jakarta.inject.Inject
 import kotlinx.coroutines.future.await
 import mindustry.Vars
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 
-class ChatCommand @Inject constructor(private val messenger: Messenger, private val config: ImperiumConfig) :
-    LifecycleListener {
+class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val messenger = instances.get<Messenger>()
+    private val config = instances.get<ImperiumConfig>()
 
     @ImperiumCommand(["t"])
     @ClientSide

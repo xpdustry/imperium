@@ -19,13 +19,13 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import mindustry.Vars
 import mindustry.core.GameState
 
-class PauseListener : LifecycleListener {
+class PauseListener : ImperiumApplication.Listener {
 
     @ImperiumCommand(["pause"], rank = Rank.MODERATOR)
     @ClientSide

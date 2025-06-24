@@ -24,10 +24,11 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.toInetAddress
@@ -54,21 +55,16 @@ import com.xpdustry.imperium.mindustry.translation.gui_report_rate_limit
 import com.xpdustry.imperium.mindustry.translation.gui_report_success
 import com.xpdustry.imperium.mindustry.translation.gui_report_title
 import com.xpdustry.imperium.mindustry.translation.yes
-import jakarta.inject.Inject
 import java.net.InetAddress
 import kotlin.time.Duration.Companion.seconds
 import mindustry.gen.Player
 
-class ReportCommand
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val messenger: Messenger,
-    private val users: UserManager,
-    plugin: MindustryPlugin,
-) : LifecycleListener {
-    private val reportInterface = MenuManager.create(plugin)
+class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val reportInterface = MenuManager.create(instances.get())
+    private val config = instances.get<ImperiumConfig>()
+    private val messenger = instances.get<Messenger>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
+    private val users = instances.get<UserManager>()
 
     init {
         reportInterface.addTransformer(

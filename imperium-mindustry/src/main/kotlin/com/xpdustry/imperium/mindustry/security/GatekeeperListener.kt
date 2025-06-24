@@ -26,11 +26,13 @@ import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetAllOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
@@ -40,7 +42,6 @@ import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gatekeeper_failure
-import jakarta.inject.Inject
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.time.Duration
@@ -60,16 +61,14 @@ import okhttp3.OkHttpClient
 
 private val logger = logger("ROOT")
 
-class GatekeeperListener
-@Inject
-constructor(
-    private val pipeline: GatekeeperPipeline,
-    private val vpn: VpnDetection,
-    private val http: OkHttpClient,
-    private val config: ImperiumConfig,
-    private val whitelist: AddressWhitelist,
-    private val badWords: BadWordDetector,
-) : LifecycleListener {
+class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val pipeline = instances.get<GatekeeperPipeline>()
+    private val vpn = instances.get<VpnDetection>()
+    private val http = instances.get<OkHttpClient>()
+    private val config = instances.get<ImperiumConfig>()
+    private val whitelist = instances.get<AddressWhitelist>()
+    private val badWords = instances.get<BadWordDetector>()
+
     override fun onImperiumInit() {
         if (!config.mindustry.security.gatekeeper) {
             logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")

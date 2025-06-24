@@ -17,14 +17,11 @@
  */
 package com.xpdustry.imperium.common.database
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
-import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import jakarta.inject.Inject
-import jakarta.inject.Named
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
 import kotlinx.coroutines.CoroutineScope
@@ -41,10 +38,8 @@ interface SQLProvider {
     suspend fun <T> newSuspendTransaction(block: suspend () -> T): T
 }
 
-class SimpleSQLProvider
-@Inject
-constructor(private val config: ImperiumConfig, @param:Named("directory") private val directory: Path) :
-    SQLProvider, LifecycleListener {
+class SimpleSQLProvider(private val config: DatabaseConfig, private val directory: Path) :
+    SQLProvider, ImperiumApplication.Listener {
 
     private val parent = SupervisorJob()
     private val scope = CoroutineScope(ImperiumScope.IO.coroutineContext + parent)
@@ -58,14 +53,13 @@ constructor(private val config: ImperiumConfig, @param:Named("directory") privat
         hikari.minimumIdle = 2
         hikari.addDataSourceProperty("createDatabaseIfNotExist", "true")
 
-        when (val config = config.database) {
+        when (config) {
             is DatabaseConfig.H2 -> {
                 hikari.driverClassName = "org.h2.Driver"
                 if (config.memory) {
                     hikari.jdbcUrl = "jdbc:h2:mem:${config.database};MODE=MYSQL"
                 } else {
-                    hikari.jdbcUrl =
-                        "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL;AUTO_SERVER=TRUE"
+                    hikari.jdbcUrl = "jdbc:h2:file:${directory.resolve("database.h2").absolutePathString()};MODE=MYSQL"
                 }
             }
             is DatabaseConfig.MariaDB -> {

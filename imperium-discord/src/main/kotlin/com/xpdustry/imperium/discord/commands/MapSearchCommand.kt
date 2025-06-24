@@ -19,13 +19,15 @@ package com.xpdustry.imperium.discord.commands
 
 import com.github.benmanes.caffeine.cache.RemovalCause
 import com.github.benmanes.caffeine.cache.Scheduler
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.discord.command.MenuCommand
@@ -34,7 +36,6 @@ import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.disableComponents
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
@@ -49,13 +50,10 @@ import net.dv8tion.jda.api.interactions.components.selections.StringSelectIntera
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu
 import net.dv8tion.jda.api.utils.messages.MessageEditData
 
-class MapSearchCommand
-@Inject
-constructor(
-    private val discord: DiscordService,
-    private val maps: MindustryMapManager,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class MapSearchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val discord = instances.get<DiscordService>()
+    private val maps = instances.get<MindustryMapManager>()
+    private val codec = instances.get<IdentifierCodec>()
     private val states =
         buildCache<Long, MapSearchState> {
             expireAfterWrite(1.minutes.toJavaDuration())

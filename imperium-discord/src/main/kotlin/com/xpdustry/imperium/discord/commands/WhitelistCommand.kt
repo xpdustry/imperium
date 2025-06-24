@@ -18,16 +18,19 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.toInetAddressOrNull
 import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.await
-import jakarta.inject.Inject
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class WhitelistCommand @Inject constructor(private val whitelist: AddressWhitelist) : LifecycleListener {
+class WhitelistCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val whitelist = instances.get<AddressWhitelist>()
+
     @ImperiumCommand(["whitelist", "add"], Rank.ADMIN)
     suspend fun onWhitelistAddCommand(interaction: SlashCommandInteraction, address: String, reason: String) {
         val reply = interaction.deferReply(true).await()

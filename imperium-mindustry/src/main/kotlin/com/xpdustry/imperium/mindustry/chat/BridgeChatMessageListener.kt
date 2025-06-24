@@ -26,32 +26,29 @@ import com.xpdustry.flex.message.FlexPlayerChatEvent
 import com.xpdustry.flex.message.MessageContext
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
-import jakarta.inject.Inject
-import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 
-class BridgeChatMessageListener
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val messenger: Messenger,
-    private val accounts: AccountManager,
-) : LifecycleListener {
+class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val config = instances.get<ImperiumConfig>()
+    private val messenger = instances.get<Messenger>()
+    private val accounts = instances.get<AccountManager>()
 
     override fun onImperiumInit() {
         messenger.consumer<BridgeChatMessage> {
@@ -81,7 +78,7 @@ constructor(
                     DiscordAudience(
                         it.senderName,
                         account?.rank ?: Rank.EVERYONE,
-                        account?.playtime?.toKotlinDuration()?.inWholeHours?.toInt(),
+                        account?.playtime?.inWholeHours?.toInt(),
                         config.language,
                     ),
                     Distributor.get().audienceProvider.players,

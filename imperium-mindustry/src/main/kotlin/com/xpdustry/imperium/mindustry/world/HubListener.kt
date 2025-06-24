@@ -22,13 +22,14 @@ import arc.math.geom.Geometry
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializablePolygon
@@ -37,8 +38,6 @@ import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.misc.id
-import jakarta.inject.Inject
-import jakarta.inject.Named
 import java.awt.Polygon
 import java.nio.file.Path
 import kotlin.experimental.or
@@ -58,19 +57,14 @@ import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.WorldLabel
 
-class HubListener
-@Inject
-constructor(
-    private val discovery: Discovery,
-    config: ImperiumConfig,
-    @Named("directory") directory: Path,
-    plugin: MindustryPlugin,
-) : LifecycleListener {
-    private val directory = directory.resolve("hub")
-    private val config = config.mindustry.hub
+class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val config = instances.get<ImperiumConfig>().mindustry.hub
+    private val directory = instances.get<Path>("directory").resolve("hub")
     private val portals = mutableMapOf<String, Portal>()
-    private val building = PlayerMap<PortalBuilder>(plugin)
-    private val debug = PlayerMap<Boolean>(plugin)
+    private val building = PlayerMap<PortalBuilder>(instances.get())
+    private val discovery = instances.get<Discovery>()
+    private val debug = PlayerMap<Boolean>(instances.get())
 
     override fun onImperiumInit() {
         directory.toFile().mkdirs()

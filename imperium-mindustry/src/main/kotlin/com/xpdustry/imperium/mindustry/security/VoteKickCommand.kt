@@ -21,13 +21,14 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.player.MUUID
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.toInetAddress
@@ -52,7 +53,6 @@ import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
 import com.xpdustry.imperium.mindustry.ui.state.stateKey
-import jakarta.inject.Inject
 import java.net.InetAddress
 import java.util.Collections
 import kotlin.math.ceil
@@ -76,19 +76,16 @@ data class VotekickEvent(val target: Player, val type: Type) {
     }
 }
 
-class VoteKickCommand
-@Inject
-constructor(
-    private val punishments: PunishmentManager,
-    private val config: ImperiumConfig,
-    private val users: UserManager,
-    private val marks: MarkedPlayerManager,
-    private val accounts: AccountManager,
-    plugin: MindustryPlugin,
-) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", 1.minutes), LifecycleListener {
+class VoteKickCommand(instances: InstanceManager) :
+    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", 1.minutes), ImperiumApplication.Listener {
 
+    private val punishments = instances.get<PunishmentManager>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
+    private val config = instances.get<ImperiumConfig>()
+    private val users = instances.get<UserManager>()
+    private val marks = instances.get<MarkedPlayerManager>()
+    private val accounts = instances.get<AccountManager>()
     private val recentBans =
         Collections.newSetFromMap(buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
 

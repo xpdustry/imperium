@@ -17,12 +17,13 @@
  */
 package com.xpdustry.imperium.mindustry
 
+import arc.Core
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.bridge.PlayerTracker
-import com.xpdustry.imperium.common.factory.ObjectBinder
-import com.xpdustry.imperium.common.factory.ObjectModule
-import com.xpdustry.imperium.common.lifecycle.PlatformExitService
-import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
+import com.xpdustry.imperium.common.inject.MutableInstanceManager
+import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.inject.provider
+import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
 import com.xpdustry.imperium.mindustry.game.ClientDetector
@@ -31,8 +32,6 @@ import com.xpdustry.imperium.mindustry.history.Historian
 import com.xpdustry.imperium.mindustry.history.HistoryRenderer
 import com.xpdustry.imperium.mindustry.history.SimpleHistorian
 import com.xpdustry.imperium.mindustry.history.SimpleHistoryRenderer
-import com.xpdustry.imperium.mindustry.lifecycle.ExecutorWithLifecycle
-import com.xpdustry.imperium.mindustry.lifecycle.MindustryExitService
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
 import com.xpdustry.imperium.mindustry.security.BadWordDetector
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
@@ -42,21 +41,30 @@ import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
 import java.nio.file.Path
 import java.util.concurrent.Executor
+import java.util.function.Supplier
 
-class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
-    override fun configure(binder: ObjectBinder) {
-        binder.bind(PlatformExitService::class.java).toImpl(MindustryExitService::class.java)
-        binder.bind(MindustryPlugin::class.java).toInst(plugin)
-        binder.bind(ImperiumVersion::class.java).toInst(ImperiumVersion.parse(plugin.metadata.version))
-        binder.bind(Historian::class.java).toImpl(SimpleHistorian::class.java)
-        binder.bind(GatekeeperPipeline::class.java).toImpl(SimpleGatekeeperPipeline::class.java)
-        binder.bind(Path::class.java).named("directory").toInst(plugin.directory)
-        binder.bind(DiscoveryDataSupplier::class.java).toInst(DiscoveryDataSupplier(::getMindustryServerInfo))
-        binder.bind(PlayerTracker::class.java).toImpl(MindustryPlayerTracker::class.java)
-        binder.bind(ClientDetector::class.java).toImpl(SimpleClientDetector::class.java)
-        binder.bind(BadWordDetector::class.java).toImpl(SimpleBadWordDetector::class.java)
-        binder.bind(HistoryRenderer::class.java).toImpl(SimpleHistoryRenderer::class.java)
-        binder.bind(MarkedPlayerManager::class.java).toImpl(SimpleMarkedPlayerManager::class.java)
-        binder.bind(Executor::class.java).named("work").toImpl(ExecutorWithLifecycle::class.java)
-    }
+internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlugin) {
+    provider<Historian> { SimpleHistorian(get(), get(), get(), get(), get()) }
+
+    provider<MindustryPlugin> { plugin }
+
+    provider<GatekeeperPipeline> { SimpleGatekeeperPipeline() }
+
+    provider<Path>("directory") { plugin.directory }
+
+    provider<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
+
+    provider<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().metadata.version) }
+
+    provider<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
+
+    provider<Executor>("main") { Executor(Core.app::post) }
+
+    provider<ClientDetector> { SimpleClientDetector(get()) }
+
+    provider<BadWordDetector> { SimpleBadWordDetector(get()) }
+
+    provider<HistoryRenderer> { SimpleHistoryRenderer(get(), get(), get()) }
+
+    provider<MarkedPlayerManager> { SimpleMarkedPlayerManager(plugin) }
 }

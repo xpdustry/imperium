@@ -19,10 +19,11 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.user.UserManager
@@ -34,7 +35,6 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_block
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_unit
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
@@ -44,18 +44,14 @@ import mindustry.world.Block
 import mindustry.world.blocks.power.PowerGenerator
 import mindustry.world.blocks.storage.StorageBlock
 
-class AntiGriefListener
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val historian: Historian,
-    private val users: UserManager,
-    private val marks: MarkedPlayerManager,
-    plugin: MindustryPlugin,
-) : LifecycleListener {
-    private val isNew = PlayerMap<Boolean>(plugin)
-    private val control = PlayerMap<Int>(plugin)
-    private val deaths = PlayerMap<RateLimiter<Unit>>(plugin)
+class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val config = instances.get<ImperiumConfig>()
+    private val historian = instances.get<Historian>()
+    private val users = instances.get<UserManager>()
+    private val isNew = PlayerMap<Boolean>(instances.get())
+    private val control = PlayerMap<Int>(instances.get())
+    private val deaths = PlayerMap<RateLimiter<Unit>>(instances.get())
+    private val marks = instances.get<MarkedPlayerManager>()
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =

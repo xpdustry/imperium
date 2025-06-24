@@ -23,15 +23,16 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.message.MessageContext
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -53,7 +54,6 @@ import com.xpdustry.imperium.mindustry.translation.announcement_ban
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
 import com.xpdustry.imperium.mindustry.translation.warning
-import jakarta.inject.Inject
 import java.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
@@ -72,22 +72,18 @@ import mindustry.world.Tile
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.MessageBlock
 
-class PunishmentListener
-@Inject
-constructor(
-    private val messenger: Messenger,
-    private val punishments: PunishmentManager,
-    private val users: UserManager,
-    private val gatekeeper: GatekeeperPipeline,
-    private val badWords: BadWordDetector,
-    private val config: ImperiumConfig,
-    private val codec: IdentifierCodec,
-    plugin: MindustryPlugin,
-) : LifecycleListener {
+class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val messenger = instances.get<Messenger>()
+    private val punishments = instances.get<PunishmentManager>()
+    private val users = instances.get<UserManager>()
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
-    private val cache = PlayerMap<List<Punishment>>(plugin)
-    private val kicking = PlayerMap<Boolean>(plugin)
+    private val cache = PlayerMap<List<Punishment>>(instances.get())
+    private val kicking = PlayerMap<Boolean>(instances.get())
+    private val gatekeeper = instances.get<GatekeeperPipeline>()
+    private val badWords = instances.get<BadWordDetector>()
     private val badWordsCounter = SimpleRateLimiter<MUUID>(3, 10.minutes)
+    private val config = instances.get<ImperiumConfig>()
+    private val codec = instances.get<IdentifierCodec>()
 
     override fun onImperiumInit() {
         messenger.consumer<PunishmentMessage> { message ->

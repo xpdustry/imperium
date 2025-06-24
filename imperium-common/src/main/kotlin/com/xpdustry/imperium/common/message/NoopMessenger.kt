@@ -17,13 +17,13 @@
  */
 package com.xpdustry.imperium.common.message
 
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlinx.coroutines.Job
 
-class NoopMessenger : Messenger, LifecycleListener {
+class NoopMessenger : Messenger, ImperiumApplication.Listener {
     override fun onImperiumInit() {
         LOGGER.warn("Using NoopMessenger, this is not recommended for production")
     }

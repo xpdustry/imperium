@@ -21,16 +21,17 @@ import arc.math.Interp
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.misc.dayNightCycle
-import jakarta.inject.Inject
 import mindustry.Vars
 import mindustry.gen.Call
 
-class DayNighCycleListener @Inject constructor(config: ImperiumConfig) : LifecycleListener {
+class DayNighCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val cycle = config.mindustry.world.dayNightCycleDuration.inWholeSeconds
+    private val cycle = instances.get<ImperiumConfig>().mindustry.world.dayNightCycleDuration.inWholeSeconds
 
     @EventHandler
     fun onMenuToPlayEvent(event: MenuToPlayEvent) {

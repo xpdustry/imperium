@@ -22,7 +22,6 @@ import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.request
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
-import jakarta.inject.Inject
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.Serializable
@@ -40,7 +39,7 @@ interface PlayerTracker {
     )
 }
 
-open class RequestingPlayerTracker @Inject constructor(protected val messenger: Messenger) : PlayerTracker {
+open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerTracker {
 
     override suspend fun getPlayerJoins(server: String): List<PlayerTracker.Entry>? =
         requestPlayerList(server, PlayerListRequest.Type.JOIN)

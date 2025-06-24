@@ -17,15 +17,14 @@
  */
 package com.xpdustry.imperium.common.security
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.user.UserAddressTable
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.user.UserTable
-import jakarta.inject.Inject
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
@@ -81,14 +80,12 @@ data class PunishmentMessage(
     }
 }
 
-class SimplePunishmentManager
-@Inject
-constructor(
+class SimplePunishmentManager(
     private val provider: SQLProvider,
     private val messenger: Messenger,
     private val users: UserManager,
     private val config: ImperiumConfig,
-) : PunishmentManager, LifecycleListener {
+) : PunishmentManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         provider.newTransaction { SchemaUtils.create(PunishmentTable) }

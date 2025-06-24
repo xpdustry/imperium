@@ -18,27 +18,25 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class PlayerCommand
-@Inject
-constructor(
-    private val users: UserManager,
-    private val discord: DiscordService,
-    private val renderer: TimeRenderer,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class PlayerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val users = instances.get<UserManager>()
+    private val discord = instances.get<DiscordService>()
+    private val renderer = instances.get<TimeRenderer>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["player", "info"])
     suspend fun onPlayerInfoCommand(interaction: SlashCommandInteraction, player: String) {
