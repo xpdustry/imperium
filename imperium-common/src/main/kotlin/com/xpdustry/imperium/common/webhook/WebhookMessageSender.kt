@@ -23,10 +23,8 @@ import com.xpdustry.imperium.common.config.WebhookBackendConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.common.version.ImperiumVersion
-import jakarta.inject.Inject
 import java.io.InputStream
 import java.util.EnumMap
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -42,15 +40,10 @@ import okhttp3.RequestBody.Companion.toRequestBody
 interface WebhookMessageSender {
 
     suspend fun send(channel: WebhookChannel, message: WebhookMessage)
-
-    fun sendBlocking(channel: WebhookChannel, message: WebhookMessage) {
-        runBlocking { send(channel, message) }
-    }
 }
 
-class WebhookMessageSenderImpl
-@Inject
-constructor(config: ImperiumConfig, http: OkHttpClient, version: ImperiumVersion) : WebhookMessageSender {
+class WebhookMessageSenderImpl(config: ImperiumConfig, http: OkHttpClient, version: ImperiumVersion) :
+    WebhookMessageSender {
     private val channels = EnumMap<WebhookChannel, WebhookBackend>(WebhookChannel::class.java)
 
     init {

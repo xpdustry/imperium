@@ -17,15 +17,11 @@
  */
 package com.xpdustry.imperium.discord
 
-import com.xpdustry.imperium.backend.lifecycle.SystemExitService
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
-import com.xpdustry.imperium.common.bridge.PlayerTracker
-import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
-import com.xpdustry.imperium.common.factory.ObjectBinder
-import com.xpdustry.imperium.common.factory.ObjectModule
-import com.xpdustry.imperium.common.lifecycle.PlatformExitService
+import com.xpdustry.imperium.common.inject.MutableInstanceManager
+import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.network.Discovery
-import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.MenuCommandRegistry
 import com.xpdustry.imperium.discord.command.ModalCommandRegistry
@@ -35,25 +31,25 @@ import com.xpdustry.imperium.discord.content.MindustryContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
+import java.util.function.Supplier
 import kotlin.io.path.Path
 
-class DiscordModule : ObjectModule {
-    override fun configure(binder: ObjectBinder) {
-        binder.bind(PlatformExitService::class.java).toImpl(SystemExitService::class.java)
-        binder.bind(PlayerTracker::class.java).toImpl(RequestingPlayerTracker::class.java)
-        binder.bind(DiscordService::class.java).toImpl(SimpleDiscordService::class.java)
-        binder.bind(Path::class.java).named("directory").toInst(Path("."))
-        binder.bind(AnnotationScanner::class.java).named("slash").toImpl(SlashCommandRegistry::class.java)
-        binder.bind(AnnotationScanner::class.java).named("menu").toImpl(MenuCommandRegistry::class.java)
-        binder.bind(AnnotationScanner::class.java).named("modal").toImpl(ModalCommandRegistry::class.java)
-        binder.bind(MindustryContentHandler::class.java).toImpl(AnukenMindustryContentHandler::class.java)
-        binder.bind(DiscoveryDataSupplier::class.java).toInst(DiscoveryDataSupplier { Discovery.Data.Discord })
-        binder
-            .bind(ImperiumVersion::class.java)
-            .toInst(
-                ImperiumVersion.parse(
-                    this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText()
-                )
-            )
+fun MutableInstanceManager.registerDiscordModule() {
+    provider<DiscordService> { SimpleDiscordService(get(), get(), get()) }
+
+    provider<Path>("directory") { Path(".") }
+
+    provider<AnnotationScanner>("slash") { SlashCommandRegistry(get(), get()) }
+
+    provider<AnnotationScanner>("menu") { MenuCommandRegistry(get()) }
+
+    provider<AnnotationScanner>("modal") { ModalCommandRegistry(get()) }
+
+    provider<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
+
+    provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
+
+    provider<ImperiumVersion> {
+        ImperiumVersion.parse(this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
     }
 }

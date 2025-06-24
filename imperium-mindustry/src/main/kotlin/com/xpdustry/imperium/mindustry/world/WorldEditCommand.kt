@@ -21,8 +21,8 @@ import arc.struct.Seq
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.misc.Rotation
@@ -37,7 +37,7 @@ import mindustry.world.blocks.environment.Prop
 import mindustry.world.blocks.environment.TreeBlock
 import org.incendo.cloud.annotation.specifier.Range
 
-class WorldEditCommand : LifecycleListener {
+class WorldEditCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["wedit"], Rank.MODERATOR)
     @ClientSide

@@ -18,20 +18,20 @@
 package com.xpdustry.imperium.mindustry.control
 
 import com.xpdustry.distributor.api.Distributor
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
-import com.xpdustry.imperium.common.lifecycle.LifecycleService
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.onEvent
 import com.xpdustry.imperium.mindustry.translation.server_restart_delay
 import com.xpdustry.imperium.mindustry.translation.server_restart_game_over
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -40,14 +40,11 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.GameOverEvent
 
-class ControlListener
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val messenger: Messenger,
-    private val lifecycle: LifecycleService,
-) : LifecycleListener {
+class ControlListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
+    private val config = instances.get<ImperiumConfig>()
+    private val messenger = instances.get<Messenger>()
+    private val application = instances.get<ImperiumApplication>()
     private var job: Job? = null
         set(value) {
             field?.cancel()
@@ -70,7 +67,7 @@ constructor(
             job =
                 ImperiumScope.MAIN.launch {
                     delay(10.seconds)
-                    lifecycle.exit(action.toExitStatus())
+                    application.exit(action.toExitStatus())
                 }
         } else if (config.mindustry.gamemode.pvp) {
             everyone.sendMessage(server_restart_game_over(reason))
@@ -78,7 +75,7 @@ constructor(
                 job =
                     ImperiumScope.MAIN.launch {
                         delay(5.seconds)
-                        lifecycle.exit(action.toExitStatus())
+                        application.exit(action.toExitStatus())
                     }
             }
         } else if (config.mindustry.gamemode == MindustryGamemode.HUB) {
@@ -86,14 +83,14 @@ constructor(
             job =
                 ImperiumScope.MAIN.launch {
                     delay(10.seconds)
-                    lifecycle.exit(action.toExitStatus())
+                    application.exit(action.toExitStatus())
                 }
         } else {
             everyone.sendMessage(server_restart_delay(reason, 5.minutes))
             job =
                 ImperiumScope.MAIN.launch {
                     delay(5.minutes)
-                    lifecycle.exit(action.toExitStatus())
+                    application.exit(action.toExitStatus())
                 }
         }
     }

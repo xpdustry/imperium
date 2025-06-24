@@ -31,5 +31,4 @@
     <logger name="com.zaxxer.hikari" level="INFO"/>
     <logger name="net.dv8tion.jda.api.requests.RestRateLimiter" level="INFO"/>
     <logger name="net.dv8tion.jda.internal.requests.Requester" level="INFO"/>
-    <logger name="com.xpdustry.imperium.common.message.SQLMessageService" level="INFO"/>
 </configuration>

@@ -22,14 +22,14 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.RemovalCause
 import com.google.common.cache.RemovalListener
 import com.google.common.cache.RemovalNotification
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import jakarta.inject.Inject
 import java.util.concurrent.TimeUnit
+import java.util.function.Supplier
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -39,13 +39,11 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class SimpleDiscovery
-@Inject
-constructor(
+class SimpleDiscovery(
     private val messenger: Messenger,
-    private val discoveryDataProvider: DiscoveryDataSupplier,
+    private val discoveryDataProvider: Supplier<Discovery.Data>,
     private val config: ImperiumConfig,
-) : Discovery, LifecycleListener {
+) : Discovery, ImperiumApplication.Listener {
 
     override val servers: Map<String, Discovery.Server>
         get() = this._servers.asMap()

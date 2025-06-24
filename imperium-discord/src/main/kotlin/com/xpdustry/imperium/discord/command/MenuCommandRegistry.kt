@@ -18,13 +18,12 @@
 package com.xpdustry.imperium.discord.command
 
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import kotlin.reflect.KClass
 import kotlin.reflect.KClassifier
 import kotlin.reflect.KFunction
@@ -39,8 +38,7 @@ import net.dv8tion.jda.api.events.interaction.component.GenericComponentInteract
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.components.ComponentInteraction
 
-class MenuCommandRegistry @Inject constructor(private val discord: DiscordService) :
-    AnnotationScanner, LifecycleListener {
+class MenuCommandRegistry(private val discord: DiscordService) : AnnotationScanner, ImperiumApplication.Listener {
     private val handlers = mutableMapOf<String, ButtonHandler>()
 
     override fun onImperiumInit() {

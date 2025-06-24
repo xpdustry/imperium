@@ -18,11 +18,12 @@
 package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
@@ -30,13 +31,12 @@ import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import mindustry.game.Team
 import mindustry.gen.Call
 
-class KillAllCommand @Inject constructor(plugin: MindustryPlugin) :
-    AbstractVoteCommand<Unit>(plugin, "killall", 30.seconds), LifecycleListener {
+class KillAllCommand(instances: InstanceManager) :
+    AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds), ImperiumApplication.Listener {
 
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)

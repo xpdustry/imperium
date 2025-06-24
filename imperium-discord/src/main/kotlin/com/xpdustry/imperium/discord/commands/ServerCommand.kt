@@ -18,20 +18,20 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ExitStatus
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
-import com.xpdustry.imperium.common.lifecycle.LifecycleService
-import com.xpdustry.imperium.common.lifecycle.PlatformExitCode
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.await
-import jakarta.inject.Inject
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -39,15 +39,12 @@ import java.util.Locale
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class ServerCommand
-@Inject
-constructor(
-    private val discovery: Discovery,
-    private val tracker: PlayerTracker,
-    private val lifecycle: LifecycleService,
-    private val messenger: Messenger,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val discovery = instances.get<Discovery>()
+    private val tracker = instances.get<PlayerTracker>()
+    private val application = instances.get<ImperiumApplication>()
+    private val messenger = instances.get<Messenger>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["server", "list"])
     suspend fun onServerList(interaction: SlashCommandInteraction) =
@@ -110,7 +107,7 @@ constructor(
         val reply = interaction.deferReply(false).await()
         if (server == "discord") {
             reply.sendMessage("Restarting discord bot.").await()
-            lifecycle.exit(action.toExitStatus())
+            application.exit(action.toExitStatus())
             return
         }
         if (server != null && discovery.servers[server] == null) {
@@ -129,7 +126,7 @@ constructor(
     @ImperiumCommand(["exit"], Rank.OWNER)
     suspend fun onExit(interaction: SlashCommandInteraction) {
         interaction.reply("Exiting...").await()
-        lifecycle.exit(PlatformExitCode.SUCCESS)
+        application.exit(ExitStatus.EXIT)
     }
 
     private fun createPlayerListEmbed(

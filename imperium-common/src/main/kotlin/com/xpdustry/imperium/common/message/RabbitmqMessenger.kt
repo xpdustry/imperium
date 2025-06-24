@@ -25,10 +25,10 @@ import com.rabbitmq.client.ConnectionFactory
 import com.rabbitmq.client.Consumer
 import com.rabbitmq.client.Envelope
 import com.rabbitmq.client.ShutdownSignalException
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MessengerConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
@@ -52,7 +52,7 @@ import kotlinx.serialization.serializer
 
 private typealias MessageOrRequest<T> = Pair<T, RabbitmqMessenger.RequestData?>
 
-class RabbitmqMessenger(private val config: ImperiumConfig) : Messenger, LifecycleListener {
+class RabbitmqMessenger(private val config: ImperiumConfig) : Messenger, ImperiumApplication.Listener {
     internal val flows = ConcurrentHashMap<KClass<out Message>, FlowWithCTag<out Message>>()
     private lateinit var channel: Channel
     private lateinit var connection: Connection

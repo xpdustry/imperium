@@ -20,13 +20,13 @@ package com.xpdustry.imperium.discord.command
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.discord.command.annotation.AlsoAllow
@@ -36,7 +36,6 @@ import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.getTranslatedTextOrNull
 import com.xpdustry.imperium.discord.misc.toDiscordLocale
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import java.time.Duration
 import java.util.regex.Pattern
 import kotlin.reflect.KAnnotatedElement
@@ -70,10 +69,8 @@ import net.dv8tion.jda.api.interactions.commands.build.SubcommandGroupData
 // TODO
 //   - This is awful, rewrite it, eventually
 //   - Arguments name are case insensitive, quite annoying
-class SlashCommandRegistry
-@Inject
-constructor(private val discord: DiscordService, private val config: ImperiumConfig) :
-    AnnotationScanner, LifecycleListener {
+class SlashCommandRegistry(private val discord: DiscordService, private val config: ImperiumConfig) :
+    AnnotationScanner, ImperiumApplication.Listener {
     private val containers = mutableListOf<Any>()
     private val handlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
     private val tree = CommandNode("root", parent = null)

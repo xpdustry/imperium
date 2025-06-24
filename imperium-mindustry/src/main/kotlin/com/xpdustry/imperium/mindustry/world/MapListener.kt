@@ -18,21 +18,21 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.files.Fi
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.id
-import jakarta.inject.Inject
-import jakarta.inject.Named
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
@@ -42,15 +42,11 @@ import mindustry.Vars
 import mindustry.io.MapIO
 import mindustry.maps.Map
 
-class MapListener
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val maps: MindustryMapManager,
-    private val messenger: Messenger,
-    @Named("directory") directory: Path,
-) : LifecycleListener {
-    private val cache = directory.resolve("map-pool")
+class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val config = instances.get<ImperiumConfig>()
+    private val maps = instances.get<MindustryMapManager>()
+    private val cache = instances.get<Path>("directory").resolve("map-pool")
+    private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()

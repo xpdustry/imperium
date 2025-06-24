@@ -19,7 +19,6 @@ package com.xpdustry.imperium.common.network
 
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.version.MindustryVersion
-import java.util.function.Supplier
 import kotlinx.serialization.Serializable
 
 interface Discovery {
@@ -67,5 +66,3 @@ interface Discovery {
         }
     }
 }
-
-fun interface DiscoveryDataSupplier : Supplier<Discovery.Data>

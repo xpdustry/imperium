@@ -18,24 +18,21 @@
 package com.xpdustry.imperium.mindustry.bridge
 
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.function
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
-import jakarta.inject.Inject
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
-class MindustryPlayerTracker
-@Inject
-constructor(messenger: Messenger, private val config: ImperiumConfig, private val users: UserManager) :
-    RequestingPlayerTracker(messenger), LifecycleListener {
+class MindustryPlayerTracker(messenger: Messenger, private val config: ImperiumConfig, private val users: UserManager) :
+    RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
     private val joins = LimitedList<PlayerTracker.Entry>(30)
     private val online = mutableMapOf<Int, PlayerTracker.Entry>()

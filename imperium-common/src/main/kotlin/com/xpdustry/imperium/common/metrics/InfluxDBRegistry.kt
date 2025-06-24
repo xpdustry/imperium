@@ -22,10 +22,10 @@ import com.influxdb.client.InfluxDBClientFactory
 import com.influxdb.client.InfluxDBClientOptions
 import com.influxdb.client.WriteApi
 import com.influxdb.client.write.Point
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.ServerConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.system.measureTimeMillis
@@ -39,7 +39,7 @@ class InfluxDBRegistry(
     private val server: ServerConfig,
     private val config: MetricConfig.InfluxDB,
     private val http: OkHttpClient,
-) : MetricsRegistry, LifecycleListener {
+) : MetricsRegistry, ImperiumApplication.Listener {
     private val collectors = CopyOnWriteArraySet<MetricsCollector>()
     private lateinit var client: InfluxDBClient
     private lateinit var write: WriteApi

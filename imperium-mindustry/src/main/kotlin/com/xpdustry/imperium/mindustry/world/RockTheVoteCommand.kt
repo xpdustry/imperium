@@ -27,13 +27,14 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -48,7 +49,6 @@ import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 import com.xpdustry.imperium.mindustry.translation.difficulty_name
 import com.xpdustry.imperium.mindustry.translation.gui_back
 import com.xpdustry.imperium.mindustry.translation.selected
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -56,9 +56,11 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.maps.Map
 
-class RockTheVoteCommand @Inject constructor(plugin: MindustryPlugin, private val maps: MindustryMapManager) :
-    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(plugin, "RTV", 1.minutes), LifecycleListener {
+class RockTheVoteCommand(instances: InstanceManager) :
+    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(instances.get(), "RTV", 1.minutes),
+    ImperiumApplication.Listener {
 
+    private val maps = instances.get<MindustryMapManager>()
     private val menu =
         MenuManager.create(plugin).apply {
             addTransformer { (pane) ->

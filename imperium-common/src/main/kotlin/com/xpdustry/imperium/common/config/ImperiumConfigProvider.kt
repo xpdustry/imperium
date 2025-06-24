@@ -23,17 +23,16 @@ import com.sksamuel.hoplite.ConfigLoaderBuilder
 import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.sksamuel.hoplite.fp.getOrElse
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.InstanceProvider
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import jakarta.inject.Inject
-import jakarta.inject.Named
 import java.nio.file.Path
 
-class ImperiumConfigProvider @Inject constructor(@param:Named("directory") private val directory: Path) :
-    com.google.inject.Provider<ImperiumConfig> {
-
+object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
     private val logger by LoggerDelegate()
 
-    override fun get() =
+    override fun create(instances: InstanceManager) =
         ConfigLoaderBuilder.empty()
             .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
             .addDefaultDecoders()
@@ -42,7 +41,7 @@ class ImperiumConfigProvider @Inject constructor(@param:Named("directory") priva
             .addParameterMapper(KebabCaseParamMapper)
             .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-            .addPathSource(directory.resolve("config.yaml"), optional = true, allowEmpty = true)
+            .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
             .strict()
             .withReport()

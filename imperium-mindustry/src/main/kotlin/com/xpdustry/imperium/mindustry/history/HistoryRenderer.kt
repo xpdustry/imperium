@@ -33,7 +33,6 @@ import com.xpdustry.imperium.mindustry.history.config.BlockConfig
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.translation.GRAY
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
-import jakarta.inject.Inject
 
 interface HistoryRenderer {
     suspend fun render(entries: List<HistoryEntry>, x: Int, y: Int): Component
@@ -41,9 +40,7 @@ interface HistoryRenderer {
     suspend fun render(entries: List<HistoryEntry>, actor: HistoryActor): Component
 }
 
-class SimpleHistoryRenderer
-@Inject
-constructor(
+class SimpleHistoryRenderer(
     private val users: UserManager,
     private val codec: IdentifierCodec,
     private val timeRenderer: TimeRenderer,

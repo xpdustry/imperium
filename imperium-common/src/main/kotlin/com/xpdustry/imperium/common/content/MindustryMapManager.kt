@@ -17,12 +17,12 @@
  */
 package com.xpdustry.imperium.common.content
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.storage.StorageBucket
-import jakarta.inject.Inject
 import java.io.InputStream
 import java.time.Instant
 import java.util.function.Supplier
@@ -92,10 +92,12 @@ interface MindustryMapManager {
     suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean
 }
 
-class SimpleMindustryMapManager
-@Inject
-constructor(private val provider: SQLProvider, private val messenger: Messenger, private val storage: StorageBucket) :
-    MindustryMapManager, LifecycleListener {
+class SimpleMindustryMapManager(
+    private val provider: SQLProvider,
+    private val config: ImperiumConfig,
+    private val messenger: Messenger,
+    private val storage: StorageBucket,
+) : MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         provider.newTransaction {

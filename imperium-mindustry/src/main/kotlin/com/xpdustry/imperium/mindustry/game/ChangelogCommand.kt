@@ -23,16 +23,19 @@ import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.TextComponent.newline
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.translation.GRAY
-import jakarta.inject.Inject
 import java.io.Reader
 
-class ChangelogCommand @Inject constructor(version: ImperiumVersion) : LifecycleListener {
+class ChangelogCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val version = instances.get<ImperiumVersion>()
 
     private val changelog: Component
 

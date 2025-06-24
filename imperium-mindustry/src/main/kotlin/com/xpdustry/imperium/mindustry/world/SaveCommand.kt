@@ -39,10 +39,12 @@ import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.functional.ImperiumResult
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -58,7 +60,6 @@ import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 import com.xpdustry.imperium.mindustry.translation.ORANGE
 import com.xpdustry.imperium.mindustry.translation.SCARLET
 import com.xpdustry.imperium.mindustry.translation.gui_close
-import jakarta.inject.Inject
 import java.io.IOException
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -75,15 +76,13 @@ import mindustry.Vars
 import mindustry.gen.Iconc
 import mindustry.io.SaveIO
 
-class SaveCommand
-@Inject
-constructor(
-    private val plugin: MindustryPlugin,
-    private val renderer: TimeRenderer,
-    private val config: ImperiumConfig,
-) : LifecycleListener {
-    private val text = TextInputManager.create(plugin)
-    private val menu = MenuManager.create(plugin)
+class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val plugin = instances.get<MindustryPlugin>()
+    private val text = TextInputManager.create(instances.get())
+    private val menu = MenuManager.create(instances.get())
+    private val renderer = instances.get<TimeRenderer>()
+    private val config = instances.get<ImperiumConfig>()
 
     init {
         menu.addTransformer(

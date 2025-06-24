@@ -18,6 +18,7 @@
 package com.xpdustry.imperium.discord.commands
 
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -26,7 +27,8 @@ import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.image.inputStream
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.permission.Permission
@@ -39,7 +41,6 @@ import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import java.awt.Color
 import java.io.InputStream
 import java.net.URI
@@ -53,15 +54,12 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
-class MapSubmitCommand
-@Inject
-constructor(
-    private val config: ImperiumConfig,
-    private val maps: MindustryMapManager,
-    private val content: MindustryContentHandler,
-    private val discord: DiscordService,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val config = instances.get<ImperiumConfig>()
+    private val maps = instances.get<MindustryMapManager>()
+    private val content = instances.get<MindustryContentHandler>()
+    private val discord = instances.get<DiscordService>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["map", "submit"])
     suspend fun onMapSubmitCommand(

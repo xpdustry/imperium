@@ -44,7 +44,7 @@ import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.ReportMessage
 import com.xpdustry.imperium.common.time.truncatedTo
-import com.xpdustry.imperium.common.user.Setting
+import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.Tip
@@ -135,7 +135,7 @@ fun gui_user_settings_title(): Component = translatable("imperium.gui.user-setti
 
 fun gui_user_settings_description(): Component = translatable("imperium.gui.user-settings.description")
 
-fun gui_user_settings_entry(setting: Setting, value: Boolean): Component =
+fun gui_user_settings_entry(setting: User.Setting, value: Boolean): Component =
     components()
         .append(text(setting.name.lowercase().replace('_', '-'), WHITE))
         .append(text(": "))
@@ -235,13 +235,13 @@ fun gui_rate_map_failure(): Component = translatable("imperium.gui.rate-map.fail
 
 fun gui_error(): Component = translatable("imperium.gui.error", SCARLET)
 
-fun gui_close(): Component = translatable("imperium.gui.shared.close")
+fun gui_close(): Component = translatable("imperium.gui.close")
 
-fun gui_back(): Component = translatable("imperium.gui.shared.back", LIGHT_GRAY)
+fun gui_back(): Component = translatable("imperium.gui.back", LIGHT_GRAY)
 
 fun gui_submit(): Component = translatable("imperium.gui.submit", ACCENT)
 
-fun user_setting_description(setting: Setting): Component =
+fun user_setting_description(setting: User.Setting): Component =
     translatable("imperium.user-setting.${setting.name.lowercase()}.description")
 
 fun announcement_tip(tip: Tip): Component =

@@ -11,16 +11,7 @@ plugins {
 indra {
     javaVersions {
         target(libs.versions.java.get().toInt())
-        previewFeaturesEnabled(true)
     }
-}
-
-tasks.withType<JavaExec> {
-    jvmArgs("--enable-preview")
-}
-
-tasks.withType<Test> {
-    jvmArgs("--enable-preview")
 }
 
 repositories {
@@ -50,21 +41,16 @@ dependencies {
     testImplementation(kotlin("stdlib"))
     testImplementation(kotlin("reflect"))
 
-    testImplementation(libs.bundles.test.lib)
-    testRuntimeOnly(libs.bundles.test.run)
+    testImplementation(libs.junit.api)
+    testRuntimeOnly(libs.junit.engine)
 
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
     testImplementation(libs.testcontainers.rabbitmq)
     testImplementation(libs.testcontainers.minio)
-    compileOnly(libs.jspecify)
 }
 
 spotless {
-    java {
-        palantirJavaFormat()
-        formatAnnotations()
-    }
     kotlin {
         ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
         licenseHeader(toLongComment(rootProject.file("LICENSE_HEADER.md").readText()))

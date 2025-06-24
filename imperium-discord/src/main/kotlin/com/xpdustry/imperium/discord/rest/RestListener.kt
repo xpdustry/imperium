@@ -17,10 +17,12 @@
  */
 package com.xpdustry.imperium.discord.rest
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.version.MindustryVersion
@@ -34,18 +36,15 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.get
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
-import jakarta.inject.Inject
 import java.util.concurrent.TimeUnit
 import kotlinx.serialization.Serializable
 
-class RestListener
-@Inject
-constructor(
-    private val discovery: Discovery,
-    private val tracker: PlayerTracker,
-    private val config: ImperiumConfig,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
+
+    private val discovery = instances.get<Discovery>()
+    private val tracker = instances.get<PlayerTracker>()
+    private val config = instances.get<ImperiumConfig>()
+    private val codec = instances.get<IdentifierCodec>()
 
     private lateinit var ktor: EmbeddedServer<*, *>
 

@@ -19,8 +19,8 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.imperium.common.account.AccountResult
-import com.xpdustry.imperium.common.string.StringRequirement
-import com.xpdustry.imperium.common.string.StringRequirement.Letter
+import com.xpdustry.imperium.common.security.PasswordRequirement
+import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import mindustry.gen.Player
 
@@ -49,20 +49,22 @@ private fun handleAccountResult(result: AccountResult, player: Player, window: W
     player.showInfoMessage("[red]$message")
 }
 
-// TODO Replace "It" by an argument which is either "username" or "password"
-private fun getErrorMessage(requirement: StringRequirement) =
+private fun getErrorMessage(requirement: PasswordRequirement) =
     when (requirement) {
-        is Letter ->
-            when (requirement) {
-                Letter.HAS_LOWERCASE -> "It needs at least one lowercase letter."
-                Letter.HAS_UPPERCASE -> "It needs at least one uppercase letter."
-                Letter.ALL_LOWERCASE -> "Uppercase letters aren't allowed."
-                Letter.HAS_DIGIT -> "It needs at least a number."
-                Letter.HAS_SPACIAL_SYMBOL -> "It needs at least a symbol."
-            }
-        is StringRequirement.AllowedSpecialSymbol ->
-            "It can only contain the following special symbols: ${requirement.allowed.joinToString()}."
-        is StringRequirement.Length ->
+        is PasswordRequirement.LowercaseLetter -> "It needs at least a lowercase letter."
+        is PasswordRequirement.UppercaseLetter -> "It needs at least a uppercase letter."
+        is PasswordRequirement.Number -> "It needs at least a number."
+        is PasswordRequirement.Symbol -> "It needs at least a symbol."
+        is PasswordRequirement.Length ->
             "It needs to be between ${requirement.min} and ${requirement.max} characters long."
-        is StringRequirement.Reserved -> "It's is reserved or already taken, try something else."
+    }
+
+private fun getErrorMessage(requirement: UsernameRequirement) =
+    when (requirement) {
+        is UsernameRequirement.InvalidSymbol ->
+            "It can only contain letters, numbers and ${requirement.allowed.joinToString()}."
+        is UsernameRequirement.Length ->
+            "It needs to be between ${requirement.min} and ${requirement.max} characters long."
+        is UsernameRequirement.Reserved -> "This username is reserved or already taken."
+        is UsernameRequirement.AllLowercase -> "Uppercase letters aren't allowed in the username."
     }

@@ -18,12 +18,14 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.image.ImageFormat
 import com.xpdustry.imperium.common.image.inputStream
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
@@ -33,21 +35,18 @@ import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.nohorny.image.NoHornyResult
 import com.xpdustry.nohorny.image.analyzer.ImageAnalyzerEvent
-import jakarta.inject.Inject
 import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 
-class NoHornyListener
-@Inject
-constructor(
-    private val users: UserManager,
-    private val punishments: PunishmentManager,
-    private val config: ImperiumConfig,
-    private val webhook: WebhookMessageSender,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val users = instances.get<UserManager>()
+    private val punishments = instances.get<PunishmentManager>()
+    private val config = instances.get<ImperiumConfig>()
+    private val webhook = instances.get<WebhookMessageSender>()
+    private val codec = instances.get<IdentifierCodec>()
+
     @EventHandler
     fun onImageLogicAnalyzer(event: ImageAnalyzerEvent) =
         ImperiumScope.MAIN.launch {

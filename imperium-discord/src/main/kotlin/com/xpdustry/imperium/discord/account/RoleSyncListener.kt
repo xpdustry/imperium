@@ -21,26 +21,24 @@ import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.account.RankChangeEvent
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.Messenger
 import com.xpdustry.imperium.common.message.consumer
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
-import jakarta.inject.Inject
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.api.events.guild.update.GuildUpdateBoostCountEvent
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class RoleSyncListener
-@Inject
-constructor(
-    private val discord: DiscordService,
-    private val accounts: AccountManager,
-    private val messenger: Messenger,
-) : LifecycleListener {
+class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val discord = instances.get<DiscordService>()
+    private val accounts = instances.get<AccountManager>()
+    private val messenger = instances.get<Messenger>()
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<GuildMemberJoinEvent> { discord.syncRoles(it.member) }

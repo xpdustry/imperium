@@ -19,15 +19,14 @@ package com.xpdustry.imperium.discord.service
 
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.misc.snowflake
-import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
@@ -58,10 +57,11 @@ interface DiscordService {
     suspend fun syncRoles(member: Member)
 }
 
-class SimpleDiscordService
-@Inject
-constructor(private val config: ImperiumConfig, private val http: OkHttpClient, private val accounts: AccountManager) :
-    DiscordService, LifecycleListener {
+class SimpleDiscordService(
+    private val config: ImperiumConfig,
+    private val http: OkHttpClient,
+    private val accounts: AccountManager,
+) : DiscordService, ImperiumApplication.Listener {
     override lateinit var jda: JDA
 
     override fun onImperiumInit() {

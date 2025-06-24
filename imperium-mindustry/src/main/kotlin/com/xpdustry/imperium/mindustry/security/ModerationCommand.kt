@@ -19,18 +19,19 @@ package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.identity
-import jakarta.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
@@ -38,14 +39,11 @@ import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 import org.incendo.cloud.annotation.specifier.Quoted
 
-class ModerationCommand
-@Inject
-constructor(
-    private val punishments: PunishmentManager,
-    private val users: UserManager,
-    private val config: ImperiumConfig,
-    private val codec: IdentifierCodec,
-) : LifecycleListener {
+class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val punishments = instances.get<PunishmentManager>()
+    private val users = instances.get<UserManager>()
+    private val config = instances.get<ImperiumConfig>()
+    private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     @ClientSide

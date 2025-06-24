@@ -19,13 +19,13 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Achievement
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.translation.command_achievements
 
-class AchievementCommand : LifecycleListener {
+class AchievementCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["achievements"])
     @ClientSide
