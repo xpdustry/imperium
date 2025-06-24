@@ -410,7 +410,7 @@ class SimpleAccountManager(
                 return@newSuspendTransaction AccountResult.NotFound
             }
 
-            AccountSessionTable.insert {
+            AccountSessionTable.upsert {
                 it[account] = result[AccountTable.id]
                 it[uuid] = key.uuid
                 it[usid] = key.usid
