@@ -43,6 +43,7 @@ dependencies {
 
     testImplementation(libs.junit.api)
     testRuntimeOnly(libs.junit.engine)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
