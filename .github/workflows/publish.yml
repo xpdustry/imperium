@@ -57,7 +57,7 @@ jobs:
         run: gradle incrementVersionFile
 
       - name: Commit Incremented Version
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v6
         with:
           branch: "${{ github.event.release.target_commitish }}"
           commit_message: "chore: Increment version"
