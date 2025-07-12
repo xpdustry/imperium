@@ -125,15 +125,6 @@ class ExcavateCommand(instances: InstanceManager) :
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
     }
 
-    @ImperiumCommand(["excavate|e", "select|s"])
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
-    @ClientSide
-    private fun onOldExcavateStartCommand(sender: CommandSender) {
-        sender.player.sendMessage(
-            "This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead."
-        )
-    }
-
     @ImperiumCommand(["excavate|e"])
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
@@ -204,14 +195,14 @@ class ExcavateCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["excavate|e", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["excavate|e", "cancel|c"], Rank.OVERSEER)
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(["excavate|e", "force|f"], Rank.MODERATOR)
+    @ImperiumCommand(["excavate|e", "force|f"], Rank.OVERSEER)
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onRtvForceCommand(sender: CommandSender) {

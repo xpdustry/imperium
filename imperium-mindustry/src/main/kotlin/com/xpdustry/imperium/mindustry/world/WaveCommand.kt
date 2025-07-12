@@ -96,7 +96,7 @@ class WaveCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["ws", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["ws", "cancel|c"], Rank.OVERSEER)
     @ClientSide
     fun onWaveSkipCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)

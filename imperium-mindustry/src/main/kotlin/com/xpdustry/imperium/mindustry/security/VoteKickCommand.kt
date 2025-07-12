@@ -128,12 +128,13 @@ class VoteKickCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
-    @ImperiumCommand(["vote", "c"], Rank.MODERATOR)
+    @ImperiumCommand(["vote", "c"], Rank.OVERSEER)
     @ClientSide
     fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))
     }
 
+    // TODO: Translate these, important
     @ImperiumCommand(["votekick"])
     @ClientSide
     fun onVotekickCommand(sender: CommandSender, target: Player? = null, @Greedy reason: String? = null) {

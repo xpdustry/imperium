@@ -69,15 +69,14 @@ class KillAllCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["killall|ku", "c"], Rank.MODERATOR)
+    @ImperiumCommand(["killall|ku", "cancel|c"], Rank.OVERSEER)
     @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
     fun onKillAllUnitsCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    // TODO: This should have a better name instead of "force"
-    @ImperiumCommand(["killall|ku", "force|f"], Rank.MODERATOR)
+    @ImperiumCommand(["killall|ku", "force|f"], Rank.OVERSEER)
     @ClientSide
     fun onKillAllUnitsTeamCommand(
         sender: CommandSender,
