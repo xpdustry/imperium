@@ -33,11 +33,11 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val accounts = instances.get<AccountManager>()
     private val codec = instances.get<IdentifierCodec>()
 
-    @ImperiumCommand(["account", "edit", "rank"], Rank.HEAD_ADMIN)
+    @ImperiumCommand(["account", "edit", "rank"], Rank.ADMIN)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
         val reply = interaction.deferReply(true).await()
-        if (rank == Rank.OWNER) {
-            reply.sendMessage("Nuh huh").await()
+        if (rank.ordinal >= accounts.selectByDiscord(interaction.user.idLong)!!.rank.ordinal) {
+            reply.sendMessage("Nuh huh, you can only grant a rank lower than yours.").await()
             return
         }
         var id: Int? = null
