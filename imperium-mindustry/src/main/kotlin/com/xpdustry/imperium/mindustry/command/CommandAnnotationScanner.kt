@@ -161,9 +161,9 @@ class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val 
                 )
         }
 
-        if (annotation.rank != Rank.OWNER) {
+        if (annotation.rank != Rank.OWNER || annotation.rank != Rank.HEAD_ADMIN) {
             permission =
-                Permission.anyOf(permission, Permission.permission("imperium.rank.${Rank.HEAD_ADMIN.name.lowercase()}"))
+                Permission.anyOf(permission, Permission.permission("imperium.rank.${Rank.ADMIN.name.lowercase()}"))
         }
 
         return permission
