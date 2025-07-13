@@ -156,13 +156,13 @@ class RockTheVoteCommand(instances: InstanceManager) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["rtv", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["rtv", "cancel|c"], Rank.OVERSEER)
     @ClientSide
     fun onRtvCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(["rtv", "force|f"], Rank.MODERATOR)
+    @ImperiumCommand(["rtv", "force|f"], Rank.OVERSEER)
     @ClientSide
     fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)
