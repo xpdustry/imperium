@@ -59,11 +59,10 @@ import org.slf4j.LoggerFactory
 fun <T : Entityc> EntityGroup<T>.asList(): List<T> = MindustryCollections.immutableList(this)
 
 @Suppress("UNCHECKED_CAST")
-fun <K, V> ObjectMap<K, V>.asMap(): Map<K, V> =
-    MindustryCollections.immutableMap(this as ObjectMap<K & Any, V & Any>) as Map<K, V>
+fun <K : Any, V> ObjectMap<K, V>.asMap(): Map<K, V> =
+    MindustryCollections.immutableMap(this as ObjectMap<K, V & Any>) as Map<K, V>
 
-@Suppress("UNCHECKED_CAST")
-fun <T> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this as ObjectSet<T & Any>)
+fun <T : Any> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this)
 
 // https://stackoverflow.com/a/73494554
 suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T =
