@@ -141,11 +141,13 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
     @ImperiumCommand(["group|g"])
     @ClientSide
     suspend fun onFormationCommand(sender: CommandSender) {
-        val playerUnit = sender.player.unit() ?: run {
-            // player is dead or has no unit
-            sender.error(formation_failure_dead())
-            return
-        }
+        val playerUnit =
+            sender.player.unit()
+                ?: run {
+                    // player is dead or has no unit
+                    sender.error(formation_failure_dead())
+                    return
+                }
         val valid = runMindustryThread {
             if (sender.player.id() in formations) {
                 formations.remove(sender.player.id())!!.deleted = true
