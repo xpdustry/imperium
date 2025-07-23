@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import arc.graphics.Color
 import arc.math.Interp
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
@@ -29,7 +30,7 @@ import com.xpdustry.imperium.mindustry.misc.dayNightCycle
 import mindustry.Vars
 import mindustry.gen.Call
 
-class DayNighCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val cycle = instances.get<ImperiumConfig>().mindustry.world.dayNightCycleDuration.inWholeSeconds
 
@@ -41,11 +42,13 @@ class DayNighCycleListener(instances: InstanceManager) : ImperiumApplication.Lis
         }
     }
 
-    @TaskHandler(interval = 1, unit = MindustryTimeUnit.SECONDS)
+    @TaskHandler(interval = 50, unit = MindustryTimeUnit.MILLISECONDS)
     fun onSolarCycleUpdate() {
         if (!Vars.state.isGame || !Vars.state.rules.lighting || !Vars.state.map.dayNightCycle) return
         val time = ((System.currentTimeMillis() / 1000L) % cycle) / (cycle * 0.5F)
-        Vars.state.rules.ambientLight.a = Interp.sine.apply(0F, 0.8F, time)
+        val oldColor = Vars.state.rules.ambientLight
+        val newAlpha = Interp.sine.apply(0F, 0.8F, time)
+        Vars.state.rules.ambientLight = Color(oldColor.r, oldColor.g, oldColor.b, newAlpha)
         Call.setRules(Vars.state.rules)
     }
 }
