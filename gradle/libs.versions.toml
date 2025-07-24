@@ -5,7 +5,7 @@ kotlin-coroutine = "1.10.2"
 kotlin-runtime = "4.2.0"
 kotlinx-serialization = "1.8.1"
 java = "17"
-mindustry = "149"
+mindustry = "150"
 
 # libraries
 distributor = "4.2.0"
