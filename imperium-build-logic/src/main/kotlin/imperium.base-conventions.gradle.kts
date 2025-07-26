@@ -19,10 +19,6 @@ repositories {
     xpdustryMindustry()
     xpdustryReleases()
     xpdustrySnapshots()
-    maven("https://raw.githubusercontent.com/Zelaux/MindustryRepo/master/repository") {
-        name = "zelaux"
-        mavenContent { releasesOnly() }
-    }
     maven("https://oss.sonatype.org/content/repositories/snapshots/") {
         name = "sonatype-snapshots"
         mavenContent { snapshotsOnly() }

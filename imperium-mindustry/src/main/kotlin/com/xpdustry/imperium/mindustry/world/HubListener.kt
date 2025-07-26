@@ -361,10 +361,8 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             x((portal.centerX + (overlay.offsetX * portal.w)) * Vars.tilesize)
             y((portal.centerY + (overlay.offsetY * portal.h)) * Vars.tilesize)
             fontSize = overlay.fontSize
-            var flags: Byte = 0
             if (overlay.outline) flags = flags or WorldLabel.flagOutline
             if (overlay.background) flags = flags or WorldLabel.flagBackground
-            flags = flags
         }
 
     private fun getCurrentMapName() =
