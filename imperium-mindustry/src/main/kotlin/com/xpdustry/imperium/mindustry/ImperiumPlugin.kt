@@ -56,7 +56,7 @@ import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.AntiGriefListener
 import com.xpdustry.imperium.mindustry.game.ChangelogCommand
-import com.xpdustry.imperium.mindustry.game.DayNighCycleListener
+import com.xpdustry.imperium.mindustry.game.DayNightCycleListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
@@ -189,7 +189,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 FlexListener::class,
                 MetricsListener::class,
                 ChangelogCommand::class,
-                DayNighCycleListener::class,
+                DayNightCycleListener::class,
                 ImperiumPermissionListener::class,
             )
             .forEach(application::register)

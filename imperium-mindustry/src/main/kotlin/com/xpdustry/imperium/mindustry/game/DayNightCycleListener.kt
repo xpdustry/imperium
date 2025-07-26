@@ -29,7 +29,7 @@ import com.xpdustry.imperium.mindustry.misc.dayNightCycle
 import mindustry.Vars
 import mindustry.gen.Call
 
-class DayNighCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
+class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val cycle = instances.get<ImperiumConfig>().mindustry.world.dayNightCycleDuration.inWholeSeconds
 
