@@ -166,8 +166,8 @@ class SimpleHistorian(
     }
 
     @EventHandler(priority = Priority.HIGH)
-    fun onBLockConfigEvent(event: EventType.ConfigEvent) {
-        if (event.player == null) {
+    fun onBlockConfigEvent(event: EventType.ConfigEvent) {
+        if (event.player?.unit() == null) {
             return
         }
         this.addEntry(event.tile, event.tile.block, event.player.unit(), HistoryEntry.Type.CONFIGURE, event.value)
