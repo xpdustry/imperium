@@ -302,32 +302,32 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val info = discovery.servers[portal.name]
             if (info == null) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[orange]Server not found.")
+                labels.error.text = "[orange]Server not found."
                 labels.error.add()
                 continue
             }
             val data = info.data
             if (data !is Discovery.Data.Mindustry) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[scarlet]Server is not a Mindustry server.")
+                labels.error.text = "[scarlet]Server is not a Mindustry server."
                 labels.error.add()
                 continue
             }
             if (data.state == Discovery.Data.Mindustry.State.STOPPED) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[orange]Server is not open.")
+                labels.error.text = "[orange]Server is not open."
                 labels.error.add()
                 continue
             }
             if (data.gameVersion != getMindustryServerInfo().gameVersion) {
                 labels.overlays.forEach { it.first.hide() }
-                labels.error.text("[scarlet]Server version mismatch.")
+                labels.error.text = "[scarlet]Server version mismatch."
                 labels.error.add()
                 continue
             }
             labels.error.hide()
             labels.overlays.forEach { (label, overlay) ->
-                label.text(formatText(overlay.text.trim(), data))
+                label.text = formatText(overlay.text.trim(), data)
                 label.add()
             }
         }
@@ -352,19 +352,17 @@ class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
         WorldLabel.create().apply {
             x(portal.centerX * Vars.tilesize)
             y(portal.centerY * Vars.tilesize)
-            fontSize(config.errorFontSize)
-            flags(WorldLabel.flagOutline or WorldLabel.flagBackground)
+            fontSize = config.errorFontSize
+            flags = WorldLabel.flagOutline or WorldLabel.flagBackground
         }
 
     private fun createWorldLabel(portal: Portal, overlay: MindustryConfig.Hub.Overlay) =
         WorldLabel.create().apply {
             x((portal.centerX + (overlay.offsetX * portal.w)) * Vars.tilesize)
             y((portal.centerY + (overlay.offsetY * portal.h)) * Vars.tilesize)
-            fontSize(overlay.fontSize)
-            var flags: Byte = 0
+            fontSize = overlay.fontSize
             if (overlay.outline) flags = flags or WorldLabel.flagOutline
             if (overlay.background) flags = flags or WorldLabel.flagBackground
-            flags(flags)
         }
 
     private fun getCurrentMapName() =
