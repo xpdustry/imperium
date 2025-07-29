@@ -64,14 +64,13 @@ class FormationListener(instances: InstanceManager) : ImperiumApplication.Listen
             val (id, context) = iterator.next()
 
             val player = Groups.player.getByID(id)
-            val playerUnit = player.unit() ?: continue // Player has no unit, skip
-
             if (player == null) {
                 context.deleted = true
                 iterator.remove()
                 continue
             }
-
+            
+            val playerUnit = player.unit() ?: continue // Player has no unit, skip
             if (context.leader != playerUnit) {
                 context.leader = playerUnit
             }
