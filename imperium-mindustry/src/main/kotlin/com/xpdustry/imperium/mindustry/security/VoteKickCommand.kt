@@ -218,8 +218,12 @@ class VoteKickCommand(instances: InstanceManager) :
             objective.target.sendMessage(player.name() + " [scarlet]tried to votekick you.")
             return false
         } else if (afk.isPlayerAfk(objective.target)) {
-            Call.sendMessage("Player [scarlet]${objective.target.name}[white] has been disconnected due to being AFK and ${player.name()}[white] trying to votekick them.")
-            objective.target.kick("You have been disconnected due to being AFK and ${player.name()} trying to votekick you.\nYou can rejoin freely.")
+            Call.sendMessage(
+                "Player [scarlet]${objective.target.name}[white] has been disconnected due to being AFK and ${player.name()}[white] trying to votekick them."
+            )
+            objective.target.kick(
+                "You have been disconnected due to being AFK and ${player.name()} trying to votekick you.\nYou can rejoin freely."
+            )
             return false
         } else if (!limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage("[scarlet]You are limited to one votekick per minute. Please try again later.")

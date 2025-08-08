@@ -40,7 +40,6 @@ import com.xpdustry.imperium.mindustry.formation.FormationAI
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.AfkManager
-import com.xpdustry.imperium.mindustry.world.ExcavateCommand.ExcavateData
 import kotlin.time.Duration.Companion.seconds
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -121,7 +120,6 @@ class KillAllCommand(instances: InstanceManager) :
         }
         sender.reply(components.build())
     }
-
 
     override fun getRequiredVotes(session: VoteManager.Session<Unit>, players: Int): Int {
         var votes = (Entities.getPlayers().size / 2) + 1

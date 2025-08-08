@@ -225,23 +225,23 @@ class ExcavateCommand(instances: InstanceManager) :
     }
 
     override fun getRequiredVotes(session: VoteManager.Session<ExcavateData>, players: Int): Int {
-        var votes = when (Entities.getPlayers().size) {
-            0 -> 0
-            1 -> 1
-            2,
-            3,
-            4,
-            5 -> 2
-            6,
-            7,
-            8,
-            9 -> 3
-            else -> 4
-        }
+        var votes =
+            when (Entities.getPlayers().size) {
+                0 -> 0
+                1 -> 1
+                2,
+                3,
+                4,
+                5 -> 2
+                6,
+                7,
+                8,
+                9 -> 3
+                else -> 4
+            }
         votes -= afk.getAfkPlayerCount()
         return votes
     }
-
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<ExcavateData>) {
         val sequence = AtomicInteger(0)

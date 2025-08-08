@@ -1,3 +1,20 @@
+/*
+ * Imperium, the software collection powering the Chaotic Neutral network.
+ * Copyright (C) 2024  Xpdustry
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.Distributor
@@ -10,16 +27,17 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.translation.player_afk
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
+import java.time.Duration
+import java.time.Instant
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Player
-import java.time.Instant
-import java.time.Duration
 
 // TODO: Make chatting count towards player activity
 
 interface AfkManager {
     fun isPlayerAfk(player: Player): Boolean
+
     fun getAfkPlayerCount(): Int
 }
 
@@ -33,7 +51,8 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
         Vars.netServer.admins.addActionFilter { action ->
             playerActionTimer[action.player] = Instant.now()
             val removed: Boolean = afkPlayers.remove(action.player) != null
-            if (removed) Distributor.get().audienceProvider.getPlayer(action.player).sendMessage(player_afk(removed = true))
+            if (removed)
+                Distributor.get().audienceProvider.getPlayer(action.player).sendMessage(player_afk(removed = true))
             true
         }
     }
@@ -55,7 +74,8 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
         for ((player, lastActionTime) in playerActionTimer) {
             if (lastActionTime.isBefore(Instant.now().minusSeconds(config.mindustry.afkDelay.inWholeSeconds))) {
                 playerActionTimer.remove(player)
-                if (!config.mindustry.kickAfkPlayers) Distributor.get().audienceProvider.getPlayer(player).sendMessage(player_afk(removed = false))
+                if (!config.mindustry.kickAfkPlayers)
+                    Distributor.get().audienceProvider.getPlayer(player).sendMessage(player_afk(removed = false))
                 else {
                     Distributor.get().audienceProvider.getPlayer(player).kick(player_afk_kick(), Duration.ZERO)
                     continue
@@ -69,6 +89,7 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
         onPlayerAfk() // Ensure 1 player is not afk, always happens when a vote starts
         return afkPlayers.containsKey(player)
     }
+
     // TODO: Make this applied by default to the vote requirements
     // Current implementation is manually adding it to every vote file
     override fun getAfkPlayerCount(): Int = afkPlayers.size
