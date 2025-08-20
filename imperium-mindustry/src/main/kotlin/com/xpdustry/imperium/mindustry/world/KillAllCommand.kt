@@ -96,9 +96,9 @@ class KillAllCommand(instances: InstanceManager) :
         for (unit in Entities.getUnits().toList()) {
             if (
                 !unit.isPlayer &&
-                (team == null || team == unit.team()) &&
-                unit.controller() !is FormationAI &&
-                (type == null || unit.type() == type)
+                    (team == null || team == unit.team()) &&
+                    unit.controller() !is FormationAI &&
+                    (type == null || unit.type() == type)
             ) {
                 killed++
                 Call.unitDespawn(unit)
