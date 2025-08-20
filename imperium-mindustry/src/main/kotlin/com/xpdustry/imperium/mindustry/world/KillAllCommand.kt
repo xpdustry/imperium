@@ -77,6 +77,14 @@ class KillAllCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["killall|ku", "force|f"], Rank.OVERSEER)
+    @Scope(MindustryGamemode.SANDBOX)
+    @ClientSide
+    fun onKillAllUnitsForceCommand(sender: CommandSender) {
+        onPlayerForceSuccess(sender.player, manager.session)
+    }
+
+    @ImperiumCommand(["killall|ku"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
     fun onKillAllUnitsTeamCommand(
         sender: CommandSender,
@@ -88,9 +96,9 @@ class KillAllCommand(instances: InstanceManager) :
         for (unit in Entities.getUnits().toList()) {
             if (
                 !unit.isPlayer &&
-                    (team == null || team == unit.team()) &&
-                    unit.controller() !is FormationAI &&
-                    (type == null || unit.type() == type)
+                (team == null || team == unit.team()) &&
+                unit.controller() !is FormationAI &&
+                (type == null || unit.type() == type)
             ) {
                 killed++
                 Call.unitDespawn(unit)
