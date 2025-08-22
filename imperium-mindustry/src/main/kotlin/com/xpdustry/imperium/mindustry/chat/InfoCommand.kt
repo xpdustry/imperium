@@ -30,10 +30,10 @@ class InfoCommand : ImperiumApplication.Listener {
     @ClientSide
     fun onInfoCommand(sender: CommandSender, page: Int = 1) {
         val list = pages[page] ?: pages[0]
-        sender.player.asAudience.sendMessage(compileText(list as List<TranslatableComponent>, page))
+        sender.player.asAudience.sendMessage(compileText(list as List<TranslatableComponent>))
     }
 
-    fun compileText(list: List<TranslatableComponent>, pageNumber: Int): Component {
+    fun compileText(list: List<TranslatableComponent>): Component {
         var component: Component? = null
         if (list.size != 1) {
             component = components(
@@ -41,6 +41,8 @@ class InfoCommand : ImperiumApplication.Listener {
                     if (index == 0) {
                         listOf(
                             it,
+                            newline(),
+                            translatable("imperium.seperator", ACCENT),
                             newline()
                         )
                     } else {
@@ -65,7 +67,7 @@ class InfoCommand : ImperiumApplication.Listener {
         ),
         // Table of Contents
         1 to listOf(
-            translatable("imperium.info.page1.title", ACCENT),
+            translatable("imperium.info.page1.title"),
             translatable("imperium.info.page1.line1"),
             translatable("imperium.info.page1.line2"),
             translatable("imperium.info.page1.line3"),
