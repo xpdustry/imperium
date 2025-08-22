@@ -75,7 +75,7 @@ class InfoCommand : ImperiumApplication.Listener {
         ),
         // Staff Info
         2 to listOf(
-            translatable("imperium.info.page2.title", ACCENT),
+            translatable("imperium.info.page2.title"),
             translatable("imperium.info.page2.line1"),
             translatable("imperium.info.page2.line2"),
             translatable("imperium.info.page2.line3"),
@@ -86,7 +86,7 @@ class InfoCommand : ImperiumApplication.Listener {
         ),
         // Excavate Command
         3 to listOf(
-            translatable("imperium.info.page3.title", ACCENT),
+            translatable("imperium.info.page3.title"),
             translatable("imperium.info.page3.line1"),
             translatable("imperium.info.page3.line2"),
             translatable("imperium.info.page3.line3"),
@@ -98,7 +98,7 @@ class InfoCommand : ImperiumApplication.Listener {
         ),
         // Formation
         4 to listOf(
-            translatable("imperium.info.page4.title", ACCENT),
+            translatable("imperium.info.page4.title"),
             translatable("imperium.info.page4.line1"),
             translatable("imperium.info.page4.line2"),
             translatable("imperium.info.page4.line3"),
