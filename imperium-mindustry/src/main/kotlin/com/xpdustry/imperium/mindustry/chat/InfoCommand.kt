@@ -52,25 +52,18 @@ class InfoCommand : ImperiumApplication.Listener {
     fun compileText(list: List<TranslatableComponent>, pageNumber: Int): Component {
         var component: Component? = null
         if (list.size != 1) {
-            component = components(
-            *list.flatMapIndexed { index, it ->
-                    if (index == 0) {
-                        listOf(
-                            it,
-                            newline(),
-                            translatable("imperium.seperator", ACCENT),
-                            newline()
-                        )
-                    } else {
-                        listOf(
-                            text(">> ", CYAN),
-                            text("", WHITE),
-                            it,
-                            newline()
-                        )
-                    }
-                }.toTypedArray()
-            )
+            component =
+                components(
+                    *list
+                        .flatMapIndexed { index, it ->
+                            if (index == 0) {
+                                listOf(it, newline(), translatable("imperium.seperator", ACCENT), newline())
+                            } else {
+                                listOf(text(">> ", CYAN), text("", WHITE), it, newline())
+                            }
+                        }
+                        .toTypedArray()
+                )
         } else component = components(list.first()) // always the error page
         return component as Component // remove the Nullable? type
     }
