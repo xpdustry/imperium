@@ -1,3 +1,20 @@
+/*
+ * Imperium, the software collection powering the Chaotic Neutral network.
+ * Copyright (C) 2024  Xpdustry
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package com.xpdustry.imperium.mindustry.chat
 
 import com.xpdustry.distributor.api.command.CommandSender
@@ -11,7 +28,6 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.ACCENT
 import com.xpdustry.distributor.api.component.style.ComponentColor.CYAN
 import com.xpdustry.distributor.api.component.style.ComponentColor.SCARLET
 import com.xpdustry.distributor.api.component.style.ComponentColor.WHITE
-import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -30,10 +46,10 @@ class InfoCommand : ImperiumApplication.Listener {
     @ClientSide
     fun onInfoCommand(sender: CommandSender, page: Int = 1) {
         val list = pages[page] ?: pages[0]
-        sender.player.asAudience.sendMessage(compileText(list as List<TranslatableComponent>))
+        sender.player.asAudience.sendMessage(compileText(list as List<TranslatableComponent>, page))
     }
 
-    fun compileText(list: List<TranslatableComponent>): Component {
+    fun compileText(list: List<TranslatableComponent>, pageNumber: Int): Component {
         var component: Component? = null
         if (list.size != 1) {
             component = components(
@@ -60,51 +76,57 @@ class InfoCommand : ImperiumApplication.Listener {
     }
 
     // Colors will be directly in the text as dealing with this is nightmarish
-    private val pages = mapOf(
-        // Error page, used when page is not found
-        0 to listOf(
-            translatable("imperium.info.page0", SCARLET) // Has bundle
-        ),
-        // Table of Contents
-        1 to listOf(
-            translatable("imperium.info.page1.title"),
-            translatable("imperium.info.page1.line1"),
-            translatable("imperium.info.page1.line2"),
-            translatable("imperium.info.page1.line3"),
-            translatable("imperium.info.page1.line4"),
-        ),
-        // Staff Info
-        2 to listOf(
-            translatable("imperium.info.page2.title"),
-            translatable("imperium.info.page2.line1"),
-            translatable("imperium.info.page2.line2"),
-            translatable("imperium.info.page2.line3"),
-            translatable("imperium.info.page2.line4"),
-            translatable("imperium.info.page2.line5"),
-            translatable("imperium.info.page2.line6"),
-            translatable("imperium.info.page2.line7"),
-        ),
-        // Excavate Command
-        3 to listOf(
-            translatable("imperium.info.page3.title"),
-            translatable("imperium.info.page3.line1"),
-            translatable("imperium.info.page3.line2"),
-            translatable("imperium.info.page3.line3"),
-            translatable("imperium.info.page3.line4"),
-            translatable("imperium.info.page3.line5"),
-            translatable("imperium.info.page3.line6"),
-            translatable("imperium.info.page3.line7"),
-            translatable("imperium.info.page3.line8"),
-        ),
-        // Formation
-        4 to listOf(
-            translatable("imperium.info.page4.title"),
-            translatable("imperium.info.page4.line1"),
-            translatable("imperium.info.page4.line2"),
-            translatable("imperium.info.page4.line3"),
-            translatable("imperium.info.page4.line4"),
-            translatable("imperium.info.page4.line5"),
-            translatable("imperium.info.page4.line6"),
+    private val pages =
+        mapOf(
+            // Error page, used when page is not found
+            0 to
+                listOf(
+                    translatable("imperium.info.page0", SCARLET) // Has bundle
+                ),
+            // Table of Contents
+            1 to
+                listOf(
+                    translatable("imperium.info.page1.title"),
+                    translatable("imperium.info.page1.line1"),
+                    translatable("imperium.info.page1.line2"),
+                    translatable("imperium.info.page1.line3"),
+                    translatable("imperium.info.page1.line4"),
+                ),
+            // Staff Info
+            2 to
+                listOf(
+                    translatable("imperium.info.page2.title"),
+                    translatable("imperium.info.page2.line1"),
+                    translatable("imperium.info.page2.line2"),
+                    translatable("imperium.info.page2.line3"),
+                    translatable("imperium.info.page2.line4"),
+                    translatable("imperium.info.page2.line5"),
+                    translatable("imperium.info.page2.line6"),
+                    translatable("imperium.info.page2.line7"),
+                ),
+            // Excavate Command
+            3 to
+                listOf(
+                    translatable("imperium.info.page3.title"),
+                    translatable("imperium.info.page3.line1"),
+                    translatable("imperium.info.page3.line2"),
+                    translatable("imperium.info.page3.line3"),
+                    translatable("imperium.info.page3.line4"),
+                    translatable("imperium.info.page3.line5"),
+                    translatable("imperium.info.page3.line6"),
+                    translatable("imperium.info.page3.line7"),
+                    translatable("imperium.info.page3.line8"),
+                ),
+            // Formation
+            4 to
+                listOf(
+                    translatable("imperium.info.page4.title"),
+                    translatable("imperium.info.page4.line1"),
+                    translatable("imperium.info.page4.line2"),
+                    translatable("imperium.info.page4.line3"),
+                    translatable("imperium.info.page4.line4"),
+                    translatable("imperium.info.page4.line5"),
+                    translatable("imperium.info.page4.line6"),
+                ),
         )
-    )
 }
