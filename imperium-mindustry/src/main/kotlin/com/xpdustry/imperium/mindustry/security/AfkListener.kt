@@ -20,13 +20,18 @@ package com.xpdustry.imperium.mindustry.security
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
+import com.xpdustry.distributor.api.util.Priority
+import com.xpdustry.flex.FlexAPI
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.translation.player_afk
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
+import kotlinx.coroutines.future.future
 import java.time.Duration
 import java.time.Instant
 import mindustry.Vars
@@ -52,8 +57,19 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
             playerActionTimer[action.player] = Instant.now()
             val removed: Boolean = afkPlayers.remove(action.player) != null
             if (removed)
-                Distributor.get().audienceProvider.getPlayer(action.player).sendMessage(player_afk(removed = true))
+                (action.player as PlayerAudience).sendMessage(player_afk(removed = true))
             true
+        }
+
+        // I think this is hacky, but it's better than nothing
+        FlexAPI.get().messages.register("player_afk", Priority.NORMAL) { ctx ->
+            ImperiumScope.MAIN.future {
+                val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
+                playerActionTimer[player.player] = Instant.now()
+                val removed: Boolean = afkPlayers.remove(player.player) != null
+                if (removed) player.sendMessage(player_afk(removed = true))
+                ctx.message // we dont filter nor block
+            }
         }
     }
 
