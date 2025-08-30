@@ -31,9 +31,9 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.translation.player_afk
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
-import kotlinx.coroutines.future.future
 import java.time.Duration
 import java.time.Instant
+import kotlinx.coroutines.future.future
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Player
@@ -56,8 +56,7 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
         Vars.netServer.admins.addActionFilter { action ->
             playerActionTimer[action.player] = Instant.now()
             val removed: Boolean = afkPlayers.remove(action.player) != null
-            if (removed)
-                (action.player as PlayerAudience).sendMessage(player_afk(removed = true))
+            if (removed) (action.player as PlayerAudience).sendMessage(player_afk(removed = true))
             true
         }
 
