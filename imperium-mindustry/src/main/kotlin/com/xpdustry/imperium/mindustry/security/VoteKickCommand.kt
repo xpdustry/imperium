@@ -65,9 +65,12 @@ import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
 import org.incendo.cloud.annotation.specifier.Greedy
+
+// TODO: Translate this file
 
 data class VotekickEvent(val target: Player, val type: Type) {
     enum class Type {
@@ -86,6 +89,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val users = instances.get<UserManager>()
     private val marks = instances.get<MarkedPlayerManager>()
     private val accounts = instances.get<AccountManager>()
+    private val afk = instances.get<AfkManager>()
     private val recentBans =
         Collections.newSetFromMap(buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
 
@@ -213,6 +217,14 @@ class VoteKickCommand(instances: InstanceManager) :
             player.sendMessage("[scarlet]You can't start a votekick on this player.")
             objective.target.sendMessage(player.name() + " [scarlet]tried to votekick you.")
             return false
+        } else if (afk.isPlayerAfk(objective.target)) {
+            Call.sendMessage(
+                "Player [scarlet]${objective.target.name}[white] has been disconnected due to being AFK and ${player.name()}[white] trying to votekick them."
+            )
+            objective.target.kick(
+                "You have been disconnected due to being AFK and ${player.name()} trying to votekick you.\nYou can rejoin freely."
+            )
+            return false
         } else if (!limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage("[scarlet]You are limited to one votekick per minute. Please try again later.")
             return false
@@ -249,6 +261,8 @@ class VoteKickCommand(instances: InstanceManager) :
         if (marks.isMarked(session.objective.target)) {
             required /= 2F
         }
+        // Dont count AFK players towards the required votes
+        required -= afk.getAfkPlayerCount()
         return ceil(required).toInt()
     }
 
