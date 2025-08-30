@@ -188,7 +188,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         FlexAPI.get().messages.register("bad_word", Priority.HIGH) { ctx ->
             ImperiumScope.MAIN.future {
-                if (!ctx.filter) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
                 if (rank >= Rank.MODERATOR) return@future ctx.message
