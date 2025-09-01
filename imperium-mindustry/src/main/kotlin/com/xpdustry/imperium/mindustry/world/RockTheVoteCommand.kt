@@ -45,7 +45,6 @@ import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 import com.xpdustry.imperium.mindustry.translation.difficulty_name
 import com.xpdustry.imperium.mindustry.translation.gui_back
@@ -62,7 +61,6 @@ class RockTheVoteCommand(instances: InstanceManager) :
     ImperiumApplication.Listener {
 
     private val maps = instances.get<MindustryMapManager>()
-    private val afk = instances.get<AfkManager>()
     private val menu =
         MenuManager.create(plugin).apply {
             addTransformer { (pane) ->
@@ -190,12 +188,6 @@ class RockTheVoteCommand(instances: InstanceManager) :
 
     override fun getVoteSessionDetails(session: VoteManager.Session<MapSelector>): String =
         "[white]Type [accent]/rtv y[] to vote to change the map to [accent]${session.objective.name()}[white]."
-
-    override fun getRequiredVotes(session: VoteManager.Session<MapSelector>, players: Int): Int {
-        var votes = (players / 2) + 1
-        votes -= afk.getAfkPlayerCount()
-        return votes
-    }
 
     private fun MapSelector.name(): String =
         when (this) {

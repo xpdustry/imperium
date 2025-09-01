@@ -146,8 +146,6 @@ data class MindustryConfig(
     val world: World = World(),
     val security: Security = Security(),
     val tipsDelay: Duration = 5.minutes,
-    val afkDelay: Duration = 5.minutes,
-    val kickAfkPlayers: Boolean = false,
 ) {
     data class History(
         val tileEntriesLimit: Int = 20,

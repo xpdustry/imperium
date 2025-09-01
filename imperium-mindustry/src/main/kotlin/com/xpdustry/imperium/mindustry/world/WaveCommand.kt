@@ -28,7 +28,6 @@ import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
@@ -40,8 +39,6 @@ import org.incendo.cloud.annotation.specifier.Range
 
 class WaveCommand(instances: InstanceManager) :
     AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds), ImperiumApplication.Listener {
-    private val afk = instances.get<AfkManager>()
-
     private val waveSkipInterface =
         MenuInterface.create(instances.get()).apply {
             addTransformer { _, pane ->
@@ -107,12 +104,6 @@ class WaveCommand(instances: InstanceManager) :
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Int>): String =
         "Type [accent]/ws y[] to vote to skip [accent]${session.objective}[] wave(s)."
-
-    override fun getRequiredVotes(session: VoteManager.Session<Int>, players: Int): Int {
-        var votes = (players / 2) + 1
-        votes -= afk.getAfkPlayerCount()
-        return votes
-    }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) = runMindustryThread {
         Vars.state.wave += session.objective

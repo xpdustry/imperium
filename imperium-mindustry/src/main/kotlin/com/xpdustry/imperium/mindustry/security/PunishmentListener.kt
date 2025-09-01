@@ -191,7 +191,6 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
                 if (rank >= Rank.MODERATOR) return@future ctx.message
-
                 val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
                 if (words.isNotEmpty()) {
                     if (badWordsCounter.incrementAndCheck(MUUID.from(player.player))) {
