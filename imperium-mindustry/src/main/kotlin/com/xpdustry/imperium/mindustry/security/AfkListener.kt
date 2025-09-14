@@ -86,16 +86,20 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
 
     @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
     fun onPlayerAfk() {
-        for ((player, lastActionTime) in playerActionTimer) {
-            if (lastActionTime.isBefore(Instant.now().minusSeconds(config.mindustry.afkDelay.inWholeSeconds))) {
-                playerActionTimer.remove(player)
-                if (!config.mindustry.kickAfkPlayers)
-                    Distributor.get().audienceProvider.getPlayer(player).sendMessage(player_afk(removed = false))
-                else {
-                    Distributor.get().audienceProvider.getPlayer(player).kick(player_afk_kick(), Duration.ZERO)
-                    continue
+        val now = Instant.now()
+        val afkDelay = config.mindustry.afkDelay.inWholeSeconds
+        val iterator = playerActionTimer.entries.iterator()
+        while (iterator.hasNext()) {
+            val (player, lastActionTime) = iterator.next()
+            if (lastActionTime.isBefore(now.minusSeconds(afkDelay))) {
+                iterator.remove()
+                val audiencePlayer = Distributor.get().audienceProvider.getPlayer(player)
+                if (!config.mindustry.kickAfkPlayers) {
+                    audiencePlayer.sendMessage(player_afk(removed = false))
+                    afkPlayers[player] = now
+                } else {
+                    audiencePlayer.kick(player_afk_kick(), Duration.ZERO)
                 }
-                afkPlayers[player] = Instant.now()
             }
         }
     }
