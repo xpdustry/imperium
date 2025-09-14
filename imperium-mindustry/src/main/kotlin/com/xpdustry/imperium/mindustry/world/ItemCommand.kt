@@ -53,12 +53,10 @@ class ItemCommand : ImperiumApplication.Listener {
             parts
                 .chunked(2)
                 .flatMap { (itemName, amountString) ->
-                    // Find the item by name, case-insensitively
                     val item =
                         Vars.content.items().find { it.name.equals(itemName, ignoreCase = true) }
                             ?: return sender.reply("Invalid item name: $itemName")
 
-                    // Parse the amount, ensuring it's a valid integer
                     val amount =
                         amountString.toIntOrNull() ?: return sender.reply("Invalid amount for $itemName: $amountString")
 
@@ -68,7 +66,7 @@ class ItemCommand : ImperiumApplication.Listener {
 
         val core = team.core()
         if (core == null) {
-            sender.reply("Could not find a core.")
+            sender.reply("Could not find a core for team ${team.localized()}.")
             return
         }
 
@@ -95,7 +93,7 @@ class ItemCommand : ImperiumApplication.Listener {
     ) {
         val core = team.core()
         if (core == null) {
-            sender.reply("Could not find a core.")
+            sender.reply("Could not find a core for team ${team.localized()}.")
             return
         }
         if (amount >= 0) core.items.add(item, amount) else core.items.remove(item, amount)
