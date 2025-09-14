@@ -34,7 +34,7 @@ class ItemCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["fillitems"], Rank.ADMIN)
     @ClientSide
-    fun onItemCommand(sender: CommandSender, team: Team = sender.player.team(), @Quoted items: String) {
+    fun onItemCommand(sender: CommandSender, @Quoted items: String, team: Team = sender.player.team()) {
         // Trim trailing commas and whitespace
         val trimmedItems = items.trim().removeSuffix(",")
         if (trimmedItems.isEmpty()) {
@@ -44,7 +44,6 @@ class ItemCommand : ImperiumApplication.Listener {
 
         val parts = trimmedItems.split(",").map { it.trim() }
 
-        // Each item must have a corresponding amount
         if (parts.size % 2 != 0) {
             sender.reply("Each item must have an amount. EG: \"copper, 1, lead, 2\"")
             return
@@ -83,14 +82,14 @@ class ItemCommand : ImperiumApplication.Listener {
         core.items.add(itemSeq)
         val formattedItems =
             itemSeq.joinToString(", ") { itemStack -> "${itemStack.item.localizedName}: ${itemStack.amount}" }
-        sender.reply("Added items to core:\n$formattedItems")
+        sender.reply("Added items to ${team.localized()} core:\n$formattedItems")
     }
 
     @ImperiumCommand(["item"], Rank.ADMIN)
     @ClientSide
     fun onItemCommand(
         sender: CommandSender,
-        @Flag("i") item: Item,
+        item: Item,
         @Flag("a") amount: Int = 1,
         @Flag("t") team: Team = sender.player.team(),
     ) {
@@ -101,7 +100,7 @@ class ItemCommand : ImperiumApplication.Listener {
         }
         if (amount >= 0) core.items.add(item, amount) else core.items.remove(item, amount)
         sender.reply(
-            "${if(amount >= 0) "Added" else "Removed"}} ${amount.absoluteValue} ${item.localizedName} to core."
+            "${if(amount >= 0) "Added" else "Removed"} ${amount.absoluteValue} ${item.localizedName} to ${team.localized()} core."
         )
     }
 }
