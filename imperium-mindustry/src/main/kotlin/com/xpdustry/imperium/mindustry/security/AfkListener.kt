@@ -102,7 +102,6 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
     }
 
     override fun isPlayerAfk(player: Player): Boolean {
-        onPlayerAfk() // Ensure 1 player is not afk, always happens when a vote starts
         return afkPlayers.containsKey(player)
     }
 

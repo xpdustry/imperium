@@ -145,6 +145,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         )
 
         sequenceOf(
+            AfkListener::class,
                 ConventionListener::class,
                 GatekeeperListener::class,
                 AccountListener::class,
@@ -192,7 +193,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ChangelogCommand::class,
                 DayNightCycleListener::class,
                 ImperiumPermissionListener::class,
-                AfkListener::class,
             )
             .forEach(application::register)
 
