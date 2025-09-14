@@ -145,7 +145,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         )
 
         sequenceOf(
-            AfkListener::class,
+                AfkListener::class,
                 ConventionListener::class,
                 GatekeeperListener::class,
                 AccountListener::class,
