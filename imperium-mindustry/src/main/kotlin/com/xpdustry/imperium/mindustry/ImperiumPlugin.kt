@@ -71,6 +71,7 @@ import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import com.xpdustry.imperium.mindustry.misc.onEvent
 import com.xpdustry.imperium.mindustry.permission.ImperiumPermissionListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
+import com.xpdustry.imperium.mindustry.security.AfkListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
 import com.xpdustry.imperium.mindustry.security.GatekeeperListener
 import com.xpdustry.imperium.mindustry.security.ModerationCommand
@@ -145,6 +146,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         )
 
         sequenceOf(
+                AfkListener::class,
                 ConventionListener::class,
                 GatekeeperListener::class,
                 AccountListener::class,
