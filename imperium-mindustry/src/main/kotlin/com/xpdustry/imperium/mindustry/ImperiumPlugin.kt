@@ -47,6 +47,7 @@ import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatCommand
 import com.xpdustry.imperium.mindustry.chat.FlexListener
 import com.xpdustry.imperium.mindustry.chat.HereCommand
+import com.xpdustry.imperium.mindustry.chat.InfoCommand
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
@@ -191,6 +192,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ChangelogCommand::class,
                 DayNightCycleListener::class,
                 ImperiumPermissionListener::class,
+                InfoCommand::class,
             )
             .forEach(application::register)
 
