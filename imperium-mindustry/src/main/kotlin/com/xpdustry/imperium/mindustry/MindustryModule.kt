@@ -33,6 +33,8 @@ import com.xpdustry.imperium.mindustry.history.HistoryRenderer
 import com.xpdustry.imperium.mindustry.history.SimpleHistorian
 import com.xpdustry.imperium.mindustry.history.SimpleHistoryRenderer
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
+import com.xpdustry.imperium.mindustry.security.AfkListener
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.security.BadWordDetector
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
@@ -67,4 +69,6 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
     provider<HistoryRenderer> { SimpleHistoryRenderer(get(), get(), get()) }
 
     provider<MarkedPlayerManager> { SimpleMarkedPlayerManager(plugin) }
+
+    provider<AfkManager> { AfkListener(this) }
 }

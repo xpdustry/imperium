@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.max
@@ -67,6 +68,7 @@ class ExcavateCommand(instances: InstanceManager) :
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val config = instances.get<ImperiumConfig>()
+    private val afk = instances.get<AfkManager>()
     private lateinit var item: Item
 
     override fun onImperiumInit() {
@@ -222,20 +224,24 @@ class ExcavateCommand(instances: InstanceManager) :
         return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use ${session.objective.price} ${item.name} and you have ${Vars.state.rules.defaultTeam.items().get(item)} ${item.name}"
     }
 
-    override fun getRequiredVotes(session: VoteManager.Session<ExcavateData>, players: Int): Int =
-        when (Entities.getPlayers().size) {
-            0 -> 0
-            1 -> 1
-            2,
-            3,
-            4,
-            5 -> 2
-            6,
-            7,
-            8,
-            9 -> 3
-            else -> 4
-        }
+    override fun getRequiredVotes(session: VoteManager.Session<ExcavateData>, players: Int): Int {
+        var votes =
+            when (Entities.getPlayers().size) {
+                0 -> 0
+                1 -> 1
+                2,
+                3,
+                4,
+                5 -> 2
+                6,
+                7,
+                8,
+                9 -> 3
+                else -> 4
+            }
+        votes -= afk.getAfkPlayerCount()
+        return votes
+    }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<ExcavateData>) {
         val sequence = AtomicInteger(0)
