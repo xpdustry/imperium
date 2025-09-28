@@ -435,7 +435,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
         val ver = SaveIO.getSaveWriter(version)
         val metaOut = arrayOf<StringMap?>(null)
 
-        ver.region("meta", stream, counter) { metaOut[0] = ver.readStringMap(it) }
+        ver.readRegion("meta", stream, counter) { metaOut[0] = ver.readStringMap(it) }
 
         val meta = metaOut[0]!!
         val name = meta["name"] ?: throw IOException("Map does not have a name.")
@@ -447,7 +447,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
 
         if (preview) {
             try {
-                ver.region("content", stream, counter) { ver.readContentHeader(it) }
+                ver.readRegion("content", stream, counter) { ver.readContentHeader(it) }
                 floors = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val walls = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 val fGraphics = floors.createGraphics()
@@ -465,7 +465,7 @@ class AnukenMindustryContentHandler(directory: Path, private val config: Imperiu
                             }
                         }
                     }
-                ver.region("preview_map", stream, counter) {
+                ver.readRegion("preview_map", stream, counter) {
                     ver.readMap(
                         it,
                         object : WorldContext {

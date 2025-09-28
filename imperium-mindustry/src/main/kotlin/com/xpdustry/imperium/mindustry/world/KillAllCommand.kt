@@ -79,6 +79,14 @@ class KillAllCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["killall|ku", "force|f"], Rank.OVERSEER)
+    @Scope(MindustryGamemode.SANDBOX)
+    @ClientSide
+    fun onKillAllUnitsForceCommand(sender: CommandSender) {
+        onPlayerForceSuccess(sender.player, manager.session)
+    }
+
+    @ImperiumCommand(["killall|ku"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
     fun onKillAllUnitsTeamCommand(
         sender: CommandSender,
