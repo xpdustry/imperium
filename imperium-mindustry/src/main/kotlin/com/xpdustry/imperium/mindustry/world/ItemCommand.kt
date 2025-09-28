@@ -18,85 +18,32 @@
 package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
-import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import kotlin.math.absoluteValue
-import mindustry.Vars
 import mindustry.game.Team
 import mindustry.type.Item
-import mindustry.type.ItemSeq
-import org.incendo.cloud.annotation.specifier.Quoted
 
 class ItemCommand : ImperiumApplication.Listener {
 
-    @ImperiumCommand(["fillitems"], Rank.ADMIN)
-    @ClientSide
-    fun onItemCommand(sender: CommandSender, @Quoted items: String, team: Team = sender.player.team()) {
-        // Trim trailing commas and whitespace
-        val trimmedItems = items.trim().removeSuffix(",")
-        if (trimmedItems.isEmpty()) {
-            sender.reply("No items provided.")
-            return
-        }
-
-        val parts = trimmedItems.split(",").map { it.trim() }
-
-        if (parts.size % 2 != 0) {
-            sender.reply("Each item must have an amount. EG: \"copper, 1, lead, 2\"")
-            return
-        }
-
-        val itemArray =
-            parts
-                .chunked(2)
-                .flatMap { (itemName, amountString) ->
-                    val item =
-                        Vars.content.items().find { it.name.equals(itemName, ignoreCase = true) }
-                            ?: return sender.reply("Invalid item name: $itemName")
-
-                    val amount =
-                        amountString.toIntOrNull() ?: return sender.reply("Invalid amount for $itemName: $amountString")
-
-                    listOf(item, amount)
-                }
-                .toTypedArray()
-
+    @ImperiumCommand(["item", "add|a"], Rank.ADMIN)
+    fun onItemAddCommand(sender: CommandSender, item: Item, amount: Int, @AllTeams team: Team = sender.player.team()) {
         val core = team.core()
         if (core == null) {
             sender.reply("Could not find a core for team ${team.localized()}.")
             return
         }
 
-        val itemSeq =
-            ItemSeq().apply {
-                for (i in itemArray.indices step 2) {
-                    add(itemArray[i] as Item, itemArray[i + 1] as Int)
-                }
-            }
-
-        core.items.add(itemSeq)
-        val formattedItems =
-            itemSeq.joinToString(", ") { itemStack -> "${itemStack.item.localizedName}: ${itemStack.amount}" }
-        sender.reply("Added items to ${team.localized()} core:\n$formattedItems")
-    }
-
-    @ImperiumCommand(["item"], Rank.ADMIN)
-    @ClientSide
-    fun onItemCommand(
-        sender: CommandSender,
-        item: Item,
-        @Flag("a") amount: Int = 1,
-        @Flag("t") team: Team = sender.player.team(),
-    ) {
-        val core = team.core()
-        if (core == null) {
-            sender.reply("Could not find a core for team ${team.localized()}.")
-            return
+        if (amount == 0) {
+            sender.reply("Amount must not be zero!")
+        } else if (amount > 0) {
+            core.items.add(item, amount)
+        } else {
+            core.items.remove(item, amount.absoluteValue)
         }
-        if (amount >= 0) core.items.add(item, amount) else core.items.remove(item, amount)
+
         sender.reply(
             "${if(amount >= 0) "Added" else "Removed"} ${amount.absoluteValue} ${item.localizedName} to ${team.localized()} core."
         )
