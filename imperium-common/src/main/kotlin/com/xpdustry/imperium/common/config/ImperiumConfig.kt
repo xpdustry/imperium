@@ -122,7 +122,7 @@ data class DiscordConfig(
     val ranks2roles: Map<Rank, Long> = emptyMap(),
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Achievement, Long> = emptyMap(),
-    val mindustryVersion: String = "145",
+    val mindustryVersion: String = "152",
     val globalCommands: Boolean = false,
     val alertsRole: Long? = null,
 ) {
