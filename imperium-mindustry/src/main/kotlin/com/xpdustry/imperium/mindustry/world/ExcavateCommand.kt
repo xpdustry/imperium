@@ -63,7 +63,7 @@ import mindustry.type.Item
 import mindustry.world.blocks.environment.TreeBlock
 
 class ExcavateCommand(instances: InstanceManager) :
-    AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", 1.minutes),
+    AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", instances.get(), 1.minutes),
     ImperiumApplication.Listener {
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
@@ -224,24 +224,20 @@ class ExcavateCommand(instances: InstanceManager) :
         return "Type [accent]/e y[] to remove the walls in-between [red](${area.x1}, ${area.y1})[] and[red] (${area.x2}, ${area.y2}).\n[]This will use ${session.objective.price} ${item.name} and you have ${Vars.state.rules.defaultTeam.items().get(item)} ${item.name}"
     }
 
-    override fun getRequiredVotes(session: VoteManager.Session<ExcavateData>, players: Int): Int {
-        var votes =
-            when (Entities.getPlayers().size) {
-                0 -> 0
-                1 -> 1
-                2,
-                3,
-                4,
-                5 -> 2
-                6,
-                7,
-                8,
-                9 -> 3
-                else -> 4
-            }
-        votes -= afk.getAfkPlayerCount()
-        return votes
-    }
+    override fun getRequiredVotes(session: VoteManager.Session<ExcavateData>, players: Int): Int =
+        when (Entities.getPlayers().size) {
+            0 -> 0
+            1 -> 1
+            2,
+            3,
+            4,
+            5 -> 2
+            6,
+            7,
+            8,
+            9 -> 3
+            else -> 4
+        }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<ExcavateData>) {
         val sequence = AtomicInteger(0)

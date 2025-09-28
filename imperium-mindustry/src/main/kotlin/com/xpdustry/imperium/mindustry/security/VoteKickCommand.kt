@@ -80,7 +80,8 @@ data class VotekickEvent(val target: Player, val type: Type) {
 }
 
 class VoteKickCommand(instances: InstanceManager) :
-    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", 1.minutes), ImperiumApplication.Listener {
+    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", instances.get(), 1.minutes),
+    ImperiumApplication.Listener {
 
     private val punishments = instances.get<PunishmentManager>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
@@ -261,8 +262,6 @@ class VoteKickCommand(instances: InstanceManager) :
         if (marks.isMarked(session.objective.target)) {
             required /= 2F
         }
-        // Dont count AFK players towards the required votes
-        required -= afk.getAfkPlayerCount()
         return ceil(required).toInt()
     }
 

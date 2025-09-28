@@ -17,98 +17,89 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import com.xpdustry.distributor.api.Distributor
+import arc.math.geom.Point2
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
-import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
-import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.flex.FlexAPI
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.translation.player_afk
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import java.time.Duration
 import java.time.Instant
-import kotlinx.coroutines.future.future
+import kotlin.time.toKotlinDuration
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-// TODO: Make chatting count towards player activity
-
 interface AfkManager {
     fun isPlayerAfk(player: Player): Boolean
-
-    fun getAfkPlayerCount(): Int
 }
 
 class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
-    val afkPlayers = mutableMapOf<Player, Instant>()
-    val playerActionTimer = mutableMapOf<Player, Instant>()
+    private val lastActivity = PlayerMap<Instant>(instances.get())
+    private val lastPosition = PlayerMap<Int>(instances.get())
+    private val notified = PlayerMap<Unit>(instances.get())
 
-    // action filter is easiest way to track player actions
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter { action ->
-            playerActionTimer[action.player] = Instant.now()
-            val removed: Boolean = afkPlayers.remove(action.player) != null
-            if (removed) (action.player as PlayerAudience).sendMessage(player_afk(removed = true))
+            onDisturbingThePeace(action.player)
             true
         }
 
-        // I think this is hacky, but it's better than nothing
-        FlexAPI.get().messages.register("player_afk", Priority.NORMAL) { ctx ->
-            ImperiumScope.MAIN.future {
-                val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
-                playerActionTimer[player.player] = Instant.now()
-                val removed: Boolean = afkPlayers.remove(player.player) != null
-                if (removed) player.sendMessage(player_afk(removed = true))
-                ctx.message // we dont filter nor block
-            }
+        Vars.netServer.admins.addChatFilter { player, message ->
+            if (message.isNotBlank()) onDisturbingThePeace(player)
+            message
         }
     }
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
-        afkPlayers.remove(event.player)
-        playerActionTimer[event.player] = Instant.now()
+        onDisturbingThePeace(event.player)
     }
 
-    @EventHandler
-    fun onPlayerLeave(event: EventType.PlayerLeave) {
-        afkPlayers.remove(event.player)
-        playerActionTimer.remove(event.player)
-    }
+    @TaskHandler(interval = 15, unit = MindustryTimeUnit.SECONDS)
+    fun onPlayerAfkUpdate() {
+        Entities.getPlayers().forEach { player ->
+            val new = Point2.pack(player.tileX(), player.tileY())
+            val old = lastPosition.set(player, new)
+            if (old != new) {
+                onDisturbingThePeace(player)
+            }
 
-    @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
-    fun onPlayerAfk() {
-        val now = Instant.now()
-        val afkDelay = config.mindustry.afkDelay.inWholeSeconds
-        val iterator = playerActionTimer.entries.iterator()
-        while (iterator.hasNext()) {
-            val (player, lastActionTime) = iterator.next()
-            if (lastActionTime.isBefore(now.minusSeconds(afkDelay))) {
-                iterator.remove()
-                val audiencePlayer = Distributor.get().audienceProvider.getPlayer(player)
-                if (!config.mindustry.kickAfkPlayers) {
-                    audiencePlayer.sendMessage(player_afk(removed = false))
-                    afkPlayers[player] = now
-                } else {
-                    audiencePlayer.kick(player_afk_kick(), Duration.ZERO)
+            val duration = getAfkDuration(player).toKotlinDuration()
+            when {
+                duration >= config.mindustry.afkDelay -> {
+                    if (notified.set(player, Unit) != null) player.asAudience.sendMessage(player_afk(enabled = true))
+                }
+                duration >= config.mindustry.afkKickDelay -> {
+                    player.asAudience.kick(player_afk_kick(), Duration.ZERO)
                 }
             }
         }
     }
 
     override fun isPlayerAfk(player: Player): Boolean {
-        return afkPlayers.containsKey(player)
+        return getAfkDuration(player).toKotlinDuration() >= config.mindustry.afkDelay
     }
 
-    // TODO: Make this applied by default to the vote requirements
-    // Current implementation is manually adding it to every vote file
-    override fun getAfkPlayerCount(): Int = afkPlayers.size
+    private fun getAfkDuration(player: Player): Duration {
+        return lastActivity[player]?.let { Duration.between(it, Instant.now()) } ?: Duration.ZERO
+    }
+
+    // PERSONA!!
+    private fun onDisturbingThePeace(player: Player) {
+        notified.remove(player)
+        val wasAfk = isPlayerAfk(player)
+        lastActivity[player] = Instant.now()
+        if (!wasAfk) {
+            player.asAudience.sendMessage(player_afk(enabled = false))
+        }
+    }
 }

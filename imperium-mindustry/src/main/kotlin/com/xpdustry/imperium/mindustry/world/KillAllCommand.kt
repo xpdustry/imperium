@@ -47,7 +47,7 @@ import mindustry.type.UnitType
 import org.incendo.cloud.annotation.specifier.Range
 
 class KillAllCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds), ImperiumApplication.Listener {
+    AbstractVoteCommand<Unit>(instances.get(), "killall", instances.get(), 30.seconds), ImperiumApplication.Listener {
     private val afk = instances.get<AfkManager>()
 
     @ImperiumCommand(["killall|ku"])
@@ -127,12 +127,6 @@ class KillAllCommand(instances: InstanceManager) :
             )
         }
         sender.reply(components.build())
-    }
-
-    override fun getRequiredVotes(session: VoteManager.Session<Unit>, players: Int): Int {
-        var votes = (Entities.getPlayers().size / 2) + 1
-        votes -= afk.getAfkPlayerCount()
-        return votes
     }
 
     override fun getVoteSessionDetails(session: VoteManager.Session<Unit>): String =
