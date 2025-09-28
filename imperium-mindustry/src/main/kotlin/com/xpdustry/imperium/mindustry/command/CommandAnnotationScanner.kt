@@ -65,7 +65,8 @@ import org.incendo.cloud.parser.flag.CommandFlag
 import org.incendo.cloud.parser.standard.DurationParser
 import org.incendo.cloud.permission.Permission
 import org.incendo.cloud.setting.ManagerSetting
-import org.incendo.cloud.translations.TranslationBundle
+
+// import org.incendo.cloud.translations.TranslationBundle
 
 class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val config: ImperiumConfig) :
     PluginAnnotationProcessor<Void> {
@@ -275,7 +276,7 @@ class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val 
             .apply {
                 descriptionMapper { DescriptionFacade.translated(it.textDescription(), config.language) }
                 settings().set(ManagerSetting.OVERRIDE_EXISTING_COMMANDS, true)
-                captionRegistry().registerProvider(TranslationBundle.core(CommandSender::getLocale))
+                // captionRegistry().registerProvider(TranslationBundle.core(CommandSender::getLocale))
                 parserRegistry().registerParser(KotlinDurationParser())
             }
 
