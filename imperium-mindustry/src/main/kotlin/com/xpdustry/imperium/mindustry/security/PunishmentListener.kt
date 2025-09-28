@@ -172,7 +172,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         FlexAPI.get().messages.register("mute", Priority.HIGH) { ctx ->
             ImperiumScope.MAIN.future {
-                if (!ctx.filter || ctx.kind == MessageContext.Kind.COMMAND) return@future ctx.message
+                if (!ctx.filter || ctx.kind != MessageContext.Kind.CHAT) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val muted = runMindustryThread {
                     cache[player.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
@@ -188,7 +188,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
 
         FlexAPI.get().messages.register("bad_word", Priority.HIGH) { ctx ->
             ImperiumScope.MAIN.future {
-                if (!ctx.filter) return@future ctx.message
+                if (!ctx.filter || ctx.kind != MessageContext.Kind.CHAT) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
                 if (rank >= Rank.MODERATOR) return@future ctx.message
