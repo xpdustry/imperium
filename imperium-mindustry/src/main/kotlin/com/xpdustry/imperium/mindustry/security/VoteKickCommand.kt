@@ -43,9 +43,11 @@ import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -56,6 +58,7 @@ import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import java.net.InetAddress
 import java.util.Collections
 import kotlin.math.ceil
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -77,7 +80,8 @@ data class VotekickEvent(val target: Player, val type: Type) {
 }
 
 class VoteKickCommand(instances: InstanceManager) :
-    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", 1.minutes), ImperiumApplication.Listener {
+    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", instances.get(), 1.minutes),
+    ImperiumApplication.Listener {
 
     private val punishments = instances.get<PunishmentManager>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
@@ -86,6 +90,7 @@ class VoteKickCommand(instances: InstanceManager) :
     private val users = instances.get<UserManager>()
     private val marks = instances.get<MarkedPlayerManager>()
     private val accounts = instances.get<AccountManager>()
+    private val afk = instances.get<AfkManager>()
     private val recentBans =
         Collections.newSetFromMap(buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
 
@@ -166,8 +171,14 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
-        runMindustryThread {
+        val wasAfk = runMindustryThread {
             Distributor.get().eventBus.post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
+            afk.isPlayerAfk(session.objective.target)
+        }
+        if (wasAfk) {
+            // TODO Polish this shi
+            session.objective.target.asAudience.kick(player_afk_kick(), Duration.ZERO.toJavaDuration())
+            return
         }
         val yes = mutableSetOf<MindustryUUIDAsLong>()
         val nay = mutableSetOf<MindustryUUIDAsLong>()

@@ -38,7 +38,7 @@ import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
 
 class WaveCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Int>(instances.get(), "wave-skip", 45.seconds), ImperiumApplication.Listener {
+    AbstractVoteCommand<Int>(instances.get(), "wave-skip", instances.get(), 45.seconds), ImperiumApplication.Listener {
     private val waveSkipInterface =
         MenuInterface.create(instances.get()).apply {
             addTransformer { _, pane ->
