@@ -39,7 +39,6 @@ import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.formation.FormationAI
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.security.AfkManager
 import kotlin.time.Duration.Companion.seconds
 import mindustry.game.Team
 import mindustry.gen.Call
@@ -48,7 +47,6 @@ import org.incendo.cloud.annotation.specifier.Range
 
 class KillAllCommand(instances: InstanceManager) :
     AbstractVoteCommand<Unit>(instances.get(), "killall", instances.get(), 30.seconds), ImperiumApplication.Listener {
-    private val afk = instances.get<AfkManager>()
 
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)

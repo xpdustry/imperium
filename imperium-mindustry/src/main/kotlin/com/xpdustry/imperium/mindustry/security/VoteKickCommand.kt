@@ -43,9 +43,11 @@ import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -56,6 +58,7 @@ import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import java.net.InetAddress
 import java.util.Collections
 import kotlin.math.ceil
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -65,12 +68,9 @@ import mindustry.core.NetServer
 import mindustry.game.EventType
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.Team
-import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
 import org.incendo.cloud.annotation.specifier.Greedy
-
-// TODO: Translate this file
 
 data class VotekickEvent(val target: Player, val type: Type) {
     enum class Type {
@@ -171,8 +171,14 @@ class VoteKickCommand(instances: InstanceManager) :
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
-        runMindustryThread {
+        val wasAfk = runMindustryThread {
             Distributor.get().eventBus.post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
+            afk.isPlayerAfk(session.objective.target)
+        }
+        if (wasAfk) {
+            // TODO Polish this shi
+            session.objective.target.asAudience.kick(player_afk_kick(), Duration.ZERO.toJavaDuration())
+            return
         }
         val yes = mutableSetOf<MindustryUUIDAsLong>()
         val nay = mutableSetOf<MindustryUUIDAsLong>()
@@ -217,14 +223,6 @@ class VoteKickCommand(instances: InstanceManager) :
         ) {
             player.sendMessage("[scarlet]You can't start a votekick on this player.")
             objective.target.sendMessage(player.name() + " [scarlet]tried to votekick you.")
-            return false
-        } else if (afk.isPlayerAfk(objective.target)) {
-            Call.sendMessage(
-                "Player [scarlet]${objective.target.name}[white] has been disconnected due to being AFK and ${player.name()}[white] trying to votekick them."
-            )
-            objective.target.kick(
-                "You have been disconnected due to being AFK and ${player.name()} trying to votekick you.\nYou can rejoin freely."
-            )
             return false
         } else if (!limiter.incrementAndCheck(player.ip().toInetAddress())) {
             player.sendMessage("[scarlet]You are limited to one votekick per minute. Please try again later.")
