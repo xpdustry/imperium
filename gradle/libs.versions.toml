@@ -9,7 +9,7 @@ mindustry = "151.1"
 
 # libraries
 distributor = "4.2.0"
-junit = "5.13.2"
+junit = "5.13.4"
 testcontainers = "1.21.2"
 guava = "33.4.8-jre"
 hoplite = "2.9.0"
