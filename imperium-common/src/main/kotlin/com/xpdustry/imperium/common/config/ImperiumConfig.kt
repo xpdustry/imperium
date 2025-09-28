@@ -146,7 +146,15 @@ data class MindustryConfig(
     val world: World = World(),
     val security: Security = Security(),
     val tipsDelay: Duration = 5.minutes,
+    val afkDelay: Duration = 10.minutes,
+    val afkKickDelay: Duration = 15.minutes,
 ) {
+    init {
+        if (afkDelay >= afkKickDelay) {
+            error("afkDelay is greater or equal to afkKickDelay")
+        }
+    }
+
     data class History(
         val tileEntriesLimit: Int = 20,
         val playerEntriesLimit: Int = 200,

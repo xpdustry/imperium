@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.max
@@ -62,11 +63,12 @@ import mindustry.type.Item
 import mindustry.world.blocks.environment.TreeBlock
 
 class ExcavateCommand(instances: InstanceManager) :
-    AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", 1.minutes),
+    AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", instances.get(), 1.minutes),
     ImperiumApplication.Listener {
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val config = instances.get<ImperiumConfig>()
+    private val afk = instances.get<AfkManager>()
     private lateinit var item: Item
 
     override fun onImperiumInit() {

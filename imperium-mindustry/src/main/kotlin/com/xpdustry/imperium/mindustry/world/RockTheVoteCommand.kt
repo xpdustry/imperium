@@ -57,7 +57,7 @@ import mindustry.game.Team
 import mindustry.maps.Map
 
 class RockTheVoteCommand(instances: InstanceManager) :
-    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(instances.get(), "RTV", 1.minutes),
+    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(instances.get(), "RTV", instances.get(), 1.minutes),
     ImperiumApplication.Listener {
 
     private val maps = instances.get<MindustryMapManager>()

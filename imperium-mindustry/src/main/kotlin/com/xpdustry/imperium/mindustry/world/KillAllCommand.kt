@@ -46,7 +46,7 @@ import mindustry.type.UnitType
 import org.incendo.cloud.annotation.specifier.Range
 
 class KillAllCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Unit>(instances.get(), "killall", 30.seconds), ImperiumApplication.Listener {
+    AbstractVoteCommand<Unit>(instances.get(), "killall", instances.get(), 30.seconds), ImperiumApplication.Listener {
 
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)
@@ -77,6 +77,14 @@ class KillAllCommand(instances: InstanceManager) :
     }
 
     @ImperiumCommand(["killall|ku", "force|f"], Rank.OVERSEER)
+    @Scope(MindustryGamemode.SANDBOX)
+    @ClientSide
+    fun onKillAllUnitsForceCommand(sender: CommandSender) {
+        onPlayerForceSuccess(sender.player, manager.session)
+    }
+
+    @ImperiumCommand(["killall|ku"], Rank.MODERATOR)
+    @Scope(MindustryGamemode.SANDBOX)
     @ClientSide
     fun onKillAllUnitsTeamCommand(
         sender: CommandSender,
