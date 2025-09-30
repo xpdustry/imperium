@@ -95,11 +95,10 @@ class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.
 
     // PERSONA!!
     private fun onDisturbingThePeace(player: Player) {
-        notified.remove(player)
-        val wasAfk = isPlayerAfk(player)
-        lastActivity[player] = Instant.now()
-        if (!wasAfk) {
+        if (isPlayerAfk(player)) {
             player.asAudience.sendMessage(player_afk(enabled = false))
         }
+        notified.remove(player)
+        lastActivity[player] = Instant.now()
     }
 }
