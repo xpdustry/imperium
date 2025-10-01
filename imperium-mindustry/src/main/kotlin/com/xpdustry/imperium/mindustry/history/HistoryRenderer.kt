@@ -199,7 +199,8 @@ constructor(
                 components(text(it.lastName, ACCENT), space(), text("#${codec.encode(it.id)}", LIGHT_GRAY))
             } ?: text("Unknown", ACCENT)
         } else {
-            components(ACCENT, translatable(author.team), space(), translatable(author.unit))
+            // TODO Translate text("Unknown")
+            components(ACCENT, translatable(author.team), space(), author.unit?.let(::translatable) ?: text("Unknown"))
         }
 
     private fun getDisplayOrientation(rotation: Int): Component =

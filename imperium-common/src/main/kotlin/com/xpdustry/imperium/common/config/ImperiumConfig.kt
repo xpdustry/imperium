@@ -126,7 +126,7 @@ data class DiscordConfig(
     val ranks2roles: Map<Rank, Long> = emptyMap(),
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Achievement, Long> = emptyMap(),
-    val mindustryVersion: String = "145",
+    val mindustryVersion: String = "152",
     val globalCommands: Boolean = false,
     val alertsRole: Long? = null,
 ) {
@@ -151,7 +151,15 @@ data class MindustryConfig(
     val world: World = World(),
     val security: Security = Security(),
     val tipsDelay: Duration = 5.minutes,
+    val afkDelay: Duration = 10.minutes,
+    val afkKickDelay: Duration = 15.minutes,
 ) {
+    init {
+        if (afkDelay >= afkKickDelay) {
+            error("afkDelay is greater or equal to afkKickDelay")
+        }
+    }
+
     data class History(
         val tileEntriesLimit: Int = 20,
         val playerEntriesLimit: Int = 200,

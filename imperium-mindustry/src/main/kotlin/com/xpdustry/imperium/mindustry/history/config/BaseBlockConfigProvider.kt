@@ -38,10 +38,10 @@ object BaseBlockConfigProvider : BlockConfig.Provider<Building> {
     }
 
     private fun isContentConfigurableBlockOnly(building: Building) =
-        building.block().configurations.keys().all {
+        building.block.configurations.keys().all {
             UnlockableContent::class.java.isAssignableFrom(it) || it == Void.TYPE
         }
 
     private fun isEnablingBlockOnly(building: Building) =
-        building.block().configurations.let { it.size == 1 && it.containsKey(Boolean::class.java) }
+        building.block.configurations.let { it.size == 1 && it.containsKey(Boolean::class.java) }
 }

@@ -44,8 +44,10 @@ class PlayerMap<V>(plugin: MindustryPlugin) {
 
     operator fun get(player: Player): V? = players[player.id()]
 
-    operator fun set(player: Player, value: V) {
+    operator fun set(player: Player, value: V): V? {
+        val old = players[player.id()]
         players[player.id()] = value
+        return old
     }
 
     fun clear() {

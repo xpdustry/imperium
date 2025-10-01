@@ -105,7 +105,7 @@ constructor(
                 Template(
                     listOf(
                         TemplateStep(
-                            "[${config.mindustry.color.toHexString()}]<${Iconc.infoCircle}> ${config.server.name} [accent]>[white] %argument:flex_message%"
+                            "[${config.mindustry.color.toHexString()}]<${Iconc.infoCircle}> ${config.server.name} [accent]>[white] %argument:flex:message%"
                         )
                     )
                 ),

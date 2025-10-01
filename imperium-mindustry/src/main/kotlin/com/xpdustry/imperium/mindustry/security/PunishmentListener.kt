@@ -27,6 +27,9 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.message.MessageContext
+import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -49,6 +52,7 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.announcement_ban
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
@@ -72,6 +76,11 @@ import mindustry.world.Tile
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.MessageBlock
 
+class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
+    private val accounts = instances.get<AccountManager>()
+    private val messenger = instances.get<Messenger>()
+    private val punishments = instances.get<PunishmentManager>()
+    private val users = instances.get<UserManager>()
 class PunishmentListener
 @Inject
 constructor(
@@ -172,7 +181,7 @@ constructor(
 
         FlexAPI.get().messages.register("mute", Priority.HIGH) { ctx ->
             ImperiumScope.MAIN.future {
-                if (!ctx.filter || ctx.kind == MessageContext.Kind.COMMAND) return@future ctx.message
+                if (!ctx.filter || ctx.kind != MessageContext.Kind.CHAT) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
                 val muted = runMindustryThread {
                     cache[player.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
@@ -188,8 +197,11 @@ constructor(
 
         FlexAPI.get().messages.register("bad_word", Priority.HIGH) { ctx ->
             ImperiumScope.MAIN.future {
-                if (!ctx.filter) return@future ctx.message
+                if (!ctx.filter || ctx.kind != MessageContext.Kind.CHAT) return@future ctx.message
                 val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
+                val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
+                if (rank >= Rank.MODERATOR) return@future ctx.message
+
                 val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
                 if (words.isNotEmpty()) {
                     if (badWordsCounter.incrementAndCheck(MUUID.from(player.player))) {

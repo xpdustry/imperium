@@ -56,8 +56,8 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.maps.Map
 
-class RockTheVoteCommand @Inject constructor(plugin: MindustryPlugin, private val maps: MindustryMapManager) :
-    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(plugin, "RTV", 1.minutes), LifecycleListener {
+class RockTheVoteCommand @Inject constructor(plugin: MindustryPlugin, private val maps: MindustryMapManager, afk: AfkManager) :
+    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(plugin, "RTV", afk, 1.minutes), LifecycleListener {
 
     private val menu =
         MenuManager.create(plugin).apply {
@@ -114,7 +114,7 @@ class RockTheVoteCommand @Inject constructor(plugin: MindustryPlugin, private va
                         ctx.state[MAPS]!!.filter { difficulty == null || it.difficulty == difficulty }
                     }
                     .setRenderer { it -> Distributor.get().mindustryComponentDecoder.decode(it.map.name()) }
-                    .setFillEmptySpace(true)
+                    .setFillEmptyHeight(true)
                     .setChoiceAction(
                         BiAction.from<MapWithDifficulty>(Action.hideAll()).then { window, map ->
                             onVoteSessionStart(window.viewer, manager.session, MapSelector.Specific(map.map))
@@ -154,13 +154,13 @@ class RockTheVoteCommand @Inject constructor(plugin: MindustryPlugin, private va
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["rtv", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["rtv", "cancel|c"], Rank.OVERSEER)
     @ClientSide
     fun onRtvCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(["rtv", "force|f"], Rank.MODERATOR)
+    @ImperiumCommand(["rtv", "force|f"], Rank.OVERSEER)
     @ClientSide
     fun onRtvForceCommand(sender: CommandSender) {
         onPlayerForceSuccess(sender.player, manager.session)

@@ -24,7 +24,7 @@ import mindustry.gen.Building
 
 abstract class LinkableBlockConfigProvider<B : Building> : BlockConfig.Provider<B> {
     override fun create(building: B, type: HistoryEntry.Type, config: Any?): BlockConfig? {
-        if (config == null || !building.block().configurations.containsKey(config.javaClass)) {
+        if (config == null || !building.block.configurations.containsKey(config.javaClass)) {
             return null
         }
         return if (config is Int) {

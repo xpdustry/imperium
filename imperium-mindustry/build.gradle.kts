@@ -68,6 +68,7 @@ tasks.shadowJar {
         exclude(dependency(libs.caffeine.get()))
         exclude(dependency(libs.prettytime.get()))
         exclude(dependency(libs.time4j.core.get()))
+        exclude(dependency(libs.exposed.jdbc.get()))
     }
 }
 
@@ -95,7 +96,7 @@ val downloadKotlinRuntime by tasks.registering(GithubAssetDownload::class) {
 val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
     owner = "xpdustry"
     repo = "slf4md"
-    asset = "slf4md-simple.jar"
+    asset = "slf4md.jar"
     version = libs.versions.slf4md.map { "v$it" }
 }
 
@@ -137,10 +138,6 @@ val downloadFlex by tasks.registering(GithubAssetDownload::class) {
 tasks.register<MindustryExec>("runMindustryDesktop2") {
     group = Toxopid.TASK_GROUP_NAME
     configureDesktop()
-}
-
-tasks.withType<MindustryExec> {
-    jvmArguments.add("--enable-preview")
 }
 
 val pluginLibs = fileTree("libs") { include("*.jar") }

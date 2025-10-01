@@ -34,6 +34,8 @@ import com.xpdustry.imperium.mindustry.history.SimpleHistoryRenderer
 import com.xpdustry.imperium.mindustry.lifecycle.ExecutorWithLifecycle
 import com.xpdustry.imperium.mindustry.lifecycle.MindustryExitService
 import com.xpdustry.imperium.mindustry.misc.getMindustryServerInfo
+import com.xpdustry.imperium.mindustry.security.AfkListener
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.security.BadWordDetector
 import com.xpdustry.imperium.mindustry.security.GatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
@@ -58,5 +60,6 @@ class MindustryModule(private val plugin: MindustryPlugin) : ObjectModule {
         binder.bind(HistoryRenderer::class.java).toImpl(SimpleHistoryRenderer::class.java)
         binder.bind(MarkedPlayerManager::class.java).toImpl(SimpleMarkedPlayerManager::class.java)
         binder.bind(Executor::class.java).named("work").toImpl(ExecutorWithLifecycle::class.java)
+        binder.bind(AfkManager::class.java).toImpl(AfkListener::class.java)
     }
 }

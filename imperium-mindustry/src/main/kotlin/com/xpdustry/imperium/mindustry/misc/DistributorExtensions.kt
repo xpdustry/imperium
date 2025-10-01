@@ -53,11 +53,14 @@ import mindustry.gen.Entityc
 import mindustry.gen.Player
 import org.slf4j.LoggerFactory
 
-fun <T : Any> Seq<T>.asList(): List<T> = MindustryCollections.immutableList(this)
+// Wtf...
+@Suppress("UNCHECKED_CAST") fun <T> Seq<T>.asList(): List<T> = MindustryCollections.immutableList(this as Seq<T & Any>)
 
 fun <T : Entityc> EntityGroup<T>.asList(): List<T> = MindustryCollections.immutableList(this)
 
-fun <K : Any, V : Any> ObjectMap<K, V>.asMap(): Map<K, V> = MindustryCollections.immutableMap(this)
+@Suppress("UNCHECKED_CAST")
+fun <K : Any, V> ObjectMap<K, V>.asMap(): Map<K, V> =
+    MindustryCollections.immutableMap(this as ObjectMap<K, V & Any>) as Map<K, V>
 
 fun <T : Any> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this)
 

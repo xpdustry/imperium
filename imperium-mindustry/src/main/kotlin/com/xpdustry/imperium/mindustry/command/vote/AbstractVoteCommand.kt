@@ -21,6 +21,7 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.joinTime
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import kotlin.time.Duration
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
@@ -28,6 +29,7 @@ import mindustry.gen.Player
 abstract class AbstractVoteCommand<O>(
     protected val plugin: MindustryPlugin,
     private val name: String,
+    private val afk: AfkManager,
     duration: Duration,
 ) {
     protected val manager: VoteManager<O> =
@@ -105,7 +107,7 @@ abstract class AbstractVoteCommand<O>(
     protected open fun canParticipantStart(player: Player, objective: O): Boolean = true
 
     protected open fun getParticipants(session: VoteManager.Session<O>): Sequence<Player> =
-        Entities.getPlayers().asSequence()
+        Entities.getPlayers().asSequence().filter { afk.isPlayerAfk(it) }
 
     protected open fun getRequiredVotes(session: VoteManager.Session<O>, players: Int): Int = (players / 2) + 1
 

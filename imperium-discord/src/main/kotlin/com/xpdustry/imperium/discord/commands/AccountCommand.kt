@@ -31,11 +31,11 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 class AccountCommand @Inject constructor(private val accounts: AccountManager, private val codec: IdentifierCodec) :
     LifecycleListener {
 
-    @ImperiumCommand(["account", "edit", "rank"], Rank.OWNER)
+    @ImperiumCommand(["account", "edit", "rank"], Rank.ADMIN)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
         val reply = interaction.deferReply(true).await()
-        if (rank == Rank.OWNER) {
-            reply.sendMessage("Nuh huh").await()
+        if (rank.ordinal >= accounts.selectByDiscord(interaction.user.idLong)!!.rank.ordinal) {
+            reply.sendMessage("Nuh huh, you can only grant a rank lower than yours.").await()
             return
         }
         var id: Int? = null

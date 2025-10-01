@@ -59,6 +59,19 @@ object SquareFormationPattern : FormationPattern {
     }
 }
 
+// Hug the player for tightest formation
+object CompactFormationPattern : FormationPattern {
+    override fun calculate(context: FormationContext, target: Vec2, slot: Int) {
+        if (context.slots > 1) {
+            val angle = (360f * slot) / context.slots
+            val radius = context.spacing
+            target.set(Angles.trnsx(angle, radius), Angles.trnsy(angle, radius))
+        } else {
+            target.set(0f, context.spacing)
+        }
+    }
+}
+
 object RotatingCircleFormationPattern : FormationPattern {
     override fun calculate(context: FormationContext, target: Vec2, slot: Int) {
         val cycle = (30 * Time.toSeconds) / context.leader.speed()

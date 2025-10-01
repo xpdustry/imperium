@@ -42,9 +42,11 @@ import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import com.xpdustry.imperium.mindustry.ui.Interface
 import com.xpdustry.imperium.mindustry.ui.action.Action
 import com.xpdustry.imperium.mindustry.ui.action.BiAction
@@ -56,6 +58,7 @@ import jakarta.inject.Inject
 import java.net.InetAddress
 import java.util.Collections
 import kotlin.math.ceil
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -85,7 +88,8 @@ constructor(
     private val marks: MarkedPlayerManager,
     private val accounts: AccountManager,
     plugin: MindustryPlugin,
-) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", 1.minutes), LifecycleListener {
+    afk: AfkManager
+) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes), LifecycleListener {
 
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
@@ -131,12 +135,13 @@ constructor(
         onPlayerVote(sender.player, getSession(sender.player.team()), Vote.NO)
     }
 
-    @ImperiumCommand(["vote", "c"], Rank.MODERATOR)
+    @ImperiumCommand(["vote", "c"], Rank.OVERSEER)
     @ClientSide
     fun onVoteCancelCommand(sender: CommandSender, team: Team? = null) {
         onPlayerCancel(sender.player, getSession(team ?: sender.player.team()))
     }
 
+    // TODO: Translate these, important
     @ImperiumCommand(["votekick"])
     @ClientSide
     fun onVotekickCommand(sender: CommandSender, target: Player? = null, @Greedy reason: String? = null) {
@@ -168,8 +173,14 @@ constructor(
     }
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
-        runMindustryThread {
+        val wasAfk = runMindustryThread {
             Distributor.get().eventBus.post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
+            afk.isPlayerAfk(session.objective.target)
+        }
+        if (wasAfk) {
+            // TODO Polish this shi
+            session.objective.target.asAudience.kick(player_afk_kick(), Duration.ZERO.toJavaDuration())
+            return
         }
         val yes = mutableSetOf<MindustryUUIDAsLong>()
         val nay = mutableSetOf<MindustryUUIDAsLong>()

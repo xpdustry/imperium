@@ -37,8 +37,8 @@ import mindustry.Vars
 import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
 
-class WaveCommand @Inject constructor(plugin: MindustryPlugin) :
-    AbstractVoteCommand<Int>(plugin, "wave-skip", 45.seconds), LifecycleListener {
+class WaveCommand @Inject constructor(plugin: MindustryPlugin, afk: AfkManager) :
+    AbstractVoteCommand<Int>(plugin, "wave-skip", afk, 45.seconds), LifecycleListener {
     private val waveSkipInterface =
         MenuInterface.create(plugin).apply {
             addTransformer { _, pane ->
@@ -96,7 +96,7 @@ class WaveCommand @Inject constructor(plugin: MindustryPlugin) :
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["ws", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["ws", "cancel|c"], Rank.OVERSEER)
     @ClientSide
     fun onWaveSkipCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)

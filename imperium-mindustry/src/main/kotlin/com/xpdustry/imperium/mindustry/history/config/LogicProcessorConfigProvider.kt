@@ -46,7 +46,7 @@ object LogicProcessorConfigProvider : LinkableBlockConfigProvider<LogicBlock.Log
 
     override fun isLinkValid(building: LogicBlock.LogicBuild, x: Int, y: Int): Boolean {
         val link = building.links.find { it.x == x && it.y == y }
-        return link != null && link.active
+        return link != null && link.valid
     }
 
     private fun getConfiguration(building: LogicBlock.LogicBuild): BlockConfig? {
@@ -54,7 +54,7 @@ object LogicProcessorConfigProvider : LinkableBlockConfigProvider<LogicBlock.Log
         val links =
             building.links
                 .asList()
-                .filter { it.active }
+                .filter { it.valid }
                 .map { ImmutablePoint(it.x - building.tileX(), it.y - building.tileY()) }
                 .toList()
 

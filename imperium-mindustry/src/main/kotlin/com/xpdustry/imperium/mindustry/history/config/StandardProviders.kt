@@ -67,7 +67,7 @@ val UNIT_FACTORY_CONFIGURATION_FACTORY =
 val ITEM_BRIDGE_CONFIGURATION_FACTORY =
     object : LinkableBlockConfigProvider<ItemBridge.ItemBridgeBuild>() {
         override fun isLinkValid(building: ItemBridge.ItemBridgeBuild, x: Int, y: Int) =
-            (building.block() as ItemBridge).linkValid(building.tile(), Vars.world.tile(x, y))
+            (building.block as ItemBridge).linkValid(building.tile, Vars.world.tile(x, y))
     }
 
 val MASS_DRIVER_CONFIGURATION_FACTORY =
@@ -85,7 +85,7 @@ val MASS_DRIVER_CONFIGURATION_FACTORY =
 val POWER_NODE_CONFIGURATION_FACTORY =
     object : LinkableBlockConfigProvider<PowerNode.PowerNodeBuild>() {
         override fun isLinkValid(building: PowerNode.PowerNodeBuild, x: Int, y: Int) =
-            building.power().links.contains(Point2.pack(x, y))
+            building.power.links.contains(Point2.pack(x, y))
     }
 
 val PAYLOAD_DRIVER_CONFIGURATION_FACTORY =

@@ -93,7 +93,7 @@ constructor(
                 ListTransformer<Path>()
                     .setRenderer { ctx, path -> renderSaveName(ctx.viewer.asAudience, path) }
                     .setProvider { getSaveFiles() }
-                    .setFillEmptySpace(true)
+                    .setFillEmptyHeight(true)
                     .setChoiceAction(
                         BiAction.compose(
                             BiAction.with(SAVE_FILE),

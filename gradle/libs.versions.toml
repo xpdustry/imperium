@@ -1,39 +1,42 @@
 [versions]
 # platforms
-kotlin-core = "2.1.20"
-kotlin-coroutine = "1.10.1"
-kotlin-runtime = "4.1.0"
-kotlinx-serialization = "1.8.0"
-java = "23"
-mindustry = "146"
+kotlin-core = "2.2.20"
+kotlin-coroutine = "1.10.2"
+kotlin-runtime = "4.3.1"
+kotlinx-serialization = "1.9.0"
+java = "25"
+mindustry = "152"
 
 # libraries
-distributor = "4.2.0-SNAPSHOT"
-testcontainers = "1.20.6"
-guava = "33.4.5-jre"
+distributor = "4.2.0"
+junit = "5.14.0"
+testcontainers = "1.21.3"
+guava = "33.5.0-jre"
 hoplite = "2.9.0"
 slf4j = "2.0.17"
-slf4md = "1.0.0"
-sql4md = "1.1.0"
-rabbitmq-client = "5.25.0"
-jsoup = "1.19.1"
-okhttp = "4.12.0"
-classgraph = "4.8.179"
-logback = "1.5.18"
-hikari = "6.2.1"
-exposed = "0.60.0"
-h2 = "2.3.232"
-mariadb = "3.5.2"
-caffeine = "3.2.0"
+slf4md = "1.1.3"
+sql4md = "1.1.2"
+password4j = "1.8.4"
+rabbitmq-client = "5.26.0"
+jsoup = "1.21.2"
+okhttp = "5.1.0"
+classgraph = "4.8.181"
+logback = "1.5.19"
+hikari = "7.0.2"
+exposed = "0.61.0"
+h2 = "2.4.240"
+mariadb = "3.5.6"
+caffeine = "3.2.2"
 prettytime = "5.0.9.Final"
 time4j = "4.38"
-nohorny = "3.0.2"
-jda = "5.3.0"
+nohorny = "3.0.3"
+jda = "5.6.1"
 cloud-core = "2.0.0"
-cloud-translations = "1.0.0-SNAPSHOT"
-minio = "8.5.17"
+# cloud-translations = "1.0.0-SNAPSHOT"
+ahocorasick = "0.6.3"
+minio = "8.6.0"
 flex = "1.2.0"
-influxdb = "7.2.0"
+influxdb = "7.3.0"
 bouncycastle = "1.80"
 trove4j = "3.1.0"
 guice = "7.0.0"
@@ -48,16 +51,18 @@ jspecify = "1.0.0"
 
 # gradle plugins
 toxopid = "4.1.2"
-indra = "3.1.3"
-spotless = "7.0.2"
-shadow = "8.3.6"
-ktor-gradle = "3.1.1"
+indra = "3.2.0"
+spotless = "8.0.0"
+shadow = "9.2.2"
+ktor-gradle = "3.3.0"
 
 [libraries]
 # libraries
 distributor-common = { module = "com.xpdustry:distributor-common", version.ref = "distributor" }
 distributor-permission-rank = { module = "com.xpdustry:distributor-permission-rank", version.ref = "distributor" }
 distributor-command-cloud = { module = "com.xpdustry:distributor-command-cloud", version.ref = "distributor" }
+junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
+junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
@@ -67,6 +72,7 @@ hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "ho
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
+password4j = { module = "com.password4j:password4j", version.ref = "password4j" }
 rabbitmq-client = { module = "com.rabbitmq:amqp-client", version.ref = "rabbitmq-client" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
@@ -89,13 +95,11 @@ time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
 nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
-cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
+# cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
+ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasick" }
 minio = { module = "io.minio:minio", version.ref = "minio" }
 flex = { module = "com.xpdustry:flex", version.ref = "flex" }
 influxdb = { module = "com.influxdb:influxdb-client-kotlin", version.ref = "influxdb" }
-bouncycastle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncycastle" }
-trove4j-core = { module = "net.sf.trove4j:core", version.ref = "trove4j" }
-guice = { module = "com.google.inject:guice", version.ref = "guice" }
 
 # testing
 junit-api       = { module = "org.junit.jupiter:junit-jupiter-api",     version.ref = "junit" }
@@ -120,6 +124,8 @@ kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serializat
 ktor-gradle = { module = "io.ktor.plugin:plugin", version.ref = "ktor-gradle" }
 
 [bundles]
-cloud = [ "cloud-core", "cloud-translations-core" ]
+cloud = [ "cloud-core"
+    # , "cloud-translations-core"
+]
 test-lib = [ "junit-api", "junit-params", "assertj-core", "mockito-core", "mockito-junit" ]
 test-run = [ "junit-engine", "junit-launcher" ]

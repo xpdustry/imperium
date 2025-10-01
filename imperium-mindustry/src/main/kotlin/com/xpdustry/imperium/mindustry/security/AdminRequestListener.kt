@@ -264,6 +264,7 @@ constructor(
                     // fix foos autotrace complaining about ips being the same
                     // https://github.com/mindustry-antigrief/mindustry-client/blob/cd7df920b49c167674392e6837cba1812d5b19dc/core/src/mindustry/client/antigrief/Moderation.kt#L116
                     if (canSeeInfo) target.uuid() else codec.encode(user.id),
+                    target.locale,
                     target.con.modclient,
                     target.con.mobile,
                     user.timesJoined,

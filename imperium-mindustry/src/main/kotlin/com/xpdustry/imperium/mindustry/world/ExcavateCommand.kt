@@ -38,6 +38,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import jakarta.inject.Inject
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
@@ -61,7 +62,11 @@ import mindustry.gen.Sounds
 import mindustry.type.Item
 import mindustry.world.blocks.environment.TreeBlock
 
-class ExcavateCommand @Inject constructor(plugin: MindustryPlugin, private val config: ImperiumConfig) :
+class ExcavateCommand @Inject constructor(
+    plugin: MindustryPlugin,
+    private val config: ImperiumConfig,
+    private val afk: AfkManager
+) :
     AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", 1.minutes), LifecycleListener {
 
     private val areas = PlayerMap<ExcavateArea>(plugin)
@@ -121,15 +126,6 @@ class ExcavateCommand @Inject constructor(plugin: MindustryPlugin, private val c
         }
 
         event.player.sendMessage("You set the $adjective point to (${point.x}, ${point.y})")
-    }
-
-    @ImperiumCommand(["excavate|e", "select|s"])
-    @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
-    @ClientSide
-    private fun onOldExcavateStartCommand(sender: CommandSender) {
-        sender.player.sendMessage(
-            "This command has been changed to just '[accent]/excavate[]' or '[accent]/e[]', use those instead."
-        )
     }
 
     @ImperiumCommand(["excavate|e"])
@@ -202,14 +198,14 @@ class ExcavateCommand @Inject constructor(plugin: MindustryPlugin, private val c
         onPlayerVote(sender.player, manager.session, Vote.NO)
     }
 
-    @ImperiumCommand(["excavate|e", "cancel|c"], Rank.MODERATOR)
+    @ImperiumCommand(["excavate|e", "cancel|c"], Rank.OVERSEER)
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onExcavateCancelCommand(sender: CommandSender) {
         onPlayerCancel(sender.player, manager.session)
     }
 
-    @ImperiumCommand(["excavate|e", "force|f"], Rank.MODERATOR)
+    @ImperiumCommand(["excavate|e", "force|f"], Rank.OVERSEER)
     @Scope(MindustryGamemode.SURVIVAL, MindustryGamemode.ATTACK, MindustryGamemode.SURVIVAL_EXPERT)
     @ClientSide
     fun onRtvForceCommand(sender: CommandSender) {

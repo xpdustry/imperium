@@ -48,7 +48,6 @@ import mindustry.content.UnitTypes
 import mindustry.entities.Units
 import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
-import mindustry.gen.Nulls
 import mindustry.gen.Unit as MindustryUnit
 
 class FormationListener @Inject constructor(private val accounts: AccountManager) : LifecycleListener {
@@ -63,14 +62,16 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
             val (id, context) = iterator.next()
 
             val player = Groups.player.getByID(id)
-            if (player == null) {
+            val playerUnit = player?.unit()
+
+            if (player == null || playerUnit == null) {
                 context.deleted = true
                 iterator.remove()
                 continue
             }
 
-            if (context.leader != player.unit()) {
-                context.leader = player.unit()
+            if (context.leader != playerUnit) {
+                context.leader = playerUnit
             }
 
             var updated = false
@@ -100,7 +101,7 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
                         .filter { (_, score) -> score < 1F }
                         .sortedByDescending { (_, score) -> score }
                         .toList()
-                val eligible = ArrayDeque(findEligibleFormationUnits(player.unit()))
+                val eligible = ArrayDeque(findEligibleFormationUnits(playerUnit))
                 for ((replacing, score1) in replaceable) {
                     val (unit, score2) = eligible.poll() ?: break
                     if (score1 < score2) {
@@ -138,14 +139,17 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
     @ImperiumCommand(["group|g"])
     @ClientSide
     suspend fun onFormationCommand(sender: CommandSender) {
+        val playerUnit =
+            sender.player.unit()
+                ?: run {
+                    // player is dead or has no unit
+                    sender.error(formation_failure_dead())
+                    return
+                }
         val valid = runMindustryThread {
             if (sender.player.id() in formations) {
                 formations.remove(sender.player.id())!!.deleted = true
                 sender.reply(formation_toggle(enabled = false))
-                return@runMindustryThread false
-            }
-            if (sender.player.unit().dead() || sender.player.unit() == Nulls.unit) {
-                sender.error(formation_failure_dead())
                 return@runMindustryThread false
             }
             true
@@ -159,8 +163,8 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
         if (account != null) {
             slots =
                 when {
-                    accounts.selectAchievement(account.id, Achievement.SUPPORTER) -> 18
-                    accounts.selectAchievement(account.id, Achievement.HYPER) -> 18
+                    accounts.selectAchievement(account.id, Achievement.HYPER) -> 24
+                    accounts.selectAchievement(account.id, Achievement.SUPPORTER) -> 18 // p2w
                     accounts.selectAchievement(account.id, Achievement.ACTIVE) -> 12
                     account.rank >= Rank.VERIFIED -> 8
                     else -> slots
@@ -172,8 +176,8 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
         }
 
         runMindustryThread {
-            val context = FormationContext(leader = sender.player.unit(), slots = slots)
-            val eligible = findEligibleFormationUnits(sender.player.unit()).take(context.slots)
+            val context = FormationContext(leader = playerUnit, slots = slots)
+            val eligible = findEligibleFormationUnits(playerUnit).take(context.slots)
             if (eligible.isEmpty()) {
                 sender.error(formation_failure_no_valid_unit())
                 return@runMindustryThread
@@ -227,7 +231,7 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
     ) =
         unit.isAI &&
             unit.team() == leader.team() &&
-            unit.type != UnitTypes.mono &&
+            (unit.type != UnitTypes.mono || leader.type == UnitTypes.mono) &&
             unit.type.flying == leader.type.flying &&
             leader.type.buildSpeed > 0 == unit.type.buildSpeed > 0 &&
             unit != leader &&
@@ -246,6 +250,7 @@ class FormationListener @Inject constructor(private val accounts: AccountManager
     enum class FormationPatternEntry(val value: FormationPattern, val rank: Rank = Rank.EVERYONE) {
         CIRCLE(CircleFormationPattern),
         SQUARE(SquareFormationPattern),
+        COMPACT(CompactFormationPattern),
         ROTATING_CIRCLE(RotatingCircleFormationPattern, Rank.OVERSEER),
     }
 }

@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.mindustry.game
 
+import arc.func.Cons
 import arc.math.geom.Point2
 import arc.struct.IntSet
 import com.xpdustry.distributor.api.Distributor
@@ -103,7 +104,7 @@ class AlertListener @Inject constructor(config: ImperiumConfig) : LifecycleListe
             val x = Point2.x(pos).toInt()
             val y = Point2.y(pos).toInt()
             val building = Vars.world.tile(x, y).build as? ConsumeGeneratorBuild ?: continue
-            val block = building.block() as ConsumeGenerator
+            val block = building.block as ConsumeGenerator
             val consumers = block.consumers.filterIsInstance<ConsumeItemExplode>()
             for (item in explosives) {
                 if (
@@ -173,11 +174,21 @@ class AlertListener @Inject constructor(config: ImperiumConfig) : LifecycleListe
         val size = ((CORE_SEARCH_RADIUS * 2) + block.size) * Vars.tilesize * 1F
 
         var found = false
-        event.unit.player.team().data().buildingTree.intersect(x, y, size, size) { build ->
-            if (build.isCoreBuilding) {
-                found = true
-            }
-        }
+        event.unit.player
+            .team()
+            .data()
+            .buildingTree
+            .intersect(
+                x,
+                y,
+                size,
+                size,
+                Cons { build ->
+                    if (build.isCoreBuilding) {
+                        found = true
+                    }
+                },
+            )
 
         if (found) {
             Distributor.get()
