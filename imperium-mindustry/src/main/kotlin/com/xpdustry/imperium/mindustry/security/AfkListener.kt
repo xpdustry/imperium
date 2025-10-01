@@ -20,16 +20,16 @@ package com.xpdustry.imperium.mindustry.security
 import arc.math.geom.Point2
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.lifecycle.LifecycleListener
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.translation.player_afk
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
+import jakarta.inject.Inject
 import java.time.Duration
 import java.time.Instant
 import kotlin.time.toKotlinDuration
@@ -41,11 +41,11 @@ interface AfkManager {
     fun isPlayerAfk(player: Player): Boolean
 }
 
-class AfkListener(instances: InstanceManager) : AfkManager, ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val lastActivity = PlayerMap<Instant>(instances.get())
-    private val lastPosition = PlayerMap<Int>(instances.get())
-    private val notified = PlayerMap<Unit>(instances.get())
+class AfkListener @Inject constructor(private val config: ImperiumConfig, plugin: MindustryPlugin) :
+    AfkManager, LifecycleListener {
+    private val lastActivity = PlayerMap<Instant>(plugin)
+    private val lastPosition = PlayerMap<Int>(plugin)
+    private val notified = PlayerMap<Unit>(plugin)
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter { action ->

@@ -4,12 +4,11 @@ kotlin-core = "2.2.20"
 kotlin-coroutine = "1.10.2"
 kotlin-runtime = "4.3.1"
 kotlinx-serialization = "1.9.0"
-java = "25"
+java = "24"
 mindustry = "152"
 
 # libraries
 distributor = "4.2.0"
-junit = "5.14.0"
 testcontainers = "1.21.3"
 guava = "33.5.0-jre"
 hoplite = "2.9.0"
@@ -40,9 +39,10 @@ influxdb = "7.3.0"
 bouncycastle = "1.80"
 trove4j = "3.1.0"
 guice = "7.0.0"
+jakarta-inject-api = "2.0.1"
 
 # testing
-junit   = "5.12.1"
+junit   = "5.14.0"
 assertj = "3.27.3"
 mockito = "5.16.1"
 
@@ -61,8 +61,6 @@ ktor-gradle = "3.3.0"
 distributor-common = { module = "com.xpdustry:distributor-common", version.ref = "distributor" }
 distributor-permission-rank = { module = "com.xpdustry:distributor-permission-rank", version.ref = "distributor" }
 distributor-command-cloud = { module = "com.xpdustry:distributor-command-cloud", version.ref = "distributor" }
-junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
-junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:junit-jupiter", version.ref = "testcontainers" }
 testcontainers-rabbitmq = { module = "org.testcontainers:rabbitmq", version.ref = "testcontainers" }
@@ -100,6 +98,9 @@ ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasi
 minio = { module = "io.minio:minio", version.ref = "minio" }
 flex = { module = "com.xpdustry:flex", version.ref = "flex" }
 influxdb = { module = "com.influxdb:influxdb-client-kotlin", version.ref = "influxdb" }
+jakarta-inject-api = { module = "jakarta.inject:jakarta.inject-api", version.ref = "jakarta-inject-api" }
+guice = { module = "com.google.inject:guice", version.ref = "guice" }
+trove4j = { module = "net.sf.trove4j:core", version.ref = "trove4j" }
 
 # testing
 junit-api       = { module = "org.junit.jupiter:junit-jupiter-api",     version.ref = "junit" }

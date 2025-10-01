@@ -61,10 +61,10 @@ record FormFieldTextImpl<T>(Key<T> key, boolean optional, Converter<T> converter
                 error.append(newline());
                 final var text =
                         switch (requirement) {
-                            case StringRequirement.Reserved
-                            ignored -> "It's is reserved or already taken, try something else.";
-                            case StringRequirement.Length l -> "It needs to be between %d and %d characters long."
-                                    .formatted(l.min(), l.max());
+                            case StringRequirement.Reserved ignored ->
+                                "It's is reserved or already taken, try something else.";
+                            case StringRequirement.Length l ->
+                                "It needs to be between %d and %d characters long.".formatted(l.min(), l.max());
                             case StringRequirement.AllowedSpecialSymbol s -> {
                                 final var builder = new StringBuilder();
                                 builder.append("It can only contain the following special symbols: [");
@@ -77,15 +77,16 @@ record FormFieldTextImpl<T>(Key<T> key, boolean optional, Converter<T> converter
                                 }
                                 yield builder.append("].").toString();
                             }
-                            case StringRequirement.Letter l -> switch (l) {
-                                case StringRequirement.Letter
-                                        .HAS_LOWERCASE -> "It needs at least one lowercase letter.";
-                                case StringRequirement.Letter
-                                        .HAS_UPPERCASE -> "It needs at least one uppercase letter.";
-                                case StringRequirement.Letter.ALL_LOWERCASE -> "Uppercase letters aren't allowed.";
-                                case StringRequirement.Letter.HAS_DIGIT -> "It needs at least a number.";
-                                case StringRequirement.Letter.HAS_SPACIAL_SYMBOL -> "It needs at least a symbol.";
-                            };
+                            case StringRequirement.Letter l ->
+                                switch (l) {
+                                    case StringRequirement.Letter.HAS_LOWERCASE ->
+                                        "It needs at least one lowercase letter.";
+                                    case StringRequirement.Letter.HAS_UPPERCASE ->
+                                        "It needs at least one uppercase letter.";
+                                    case StringRequirement.Letter.ALL_LOWERCASE -> "Uppercase letters aren't allowed.";
+                                    case StringRequirement.Letter.HAS_DIGIT -> "It needs at least a number.";
+                                    case StringRequirement.Letter.HAS_SPACIAL_SYMBOL -> "It needs at least a symbol.";
+                                };
                         };
                 error.append(text(text));
             }

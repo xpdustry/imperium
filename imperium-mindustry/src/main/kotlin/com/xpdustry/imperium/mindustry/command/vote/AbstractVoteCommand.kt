@@ -29,7 +29,7 @@ import mindustry.gen.Player
 abstract class AbstractVoteCommand<O>(
     protected val plugin: MindustryPlugin,
     private val name: String,
-    private val afk: AfkManager,
+    val afk: AfkManager,
     duration: Duration,
 ) {
     protected val manager: VoteManager<O> =

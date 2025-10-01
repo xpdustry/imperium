@@ -44,6 +44,7 @@ import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 import com.xpdustry.imperium.mindustry.translation.difficulty_name
 import com.xpdustry.imperium.mindustry.translation.gui_back
@@ -56,7 +57,9 @@ import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.maps.Map
 
-class RockTheVoteCommand @Inject constructor(plugin: MindustryPlugin, private val maps: MindustryMapManager, afk: AfkManager) :
+class RockTheVoteCommand
+@Inject
+constructor(plugin: MindustryPlugin, private val maps: MindustryMapManager, afk: AfkManager) :
     AbstractVoteCommand<RockTheVoteCommand.MapSelector>(plugin, "RTV", afk, 1.minutes), LifecycleListener {
 
     private val menu =

@@ -13,6 +13,10 @@ dependencies {
     api(libs.caffeine)
     api(libs.minio)
 
+    api(libs.jakarta.inject.api)
+    api(libs.guice)
+    api(libs.trove4j)
+
     api(libs.slf4j.api)
     testApi(libs.slf4j.simple)
 
@@ -34,6 +38,9 @@ dependencies {
     testRuntimeOnly(libs.h2)
 
     api(libs.influxdb)
+
+    testApi(libs.bundles.test.lib)
+    testRuntimeOnly(libs.bundles.test.run)
 }
 
 // We love OOMs :^)

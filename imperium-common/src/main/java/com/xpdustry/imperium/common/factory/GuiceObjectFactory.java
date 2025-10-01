@@ -17,6 +17,11 @@ final class GuiceObjectFactory implements ObjectFactory, ProvisionListener {
     @SuppressWarnings("UnusedAssignment")
     private boolean initialized = false;
 
+    static {
+        // https://github.com/google/guice/issues/1909
+        System.setProperty("guice_custom_class_loading", "CHILD");
+    }
+
     public GuiceObjectFactory(final ObjectModule... modules) {
         this.injector = Guice.createInjector(Stage.PRODUCTION, new InternalObjectFactoryModule(List.of(modules)));
         this.initialized = true;

@@ -97,7 +97,7 @@ final class SQLDatabaseImpl implements SQLDatabase, LifecycleListener {
         }
 
         try (final var connection = this.source.getConnection()) {
-            return ScopedValue.callWhere(HANDLE, new HandleImpl(connection), () -> {
+            return ScopedValue.where(HANDLE, new HandleImpl(connection)).call(() -> {
                 final var handle = HANDLE.get();
                 try {
                     handle.connection.setAutoCommit(false);

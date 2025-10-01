@@ -29,7 +29,6 @@ import com.xpdustry.flex.FlexAPI
 import com.xpdustry.flex.message.MessageContext
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -76,11 +75,6 @@ import mindustry.world.Tile
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.MessageBlock
 
-class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val accounts = instances.get<AccountManager>()
-    private val messenger = instances.get<Messenger>()
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
 class PunishmentListener
 @Inject
 constructor(
@@ -91,6 +85,7 @@ constructor(
     private val badWords: BadWordDetector,
     private val config: ImperiumConfig,
     private val codec: IdentifierCodec,
+    private val accounts: AccountManager,
     plugin: MindustryPlugin,
 ) : LifecycleListener {
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)

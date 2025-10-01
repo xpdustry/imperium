@@ -18,12 +18,12 @@
 package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.component.ListComponent.components
 import com.xpdustry.distributor.api.component.NumberComponent.number
 import com.xpdustry.distributor.api.component.TextComponent.space
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.translation.TranslationArguments.array
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -38,6 +38,7 @@ import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.formation.FormationAI
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import jakarta.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import mindustry.game.Team

@@ -27,6 +27,7 @@ import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.ui.View
 import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
 import com.xpdustry.imperium.mindustry.ui.menu.MenuOption

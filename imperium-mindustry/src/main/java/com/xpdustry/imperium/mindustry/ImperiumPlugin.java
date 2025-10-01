@@ -21,8 +21,6 @@ import com.xpdustry.imperium.common.password.PasswordModule;
 import com.xpdustry.imperium.common.session.MindustrySessionModule;
 import com.xpdustry.imperium.common.time.TimeRenderer;
 import com.xpdustry.imperium.mindustry.account.*;
-import com.xpdustry.imperium.mindustry.backport.EnforceAutopauseOnLoadBackport;
-import com.xpdustry.imperium.mindustry.backport.NoApplicationListenerSkipBackport;
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener;
 import com.xpdustry.imperium.mindustry.chat.ChatCommand;
 import com.xpdustry.imperium.mindustry.chat.FlexListener;
@@ -60,6 +58,7 @@ import com.xpdustry.imperium.mindustry.telemetry.DumpCommand;
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener;
 import com.xpdustry.imperium.mindustry.world.ExcavateCommand;
 import com.xpdustry.imperium.mindustry.world.HubListener;
+import com.xpdustry.imperium.mindustry.world.ItemCommand;
 import com.xpdustry.imperium.mindustry.world.KillAllCommand;
 import com.xpdustry.imperium.mindustry.world.MapListener;
 import com.xpdustry.imperium.mindustry.world.ResourceHudListener;
@@ -91,8 +90,6 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
                 new MindustrySessionModule());
         this.lifecycle = this.factory.get(LifecycleService.class);
 
-        this.addListener(new EnforceAutopauseOnLoadBackport(this));
-        this.addListener(new NoApplicationListenerSkipBackport());
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader.INSTANCE);
 
         this.lifecycle.addListener(ConventionListener.class);
@@ -143,6 +140,7 @@ public final class ImperiumPlugin extends AbstractMindustryPlugin {
         this.lifecycle.addListener(DayNighCycleListener.class);
         this.lifecycle.addListener(ImperiumPermissionListener.class);
         this.lifecycle.addListener(LoginCommand.class);
+        this.lifecycle.addListener(ItemCommand.class);
 
         final var config = factory.get(ImperiumConfig.class);
 

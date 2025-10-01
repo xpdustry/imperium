@@ -88,7 +88,7 @@ constructor(
     private val marks: MarkedPlayerManager,
     private val accounts: AccountManager,
     plugin: MindustryPlugin,
-    afk: AfkManager
+    afk: AfkManager,
 ) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes), LifecycleListener {
 
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)

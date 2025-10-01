@@ -62,12 +62,10 @@ import mindustry.gen.Sounds
 import mindustry.type.Item
 import mindustry.world.blocks.environment.TreeBlock
 
-class ExcavateCommand @Inject constructor(
-    plugin: MindustryPlugin,
-    private val config: ImperiumConfig,
-    private val afk: AfkManager
-) :
-    AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", 1.minutes), LifecycleListener {
+class ExcavateCommand
+@Inject
+constructor(plugin: MindustryPlugin, private val config: ImperiumConfig, afk: AfkManager) :
+    AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", afk, 1.minutes), LifecycleListener {
 
     private val areas = PlayerMap<ExcavateArea>(plugin)
     private lateinit var item: Item

@@ -151,8 +151,8 @@ tasks.runMindustryServer {
         downloadFlex,
         pluginLibs,
         downloadSql4md,
-        // downloadDistributorCommon,
-        // downloadDistributorPermissionRank,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }
 
@@ -168,7 +168,7 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadFlex,
         pluginLibs,
         downloadSql4md,
-        // downloadDistributorCommon,
-        // downloadDistributorPermissionRank,
+        downloadDistributorCommon,
+        downloadDistributorPermissionRank,
     )
 }

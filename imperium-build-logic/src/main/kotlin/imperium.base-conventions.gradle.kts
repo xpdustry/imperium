@@ -35,12 +35,12 @@ repositories {
 }
 
 kotlin {
-    jvmToolchain(libs.versions.java.get().toInt())
+    jvmToolchain(24)
     coreLibrariesVersion = libs.versions.kotlin.core.get()
     compilerOptions {
         javaParameters = true
-        jvmTarget = JvmTarget.fromTarget(libs.versions.java.get())
-        apiVersion = KotlinVersion.KOTLIN_2_0
+        jvmTarget = JvmTarget.fromTarget("24")
+        apiVersion = KotlinVersion.KOTLIN_2_2
     }
 }
 

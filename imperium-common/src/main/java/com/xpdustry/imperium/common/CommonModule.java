@@ -79,10 +79,11 @@ public final class CommonModule implements ObjectModule {
         public VpnDetection get() {
             return switch (config.network().vpnDetection()) {
                 case NetworkConfig.VpnDetectionConfig.None ignored -> VpnDetection.Noop.INSTANCE;
-                case NetworkConfig.VpnDetectionConfig.VpnApiIo vpnApiIo -> new VpnApiIoDetection(
-                        vpnApiIo, okHttpClient);
-                default -> throw new IllegalStateException(
-                        "Unexpected value: " + config.network().vpnDetection());
+                case NetworkConfig.VpnDetectionConfig.VpnApiIo vpnApiIo ->
+                    new VpnApiIoDetection(vpnApiIo, okHttpClient);
+                default ->
+                    throw new IllegalStateException(
+                            "Unexpected value: " + config.network().vpnDetection());
             };
         }
     }

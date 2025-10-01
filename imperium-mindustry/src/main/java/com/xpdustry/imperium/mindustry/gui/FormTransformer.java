@@ -180,10 +180,10 @@ public final class FormTransformer implements Transformer<MenuPane> {
         @SuppressWarnings("unchecked")
         final var field = (FormField.Text<T>) this.fields.get(window.getState().getRequired(INDEX_KEY));
         return switch (field.converter().fromString(input)) {
-            case JImperiumResult.Failure<T, Component> failure -> Action.compose(
-                    Action.show(), ImperiumActions.announce(failure.error()));
-            case JImperiumResult.Success<T, Component> success -> Action.compose(
-                    Action.with(field.key(), success.value()), Action.back());
+            case JImperiumResult.Failure<T, Component> failure ->
+                Action.compose(Action.show(), ImperiumActions.announce(failure.error()));
+            case JImperiumResult.Success<T, Component> success ->
+                Action.compose(Action.with(field.key(), success.value()), Action.back());
         };
     }
 }
