@@ -20,6 +20,13 @@ package com.xpdustry.imperium.mindustry.security
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.WindowManager
+import com.xpdustry.distributor.api.gui.input.TextInputManager
+import com.xpdustry.distributor.api.gui.menu.ListTransformer
+import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
@@ -31,6 +38,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
+import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Punishment
@@ -44,17 +52,14 @@ import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.asAudience
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
+import com.xpdustry.imperium.mindustry.misc.component3
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.action.Action
-import com.xpdustry.imperium.mindustry.ui.action.BiAction
-import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.createPlayerListTransformer
-import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import java.net.InetAddress
 import java.util.Collections
 import kotlin.math.ceil
@@ -148,7 +153,7 @@ class VoteKickCommand(instances: InstanceManager) :
             return
         }
         if (target == null) {
-            votekickInterface.open(sender.player)
+            votekickInterface.create(sender.player).show()
             return
         }
         if (Entities.getPlayers().filter { !Vars.state.rules.pvp || it.team() == sender.player.team() }.size < 3) {
@@ -269,30 +274,38 @@ class VoteKickCommand(instances: InstanceManager) :
     private fun getSession(team: Team): VoteManager.Session<Context>? =
         manager.sessions.values.firstOrNull { it.objective.team == team }
 
-    private fun createVotekickInterface(): Interface {
+    private fun createVotekickInterface(): WindowManager {
         val reasonInterface =
-            TextInputInterface.create(plugin).apply {
-                addTransformer { _, pane ->
-                    pane.title = "Votekick (2/2)"
-                    pane.description = "Enter a reason for the votekick"
-                    pane.inputAction = BiAction { view, input ->
-                        view.closeAll()
-                        Action.command("votekick", "#" + view.state[VOTEKICK_TARGET]!!.id, input).accept(view)
-                    }
+            TextInputManager.create(plugin).apply {
+                addTransformer { (pane) ->
+                    pane.title = text("Votekick (2/2)")
+                    pane.description = text("Enter a reason for the votekick")
+                    pane.inputAction =
+                        BiAction.delegate { window, input ->
+                            Action.hideAll()
+                                .then(Action.command("votekick", "#${window.state[VOTEKICK_TARGET]!!.id}", input))
+                        }
                 }
             }
 
         val playerListInterface =
-            MenuInterface.create(plugin).apply {
-                addTransformer { _, pane ->
-                    pane.title = "Votekick (1/2)"
-                    pane.content = "Select a player to votekick"
+            MenuManager.create(plugin).apply {
+                addTransformer { (pane) ->
+                    pane.title = text("Votekick (1/2)")
+                    pane.content = text("Select a player to votekick")
                 }
                 addTransformer(
-                    createPlayerListTransformer { view, player ->
-                        view.state[VOTEKICK_TARGET] = player
-                        reasonInterface.open(view)
-                    }
+                    ListTransformer<Player>()
+                        .setProvider { (_, _, viewer) ->
+                            Entities.getPlayers()
+                                .asSequence()
+                                .filter { it != viewer }
+                                .sortedBy { it.name().stripMindustryColors() }
+                                .toList()
+                        }
+                        .setRenderer { text(it.name().stripMindustryColors()) }
+                        .setHeight(8)
+                        .setChoiceAction(BiAction.with(VOTEKICK_TARGET).then(Action.show(reasonInterface)))
                 )
             }
 
@@ -302,6 +315,6 @@ class VoteKickCommand(instances: InstanceManager) :
     data class Context(val target: Player, val reason: String, val team: Team)
 
     companion object {
-        private val VOTEKICK_TARGET = stateKey<Player>("votekick_target")
+        private val VOTEKICK_TARGET = key<Player>("votekick_target")
     }
 }
