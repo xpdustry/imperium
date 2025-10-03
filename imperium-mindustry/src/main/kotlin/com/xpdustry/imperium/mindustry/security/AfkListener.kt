@@ -76,7 +76,7 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
             val duration = getAfkDuration(player).toKotlinDuration()
             when {
                 duration >= config.mindustry.afkDelay -> {
-                    if (notified.set(player, Unit) != null) player.asAudience.sendMessage(player_afk(enabled = true))
+                    if (notified.set(player, Unit) != Unit) player.asAudience.sendMessage(player_afk(enabled = true))
                 }
                 duration >= config.mindustry.afkKickDelay -> {
                     player.asAudience.kick(player_afk_kick(), Duration.ZERO)
