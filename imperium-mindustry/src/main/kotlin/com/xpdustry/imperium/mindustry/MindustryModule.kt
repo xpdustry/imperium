@@ -70,5 +70,5 @@ internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlu
 
     provider<MarkedPlayerManager> { SimpleMarkedPlayerManager(plugin) }
 
-    provider<AfkManager> { AfkListener(this) }
+    provider<AfkManager> { AfkListener(get(), get()) }
 }

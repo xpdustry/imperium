@@ -107,7 +107,7 @@ abstract class AbstractVoteCommand<O>(
     protected open fun canParticipantStart(player: Player, objective: O): Boolean = true
 
     protected open fun getParticipants(session: VoteManager.Session<O>): Sequence<Player> =
-        Entities.getPlayers().asSequence().filter { afk.isPlayerAfk(it) }
+        Entities.getPlayers().asSequence().filter { !afk.isPlayerAfk(it) }
 
     protected open fun getRequiredVotes(session: VoteManager.Session<O>, players: Int): Int = (players / 2) + 1
 
