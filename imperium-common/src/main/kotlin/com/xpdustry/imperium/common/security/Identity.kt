@@ -20,7 +20,6 @@ package com.xpdustry.imperium.common.security
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import kotlinx.serialization.Serializable
 
-@Deprecated("Replace with relevant data directly instead")
 @Serializable
 sealed interface Identity {
     val name: String
