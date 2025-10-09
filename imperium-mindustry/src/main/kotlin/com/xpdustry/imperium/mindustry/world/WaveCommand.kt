@@ -18,6 +18,12 @@
 package com.xpdustry.imperium.mindustry.world
 
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.component.NumberComponent.number
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -26,11 +32,9 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
+import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.AfkManager
-import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
 import jakarta.inject.Inject
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -41,19 +45,19 @@ import org.incendo.cloud.annotation.specifier.Range
 class WaveCommand @Inject constructor(plugin: MindustryPlugin, afk: AfkManager) :
     AbstractVoteCommand<Int>(plugin, "wave-skip", afk, 45.seconds), LifecycleListener {
     private val waveSkipInterface =
-        MenuInterface.create(plugin).apply {
-            addTransformer { _, pane ->
-                pane.title = "Skip Wave"
-                pane.content = "How many waves do you want to skip?"
-                pane.options.addRow(
+        MenuManager.create(plugin).apply {
+            addTransformer { (pane) ->
+                pane.title = text("Skip Wave")
+                pane.content = text("How many waves do you want to skip?")
+                pane.grid.addRow(
                     listOf(3, 5, 10, 15).map { skip ->
-                        MenuOption("[orange]$skip") { view ->
-                            view.closeAll()
-                            onVoteSessionStart(view.viewer, manager.session, skip)
-                        }
+                        MenuOption.of(
+                            number(skip, ComponentColor.ORANGE),
+                            Action.hideAll().then { window -> onVoteSessionStart(window.viewer, manager.session, skip) },
+                        )
                     }
                 )
-                pane.options.addRow(MenuOption("[lightgray]Cancel", View::closeAll))
+                pane.grid.addRow(MenuOption.of(text("Cancel", ComponentColor.LIGHT_GRAY), Action.hideAll()))
             }
         }
 
@@ -82,7 +86,7 @@ class WaveCommand @Inject constructor(plugin: MindustryPlugin, afk: AfkManager) 
     @ImperiumCommand(["wave", "skip"], Rank.MODERATOR)
     @ClientSide
     fun onWaveSkip(sender: CommandSender) {
-        waveSkipInterface.open(sender.player)
+        waveSkipInterface.create(sender.player).show()
     }
 
     @ImperiumCommand(["ws", "y"])

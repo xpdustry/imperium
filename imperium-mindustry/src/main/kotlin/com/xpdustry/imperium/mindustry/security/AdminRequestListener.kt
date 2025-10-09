@@ -18,6 +18,14 @@
 package com.xpdustry.imperium.mindustry.security
 
 import arc.Events
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.WindowManager
+import com.xpdustry.distributor.api.gui.input.TextInputManager
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
@@ -29,17 +37,15 @@ import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.misc.CoroutineAction
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
+import com.xpdustry.imperium.mindustry.misc.component3
 import com.xpdustry.imperium.mindustry.misc.identity
+import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
-import com.xpdustry.imperium.mindustry.ui.Interface
-import com.xpdustry.imperium.mindustry.ui.View
-import com.xpdustry.imperium.mindustry.ui.action.BiAction
-import com.xpdustry.imperium.mindustry.ui.input.TextInputInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuInterface
-import com.xpdustry.imperium.mindustry.ui.menu.MenuOption
-import com.xpdustry.imperium.mindustry.ui.state.stateKey
 import jakarta.inject.Inject
 import java.net.InetAddress
 import kotlin.time.Duration
@@ -58,10 +64,10 @@ import mindustry.net.NetConnection
 import mindustry.net.Packets
 import mindustry.net.Packets.AdminAction
 
-private val PUNISHMENT_DURATION = stateKey<Duration>("punishment_duration")
-private val PUNISHMENT_REASON = stateKey<String>("punishment_reason")
-private val PUNISHMENT_TARGET = stateKey<Identity.Mindustry>("punishment_target")
-private val PUNISHMENT_TYPE = stateKey<Punishment.Type>("punishment_type")
+private val PUNISHMENT_DURATION = key<Duration>("punishment_duration")
+private val PUNISHMENT_REASON = key<String>("punishment_reason")
+private val PUNISHMENT_TARGET = key<Identity.Mindustry>("punishment_target")
+private val PUNISHMENT_TYPE = key<Punishment.Type>("punishment_type")
 
 class AdminRequestListener
 @Inject
@@ -72,86 +78,94 @@ constructor(
     private val accounts: AccountManager,
     private val codec: IdentifierCodec,
 ) : LifecycleListener {
-    private lateinit var adminActionInterface: Interface
+    private lateinit var adminActionInterface: WindowManager
 
     override fun onImperiumInit() {
-        val detailsInterface = TextInputInterface.create(plugin)
-        detailsInterface.addTransformer { v, pane ->
-            pane.title = "Admin Action (3/3)"
-            pane.description = "Enter the reason of the ${v.state[PUNISHMENT_TYPE].toString().lowercase()}"
-            pane.placeholder = v.state[PUNISHMENT_TYPE].toString().lowercase()
-            pane.inputAction = BiAction { view, input ->
-                view.closeAll()
-                view.state[PUNISHMENT_REASON] = input
-                ImperiumScope.MAIN.launch {
-                    val target = users.getByIdentity(view.state[PUNISHMENT_TARGET]!!)
-                    punishments.punish(
-                        view.viewer.identity,
-                        target.id,
-                        view.state[PUNISHMENT_REASON]!!,
-                        view.state[PUNISHMENT_TYPE]!!,
-                        view.state[PUNISHMENT_DURATION]!!,
-                    )
-                    // TODO Move to PunishmentListener ?
-                    logger.info(
-                        "{} ({}) has {} {} ({})",
-                        view.viewer.plainName(),
-                        view.viewer.uuid(),
-                        view.state[PUNISHMENT_TYPE]!!.name.lowercase(),
-                        target.lastName,
-                        target.uuid,
-                    )
+        val detailsInterface = TextInputManager.create(plugin)
+        detailsInterface.addTransformer { (pane, state) ->
+            pane.title = text("Admin Action (3/3)")
+            pane.description = text("Enter the reason of the ${state[PUNISHMENT_TYPE].toString().lowercase()}")
+            pane.placeholder = text(state[PUNISHMENT_TYPE].toString().lowercase())
+            pane.inputAction =
+                BiAction.delegate { _, input ->
+                    Action.hideAll()
+                        .then(Action.with(PUNISHMENT_REASON, input))
+                        .then(
+                            CoroutineAction { window ->
+                                val target = users.getByIdentity(window.state[PUNISHMENT_TARGET]!!)
+                                punishments.punish(
+                                    window.viewer.identity,
+                                    target.id,
+                                    window.state[PUNISHMENT_REASON]!!,
+                                    window.state[PUNISHMENT_TYPE]!!,
+                                    window.state[PUNISHMENT_DURATION]!!,
+                                )
+                                // TODO Move to PunishmentListener ?
+                                logger.info(
+                                    "{} ({}) has {} {} ({})",
+                                    window.viewer.plainName(),
+                                    window.viewer.uuid(),
+                                    window.state[PUNISHMENT_TYPE]!!.name.lowercase(),
+                                    target.lastName,
+                                    target.uuid,
+                                )
+                            }
+                        )
                 }
-            }
         }
 
         val durationInterface =
-            MenuInterface.create(plugin).apply {
-                addTransformer { view, pane ->
-                    pane.title = "Ban (2/3)"
+            MenuManager.create(plugin).apply {
+                addTransformer { (pane, state) ->
+                    pane.title = text("Ban (2/3)")
                     pane.content =
-                        "Select duration of the ${view.state[PUNISHMENT_TYPE].toString().lowercase()} of ${view.state[PUNISHMENT_TARGET]!!.name}"
-
-                    // TODO Goofy aah function, use proper library to display durations
-                    fun addDuration(display: String, duration: Duration) =
-                        pane.options.addRow(
-                            MenuOption(display) { _ ->
-                                view.close()
-                                view.state[PUNISHMENT_DURATION] = duration
-                                detailsInterface.open(view)
-                            }
+                        text(
+                            "Select duration of the ${state[PUNISHMENT_TYPE].toString().lowercase()} of ${state[PUNISHMENT_TARGET]!!.name}"
                         )
 
-                    addDuration("[green]15 minutes", 15.minutes)
-                    addDuration("[green]1 hour", 1.hours)
-                    addDuration("[green]3 hour", 3.hours)
-                    addDuration("[green]6 hours", 6.hours)
-                    addDuration("[green]1 day", 1.days)
-                    addDuration("[green]3 days", 3.days)
-                    addDuration("[green]1 week", 7.days)
-                    addDuration("[green]1 month", 30.days)
-                    addDuration("[red]Permanent", Duration.INFINITE)
-                    pane.options.addRow(MenuOption("[red]Cancel", View::back))
+                    // TODO Goofy aah function, use proper library to display durations
+                    fun addDuration(display: String, duration: Duration, color: ComponentColor = ComponentColor.GREEN) =
+                        pane.grid.addRow(
+                            MenuOption.of(
+                                text(display, color),
+                                Action.hide()
+                                    .then(
+                                        Action.with(PUNISHMENT_DURATION, duration).then(Action.show(detailsInterface))
+                                    ),
+                            )
+                        )
+
+                    addDuration("15 minutes", 15.minutes)
+                    addDuration("1 hour", 1.hours)
+                    addDuration("3 hour", 3.hours)
+                    addDuration("6 hours", 6.hours)
+                    addDuration("1 day", 1.days)
+                    addDuration("3 days", 3.days)
+                    addDuration("1 week", 7.days)
+                    addDuration("1 month", 30.days)
+                    addDuration("Permanent", Duration.INFINITE, ComponentColor.RED)
+                    pane.grid.addRow(MenuOption.of(text("Cancel", ComponentColor.RED), Action.back()))
                 }
             }
 
         adminActionInterface =
-            MenuInterface.create(plugin).apply {
-                addTransformer { _, pane ->
-                    pane.title = "Admin Action (1/3)"
-                    pane.content = "What kind of action you want to take ?"
+            MenuManager.create(plugin).apply {
+                addTransformer { (pane) ->
+                    pane.title = text("Admin Action (1/3)")
+                    pane.content = text("What kind of action you want to take ?")
 
                     Punishment.Type.entries.forEach { type ->
-                        pane.options.addRow(
-                            MenuOption(type.name.lowercase()) { view ->
-                                view.close()
-                                view.state[PUNISHMENT_TYPE] = type
-                                durationInterface.open(view)
-                            }
+                        pane.grid.addRow(
+                            MenuOption.of(
+                                type.name.lowercase(),
+                                Action.hide()
+                                    .then(Action.with(PUNISHMENT_TYPE, type))
+                                    .then(Action.show(durationInterface)),
+                            )
                         )
                     }
 
-                    pane.options.addRow(MenuOption("[red]Cancel", View::back))
+                    pane.grid.addRow(MenuOption.of(text("Cancel", ComponentColor.RED), Action.back()))
                 }
             }
 
@@ -197,7 +211,11 @@ constructor(
         when (packet.action) {
             AdminAction.wave -> handleWaveSkip(con.player)
             AdminAction.trace -> handleTraceInfo(con.player, packet.other)
-            AdminAction.ban -> adminActionInterface.open(con.player) { it[PUNISHMENT_TARGET] = packet.other.identity }
+            AdminAction.ban ->
+                adminActionInterface
+                    .create(con.player)
+                    .apply { state[PUNISHMENT_TARGET] = packet.other.identity }
+                    .show()
             AdminAction.kick -> {
                 packet.other.kick(Packets.KickReason.kick, 0L)
                 logger.info(
