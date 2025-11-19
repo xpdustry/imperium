@@ -4,7 +4,6 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.ListComponent.components
-import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor.*
 import com.xpdustry.distributor.api.translation.TranslationArguments
@@ -13,7 +12,9 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.asAudience
+import mindustry.Vars
 import mindustry.game.EventType
+import mindustry.world.Block
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
 
@@ -21,7 +22,6 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
     // TODO: Make a utility class for tile references so we dont have
     // to keep using Int pairs for tile locations
     val cores = mutableListOf<CoreTile>()
-    val spacer = "------------------------------" // cringe but i like the look
 
     @EventHandler
     fun onBlockDestroy(event: EventType.BlockDestroyEvent) {
@@ -35,8 +35,9 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
     @ImperiumCommand(["revivecore|rc"])
     @ClientSide
     @ServerSide
-    fun onReviveCommand(sender: CommandSender) {
-        sender.reply("nuh uh")
+    fun onReviveCommand(sender: CommandSender, core: Int) {
+        val revive = cores.get(core)
+        Vars.world.tile(revive.tileX, revive.tileY).setNet(revive.core as Block, sender.player.team(), 0)
     }
 
     @ImperiumCommand(["revivecore|rc", "list"])
@@ -46,8 +47,10 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
         val pages = cores.chunked(5)
         val thingy = StringBuilder()
         val page = pages.getOrNull(pagen - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
+        var counter: Int = 0 + (pagen - 1)
         for (entry in page) {
-            thingy.append("${entry.core.localizedName} - (${entry.tileX}, ${entry.tileY})\n")
+            thingy.append("[${counter}] ${entry.core.localizedName} - (${entry.tileX}, ${entry.tileY})\n")
+            counter++
         }
         corepage(thingy.toString(), pagen, pages.size)
     }
