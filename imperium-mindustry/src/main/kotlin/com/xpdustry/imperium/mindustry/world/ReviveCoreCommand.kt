@@ -14,6 +14,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import mindustry.Vars
 import mindustry.game.EventType
+import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
@@ -21,7 +22,7 @@ import org.incendo.cloud.annotation.specifier.Range
 class ReviveCoreCommand : ImperiumApplication.Listener {
     // TODO: Make a utility class for tile references so we dont have
     // to keep using Int pairs for tile locations
-    val cores = mutableListOf<CoreTile>()
+    val coreList = mutableSetOf<CoreTile>()
 
     @EventHandler
     fun onBlockDestroy(event: EventType.BlockDestroyEvent) {
@@ -29,39 +30,51 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
         val block = event.tile.build
         // Will this crash if it somehow tries to add a not coreblock...
         // also this can be reduced im just too lazy...
-        cores.add(CoreTile(block.tileX(), block.tileY(), block.block as CoreBlock))
+        coreList.add(CoreTile(block.tileX(), block.tileY(), block.block as CoreBlock))
     }
 
     @ImperiumCommand(["revivecore|rc"])
     @ClientSide
     @ServerSide
     fun onReviveCommand(sender: CommandSender, core: Int) {
-        val revive = cores.get(core)
+        val cores = coreList.toList()
+        val revive = cores.getOrNull(core) ?: return sender.player.asAudience.sendMessage(translatable("imperium.revivecore.invalidcore", SCARLET))
+        if (!canReviveCore(revive, sender)) return
         Vars.world.tile(revive.tileX, revive.tileY).setNet(revive.core as Block, sender.player.team(), 0)
+        coreList.remove(revive)
     }
 
     @ImperiumCommand(["revivecore|rc", "list"])
     @ClientSide
     @ServerSide
-    fun onReviveCommandList(sender: CommandSender, @Range(min = "1") pagen: Int) {
-        val pages = cores.chunked(5)
-        val thingy = StringBuilder()
-        val page = pages.getOrNull(pagen - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
-        var counter: Int = 0 + (pagen - 1)
-        for (entry in page) {
-            thingy.append("[${counter}] ${entry.core.localizedName} - (${entry.tileX}, ${entry.tileY})\n")
+    fun onReviveCommandList(sender: CommandSender, @Range(min = "1") page: Int) {
+        val cores = coreList.toList()
+        val entries = cores.chunked(5)
+        val pages = StringBuilder()
+        val pageEntry = entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
+        var counter: Int = 0 + (page - 1)
+        for (entry in pageEntry) {
+            pages.append("[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n")
             counter++
         }
-        corepage(thingy.toString(), pagen, pages.size)
+        sender.player.asAudience.sendMessage(corepage(pages.toString(), page, entries.size))
     }
 
-    fun invalid_revivecore_page(): Component = components(WHITE, translatable("imperium.revivecore.invalidpage"))
+    fun invalid_revivecore_page(): Component = components(SCARLET, translatable("imperium.revivecore.invalidpage"))
 
     fun corepage(page: String, pageNumber: Int, pageCount: Int): Component =
         components(
             WHITE,
             translatable("imperium.revivecore.pages", TranslationArguments.array(page, pageNumber, pageCount + 1))
         )
+
+    fun canReviveCore(core: CoreTile, sender: CommandSender): Boolean {
+        return false
+    }
+
+    fun cost(core: CoreBlock): String {
+        return ""
+    }
 }
 
 data class CoreTile(
