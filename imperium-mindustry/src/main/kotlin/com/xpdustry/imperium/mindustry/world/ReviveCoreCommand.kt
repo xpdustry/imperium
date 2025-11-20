@@ -31,7 +31,6 @@ import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import mindustry.Vars
 import mindustry.game.EventType
-import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
@@ -55,7 +54,9 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
     @ServerSide
     fun onReviveCommand(sender: CommandSender, core: Int) {
         val cores = coreList.toList()
-        val revive = cores.getOrNull(core) ?: return sender.player.asAudience.sendMessage(translatable("imperium.revivecore.invalidcore", SCARLET))
+        val revive =
+            cores.getOrNull(core)
+                ?: return sender.player.asAudience.sendMessage(translatable("imperium.revivecore.invalidcore", SCARLET))
         if (!canReviveCore(revive, sender)) return
         Vars.world.tile(revive.tileX, revive.tileY).setNet(revive.core as Block, sender.player.team(), 0)
         coreList.remove(revive)
@@ -68,10 +69,13 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
         val cores = coreList.toList()
         val entries = cores.chunked(5)
         val pages = StringBuilder()
-        val pageEntry = entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
+        val pageEntry =
+            entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
         var counter: Int = 0 + (page - 1)
         for (entry in pageEntry) {
-            pages.append("[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n")
+            pages.append(
+                "[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n"
+            )
             counter++
         }
         sender.player.asAudience.sendMessage(corepage(pages.toString(), page, entries.size))
