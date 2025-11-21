@@ -36,7 +36,6 @@ import mindustry.Vars
 import mindustry.content.Items
 import mindustry.content.Planets
 import mindustry.game.EventType
-import mindustry.game.Teams
 import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.blocks.storage.CoreBlock
@@ -60,7 +59,9 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
     @ServerSide
     fun onReviveCommand(sender: CommandSender, core: Int) {
         val cores = coreList.toList()
-        val revive = cores.getOrNull(core) ?: return sender.player.asAudience.sendMessage(translatable("imperium.revivecore.invalidcore", SCARLET))
+        val revive =
+            cores.getOrNull(core)
+                ?: return sender.player.asAudience.sendMessage(translatable("imperium.revivecore.invalidcore", SCARLET))
         if (!canReviveCore(revive, sender)) return
         Vars.world.tile(revive.tileX, revive.tileY).setNet(revive.core as Block, sender.player.team(), 0)
         coreList.remove(revive)
@@ -73,10 +74,13 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
         val cores = coreList.toList()
         val entries = cores.chunked(5)
         val pages = StringBuilder()
-        val pageEntry = entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
+        val pageEntry =
+            entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
         var counter: Int = 0 + (page - 1)
         for (entry in pageEntry) {
-            pages.append("[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n")
+            pages.append(
+                "[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n"
+            )
             counter++
         }
         sender.player.asAudience.sendMessage(corepage(pages.toString(), page, entries.size))
@@ -93,7 +97,8 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
     fun canReviveCore(core: CoreTile, sender: CommandSender): Boolean {
         val team = sender.player.team()
         if (Vars.state.rules.planet == Planets.serpulo) {
-            // val surge = team.data().core().items.get(Items.surgeAlloy) >= config.mindustry.reviveCore.minBlastCompound
+            // val surge = team.data().core().items.get(Items.surgeAlloy) >=
+            // config.mindustry.reviveCore.minBlastCompound
             val blast = team.data().core().items.get(Items.blastCompound)
         }
 
