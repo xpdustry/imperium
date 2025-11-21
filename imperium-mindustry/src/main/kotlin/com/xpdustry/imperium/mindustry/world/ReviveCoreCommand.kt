@@ -26,19 +26,24 @@ import com.xpdustry.distributor.api.component.style.ComponentColor.*
 import com.xpdustry.distributor.api.translation.TranslationArguments
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import mindustry.Vars
+import mindustry.content.Items
+import mindustry.content.Planets
 import mindustry.game.EventType
+import mindustry.game.Teams
 import mindustry.type.ItemStack
 import mindustry.world.Block
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
 
-class ReviveCoreCommand : ImperiumApplication.Listener {
-    // TODO: Make a utility class for tile references so we dont have
-    // to keep using Int pairs for tile locations
+class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+    val config = instances.get<ImperiumConfig>()
     val coreList = mutableSetOf<CoreTile>()
 
     @EventHandler
@@ -82,15 +87,23 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
     fun corepage(page: String, pageNumber: Int, pageCount: Int): Component =
         components(
             WHITE,
-            translatable("imperium.revivecore.pages", TranslationArguments.array(page, pageNumber, pageCount + 1)),
+            translatable("imperium.revivecore.pages", TranslationArguments.array(page, pageNumber, pageCount)),
         )
 
     fun canReviveCore(core: CoreTile, sender: CommandSender): Boolean {
+        val team = sender.player.team()
+        if (Vars.state.rules.planet == Planets.serpulo) {
+            // val surge = team.data().core().items.get(Items.surgeAlloy) >= config.mindustry.reviveCore.minBlastCompound
+            val blast = team.data().core().items.get(Items.blastCompound)
+        }
+
         return false
     }
 
     fun cost(core: CoreBlock): String {
-        return ""
+        val items = ItemStack()
+        items.set(Items.copper, 1)
+        return items.toString()
     }
 }
 
