@@ -49,8 +49,6 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
     fun onBlockDestroy(event: EventType.BlockDestroyEvent) {
         if (event.tile.block() !is CoreBlock) return
         val block = event.tile.build
-        // Will this crash if it somehow tries to add a not coreblock...
-        // also this can be reduced im just too lazy...
         coreList.add(CoreTile(block.tileX(), block.tileY(), block.block as CoreBlock))
     }
 
@@ -76,7 +74,7 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
         val pages = StringBuilder()
         val pageEntry =
             entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
-        var counter: Int = 0 + (page - 1)
+        var counter: Int = 5 + (page - 1)
         for (entry in pageEntry) {
             pages.append(
                 "[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n"
@@ -97,8 +95,7 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
     fun canReviveCore(core: CoreTile, sender: CommandSender): Boolean {
         val team = sender.player.team()
         if (Vars.state.rules.planet == Planets.serpulo) {
-            // val surge = team.data().core().items.get(Items.surgeAlloy) >=
-            // config.mindustry.reviveCore.minBlastCompound
+            val surge = team.data().core().items.get(Items.surgeAlloy) >= config.mindustry.reviveCore.minBlastCompound
             val blast = team.data().core().items.get(Items.blastCompound)
         }
 
@@ -108,7 +105,7 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
     fun cost(core: CoreBlock): String {
         val items = ItemStack()
         items.set(Items.copper, 1)
-        return items.toString()
+        return items.toString() // outputs: "copper: 1"
     }
 }
 
