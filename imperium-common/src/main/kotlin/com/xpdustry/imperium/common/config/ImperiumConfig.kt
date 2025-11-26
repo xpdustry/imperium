@@ -148,7 +148,7 @@ data class MindustryConfig(
     val tipsDelay: Duration = 5.minutes,
     val afkDelay: Duration = 10.minutes,
     val afkKickDelay: Duration = 15.minutes,
-    // val reviveCore: TODO finish
+    // val reviveCore: TODO FINISHME
 ) {
     init {
         if (afkDelay >= afkKickDelay) {

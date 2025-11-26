@@ -31,6 +31,7 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import mindustry.Vars
 import mindustry.content.Items
@@ -41,6 +42,7 @@ import mindustry.world.Block
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
 
+// This code makes me cry
 class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     val config = instances.get<ImperiumConfig>()
     val coreList = mutableSetOf<CoreTile>()
@@ -50,6 +52,11 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
         if (event.tile.block() !is CoreBlock) return
         val block = event.tile.build
         coreList.add(CoreTile(block.tileX(), block.tileY(), block.block as CoreBlock))
+    }
+
+    @EventHandler
+    fun onGameOver(event: MenuToPlayEvent) {
+        coreList.clear()
     }
 
     @ImperiumCommand(["revivecore|rc"])
@@ -63,6 +70,14 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
         if (!canReviveCore(revive, sender)) return
         Vars.world.tile(revive.tileX, revive.tileY).setNet(revive.core as Block, sender.player.team(), 0)
         coreList.remove(revive)
+    }
+
+    @ImperiumCommand(["revivecore|rc", "list"])
+    @ClientSide
+    @ServerSide
+    // TODO: better name?
+    fun onReviveCommandPage(sender: CommandSender) {
+        onReviveCommandList(sender, 1)
     }
 
     @ImperiumCommand(["revivecore|rc", "list"])
@@ -92,16 +107,20 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
             translatable("imperium.revivecore.pages", TranslationArguments.array(page, pageNumber, pageCount)),
         )
 
+    // FINISHME: configable items... this doesnt work in erekir
     fun canReviveCore(core: CoreTile, sender: CommandSender): Boolean {
         val team = sender.player.team()
+        var canAfford: Boolean = false
         if (Vars.state.rules.planet == Planets.serpulo) {
-            val surge = team.data().core().items.get(Items.surgeAlloy) >= config.mindustry.reviveCore.minBlastCompound
-            val blast = team.data().core().items.get(Items.blastCompound)
+            val surge = team.data().core().items.get(Items.surgeAlloy) >= 10000
+            val blast = team.data().core().items.get(Items.blastCompound) >= 8000
+            canAfford = surge && blast
         }
 
-        return false
+        return canAfford
     }
 
+    // FINISHME: tell the players the required items, not this filler
     fun cost(core: CoreBlock): String {
         val items = ItemStack()
         items.set(Items.copper, 1)
