@@ -89,7 +89,7 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
         val pages = StringBuilder()
         val pageEntry =
             entries.getOrNull(page - 1) ?: return sender.player.asAudience.sendMessage(invalid_revivecore_page())
-        var counter: Int = 5 + (page - 1)
+        var counter: Int = (page - 1) * 5
         for (entry in pageEntry) {
             pages.append(
                 "[${counter}] ${entry.core.localizedName} (${entry.tileX}, ${entry.tileY}) - ${cost(entry.core)}\n"
