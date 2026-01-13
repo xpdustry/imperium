@@ -20,6 +20,6 @@ package com.xpdustry.imperium.common.history
 import com.xpdustry.imperium.common.message.Message
 import kotlinx.serialization.Serializable
 
-@Serializable data class HistoryRequestMessage(val server: String, val player: Int) : Message
+@Serializable data class HistoryRequestMessage(val server: String, val player: Int, val id: String) : Message
 
-@Serializable data class HistoryResponseMessage(val history: String) : Message
+@Serializable data class HistoryResponseMessage(val history: String, val id: String) : Message

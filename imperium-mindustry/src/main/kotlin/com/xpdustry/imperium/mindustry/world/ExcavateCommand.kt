@@ -39,7 +39,6 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import com.xpdustry.imperium.mindustry.security.AfkManager
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.max
@@ -68,7 +67,6 @@ class ExcavateCommand(instances: InstanceManager) :
 
     private val areas = PlayerMap<ExcavateArea>(instances.get())
     private val config = instances.get<ImperiumConfig>()
-    private val afk = instances.get<AfkManager>()
     private lateinit var item: Item
 
     override fun onImperiumInit() {
@@ -262,7 +260,7 @@ class ExcavateCommand(instances: InstanceManager) :
                     )
                 }
                 val cx = area.x1 + ((area.x2 - area.x1) / 2F) * Vars.tilesize
-                Call.soundAt(Sounds.place, cx, y.toFloat() * Vars.tilesize, 1F, getNextPitch(sequence))
+                Call.soundAt(Sounds.blockPlace1, cx, y.toFloat() * Vars.tilesize, 1F, getNextPitch(sequence))
             }
         }
         Call.sendMessage("The excavation has finished!")

@@ -24,8 +24,8 @@ import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
@@ -35,7 +35,7 @@ import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
 class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val config = instances.get<ImperiumConfig>()
 
     override fun onImperiumInit() {
@@ -47,7 +47,7 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             if (
                 channel.parentCategoryIdLong != 0L && channel.parentCategoryIdLong == config.discord.categories.liveChat
             ) {
-                messenger.publish(
+                messenger.broadcast(
                     BridgeChatMessage(
                         channel.name,
                         event.message.member?.nickname ?: event.message.author.name,
@@ -58,8 +58,8 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             }
         }
 
-        messenger.consumer<MindustryPlayerMessage> { message ->
-            val channel = getLiveChatChannel(message.server) ?: return@consumer
+        messenger.subscribe<MindustryPlayerMessage> { message ->
+            val channel = getLiveChatChannel(message.server) ?: return@subscribe
             val text =
                 when (val action = message.action) {
                     is MindustryPlayerMessage.Action.Join ->
@@ -70,8 +70,8 @@ class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.
             channel.sendMessage(text).setAllowedMentions(emptySet()).await()
         }
 
-        messenger.consumer<MindustryServerMessage> { message ->
-            val channel = getLiveChatChannel(message.server) ?: return@consumer
+        messenger.subscribe<MindustryServerMessage> { message ->
+            val channel = getLiveChatChannel(message.server) ?: return@subscribe
             val text = buildString {
                 append(":purple_square: ")
                 if (message.chat) append("**${message.server}**: ")

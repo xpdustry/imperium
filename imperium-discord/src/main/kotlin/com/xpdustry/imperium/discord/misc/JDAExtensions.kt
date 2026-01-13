@@ -78,10 +78,10 @@ private fun ItemComponent.disableComponent(): ItemComponent =
         else -> error("Unsupported component type: ${this::class}")
     }
 
-suspend inline fun <T : Any> RestAction<T>.await(): T = submit().await()
+suspend inline fun <T> RestAction<T>.await(): T = submit().await()
 
-// TODO Totally sane pattern
-suspend inline fun RestAction<Void>.awaitVoid() {
+@JvmName("awaitVoid") // I am a genius!
+suspend inline fun RestAction<Void>.await() {
     submit().await()
 }
 

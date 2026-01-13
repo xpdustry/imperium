@@ -27,8 +27,8 @@ import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.function
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
@@ -85,7 +85,7 @@ class SimpleHistorian(
     private val config: ImperiumConfig,
     private val users: UserManager,
     private val renderer: HistoryRenderer,
-    private val messenger: Messenger,
+    private val messenger: MessageService,
 ) : Historian, ImperiumApplication.Listener {
     private val positions = mutableMapOf<Int, LimitedList<HistoryEntry>>()
     private val players = mutableMapOf<String, LimitedList<HistoryEntry>>()
@@ -103,18 +103,23 @@ class SimpleHistorian(
         setProvider<PowerNode.PowerNodeBuild>(POWER_NODE_CONFIGURATION_FACTORY)
         setProvider<UnitFactory.UnitFactoryBuild>(UNIT_FACTORY_CONFIGURATION_FACTORY)
 
-        messenger.function<HistoryRequestMessage, HistoryResponseMessage> { request ->
-            if (!request.server.equals(imperium.server.name, ignoreCase = true)) return@function null
-            val user = users.findById(request.player) ?: return@function null
+        messenger.subscribe<HistoryRequestMessage> { request ->
+            if (!request.server.equals(imperium.server.name, ignoreCase = true)) return@subscribe
+            val user = users.findById(request.player) ?: return@subscribe
             val (team, unit) =
                 runMindustryThread {
                     val player = Entities.getPlayers().firstOrNull { it.uuid() == user.uuid }
                     (player?.team() ?: Team.sharded) to player?.unit()?.type
                 }
-            HistoryResponseMessage(
-                ComponentStringBuilder.plain(KeyContainer.empty())
-                    .append(renderer.render(getHistory(user.uuid).normalize(30), HistoryActor(user.uuid, team, unit)))
-                    .toString()
+            messenger.broadcast(
+                HistoryResponseMessage(
+                    ComponentStringBuilder.plain(KeyContainer.empty())
+                        .append(
+                            renderer.render(getHistory(user.uuid).normalize(30), HistoryActor(user.uuid, team, unit))
+                        )
+                        .toString(),
+                    request.id,
+                )
             )
         }
     }

@@ -58,7 +58,7 @@ class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, I
                     error("Failed to download bad words list")
                 }
                 val temp = Files.createTempFile("imperium", ".zip")
-                temp.outputStream().use { out -> response.body!!.byteStream().copyTo(out) }
+                temp.outputStream().use { out -> response.body.byteStream().copyTo(out) }
                 val builder = PayloadTrie.builder<Category>().ignoreCase()
                 FileSystems.newFileSystem(temp, null as ClassLoader?).use { fs ->
                     fs.getPath("/bad-words-master/languages/").listDirectoryEntries().forEach { entry ->

@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -38,7 +38,7 @@ import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 
 class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val config = instances.get<ImperiumConfig>()
 
     @ImperiumCommand(["t"])
@@ -105,7 +105,7 @@ class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         }
 
         sender.reply("&fi&lcServer: &fr&lw$forServer")
-        messenger.publish(MindustryServerMessage(config.server.name, forServer, chat = true))
+        messenger.broadcast(MindustryServerMessage(config.server.name, forServer, chat = true))
 
         FlexAPI.get()
             .messages

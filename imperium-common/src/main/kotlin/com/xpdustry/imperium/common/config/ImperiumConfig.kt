@@ -50,7 +50,7 @@ data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
     val database: DatabaseConfig = DatabaseConfig.H2(),
-    val messenger: MessengerConfig = MessengerConfig.None,
+    val messenger: MessengerConfig = MessengerConfig.Noop,
     val server: ServerConfig = ServerConfig("unknown"),
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,
@@ -74,11 +74,12 @@ data class NetworkConfig(
 }
 
 sealed interface DatabaseConfig {
-    data class H2(val memory: Boolean = false, val database: String = "imperium") : DatabaseConfig
+    data class H2(@Deprecated("delete, eventually...") val memory: Boolean = false, val database: String = "imperium") :
+        DatabaseConfig
 
     data class MariaDB(
         val host: String = "localhost",
-        val port: Short = 3306,
+        val port: Int = 3306,
         val database: String = "imperium",
         val username: String = "root",
         val password: Secret = Secret("root"),
@@ -86,15 +87,9 @@ sealed interface DatabaseConfig {
 }
 
 sealed interface MessengerConfig {
-    data object None : MessengerConfig
+    data object Noop : MessengerConfig
 
-    data class RabbitMQ(
-        val host: String = "localhost",
-        val port: Int = 5672,
-        val username: String = "guest",
-        val password: Secret = Secret("guest"),
-        val ssl: Boolean = false,
-    ) : MessengerConfig
+    data object SQL : MessengerConfig
 }
 
 data class ServerConfig(val name: String, val displayName: String = name.capitalize()) {
@@ -122,7 +117,6 @@ data class DiscordConfig(
     val ranks2roles: Map<Rank, Long> = emptyMap(),
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Achievement, Long> = emptyMap(),
-    val mindustryVersion: String = "152",
     val globalCommands: Boolean = false,
     val alertsRole: Long? = null,
 ) {

@@ -280,6 +280,7 @@ class VoteKickCommand(instances: InstanceManager) :
                 addTransformer { (pane) ->
                     pane.title = text("Votekick (2/2)")
                     pane.description = text("Enter a reason for the votekick")
+                    pane.maxLength = 128
                     pane.inputAction =
                         BiAction.delegate { window, input ->
                             Action.hideAll()

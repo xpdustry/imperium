@@ -37,9 +37,9 @@ data class ImperiumVersion(val year: Int, val month: Int, val build: Int) : Comp
 
     companion object {
         fun parse(version: String): ImperiumVersion {
-            val split = (if (version.startsWith("v")) version.substring(1) else version).split(".")
-            require(split.size == 3) { "Version must be in format 'year.month.build'" }
-            return ImperiumVersion(split[0].toInt(), split[1].toInt(), split[2].toInt())
+            val parts = version.removePrefix("v").removeSuffix("-SNAPSHOT").split(".")
+            require(parts.size == 3) { "Version must be in format 'year.month.build'" }
+            return ImperiumVersion(parts[0].toInt(), parts[1].toInt(), parts[2].toInt())
         }
     }
 }

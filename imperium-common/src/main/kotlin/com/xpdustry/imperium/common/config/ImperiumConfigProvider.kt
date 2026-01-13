@@ -20,6 +20,7 @@ package com.xpdustry.imperium.common.config
 import com.sksamuel.hoplite.ConfigException
 import com.sksamuel.hoplite.ConfigFailure
 import com.sksamuel.hoplite.ConfigLoaderBuilder
+import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.sksamuel.hoplite.fp.getOrElse
@@ -32,6 +33,7 @@ import java.nio.file.Path
 object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
     private val logger by LoggerDelegate()
 
+    @OptIn(ExperimentalHoplite::class)
     override fun create(instances: InstanceManager) =
         ConfigLoaderBuilder.empty()
             .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
@@ -43,9 +45,10 @@ object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
             .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
-            .strict()
+            // .strict() TODO Re-enable when hoplite 2.9.1 comes out, see https://github.com/sksamuel/hoplite/pull/509
             .withReport()
             .withReportPrintFn(logger::debug)
+            .withExplicitSealedTypes("_type")
             .build()
             .loadConfig<ImperiumConfig>()
             .getOrElse {

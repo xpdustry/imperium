@@ -34,8 +34,8 @@ import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
@@ -47,12 +47,12 @@ import mindustry.game.EventType
 
 class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val accounts = instances.get<AccountManager>()
 
     override fun onImperiumInit() {
-        messenger.consumer<BridgeChatMessage> {
-            if (it.serverName != config.server.name) return@consumer
+        messenger.subscribe<BridgeChatMessage> {
+            if (it.serverName != config.server.name) return@subscribe
 
             val forServer =
                 FlexAPI.get()
@@ -91,7 +91,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
         ImperiumScope.MAIN.launch {
-            messenger.publish(
+            messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
                     event.player.info.plainLastName(),
@@ -103,7 +103,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
         ImperiumScope.MAIN.launch {
-            messenger.publish(
+            messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
                     event.player.info.plainLastName(),
@@ -115,7 +115,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     @EventHandler
     fun onPlayerChat(event: FlexPlayerChatEvent) =
         ImperiumScope.MAIN.launch {
-            messenger.publish(
+            messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
                     event.player.player.info.plainLastName(),
@@ -133,7 +133,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
         ImperiumScope.MAIN.launch {
-            messenger.publish(MindustryServerMessage(config.server.name, message, chat = false))
+            messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false))
         }
     }
 
@@ -141,7 +141,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
     fun onNextMap(event: EventType.PlayEvent) {
         val message = "New game started on **\"${Vars.state.map.name().stripMindustryColors()}\"**."
         ImperiumScope.MAIN.launch {
-            messenger.publish(MindustryServerMessage(config.server.name, message, chat = false))
+            messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false))
         }
     }
 

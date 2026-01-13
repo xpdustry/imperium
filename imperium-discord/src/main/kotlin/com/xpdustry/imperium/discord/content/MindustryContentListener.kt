@@ -22,20 +22,21 @@ import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
-import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
 import com.xpdustry.imperium.discord.misc.await
-import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.image.BufferedImage
-import java.io.ByteArrayOutputStream
+import java.nio.file.Path
+import kotlin.io.encoding.Base64
+import kotlin.io.encoding.ExperimentalEncodingApi
+import kotlin.io.path.createTempFile
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.writeBytes
 import kotlinx.coroutines.future.await
-import mindustry.Vars
-import mindustry.ctype.MappableContent
-import mindustry.game.Schematic
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
@@ -55,25 +56,27 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
         }
     }
 
+    @OptIn(ExperimentalEncodingApi::class)
     private suspend fun onMindustryContent(channel: MessageChannel, message: Message, member: Member) {
-        val maps = mutableListOf<Triple<MapMetadata, BufferedImage, Message.Attachment>>()
-        val schematics = mutableListOf<Schematic>()
+        val maps = mutableListOf<Triple<ParsedMindustryMapMetadata, BufferedImage, Message.Attachment>>()
+        val schematics = mutableListOf<Pair<ParsedMindustrySchematic, Path>>()
         var delete = false
 
-        if (message.contentRaw.startsWith(Vars.schematicBaseStart)) {
+        if (message.contentRaw.startsWith(SCHEMATIC_HEADER_PREFIX)) {
             delete = true
             schematics +=
                 content
-                    .getSchematic(message.contentRaw)
+                    .parseSchematic(message.contentRaw)
                     .onFailure {
-                        channel.sendMessage("Failed to parse text schematic ${it.message}").await()
+                        logger.error("Failed to parse text schematic", it)
+                        channel.sendMessage("Failed to parse text schematic").await()
                         return
                     }
-                    .getOrThrow()
+                    .getOrThrow() to createTempFile().apply { writeBytes(Base64.decode(message.contentRaw)) }
         }
 
-        val attachements = message.attachments
-        if (attachements.isNotEmpty() && message.contentRaw.isEmpty()) {
+        val attachments = message.attachments
+        if (attachments.isNotEmpty() && message.contentRaw.isEmpty()) {
             delete = true
         }
 
@@ -89,111 +92,117 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                         return
                     }
                     val text = attachment.proxy.download().await().bufferedReader().use { it.readText() }
-                    if (text.startsWith(Vars.schematicBaseStart)) {
+                    if (text.startsWith(SCHEMATIC_HEADER_PREFIX)) {
                         schematics +=
                             content
-                                .getSchematic(text)
+                                .parseSchematic(text)
                                 .onFailure {
-                                    channel.sendMessage("Failed to parse text schematic: ${it.message}").await()
+                                    logger.error("Failed to parse text schematic", it)
+                                    channel.sendMessage("Failed to parse text schematic").await()
                                     return
                                 }
-                                .getOrThrow()
+                                .getOrThrow() to createTempFile().apply { writeBytes(Base64.decode(text)) }
                     }
                 } else if (attachment.fileExtension == "msch") {
                     if (attachment.size > SCHEMATIC_MAX_FILE_SIZE) {
                         channel.sendMessage("Schematic file is too large!").await()
                         return
                     }
-                    attachment.proxy.download().await().use { stream ->
-                        schematics +=
-                            content
-                                .getSchematic(stream)
-                                .onFailure {
-                                    channel.sendMessage("Failed to parse binary schematic: ${it.message}").await()
-                                    return
-                                }
-                                .getOrThrow()
-                    }
+                    val tempFile = createTempFile()
+                    attachment.proxy.downloadToFile(tempFile.toFile()).await()
+                    schematics +=
+                        content
+                            .parseSchematic(tempFile.toFile())
+                            .onFailure {
+                                logger.error("Failed to parse binary schematic", it)
+                                channel.sendMessage("Failed to parse binary schematic").await()
+                                return
+                            }
+                            .getOrThrow() to tempFile
                 } else if (attachment.fileExtension == "msav") {
                     if (attachment.size > MindustryMap.MAX_MAP_FILE_SIZE) {
                         channel.sendMessage("The map file is too big, please submit reasonably sized maps.").await()
                         return
                     }
-                    attachment.proxy.download().await().use { stream ->
-                        val (meta, preview) =
-                            content
-                                .getMapMetadataWithPreview(stream)
-                                .onFailure {
-                                    channel.sendMessage("Failed to parse map: ${it.message}").await()
-                                    return
-                                }
-                                .getOrThrow()
-
-                        if (
-                            meta.width > MindustryMap.MAX_MAP_SIDE_SIZE || meta.height > MindustryMap.MAX_MAP_SIDE_SIZE
-                        ) {
-                            channel
-                                .sendMessage(
-                                    "The map is bigger than ${MindustryMap.MAX_MAP_SIDE_SIZE} blocks, please submit reasonably sized maps."
-                                )
-                                .await()
-                            return
-                        }
-                        maps += Triple(meta, preview, attachment)
+                    val tempFile = createTempFile()
+                    attachment.proxy.downloadToPath(tempFile).await()
+                    val metadata =
+                        content
+                            .parseMap(tempFile.toFile())
+                            .onFailure {
+                                logger.error("Failed to parse map", it)
+                                channel.sendMessage("Failed to parse map").await()
+                                return
+                            }
+                            .getOrThrow()
+                    if (
+                        metadata.width > MindustryMap.MAX_MAP_SIDE_SIZE ||
+                            metadata.height > MindustryMap.MAX_MAP_SIDE_SIZE
+                    ) {
+                        channel
+                            .sendMessage(
+                                "The map is bigger than ${MindustryMap.MAX_MAP_SIDE_SIZE} blocks, please submit reasonably sized maps."
+                            )
+                            .await()
+                        return
                     }
+                    val preview =
+                        content
+                            .renderMap(tempFile.toFile())
+                            .onFailure {
+                                logger.error("Failed to render map", it)
+                                channel.sendMessage("Failed to render map").await()
+                                return
+                            }
+                            .getOrThrow()
+                    maps += Triple(metadata, preview, attachment)
                 } else {
                     delete = false
                 }
             } catch (e: Exception) {
-                channel.sendMessage("Failed to parse mindustry content: ${e.message}").await()
+                logger.error("Failed to parse mindustry content", e)
+                channel.sendMessage("Failed to parse mindustry content").await()
                 return
             }
         }
 
-        schematics.forEach { schematic ->
-            val stream = ByteArrayOutputStream()
-            content
-                .writeSchematic(schematic, stream)
-                .onFailure {
-                    channel.sendMessage("Failed to write the schematic: ${it.message}").await()
-                    return
-                }
-                .getOrThrow()
+        schematics.forEach { (schematic, file) ->
             val preview =
                 content
-                    .getSchematicPreview(schematic)
+                    .renderSchematic(file.toFile())
                     .onFailure {
-                        channel.sendMessage("${"Failed to generate schematic preview"}: ${it.message}").await()
+                        logger.error("Failed to generate schematic preview", it)
+                        channel.sendMessage("Failed to generate schematic preview").await()
                         return
                     }
                     .getOrThrow()
             val requirements = buildString {
-                val iterator = schematic.requirements().iterator()
+                val iterator = schematic.requirements.iterator()
                 while (iterator.hasNext()) {
-                    val stack = iterator.next()
-                    append(stack.item.asEmoji())
+                    val (item, amount) = iterator.next()
+                    append(itemNameToEmoji(item))
                     append(' ')
-                    append(stack.amount)
+                    append(amount)
                     if (iterator.hasNext()) append(' ')
                 }
             }
             channel
                 .sendMessage(
                     MessageCreate {
-                        files +=
-                            FileUpload.fromData(stream.toByteArray(), "${schematic.name().stripMindustryColors()}.msch")
+                        files += FileUpload.fromData(file, "${schematic.name}.msch")
                         files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
                         embeds += Embed {
                             author(member)
                             color = MINDUSTRY_ACCENT_COLOR.rgb
-                            title = schematic.name().stripMindustryColors()
+                            title = schematic.name
                             field("Requirements", requirements, false)
-                            description = schematic.description().stripMindustryColors()
+                            description = schematic.description
                             image = "attachment://preview.png"
                         }
                     }
                 )
                 .await()
+            file.deleteExisting()
         }
 
         maps.forEach { (meta, preview, attachement) ->
@@ -201,16 +210,14 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
                 .sendMessage(
                     MessageCreate {
                         files +=
-                            FileUpload.fromStreamSupplier(meta.name.stripMindustryColors() + ".msav") {
-                                attachement.proxy.download().join()
-                            }
+                            FileUpload.fromStreamSupplier(meta.name + ".msav") { attachement.proxy.download().join() }
                         files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
                         embeds += Embed {
                             color = MINDUSTRY_ACCENT_COLOR.rgb
-                            title = meta.name.stripMindustryColors()
+                            title = meta.name
                             image = "attachment://preview.png"
-                            field("Author", meta.author?.stripMindustryColors() ?: "Unknown", false)
-                            field("Description", meta.description?.stripMindustryColors() ?: "Unknown", false)
+                            field("Author", meta.author, false)
+                            field("Description", meta.description, false)
                             field("Size", "${preview.width} x ${preview.height}", false)
                         }
                     }
@@ -219,14 +226,16 @@ class MindustryContentListener(instances: InstanceManager) : ImperiumApplication
         }
 
         if (delete) {
-            channel.deleteMessageById(message.idLong).awaitVoid()
+            channel.deleteMessageById(message.idLong).await()
         }
     }
 
-    private fun MappableContent.asEmoji() =
-        discord.getMainServer().getEmojisByName(name.replace("-", ""), true).firstOrNull()?.asMention ?: ":question:"
+    private fun itemNameToEmoji(item: String) =
+        discord.getMainServer().getEmojisByName(item.replace("-", ""), true).firstOrNull()?.asMention ?: ":question:"
 
     companion object {
+        private val logger by LoggerDelegate()
         private const val SCHEMATIC_MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB
+        private const val SCHEMATIC_HEADER_PREFIX = "bXNjaA"
     }
 }

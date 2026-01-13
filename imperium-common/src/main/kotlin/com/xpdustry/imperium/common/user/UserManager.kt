@@ -19,7 +19,7 @@ package com.xpdustry.imperium.common.user
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -63,7 +63,7 @@ interface UserManager {
     suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean)
 }
 
-class SimpleUserManager(private val provider: SQLProvider, private val messenger: Messenger) :
+class SimpleUserManager(private val provider: SQLProvider, private val messenger: MessageService) :
     UserManager, ImperiumApplication.Listener {
     private val userCreateMutex = Mutex()
 

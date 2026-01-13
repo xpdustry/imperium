@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.TestMessenger
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.registerCommonModule
@@ -217,7 +217,7 @@ class SimpleAccountManagerTest {
         provider<ImperiumConfig> {
             ImperiumConfig(database = DatabaseConfig.H2(memory = true, database = UUID.randomUUID().toString()))
         }
-        provider<Messenger> { TestMessenger() }
+        provider<MessageService> { TestMessenger() }
         provider<Path>("directory") { tempDir }
     }
 

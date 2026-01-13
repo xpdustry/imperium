@@ -21,7 +21,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.user.UserAddressTable
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.user.UserTable
@@ -82,7 +82,7 @@ data class PunishmentMessage(
 
 class SimplePunishmentManager(
     private val provider: SQLProvider,
-    private val messenger: Messenger,
+    private val messenger: MessageService,
     private val users: UserManager,
     private val config: ImperiumConfig,
 ) : PunishmentManager, ImperiumApplication.Listener {
@@ -150,7 +150,7 @@ class SimplePunishmentManager(
                         .value
                 }
         }
-        messenger.publish(
+        messenger.broadcast(
             PunishmentMessage(
                 author,
                 if (latest == null) PunishmentMessage.Type.CREATE else PunishmentMessage.Type.MODIFY,
@@ -183,7 +183,7 @@ class SimplePunishmentManager(
                 return@newSuspendTransaction PardonResult.SUCCESS
             }
             .also {
-                messenger.publish(
+                messenger.broadcast(
                     PunishmentMessage(
                         author,
                         PunishmentMessage.Type.PARDON,

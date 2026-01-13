@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.permission.Permission
@@ -39,11 +40,11 @@ import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
-import com.xpdustry.imperium.discord.misc.awaitVoid
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
-import java.io.InputStream
 import java.net.URI
+import kotlin.io.path.createTempFile
+import kotlin.io.path.deleteExisting
 import kotlinx.coroutines.future.await
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.MessageEmbed
@@ -57,6 +58,7 @@ import net.dv8tion.jda.api.utils.FileUpload
 class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val maps = instances.get<MindustryMapManager>()
+
     private val content = instances.get<MindustryContentHandler>()
     private val discord = instances.get<DiscordService>()
     private val codec = instances.get<IdentifierCodec>()
@@ -91,13 +93,24 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
             return
         }
 
-        val bytes = map.proxy.download().await().use(InputStream::readBytes)
-        val result = content.getMapMetadataWithPreview(bytes.inputStream())
-        if (result.isFailure) {
-            reply.sendMessage("Invalid map file: " + result.exceptionOrNull()!!.message).await()
+        val tempFile = createTempFile()
+        map.proxy.downloadToPath(tempFile).await()
+        val metaResult = content.parseMap(tempFile.toFile())
+        val previewResult = content.renderMap(tempFile.toFile())
+        if (metaResult.isFailure) {
+            val ex = metaResult.exceptionOrNull()!!
+            logger.error("Invalid map file", ex)
+            reply.sendMessage("Invalid map file: " + ex.message).await()
             return
         }
-        val (meta, preview) = result.getOrThrow()
+        if (previewResult.isFailure) {
+            val ex = previewResult.exceptionOrNull()!!
+            logger.error("Invalid map file", ex)
+            reply.sendMessage("Invalid map file: " + ex.message).await()
+            return
+        }
+        val meta = metaResult.getOrThrow()
+        val preview = previewResult.getOrThrow()
 
         if (meta.width > MindustryMap.MAX_MAP_SIDE_SIZE || meta.height > MindustryMap.MAX_MAP_SIDE_SIZE) {
             reply
@@ -116,19 +129,15 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
             channel
                 .sendMessage(
                     MessageCreate {
-                        files +=
-                            FileUpload.fromStreamSupplier(
-                                "${meta.name.stripMindustryColors()}.msav",
-                                bytes::inputStream,
-                            )
+                        files += FileUpload.fromData(tempFile, "${meta.name.stripMindustryColors()}.msav")
                         files += FileUpload.fromStreamSupplier("preview.png", preview::inputStream)
                         embeds += Embed {
                             color = MINDUSTRY_ACCENT_COLOR.rgb
                             title = "Map Submission"
                             field("Submitter", interaction.member!!.asMention, false)
                             field("Name", meta.name.stripMindustryColors(), false)
-                            field("Author", meta.author?.stripMindustryColors() ?: "Unknown", false)
-                            field("Description", meta.description?.stripMindustryColors() ?: "Unknown", false)
+                            field("Author", meta.author.stripMindustryColors(), false)
+                            field("Description", meta.description.stripMindustryColors(), false)
                             field("Size", "${preview.width} x ${preview.height}", false)
                             if (notes != null) {
                                 field("Notes", notes, false)
@@ -160,6 +169,8 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
                 }
             )
             .await()
+
+        tempFile.deleteExisting()
     }
 
     @MenuCommand(MAP_REJECT_BUTTON, Rank.ADMIN)
@@ -175,7 +186,9 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
     private suspend fun onMapAccept(interaction: ButtonInteraction) {
         val reply = interaction.deferReply(true).await()
         val attachment = interaction.message.attachments.first()
-        val meta = attachment.proxy.download().await().use { content.getMapMetadata(it).getOrThrow() }
+        val tempFile = createTempFile()
+        attachment.proxy.downloadToPath(tempFile).await()
+        val meta = content.parseMap(tempFile.toFile()).getOrThrow()
 
         val target =
             interaction.message.embeds.first().getFieldValue("Updating")?.let {
@@ -191,9 +204,9 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
         if (target == null) {
             id =
                 maps.createMap(
-                    name = meta.name.stripMindustryColors(),
-                    description = meta.description?.stripMindustryColors(),
-                    author = meta.author?.stripMindustryColors(),
+                    name = meta.name,
+                    description = meta.description,
+                    author = meta.author,
                     width = meta.width,
                     height = meta.height,
                     stream = { attachment.proxy.download().join() },
@@ -202,8 +215,8 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
             id = target.id
             maps.updateMap(
                 id = target.id,
-                description = meta.description?.stripMindustryColors(),
-                author = meta.author?.stripMindustryColors(),
+                description = meta.description,
+                author = meta.author,
                 width = meta.width,
                 height = meta.height,
                 stream = { attachment.proxy.download().join() },
@@ -257,7 +270,7 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
 
         // TODO Band-aid fix for contributor, cleanup this damn role system
         discord.getMainServer().getRolesByName("Contributor", true).singleOrNull()?.let {
-            discord.getMainServer().addRoleToMember(member, it).awaitVoid()
+            discord.getMainServer().addRoleToMember(member, it).await()
         }
 
         member.user
@@ -278,5 +291,6 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")
         private const val MAP_ACCEPT_BUTTON = "map-submission-accept:2"
         private const val MAP_REJECT_BUTTON = "map-submission-reject:2"
+        private val logger by LoggerDelegate()
     }
 }

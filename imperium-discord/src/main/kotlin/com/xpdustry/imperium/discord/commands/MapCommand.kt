@@ -24,7 +24,6 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
-import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
@@ -37,8 +36,13 @@ import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.ImperiumEmojis
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
+import javax.imageio.ImageIO
+import kotlin.io.path.createTempFile
+import kotlin.io.path.deleteExisting
+import kotlin.io.path.outputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.ActionRow
@@ -62,22 +66,17 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
         }
 
         val stats = maps.getMapStats(map.id)!!
+        val tempImageFile = createTempFile()
+        val tempMapFile = createTempFile()
+        withContext(Dispatchers.IO) {
+            tempMapFile.outputStream().use { out -> maps.getMapInputStream(map.id)!!.copyTo(out) }
+            ImageIO.write(content.renderMap(tempMapFile.toFile()).getOrThrow(), "png", tempImageFile.toFile())
+        }
+
         reply
             .sendMessage(
                 MessageCreate {
-                    files +=
-                        FileUpload.fromStreamSupplier("preview.png") {
-                            runBlocking {
-                                maps.getMapInputStream(map.id)!!.use {
-                                    this@MapCommand.content
-                                        .getMapMetadataWithPreview(it)
-                                        .getOrThrow()
-                                        .second
-                                        .inputStream()
-                                }
-                            }
-                        }
-
+                    files += FileUpload.fromData(tempImageFile, "preview.png")
                     embeds += Embed {
                         color = MINDUSTRY_ACCENT_COLOR.rgb
                         title = map.name
@@ -105,6 +104,9 @@ internal class MapCommand(instances: InstanceManager) : ImperiumApplication.List
                 }
             )
             .await()
+
+        tempImageFile.deleteExisting()
+        tempMapFile.deleteExisting()
     }
 
     // TODO Add a way to navigate the games

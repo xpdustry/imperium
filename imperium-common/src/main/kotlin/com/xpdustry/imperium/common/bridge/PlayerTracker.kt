@@ -17,13 +17,17 @@
  */
 package com.xpdustry.imperium.common.bridge
 
+import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.request
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.serialization.SerializableJInstant
 import java.time.Instant
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 
 interface PlayerTracker {
@@ -39,7 +43,8 @@ interface PlayerTracker {
     )
 }
 
-open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerTracker {
+open class RequestingPlayerTracker(protected val messenger: MessageService) :
+    PlayerTracker, ImperiumApplication.Listener {
 
     override suspend fun getPlayerJoins(server: String): List<PlayerTracker.Entry>? =
         requestPlayerList(server, PlayerListRequest.Type.JOIN)
@@ -47,16 +52,26 @@ open class RequestingPlayerTracker(protected val messenger: Messenger) : PlayerT
     override suspend fun getOnlinePlayers(server: String): List<PlayerTracker.Entry>? =
         requestPlayerList(server, PlayerListRequest.Type.ONLINE)
 
-    private suspend fun requestPlayerList(server: String, type: PlayerListRequest.Type) =
-        messenger.request<PlayerListResponse>(PlayerListRequest(server, type), timeout = 1.seconds)?.entries
+    private suspend fun requestPlayerList(server: String, type: PlayerListRequest.Type): List<PlayerTracker.Entry>? {
+        val deferred = CompletableDeferred<List<PlayerTracker.Entry>>()
+        val id = UUID.randomUUID().toString()
+        val subscription = messenger.subscribe<PlayerListResponse> { if (it.id == id) deferred.complete(it.entries) }
+        try {
+            messenger.broadcast(PlayerListRequest(server, type, id))
+            return withTimeoutOrNull(2.seconds) { deferred.await() }
+        } finally {
+            subscription.cancel()
+        }
+    }
 
     @Serializable
-    protected data class PlayerListRequest(val server: String, val type: Type) : Message {
+    protected data class PlayerListRequest(val server: String, val type: Type, val id: String) : Message {
         enum class Type {
             JOIN,
             ONLINE,
         }
     }
 
-    @Serializable protected data class PlayerListResponse(val entries: List<PlayerTracker.Entry>) : Message
+    @Serializable
+    protected data class PlayerListResponse(val entries: List<PlayerTracker.Entry>, val id: String) : Message
 }

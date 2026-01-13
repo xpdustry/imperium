@@ -22,8 +22,8 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
@@ -45,15 +45,15 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val discord = instances.get<DiscordService>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val renderer = instances.get<TimeRenderer>()
     private val codec = instances.get<IdentifierCodec>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PunishmentMessage> { (author, type, id, server, metadata) ->
+        messenger.subscribe<PunishmentMessage> { (author, type, id, server, metadata) ->
             val punishment = punishments.findById(id)!!
             val user = punishment.target.let { users.findById(it) }!!
-            (getNotificationChannel() ?: return@consumer)
+            (getNotificationChannel() ?: return@subscribe)
                 .sendMessageEmbeds(
                     Embed {
                         author {

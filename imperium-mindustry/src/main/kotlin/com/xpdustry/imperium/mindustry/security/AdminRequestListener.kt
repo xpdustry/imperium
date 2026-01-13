@@ -84,6 +84,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             pane.title = text("Admin Action (3/3)")
             pane.description = text("Enter the reason of the ${state[PUNISHMENT_TYPE].toString().lowercase()}")
             pane.placeholder = text(state[PUNISHMENT_TYPE].toString().lowercase())
+            pane.maxLength = 128
             pane.inputAction =
                 BiAction.delegate { _, input ->
                     Action.hideAll()

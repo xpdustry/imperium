@@ -116,7 +116,7 @@ private abstract class JsonAddressProvider protected constructor(override val na
                     "Failed to download '$name' public addresses file (status-code: ${response.code}, url: ${response.request.url})."
                 )
             }
-            extractAddressRanges(Json.decodeFromStream<JsonObject>(response.body!!.byteStream()))
+            extractAddressRanges(Json.decodeFromStream<JsonObject>(response.body.byteStream()))
         }
 
     protected abstract suspend fun fetchUri(): URI

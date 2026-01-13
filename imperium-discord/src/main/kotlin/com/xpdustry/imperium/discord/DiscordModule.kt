@@ -26,8 +26,8 @@ import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.MenuCommandRegistry
 import com.xpdustry.imperium.discord.command.ModalCommandRegistry
 import com.xpdustry.imperium.discord.command.SlashCommandRegistry
-import com.xpdustry.imperium.discord.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
+import com.xpdustry.imperium.discord.content.MindustryToolContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
@@ -45,7 +45,7 @@ fun MutableInstanceManager.registerDiscordModule() {
 
     provider<AnnotationScanner>("modal") { ModalCommandRegistry(get()) }
 
-    provider<MindustryContentHandler> { AnukenMindustryContentHandler(get("directory"), get()) }
+    provider<MindustryContentHandler> { MindustryToolContentHandler(get()) }
 
     provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
 

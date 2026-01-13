@@ -26,8 +26,8 @@ import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.onEvent
 import com.xpdustry.imperium.mindustry.translation.server_restart_delay
@@ -43,7 +43,7 @@ import mindustry.game.EventType.GameOverEvent
 class ControlListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
     private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val application = instances.get<ImperiumApplication>()
     private var job: Job? = null
         set(value) {
@@ -52,7 +52,7 @@ class ControlListener(instances: InstanceManager) : ImperiumApplication.Listener
         }
 
     override fun onImperiumInit() {
-        messenger.consumer<RemoteActionMessage> {
+        messenger.subscribe<RemoteActionMessage> {
             if (it.target == null || it.target == config.server.name) {
                 prepareAction("admin", it.action, it.immediate)
             }

@@ -24,8 +24,8 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUSID
 import com.xpdustry.imperium.common.misc.MindustryUUID
@@ -43,12 +43,12 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discord = instances.get<DiscordService>()
     private val accounts = instances.get<AccountManager>()
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val pending = buildCache<Int, Verification> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     override fun onImperiumInit() {
-        messenger.consumer<VerificationMessage> { message ->
-            if (message.response) return@consumer
+        messenger.subscribe<VerificationMessage> { message ->
+            if (message.response) return@subscribe
             pending.put(message.code, Verification(message.account, message.uuid, message.usid))
         }
     }
@@ -80,7 +80,7 @@ class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
         accounts.updateRank(verification.account, rank)
 
         discord.syncRoles(interaction.member!!)
-        messenger.publish(VerificationMessage(verification.account, verification.uuid, verification.usid, code, true))
+        messenger.broadcast(VerificationMessage(verification.account, verification.uuid, verification.usid, code, true))
         reply.sendMessage("You have been verified!").await()
     }
 

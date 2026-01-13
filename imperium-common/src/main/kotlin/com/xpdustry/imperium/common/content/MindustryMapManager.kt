@@ -20,7 +20,7 @@ package com.xpdustry.imperium.common.content
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
@@ -95,7 +95,7 @@ interface MindustryMapManager {
 class SimpleMindustryMapManager(
     private val provider: SQLProvider,
     private val config: ImperiumConfig,
-    private val messenger: Messenger,
+    private val messenger: MessageService,
     private val storage: StorageBucket,
 ) : MindustryMapManager, ImperiumApplication.Listener {
 
@@ -193,7 +193,7 @@ class SimpleMindustryMapManager(
                 }
             stream.get().use { storage.getObject("maps", "$id.msav").putData(it) }
             if (rows != 0) {
-                messenger.publish(MapReloadMessage(getMapGamemodes(id)))
+                messenger.broadcast(MapReloadMessage(getMapGamemodes(id)))
                 return@newSuspendTransaction true
             } else {
                 return@newSuspendTransaction false
@@ -280,7 +280,7 @@ class SimpleMindustryMapManager(
                 this[MindustryMapGamemodeTable.gamemode] = it
             }
         }
-        messenger.publish(MapReloadMessage(gamemodes + previous))
+        messenger.broadcast(MapReloadMessage(gamemodes + previous))
         return true
     }
 

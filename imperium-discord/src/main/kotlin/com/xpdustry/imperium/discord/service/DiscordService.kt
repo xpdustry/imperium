@@ -25,7 +25,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
-import com.xpdustry.imperium.discord.misc.awaitVoid
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.snowflake
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
@@ -82,17 +82,17 @@ class SimpleDiscordService(
 
         // This is goofy, why do I need these to receive thread messages too
         getMainServer().threadChannels.forEach { thread ->
-            if (!thread.isJoined) ImperiumScope.MAIN.launch { thread.join().awaitVoid() }
+            if (!thread.isJoined) ImperiumScope.MAIN.launch { thread.join().await() }
         }
 
         jda.addSuspendingEventListener<ChannelCreateEvent> { event ->
             if (!event.channelType.isThread) return@addSuspendingEventListener
             val thread = event.channel.asThreadChannel()
-            if (!thread.isJoined) thread.join().awaitVoid()
+            if (!thread.isJoined) thread.join().await()
         }
 
         jda.addSuspendingEventListener<ThreadRevealedEvent> { event ->
-            if (!event.thread.isJoined) event.thread.join().awaitVoid()
+            if (!event.thread.isJoined) event.thread.join().await()
         }
     }
 
@@ -134,7 +134,7 @@ class SimpleDiscordService(
             val role = getMainServer().getRoleById(roleId) ?: continue
             if (completed) {
                 if (roleId in current.keys) continue
-                getMainServer().addRoleToMember(member.snowflake, role).awaitVoid()
+                getMainServer().addRoleToMember(member.snowflake, role).await()
                 logger.debug(
                     "Added achievement role {} (achievement={}) to {} (id={})",
                     role.name,
@@ -144,7 +144,7 @@ class SimpleDiscordService(
                 )
             } else {
                 if (roleId !in current.keys) continue
-                getMainServer().removeRoleFromMember(member.snowflake, role).awaitVoid()
+                getMainServer().removeRoleFromMember(member.snowflake, role).await()
                 logger.debug(
                     "Removed achievement role {} (achievement={}) from {} (id={})",
                     role.name,
@@ -161,7 +161,7 @@ class SimpleDiscordService(
             val role = getMainServer().getRoleById(roleId) ?: continue
             if (rank in ranks) {
                 if (roleId in current) continue
-                getMainServer().addRoleToMember(member.snowflake, role).awaitVoid()
+                getMainServer().addRoleToMember(member.snowflake, role).await()
                 logger.debug(
                     "Added rank role {} (rank={}) to {} (id={})",
                     role.name,
@@ -171,7 +171,7 @@ class SimpleDiscordService(
                 )
             } else {
                 if (roleId !in current) continue
-                getMainServer().removeRoleFromMember(member.snowflake, role).awaitVoid()
+                getMainServer().removeRoleFromMember(member.snowflake, role).await()
                 logger.debug(
                     "Removed rank role {} (rank={}) from {} (id={})",
                     role.name,

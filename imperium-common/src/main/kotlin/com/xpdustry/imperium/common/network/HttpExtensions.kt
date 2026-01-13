@@ -26,7 +26,7 @@ import okhttp3.Callback
 import okhttp3.Response
 
 // https://github.com/gildor/kotlin-coroutines-okhttp
-suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation ->
+suspend fun Call.await() = suspendCancellableCoroutine { continuation ->
     enqueue(
         object : Callback {
             override fun onResponse(call: Call, response: Response) {
@@ -34,17 +34,15 @@ suspend fun Call.await(): Response = suspendCancellableCoroutine { continuation 
             }
 
             override fun onFailure(call: Call, e: IOException) {
-                // Don't bother with resuming the continuation if it is already cancelled.
-                if (continuation.isCancelled) return
-                continuation.resumeWithException(e)
+                if (!continuation.isCancelled) {
+                    continuation.resumeWithException(e)
+                }
             }
         }
     )
     continuation.invokeOnCancellation {
         try {
             cancel()
-        } catch (ex: Throwable) {
-            // Ignore cancel exception
-        }
+        } catch (_: Throwable) {}
     }
 }

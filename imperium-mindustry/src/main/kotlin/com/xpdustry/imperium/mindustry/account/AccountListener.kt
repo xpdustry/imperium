@@ -32,8 +32,8 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -57,10 +57,10 @@ class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener
     private val accounts = instances.get<AccountManager>()
     private val users = instances.get<UserManager>()
     private val playtime = ConcurrentHashMap<Player, Long>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
 
     override fun onImperiumInit() {
-        messenger.consumer<AchievementCompletedMessage> { message ->
+        messenger.subscribe<AchievementCompletedMessage> { message ->
             for (player in Entities.getPlayersAsync()) {
                 val account = accounts.selectBySession(player.sessionKey)
                 if (account != null && account.id == message.account) {

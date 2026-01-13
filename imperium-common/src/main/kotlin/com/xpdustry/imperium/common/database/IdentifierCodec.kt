@@ -39,8 +39,8 @@ fun IdentifierCodec.tryDecode(identifier: String): Int? {
 object ImperiumC6B36Codec : IdentifierCodec {
 
     internal const val MAX_VALUE = 1 shl 30 // 31st bit
-    private const val PRIME = 997_991 // According to chatgpt, bigger primer is better so...
-    private const val PRIME_MULTIPLICATIVE_INVERSE = 430_522_711
+    internal const val PRIME = 997_991 // According to chatgpt, bigger prime is better so...
+    internal const val PRIME_MULTIPLICATIVE_INVERSE = 430_522_711
 
     override fun encode(identifier: Int): String {
         require(identifier >= 0) { "identifier must be non-negative" }

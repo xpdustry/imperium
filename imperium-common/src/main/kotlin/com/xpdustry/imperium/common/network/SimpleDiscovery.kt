@@ -25,8 +25,8 @@ import com.google.common.cache.RemovalNotification
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
@@ -40,7 +40,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class SimpleDiscovery(
-    private val messenger: Messenger,
+    private val messenger: MessageService,
     private val discoveryDataProvider: Supplier<Discovery.Data>,
     private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
@@ -59,7 +59,7 @@ class SimpleDiscovery(
     override fun onImperiumInit() {
         logger.debug("Starting discovery as {}", config.server.name)
 
-        messenger.consumer<DiscoveryMessage> {
+        messenger.subscribe<DiscoveryMessage> {
             if (it.info.name == config.server.name) {
                 logger.warn("Received discovery message from another server with the same name.")
             } else if (it.type === DiscoveryMessage.Type.DISCOVER) {
@@ -91,7 +91,13 @@ class SimpleDiscovery(
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
         logger.trace("Sending {} discovery message", type.name)
-        messenger.publish(DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataProvider.get()), type))
+        try {
+            messenger.broadcast(
+                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataProvider.get()), type)
+            )
+        } catch (e: Exception) {
+            logger.error("Failed to send discovery message", e)
+        }
     }
 
     private inner class DiscoveryRemovalListener : RemovalListener<String, Discovery.Server> {

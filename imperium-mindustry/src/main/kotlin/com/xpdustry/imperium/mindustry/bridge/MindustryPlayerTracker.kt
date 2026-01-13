@@ -24,28 +24,31 @@ import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.function
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
-class MindustryPlayerTracker(messenger: Messenger, private val config: ImperiumConfig, private val users: UserManager) :
-    RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
+class MindustryPlayerTracker(
+    messenger: MessageService,
+    private val config: ImperiumConfig,
+    private val users: UserManager,
+) : RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
     private val joins = LimitedList<PlayerTracker.Entry>(30)
     private val online = mutableMapOf<Int, PlayerTracker.Entry>()
 
     override fun onImperiumInit() {
-        messenger.function<PlayerListRequest, PlayerListResponse> {
-            if (it.server != config.server.name) return@function null
-            PlayerListResponse(
+        messenger.subscribe<PlayerListRequest> {
+            if (it.server != config.server.name) return@subscribe
+            val entries =
                 when (it.type) {
                     PlayerListRequest.Type.JOIN -> joins
                     PlayerListRequest.Type.ONLINE -> online.values.toList()
                 }
-            )
+            messenger.broadcast(PlayerListResponse(entries, it.id))
         }
     }
 

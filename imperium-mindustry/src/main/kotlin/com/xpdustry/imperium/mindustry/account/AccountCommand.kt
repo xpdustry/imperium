@@ -25,8 +25,8 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.security.VerificationMessage
 import com.xpdustry.imperium.common.user.User
@@ -44,7 +44,7 @@ import kotlin.time.toJavaDuration
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
     private val users = instances.get<UserManager>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val login = LoginWindow(instances.get(), accounts)
     private val register = RegisterWindow(instances.get(), accounts)
     private val changePassword = ChangePasswordWindow(instances.get(), accounts)
@@ -118,7 +118,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         }
 
         code = Random.nextInt(1000..9999)
-        messenger.publish(VerificationMessage(account.id, sender.player.uuid(), sender.player.usid(), code))
+        messenger.broadcast(VerificationMessage(account.id, sender.player.uuid(), sender.player.usid(), code))
         verifications.put(account.id, code)
 
         sender.reply(
@@ -132,12 +132,12 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     }
 
     override fun onImperiumInit() {
-        messenger.consumer<VerificationMessage> { message ->
+        messenger.subscribe<VerificationMessage> { message ->
             if (message.response && verifications.getIfPresent(message.account) == message.code) {
                 verifications.invalidate(message.account)
                 val player =
                     Entities.getPlayersAsync().find { it.uuid() == message.uuid && it.usid() == message.usid }
-                        ?: return@consumer
+                        ?: return@subscribe
                 player.showInfoMessage("You have been verified!")
             }
         }

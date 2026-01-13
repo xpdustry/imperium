@@ -27,8 +27,8 @@ import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -46,12 +46,12 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val maps = instances.get<MindustryMapManager>()
     private val cache = instances.get<Path>("directory").resolve("map-pool")
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
 
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()
 
-        messenger.consumer<MapReloadMessage> {
+        messenger.subscribe<MapReloadMessage> {
             if (config.mindustry.gamemode in it.gamemodes || it.gamemodes.isEmpty()) reloadMaps()
         }
 

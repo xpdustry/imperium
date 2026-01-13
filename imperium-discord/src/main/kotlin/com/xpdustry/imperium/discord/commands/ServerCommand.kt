@@ -28,7 +28,7 @@ import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.await
@@ -43,7 +43,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val discovery = instances.get<Discovery>()
     private val tracker = instances.get<PlayerTracker>()
     private val application = instances.get<ImperiumApplication>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["server", "list"])
@@ -114,7 +114,7 @@ class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             reply.sendMessage("Server not found.").await()
             return
         }
-        messenger.publish(RemoteActionMessage(server, action, immediate))
+        messenger.broadcast(RemoteActionMessage(server, action, immediate))
         reply
             .sendMessage(
                 "Sent ${action.name.lowercase()} request to " +

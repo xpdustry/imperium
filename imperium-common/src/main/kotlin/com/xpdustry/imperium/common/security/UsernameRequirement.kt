@@ -51,7 +51,7 @@ val DEFAULT_USERNAME_REQUIREMENTS =
         UsernameRequirement.Reserved(
             UsernameRequirement::class
                 .java
-                .getResourceAsStream("/reserved-usernames.txt")!!
+                .getResourceAsStream("/com/xpdustry/imperium/common/string/reserved-usernames.txt")!!
                 .bufferedReader()
                 .use { it.readLines() }
                 .filter { it.isNotBlank() && !it.startsWith('#') }

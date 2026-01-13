@@ -29,7 +29,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.security.ReportMessage
@@ -49,7 +49,6 @@ import com.xpdustry.imperium.mindustry.translation.gui_back
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_confirm
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_player
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_reason
-import com.xpdustry.imperium.mindustry.translation.gui_report_failure
 import com.xpdustry.imperium.mindustry.translation.gui_report_no_players
 import com.xpdustry.imperium.mindustry.translation.gui_report_rate_limit
 import com.xpdustry.imperium.mindustry.translation.gui_report_success
@@ -62,7 +61,7 @@ import mindustry.gen.Player
 class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val reportInterface = MenuManager.create(instances.get())
     private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val users = instances.get<UserManager>()
 
@@ -129,18 +128,14 @@ class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                         Action.hideAll()
                             .then(
                                 CoroutineAction(
-                                    success = { window, sent ->
-                                        if (sent) {
-                                            limiter.increment(window.viewer.ip().toInetAddress())
-                                            window.viewer.asAudience.sendAnnouncement(gui_report_success())
-                                        } else {
-                                            window.viewer.asAudience.sendAnnouncement(gui_report_failure())
-                                        }
+                                    success = { window, _ ->
+                                        limiter.increment(window.viewer.ip().toInetAddress())
+                                        window.viewer.asAudience.sendAnnouncement(gui_report_success())
                                     }
                                 ) {
                                     val sender = runMindustryThread { it.viewer.info }
                                     val target = runMindustryThread { it.state[REPORT_PLAYER]!!.info }
-                                    messenger.publish(
+                                    messenger.broadcast(
                                         ReportMessage(
                                             config.server.name,
                                             sender.plainLastName(),

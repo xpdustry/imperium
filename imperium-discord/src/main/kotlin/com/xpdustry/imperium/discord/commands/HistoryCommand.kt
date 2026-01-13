@@ -26,16 +26,31 @@ import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.request
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.discord.misc.await
+import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
+suspend fun getPlayerHistory(messenger: MessageService, server: String, player: Int): String? {
+    val deferred = CompletableDeferred<String>()
+    val id = UUID.randomUUID().toString()
+    val subscription = messenger.subscribe<HistoryResponseMessage> { if (it.id == id) deferred.complete(it.history) }
+    try {
+        messenger.broadcast(HistoryRequestMessage(server, player, id))
+        return withTimeoutOrNull(2.seconds) { deferred.await() }
+    } finally {
+        subscription.cancel()
+    }
+}
+
 class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
 
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val codec = instances.get<IdentifierCodec>()
 
     @ImperiumCommand(["history"])
@@ -50,10 +65,11 @@ class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             reply.sendMessage("Invalid player id.").await()
             return
         }
-        messenger
-            .request<HistoryResponseMessage>(HistoryRequestMessage(server, identifier), timeout = 5.seconds)
-            ?.history
-            ?.let { reply.sendFiles(FileUpload.fromStreamSupplier("history.txt") { it.byteInputStream() }).await() }
-            ?: reply.sendMessage("No history found.").await()
+        val history = getPlayerHistory(messenger, server, identifier)
+        if (history == null) {
+            reply.sendMessage("No history found.").await()
+        } else {
+            reply.sendFiles(FileUpload.fromStreamSupplier("history.txt") { history.byteInputStream() }).await()
+        }
     }
 }

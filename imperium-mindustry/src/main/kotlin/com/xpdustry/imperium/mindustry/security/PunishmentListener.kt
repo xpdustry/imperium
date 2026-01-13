@@ -35,8 +35,8 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.consumer
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -77,7 +77,7 @@ import mindustry.world.blocks.logic.MessageBlock
 
 class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
-    private val messenger = instances.get<Messenger>()
+    private val messenger = instances.get<MessageService>()
     private val punishments = instances.get<PunishmentManager>()
     private val users = instances.get<UserManager>()
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
@@ -90,9 +90,9 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val codec = instances.get<IdentifierCodec>()
 
     override fun onImperiumInit() {
-        messenger.consumer<PunishmentMessage> { message ->
-            val punishment = punishments.findById(message.identifier) ?: return@consumer
-            val punished = users.findById(punishment.target) ?: return@consumer
+        messenger.subscribe<PunishmentMessage> { message ->
+            val punishment = punishments.findById(message.identifier) ?: return@subscribe
+            val punished = users.findById(punishment.target) ?: return@subscribe
             val data = users.findNamesAndAddressesById(punishment.target)
             val targets =
                 Entities.getPlayersAsync().filter { player ->

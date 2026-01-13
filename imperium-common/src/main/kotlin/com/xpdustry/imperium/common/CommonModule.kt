@@ -22,6 +22,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.SimpleAccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -34,14 +35,15 @@ import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.ImperiumC6B36Codec
+import com.xpdustry.imperium.common.database.SQLDatabase
+import com.xpdustry.imperium.common.database.SQLDatabaseImpl
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
-import com.xpdustry.imperium.common.message.Messenger
-import com.xpdustry.imperium.common.message.NoopMessenger
-import com.xpdustry.imperium.common.message.RabbitmqMessenger
+import com.xpdustry.imperium.common.message.MessageService
+import com.xpdustry.imperium.common.message.SQLMessageService
 import com.xpdustry.imperium.common.metrics.InfluxDBRegistry
 import com.xpdustry.imperium.common.metrics.MetricsRegistry
 import com.xpdustry.imperium.common.network.Discovery
@@ -71,6 +73,7 @@ import kotlin.time.toJavaDuration
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
+// TODO Rename directory to workdir
 fun MutableInstanceManager.registerCommonModule() {
     provider(ImperiumConfigProvider)
 
@@ -80,13 +83,6 @@ fun MutableInstanceManager.registerCommonModule() {
         when (val config = get<ImperiumConfig>().network.vpnDetection) {
             is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
             is NetworkConfig.VpnDetectionConfig.VpnApiIo -> VpnApiIoDetection(config, get())
-        }
-    }
-
-    provider<Messenger> {
-        when (get<ImperiumConfig>().messenger) {
-            is MessengerConfig.RabbitMQ -> RabbitmqMessenger(get())
-            is MessengerConfig.None -> NoopMessenger()
         }
     }
 
@@ -146,6 +142,15 @@ fun MutableInstanceManager.registerCommonModule() {
         when (config.metrics) {
             is MetricConfig.InfluxDB -> InfluxDBRegistry(config.server, config.metrics, get())
             is MetricConfig.None -> MetricsRegistry.None
+        }
+    }
+
+    provider<SQLDatabase> { SQLDatabaseImpl(get(), get("directory")) }
+
+    provider<MessageService> {
+        when (get<ImperiumConfig>().messenger) {
+            MessengerConfig.Noop -> MessageService.Noop
+            MessengerConfig.SQL -> SQLMessageService(get(), get(), ImperiumScope.IO)
         }
     }
 }

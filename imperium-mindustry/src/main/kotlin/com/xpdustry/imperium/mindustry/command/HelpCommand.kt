@@ -66,7 +66,7 @@ class HelpCommand : ImperiumApplication.Listener {
             }
         }
 
-        when (val help = command!!.getHelp(sender, path.drop(1).joinToString(" "))) {
+        when (val help = command.getHelp(sender, path.drop(1).joinToString(" "))) {
             is CommandHelp.Empty -> sender.error("No help found.")
             is CommandHelp.Suggestion -> {
                 if (help.childSuggestions.isEmpty()) {

@@ -27,7 +27,7 @@ import com.xpdustry.imperium.common.hash.PBKDF2Params
 import com.xpdustry.imperium.common.hash.ShaHashFunction
 import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.message.Message
-import com.xpdustry.imperium.common.message.Messenger
+import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.security.DEFAULT_PASSWORD_REQUIREMENTS
@@ -104,7 +104,7 @@ interface AccountManager {
 
 class SimpleAccountManager(
     private val provider: SQLProvider,
-    private val messenger: Messenger,
+    private val messenger: MessageService,
     private val config: ImperiumConfig,
 ) : AccountManager, ImperiumApplication.Listener {
 
@@ -189,7 +189,7 @@ class SimpleAccountManager(
                 AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.rank] = rank } != 0
             }
         if (changed) {
-            messenger.publish(RankChangeEvent(account), local = true)
+            messenger.broadcast(RankChangeEvent(account), local = true)
         }
     }
 
@@ -266,7 +266,7 @@ class SimpleAccountManager(
         }
 
         if (!wasCompleted && completed) {
-            messenger.publish(AchievementCompletedMessage(account, achievement), local = true)
+            messenger.broadcast(AchievementCompletedMessage(account, achievement), local = true)
         }
 
         return true
