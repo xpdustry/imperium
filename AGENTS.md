@@ -23,6 +23,7 @@ Imperium is the core of the Xpdustry network, a collection of services and plugi
 - **Check Formatting**: `./gradlew spotlessCheck`
 - **Run Mindustry Server**: `./gradlew :imperium-mindustry:runMindustryServer`
 - **Run Mindustry Desktop**: `./gradlew :imperium-mindustry:runMindustryDesktop`
+  - Note: `runMindustryServer2` and `runMindustryDesktop2` are available for testing discovery functionality
 - **Run Discord Bot**: `./gradlew :imperium-discord:runShadow`
 
 ## Tech Stack
@@ -30,7 +31,7 @@ Imperium is the core of the Xpdustry network, a collection of services and plugi
 - **Language**: Kotlin 2.3.0 (JVM 25)
 - **Database**: Exposed (SQL framework) with MariaDB/H2.
 - **Serialization**: `kotlinx.serialization` (JSON/YAML).
-- **Testing**: JUnit 5, Testcontainers.
+- **Testing**: JUnit 6, Testcontainers.
 - **Logging**: SLF4J / Logback.
 - **Dependency Injection**: Custom lightweight implementation (see `com.xpdustry.imperium.common.inject`).
 
@@ -74,11 +75,21 @@ Imperium is the core of the Xpdustry network, a collection of services and plugi
 
 ### `imperium-common`
 Contains the core business logic and models used across all platforms.
-- `com.xpdustry.imperium.common.security`: Authentication, punishments, identities.
+- `com.xpdustry.imperium.common.application`: Core application lifecycle and initialization.
+- `com.xpdustry.imperium.common.account`: Account management, sessions, achievements.
+- `com.xpdustry.imperium.common.security`: Authentication, punishments, identities, VPN detection.
 - `com.xpdustry.imperium.common.user`: User profiles and management.
 - `com.xpdustry.imperium.common.database`: SQL utilities and providers.
 - `com.xpdustry.imperium.common.message`: Global messaging/broadcasting system.
 - `com.xpdustry.imperium.common.inject`: Lightweight DI container.
+- `com.xpdustry.imperium.common.config`: Configuration management (YAML-based).
+- `com.xpdustry.imperium.common.storage`: File storage abstraction (local/MinIO).
+- `com.xpdustry.imperium.common.content`: Mindustry map management.
+- `com.xpdustry.imperium.common.command`: Command infrastructure (Cloud framework).
+- `com.xpdustry.imperium.common.hash`: Password hashing (Argon2, PBKDF2, SHA).
+- `com.xpdustry.imperium.common.metrics`: Metrics collection and reporting.
+- `com.xpdustry.imperium.common.webhook`: Webhook infrastructure for Discord.
+- `com.xpdustry.imperium.common.bridge`: Mindustry-Discord bridge messaging.
 
 ### `imperium-mindustry`
 Implementation of the Mindustry plugin.
@@ -131,7 +142,7 @@ All Kotlin source files must include the standard GPL-3.0 license header found i
 
 ```kotlin
 /*
- * Imperium, the software collection powering the Chaotic Neutral network.
+ * Imperium, software collection powering the Chaotic Neutral network.
  * Copyright (C) 2024  Xpdustry
  *
  * This program is free software: you can redistribute it and/or modify
@@ -145,6 +156,6 @@ All Kotlin source files must include the standard GPL-3.0 license header found i
 ## Testing Guidelines
 
 - Place tests in `src/test/kotlin`.
-- Use JUnit 5 `@Test` annotation.
+- Use JUnit 6 `@Test` annotation.
 - For database-related tests, use `Testcontainers` (MariaDB) if necessary, or H2 for lightweight unit tests.
 - Use `kotlinx-coroutines-test` for testing suspend functions.
