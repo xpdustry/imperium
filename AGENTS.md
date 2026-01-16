@@ -10,7 +10,6 @@ Imperium is the core of the Xpdustry network, a collection of services and plugi
   - `imperium-common`: Shared logic, database models, and utilities.
   - `imperium-mindustry`: Mindustry plugin implementation.
   - `imperium-discord`: Discord bot implementation.
-  - `imperium-backend-java`: Java-based backend services.
   - `imperium-build-logic`: Gradle convention plugins.
 
 ## Build and Development Commands
@@ -23,12 +22,12 @@ Imperium is the core of the Xpdustry network, a collection of services and plugi
 - **Format Code**: `./gradlew spotlessApply` (**Required before PRs**)
 - **Check Formatting**: `./gradlew spotlessCheck`
 - **Run Mindustry Server**: `./gradlew :imperium-mindustry:runMindustryServer`
-- **Run Mindustry Client**: `./gradlew :imperium-mindustry:runMindustryClient`
+- **Run Mindustry Desktop**: `./gradlew :imperium-mindustry:runMindustryDesktop`
 - **Run Discord Bot**: `./gradlew :imperium-discord:runShadow`
 
 ## Tech Stack
 
-- **Language**: Kotlin 2.0+ (JVM 17/25)
+- **Language**: Kotlin 2.3.0 (JVM 25)
 - **Database**: Exposed (SQL framework) with MariaDB/H2.
 - **Serialization**: `kotlinx.serialization` (JSON/YAML).
 - **Testing**: JUnit 5, Testcontainers.
@@ -58,12 +57,14 @@ Imperium is the core of the Xpdustry network, a collection of services and plugi
 ### 4. Architecture & Patterns
 - **Interfaces First**: Define service logic in interfaces within `imperium-common` or module-specific packages.
 - **Coroutines**: Use `suspend` functions for asynchronous or I/O-bound operations.
+- **Coroutines Scopes**: Use `ImperiumScope.MAIN` for CPU-bound or `ImperiumScope.IO` for I/O-bound operations (see `com.xpdustry.imperium.common.async`).
 - **Exposed Transactions**: Use `SQLProvider.newSuspendTransaction { ... }` for database operations.
 - **Immutability**: Prefer `val` over `var`. Use `data class` for models.
 - **Sum Types**: Use `sealed interface` or `sealed class` for restricted class hierarchies (e.g., `Identity`, `Metric`).
 
 ### 5. Error Handling
 - **Domain Results**: Prefer returning enums or sealed classes for expected failure modes (e.g., `PardonResult { SUCCESS, NOT_FOUND, ... }`).
+- **ImperiumResult**: Use `ImperiumResult<V, E>` for typed success/failure results (see `com.xpdustry.imperium.common.functional`).
 - **Exceptions**: Use exceptions only for truly exceptional/unexpected cases or fatal errors.
 
 ### 6. Dependency Management
@@ -113,6 +114,8 @@ Broadcasting messages across the network (e.g., chat, punishments):
 ```kotlin
 messenger.broadcast(MyMessage(...), local = false)
 ```
+
+For local testing without a message broker, the system uses `NoopMessenger` which operates in local-only mode.
 
 ## Adding a New Service
 
