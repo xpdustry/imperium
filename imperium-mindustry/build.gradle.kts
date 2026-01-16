@@ -90,7 +90,7 @@ val downloadKotlinRuntime by tasks.registering(GithubAssetDownload::class) {
     repo = "kotlin-runtime"
     asset = "kotlin-runtime.jar"
     version = libs.versions.kotlin.runtime.zip(libs.versions.kotlin.core) { runtime, core ->
-        "v$runtime-k.$core"
+        "v$runtime+k.$core"
     }
 }
 
