@@ -1,7 +1,7 @@
 plugins {
     id("imperium.base-conventions")
     application
-    id("com.github.johnrengelman.shadow")
+    id("com.gradleup.shadow")
     id("io.ktor.plugin")
 }
 
