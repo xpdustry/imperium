@@ -31,7 +31,6 @@ kotlin {
     compilerOptions {
         javaParameters = true
         jvmTarget = JvmTarget.fromTarget(libs.versions.java.get())
-        apiVersion = KotlinVersion.KOTLIN_2_0
     }
 }
 

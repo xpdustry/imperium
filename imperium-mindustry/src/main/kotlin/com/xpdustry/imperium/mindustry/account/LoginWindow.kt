@@ -30,6 +30,7 @@ import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.string.Password
 import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -55,7 +56,7 @@ fun LoginWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowManage
                     accounts.login(
                         window.viewer.sessionKey,
                         data[LoginPage.USERNAME]!!,
-                        data[LoginPage.PASSWORD]!!.toCharArray(),
+                        Password(data[LoginPage.PASSWORD]!!),
                     )
                 }
             },

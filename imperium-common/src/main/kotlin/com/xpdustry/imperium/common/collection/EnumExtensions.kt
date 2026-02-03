@@ -19,20 +19,6 @@ package com.xpdustry.imperium.common.collection
 
 import java.util.EnumSet
 
-fun <T : Any> List<T>.findMostCommon(): T? {
-    val map = mutableMapOf<T, Int>()
-    var max: T? = null
-    for (key in this) {
-        val value = (map[key] ?: 0) + 1
-        map[key] = value
-        if (max == null || value > map[max]!!) {
-            max = key
-            map[max] = value
-        }
-    }
-    return max
-}
-
 inline fun <reified T : Enum<T>> enumSetOf(vararg elements: T): Set<T> =
     EnumSet.noneOf(T::class.java).apply { addAll(elements) }
 

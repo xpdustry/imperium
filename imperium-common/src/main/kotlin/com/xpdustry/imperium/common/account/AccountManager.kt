@@ -20,12 +20,6 @@ package com.xpdustry.imperium.common.account
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.hash.Argon2Params
-import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
-import com.xpdustry.imperium.common.hash.Hash
-import com.xpdustry.imperium.common.hash.PBKDF2Params
-import com.xpdustry.imperium.common.hash.ShaHashFunction
-import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -35,6 +29,9 @@ import com.xpdustry.imperium.common.security.DEFAULT_USERNAME_REQUIREMENTS
 import com.xpdustry.imperium.common.security.UsernameRequirement
 import com.xpdustry.imperium.common.security.findMissingPasswordRequirements
 import com.xpdustry.imperium.common.security.findMissingUsernameRequirements
+import com.xpdustry.imperium.common.string.ImperiumArgon2
+import com.xpdustry.imperium.common.string.Password
+import java.security.MessageDigest
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -49,10 +46,8 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.batchInsert
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsert
@@ -79,7 +74,7 @@ interface AccountManager {
 
     suspend fun updateRank(account: Int, rank: Rank)
 
-    suspend fun updatePassword(account: Int, oldPassword: CharArray, newPassword: CharArray): AccountResult
+    suspend fun updatePassword(account: Int, oldPassword: Password, newPassword: Password): AccountResult
 
     suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean
 
@@ -91,11 +86,9 @@ interface AccountManager {
 
     suspend fun updateMetadata(account: Int, key: String, value: String)
 
-    suspend fun register(username: String, password: CharArray): AccountResult
+    suspend fun register(username: String, password: Password): AccountResult
 
-    suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray): AccountResult
-
-    suspend fun login(key: SessionKey, username: String, password: CharArray): AccountResult
+    suspend fun login(key: SessionKey, username: String, password: Password): AccountResult
 
     suspend fun logout(key: SessionKey, all: Boolean = false): Boolean
 }
@@ -121,12 +114,12 @@ class SimpleAccountManager(
 
             if (config.testing) {
                 LOGGER.warn("Testing mode enabled, creating test account, with credentials {}", "test:test")
-                val password = runBlocking { GenericSaltyHashFunction.create("test".toCharArray(), PASSWORD_PARAMS) }
+                val hash = runBlocking { ImperiumArgon2.create(Password("test")) }
                 AccountTable.upsert {
                     it[username] = "test"
-                    it[passwordHash] = password.hash
-                    it[passwordSalt] = password.salt
                     it[rank] = Rank.OWNER
+                    it[passwordHash] = hash.hash
+                    it[passwordSalt] = hash.salt
                 }
             }
 
@@ -193,7 +186,7 @@ class SimpleAccountManager(
         }
     }
 
-    override suspend fun updatePassword(account: Int, oldPassword: CharArray, newPassword: CharArray): AccountResult =
+    override suspend fun updatePassword(account: Int, oldPassword: Password, newPassword: Password): AccountResult =
         provider.newSuspendTransaction {
             val result =
                 AccountTable.select(AccountTable.passwordHash, AccountTable.passwordSalt)
@@ -201,9 +194,10 @@ class SimpleAccountManager(
                     .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (
-                !GenericSaltyHashFunction.equals(
+                !ImperiumArgon2.equals(
                     oldPassword,
-                    Hash(result[AccountTable.passwordHash], result[AccountTable.passwordSalt], PASSWORD_PARAMS),
+                    result[AccountTable.passwordHash],
+                    result[AccountTable.passwordSalt],
                 )
             ) {
                 return@newSuspendTransaction AccountResult.WrongPassword
@@ -214,10 +208,10 @@ class SimpleAccountManager(
                 return@newSuspendTransaction AccountResult.InvalidPassword(missing)
             }
 
-            val newPasswordHash = GenericSaltyHashFunction.create(newPassword, PASSWORD_PARAMS)
+            val hash = ImperiumArgon2.create(newPassword)
             AccountTable.update({ AccountTable.id eq account }) {
-                it[passwordHash] = newPasswordHash.hash
-                it[passwordSalt] = newPasswordHash.salt
+                it[passwordHash] = hash.hash
+                it[passwordSalt] = hash.salt
             }
 
             return@newSuspendTransaction AccountResult.Success
@@ -291,13 +285,13 @@ class SimpleAccountManager(
         }
     }
 
-    override suspend fun register(username: String, password: CharArray): AccountResult =
+    override suspend fun register(username: String, password: Password): AccountResult =
         provider.newSuspendTransaction {
             if (AccountTable.exists { AccountTable.username eq username }) {
                 return@newSuspendTransaction AccountResult.AlreadyRegistered
             }
 
-            val hashUsr = ShaHashFunction.create(username.toCharArray(), ShaType.SHA256).hash
+            val hashUsr = MessageDigest.getInstance("SHA-256").run { digest(username.toByteArray()) }
             if (LegacyAccountTable.exists { LegacyAccountTable.usernameHash eq hashUsr }) {
                 return@newSuspendTransaction AccountResult.InvalidUsername(
                     listOf(UsernameRequirement.Reserved(username))
@@ -314,7 +308,7 @@ class SimpleAccountManager(
                 return@newSuspendTransaction AccountResult.InvalidUsername(missingUsrRequirements)
             }
 
-            val hashPwd = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
+            val hashPwd = ImperiumArgon2.create(password)
             AccountTable.insert {
                 it[AccountTable.username] = username
                 it[passwordHash] = hashPwd.hash
@@ -324,66 +318,7 @@ class SimpleAccountManager(
             return@newSuspendTransaction AccountResult.Success
         }
 
-    override suspend fun migrate(oldUsername: String, newUsername: String, password: CharArray): AccountResult =
-        provider.newSuspendTransaction {
-            val oldUsernameHash = ShaHashFunction.create(oldUsername.lowercase().toCharArray(), ShaType.SHA256).hash
-
-            val oldAccount =
-                LegacyAccountTable.selectAll()
-                    .where { LegacyAccountTable.usernameHash eq oldUsernameHash }
-                    .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
-
-            if (
-                !GenericSaltyHashFunction.equals(
-                    password,
-                    Hash(
-                        oldAccount[LegacyAccountTable.passwordHash],
-                        oldAccount[LegacyAccountTable.passwordSalt],
-                        LEGACY_PASSWORD_PARAMS,
-                    ),
-                )
-            ) {
-                return@newSuspendTransaction AccountResult.NotFound
-            }
-
-            if (AccountTable.exists { AccountTable.username eq newUsername }) {
-                return@newSuspendTransaction AccountResult.AlreadyRegistered
-            }
-
-            val missing = DEFAULT_USERNAME_REQUIREMENTS.findMissingUsernameRequirements(newUsername)
-            if (missing.isNotEmpty()) {
-                return@newSuspendTransaction AccountResult.InvalidUsername(missing)
-            }
-
-            val newPasswordHash = GenericSaltyHashFunction.create(password, PASSWORD_PARAMS)
-            val newAccount =
-                AccountTable.insertAndGetId {
-                    it[username] = newUsername
-                    it[passwordHash] = newPasswordHash.hash
-                    it[passwordSalt] = newPasswordHash.salt
-                    it[playtime] = oldAccount[LegacyAccountTable.playtime]
-                    it[games] = oldAccount[LegacyAccountTable.games]
-                    it[legacy] = true
-                    it[rank] = oldAccount[LegacyAccountTable.rank]
-                }
-
-            val oldAchievements =
-                LegacyAccountAchievementTable.selectAll().where {
-                    LegacyAccountAchievementTable.account eq oldAccount[LegacyAccountTable.id]
-                }
-
-            AccountAchievementTable.batchInsert(oldAchievements) {
-                this[AccountAchievementTable.account] = newAccount
-                this[AccountAchievementTable.achievement] = it[LegacyAccountAchievementTable.achievement]
-                this[AccountAchievementTable.completed] = true
-            }
-
-            LegacyAccountTable.deleteWhere { id eq oldAccount[LegacyAccountTable.id] }
-
-            return@newSuspendTransaction AccountResult.Success
-        }
-
-    override suspend fun login(key: SessionKey, username: String, password: CharArray): AccountResult =
+    override suspend fun login(key: SessionKey, username: String, password: Password): AccountResult =
         provider.newSuspendTransaction {
             if (
                 AccountSessionTable.exists {
@@ -402,10 +337,7 @@ class SimpleAccountManager(
                     .firstOrNull() ?: return@newSuspendTransaction AccountResult.NotFound
 
             if (
-                !GenericSaltyHashFunction.equals(
-                    password,
-                    Hash(result[AccountTable.passwordHash], result[AccountTable.passwordSalt], PASSWORD_PARAMS),
-                )
+                !ImperiumArgon2.equals(password, result[AccountTable.passwordHash], result[AccountTable.passwordSalt])
             ) {
                 return@newSuspendTransaction AccountResult.NotFound
             }
@@ -461,32 +393,6 @@ class SimpleAccountManager(
 
     companion object {
         private val LOGGER by LoggerDelegate()
-
         private val SESSION_LIFETIME = 30.days
-
-        private val SESSION_TOKEN_PARAMS =
-            Argon2Params(
-                memory = 19,
-                iterations = 2,
-                length = 32,
-                saltLength = 8,
-                parallelism = 8,
-                type = Argon2Params.Type.ID,
-                version = Argon2Params.Version.V13,
-            )
-
-        private val PASSWORD_PARAMS =
-            Argon2Params(
-                memory = 64 * 1024,
-                iterations = 3,
-                parallelism = 2,
-                length = 64,
-                type = Argon2Params.Type.ID,
-                version = Argon2Params.Version.V13,
-                saltLength = 64,
-            )
-
-        internal val LEGACY_PASSWORD_PARAMS =
-            PBKDF2Params(hmac = PBKDF2Params.Hmac.SHA256, iterations = 10000, length = 256, saltLength = 16)
     }
 }

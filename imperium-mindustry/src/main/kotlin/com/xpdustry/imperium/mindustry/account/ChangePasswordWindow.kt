@@ -29,6 +29,7 @@ import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.string.Password
 import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -51,8 +52,8 @@ fun ChangePasswordWindow(plugin: MindustryPlugin, accounts: AccountManager): Win
                             ?: return@CoroutineAction AccountResult.NotFound
                     accounts.updatePassword(
                         account.id,
-                        data[ChangePwdPage.OLD_PASSWORD]!!.toCharArray(),
-                        data[ChangePwdPage.NEW_PASSWORD]!!.toCharArray(),
+                        Password(data[ChangePwdPage.OLD_PASSWORD]!!),
+                        Password(data[ChangePwdPage.NEW_PASSWORD]!!),
                     )
                 }
             },

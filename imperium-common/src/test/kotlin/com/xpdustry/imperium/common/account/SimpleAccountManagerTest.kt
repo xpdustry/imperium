@@ -21,25 +21,18 @@ import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.database.SQLProvider
-import com.xpdustry.imperium.common.hash.GenericSaltyHashFunction
-import com.xpdustry.imperium.common.hash.ShaHashFunction
-import com.xpdustry.imperium.common.hash.ShaType
 import com.xpdustry.imperium.common.inject.MutableInstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.TestMessenger
-import com.xpdustry.imperium.common.misc.exists
 import com.xpdustry.imperium.common.registerCommonModule
+import com.xpdustry.imperium.common.string.Password
 import java.net.InetAddress
 import java.nio.file.Path
-import java.time.Duration
 import java.util.UUID
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
-import org.jetbrains.exposed.sql.batchInsert
-import org.jetbrains.exposed.sql.insertAndGetId
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -153,56 +146,6 @@ class SimpleAccountManagerTest {
         assertEquals(AccountResult.Success, manager.login(sessionKey, username, TEST_PASSWORD_2))
     }
 
-    @Test
-    fun `test migrate`() = runTest {
-        val takenUsername = randomUsername()
-        val oldUsername = randomUsername()
-        val newUsername = randomUsername()
-        val games = 10
-        val playtime = Duration.ofHours(10L)
-        val achievements = listOf(Achievement.ACTIVE, Achievement.MONTH)
-
-        assertEquals(AccountResult.NotFound, manager.migrate(oldUsername, newUsername, TEST_PASSWORD_1))
-
-        val provider = application.instances.get<SQLProvider>()
-        val id =
-            provider.newSuspendTransaction {
-                val hashedUsername = ShaHashFunction.create(oldUsername.toCharArray(), ShaType.SHA256).hash
-                val hashedPassword =
-                    GenericSaltyHashFunction.create(TEST_PASSWORD_1, SimpleAccountManager.LEGACY_PASSWORD_PARAMS)
-
-                val id =
-                    LegacyAccountTable.insertAndGetId {
-                        it[usernameHash] = hashedUsername
-                        it[passwordHash] = hashedPassword.hash
-                        it[passwordSalt] = hashedPassword.salt
-                        it[LegacyAccountTable.games] = games
-                        it[LegacyAccountTable.playtime] = playtime
-                        it[rank] = Rank.OVERSEER
-                    }
-
-                LegacyAccountAchievementTable.batchInsert(achievements) {
-                    this[LegacyAccountAchievementTable.account] = id
-                    this[LegacyAccountAchievementTable.achievement] = it
-                }
-
-                id
-            }
-
-        assertEquals(AccountResult.Success, manager.register(takenUsername, TEST_PASSWORD_1))
-        assertInstanceOf(
-            AccountResult.InvalidUsername::class.java,
-            manager.migrate(oldUsername, "XX_epyc_gaymer_XX", TEST_PASSWORD_1),
-        )
-        assertEquals(AccountResult.AlreadyRegistered, manager.migrate(oldUsername, takenUsername, TEST_PASSWORD_1))
-        assertEquals(AccountResult.NotFound, manager.migrate(newUsername, oldUsername, TEST_PASSWORD_1))
-        assertEquals(AccountResult.NotFound, manager.migrate(oldUsername, newUsername, TEST_PASSWORD_2))
-
-        assertEquals(AccountResult.Success, manager.migrate(oldUsername, newUsername, TEST_PASSWORD_1))
-
-        assertFalse(provider.newSuspendTransaction { LegacyAccountTable.exists { LegacyAccountTable.id eq id } })
-    }
-
     private fun randomSessionKey() = SessionKey(Random.nextLong(), Random.nextLong(), InetAddress.getLoopbackAddress())
 
     private fun randomUsername(): String {
@@ -222,8 +165,8 @@ class SimpleAccountManagerTest {
     }
 
     companion object {
-        private val TEST_PASSWORD_1 = "ABc123!#".toCharArray()
-        private val TEST_PASSWORD_2 = "123ABc!#".toCharArray()
-        private val INVALID_PASSWORD = "1234".toCharArray()
+        private val TEST_PASSWORD_1 = Password("ABc123!#")
+        private val TEST_PASSWORD_2 = Password("123ABc!#")
+        private val INVALID_PASSWORD = Password("1234")
     }
 }

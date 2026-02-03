@@ -4,10 +4,11 @@ plugins {
 }
 
 dependencies {
+    implementation("org.bouncycastle:bcprov-jdk18on:1.83")
+
     api(libs.guava)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
-    api(libs.password4j)
     api(libs.rabbitmq.client)
     api(libs.okhttp)
     api(libs.caffeine)
