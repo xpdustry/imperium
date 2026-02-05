@@ -17,27 +17,22 @@
  */
 package com.xpdustry.imperium.discord.rest
 
+import com.sun.net.httpserver.HttpServer
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
 import com.xpdustry.imperium.common.version.MindustryVersion
-import io.ktor.serialization.kotlinx.json.json
-import io.ktor.server.application.install
-import io.ktor.server.engine.EmbeddedServer
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.server.response.respond
-import io.ktor.server.routing.get
-import io.ktor.server.routing.route
-import io.ktor.server.routing.routing
-import java.util.concurrent.TimeUnit
+import java.net.InetAddress
+import java.net.InetSocketAddress
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
@@ -46,15 +41,27 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
     private val config = instances.get<ImperiumConfig>()
     private val codec = instances.get<IdentifierCodec>()
 
-    private lateinit var ktor: EmbeddedServer<*, *>
+    private lateinit var server: HttpServer
 
     override fun onImperiumInit() {
-        ktor =
-            embeddedServer(Netty, port = config.webserver.port) {
-                    install(ContentNegotiation) { json() }
-                    routing { route("/v0") { get("/servers") { call.respond(getServerEntries()) } } }
-                }
-                .start(wait = false)
+        server = HttpServer.create(InetSocketAddress(InetAddress.ofLiteral("0.0.0.0"), config.webserver.port), 0)
+        server.createContext("/v0/servers") { exchange ->
+            if (exchange.requestMethod != "GET" || exchange.requestURI.path != "/v0/servers") {
+                exchange.sendResponseHeaders(400, -1)
+                exchange.responseBody.close()
+                return@createContext
+            }
+            try {
+                val json = runBlocking { Json.encodeToString(getServerEntries()) }
+                exchange.sendResponseHeaders(200, 0)
+                exchange.responseBody.writer().use { it.write(json) }
+            } catch (e: Exception) {
+                exchange.sendResponseHeaders(500, -1)
+                exchange.responseBody.close()
+                logger.error("Failed to respond to a /v0/servers request", e)
+            }
+        }
+        server.start()
     }
 
     private suspend fun getServerEntries() =
@@ -84,7 +91,7 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
             }
 
     override fun onImperiumExit() {
-        ktor.stop(10L, 10L, TimeUnit.SECONDS)
+        server.stop(5)
     }
 
     @Serializable
@@ -103,5 +110,9 @@ class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
         val players: List<Player>,
     ) {
         @Serializable data class Player(val name: String, val id: String)
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
     }
 }

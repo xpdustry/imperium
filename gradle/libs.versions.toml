@@ -41,7 +41,6 @@ toxopid = "4.1.2"
 indra = "3.2.0"
 spotless = "8.0.0"
 shadow = "9.3.1"
-ktor-gradle = "3.3.0"
 
 [libraries]
 # libraries
@@ -93,7 +92,6 @@ spotless = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.re
 shadow = { module = "com.gradleup.shadow:shadow-gradle-plugin", version.ref = "shadow" }
 kotlin-plugin-core = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin-core" }
 kotlin-plugin-serialization = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin-core" }
-ktor-gradle = { module = "io.ktor.plugin:plugin", version.ref = "ktor-gradle" }
 
 [bundles]
 cloud = [ "cloud-core"

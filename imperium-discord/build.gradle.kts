@@ -2,7 +2,6 @@ plugins {
     id("imperium.base-conventions")
     application
     id("com.gradleup.shadow")
-    id("io.ktor.plugin")
 }
 
 version = rootProject.version
@@ -18,15 +17,6 @@ dependencies {
 
     implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
     implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
-
-    implementation("io.ktor:ktor-server-netty-jvm")
-    implementation("io.ktor:ktor-server-content-negotiation-jvm")
-    implementation("io.ktor:ktor-serialization-kotlinx-json-jvm")
-    implementation("io.ktor:ktor-server-core-jvm")
-    implementation("io.ktor:ktor-server-sessions-jvm")
-    implementation("io.ktor:ktor-server-auth-jvm")
-    implementation("io.ktor:ktor-client-core-jvm")
-    implementation("io.ktor:ktor-client-apache-jvm")
 
     runtimeOnly(libs.mariadb)
     runtimeOnly(libs.h2)
@@ -53,7 +43,6 @@ tasks.shadowJar {
         exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
         exclude(dependency("org.javacord:javacord-core:.*"))
-        exclude(dependency("io.ktor:ktor-.*:.*"))
         exclude(dependency(libs.exposed.jdbc.get()))
         exclude(dependency(libs.mariadb.get()))
         exclude(dependency(libs.caffeine.get()))
