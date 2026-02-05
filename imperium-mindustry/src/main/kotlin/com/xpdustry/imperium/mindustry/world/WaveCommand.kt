@@ -26,7 +26,6 @@ import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -41,7 +40,6 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
@@ -118,9 +116,7 @@ class WaveCommand(instances: InstanceManager) :
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) {
         repeat(session.objective) {
-            runMindustryThread {
-                Vars.logic.runWave()
-            }
+            runMindustryThread { Vars.logic.runWave() }
             // 3.75 seconds with 15 waves selected.
             // Delay for performance and qol
             delay(250)
