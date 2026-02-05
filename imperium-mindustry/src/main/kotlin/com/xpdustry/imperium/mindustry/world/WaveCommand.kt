@@ -26,6 +26,7 @@ import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -37,6 +38,9 @@ import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import mindustry.Vars
@@ -114,8 +118,14 @@ class WaveCommand(instances: InstanceManager) :
         "Type [accent]/ws y[] to vote to skip [accent]${session.objective}[] wave(s)."
 
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) = runMindustryThread {
-        Vars.state.wave += session.objective
-        Vars.state.wavetime = Vars.state.rules.waveSpacing
+        ImperiumScope.MAIN.launch {
+            repeat(session.objective) {
+                Vars.logic.runWave()
+                // 3.75 seconds with 15 waves selected, less than default thread timeout
+                // Delay for performance and qol
+                delay(250)
+            }
+        }
         Call.sendMessage("[green]Skipped ${session.objective} wave(s).")
     }
 }
