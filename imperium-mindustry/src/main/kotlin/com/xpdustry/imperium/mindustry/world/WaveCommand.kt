@@ -27,9 +27,11 @@ import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -82,7 +84,9 @@ class WaveCommand(instances: InstanceManager) :
         sender.reply("Ran $count wave(s).")
     }
 
-    @ImperiumCommand(["wave", "skip"], Rank.MODERATOR)
+    @ImperiumCommand(["wave", "skip"], Rank.EVERYONE)
+    // Players have requested ways to skip waves in survival, Is that a good idea?
+    @Scope(MindustryGamemode.TOWER_DEFENSE)
     @ClientSide
     fun onWaveSkip(sender: CommandSender) {
         waveSkipInterface.create(sender.player).show()
