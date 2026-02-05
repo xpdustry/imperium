@@ -18,11 +18,9 @@
 package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.exists
-import com.xpdustry.imperium.common.storage.StorageBucket
 import java.io.InputStream
 import java.time.Instant
 import java.util.function.Supplier
@@ -30,6 +28,8 @@ import kotlin.math.roundToInt
 import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
+import kotlinx.coroutines.selects.select
+import org.jetbrains.exposed.sql.ColumnSet
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.SortOrder
@@ -41,6 +41,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.insertAndGetId
 import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.upsert
@@ -92,12 +93,8 @@ interface MindustryMapManager {
     suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean
 }
 
-class SimpleMindustryMapManager(
-    private val provider: SQLProvider,
-    private val config: ImperiumConfig,
-    private val messenger: MessageService,
-    private val storage: StorageBucket,
-) : MindustryMapManager, ImperiumApplication.Listener {
+class SimpleMindustryMapManager(private val provider: SQLProvider, private val messenger: MessageService) :
+    MindustryMapManager, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         provider.newTransaction {
@@ -112,18 +109,21 @@ class SimpleMindustryMapManager(
 
     override suspend fun findMapById(id: Int): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll().where { MindustryMapTable.id eq id }.firstOrNull()?.toMindustryMap()
+            MindustryMapTable.selectAllButFile().where { MindustryMapTable.id eq id }.firstOrNull()?.toMindustryMap()
         }
 
     override suspend fun findMapByName(name: String): MindustryMap? =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll().where { MindustryMapTable.name eq name }.firstOrNull()?.toMindustryMap()
+            MindustryMapTable.selectAllButFile()
+                .where { MindustryMapTable.name eq name }
+                .firstOrNull()
+                ?.toMindustryMap()
         }
 
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
         provider.newSuspendTransaction {
             (MindustryMapTable leftJoin MindustryMapGamemodeTable)
-                .selectAll()
+                .selectAllButFile()
                 .where { (MindustryMapGamemodeTable.gamemode eq gamemode) }
                 .map { it.toMindustryMap() }
         }
@@ -148,7 +148,7 @@ class SimpleMindustryMapManager(
     }
 
     override suspend fun findAllMaps(): List<MindustryMap> =
-        provider.newSuspendTransaction { MindustryMapTable.selectAll().map { it.toMindustryMap() } }
+        provider.newSuspendTransaction { MindustryMapTable.selectAllButFile().map { it.toMindustryMap() } }
 
     override suspend fun deleteMapById(id: Int): Boolean =
         provider.newSuspendTransaction { MindustryMapTable.deleteWhere { MindustryMapTable.id eq id } > 0 }
@@ -161,17 +161,19 @@ class SimpleMindustryMapManager(
         height: Int,
         stream: Supplier<InputStream>,
     ): Int =
-        provider.newSuspendTransaction {
-            val id =
-                MindustryMapTable.insertAndGetId {
-                    it[MindustryMapTable.name] = name
-                    it[MindustryMapTable.description] = description
-                    it[MindustryMapTable.author] = author
-                    it[MindustryMapTable.width] = width
-                    it[MindustryMapTable.height] = height
-                }
-            stream.get().use { storage.getObject("maps", "$id.msav").putData(it) }
-            id.value
+        stream.get().use { actual ->
+            provider.newSuspendTransaction {
+                val id =
+                    MindustryMapTable.insertAndGetId {
+                        it[MindustryMapTable.name] = MindustryMapTable.name
+                        it[MindustryMapTable.description] = MindustryMapTable.description
+                        it[MindustryMapTable.author] = MindustryMapTable.author
+                        it[MindustryMapTable.width] = MindustryMapTable.width
+                        it[MindustryMapTable.height] = MindustryMapTable.height
+                        it[MindustryMapTable.file] = ExposedBlob(actual)
+                    }
+                id.value
+            }
         }
 
     override suspend fun updateMap(
@@ -182,21 +184,23 @@ class SimpleMindustryMapManager(
         height: Int,
         stream: Supplier<InputStream>,
     ): Boolean =
-        provider.newSuspendTransaction {
-            val rows =
-                MindustryMapTable.update({ MindustryMapTable.id eq id }) {
-                    it[MindustryMapTable.description] = description
-                    it[MindustryMapTable.author] = author
-                    it[MindustryMapTable.width] = width
-                    it[MindustryMapTable.height] = height
-                    it[lastUpdate] = Instant.now()
+        stream.get().use { actual ->
+            provider.newSuspendTransaction {
+                val rows =
+                    MindustryMapTable.update({ MindustryMapTable.id eq id }) {
+                        it[MindustryMapTable.description] = description
+                        it[MindustryMapTable.author] = author
+                        it[MindustryMapTable.width] = width
+                        it[MindustryMapTable.height] = height
+                        it[MindustryMapTable.lastUpdate] = Instant.now()
+                        it[MindustryMapTable.file] = ExposedBlob(actual)
+                    }
+                if (rows != 0) {
+                    messenger.broadcast(MapReloadMessage(getMapGamemodes(id)))
+                    return@newSuspendTransaction true
+                } else {
+                    return@newSuspendTransaction false
                 }
-            stream.get().use { storage.getObject("maps", "$id.msav").putData(it) }
-            if (rows != 0) {
-                messenger.broadcast(MapReloadMessage(getMapGamemodes(id)))
-                return@newSuspendTransaction true
-            } else {
-                return@newSuspendTransaction false
             }
         }
 
@@ -264,11 +268,19 @@ class SimpleMindustryMapManager(
         }
 
     override suspend fun getMapInputStream(map: Int): InputStream? =
-        storage.getObject("maps", "$map.msav").takeIf { it.exists }?.getData()
+        provider.newSuspendTransaction {
+            MindustryMapTable.select(MindustryMapTable.file)
+                .where { MindustryMapTable.id eq map }
+                .firstOrNull()
+                ?.get(MindustryMapTable.file)
+                ?.inputStream
+        }
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =
         provider.newSuspendTransaction {
-            MindustryMapTable.selectAll().where { MindustryMapTable.name like "%$query%" }.map { it.toMindustryMap() }
+            MindustryMapTable.selectAllButFile()
+                .where { MindustryMapTable.name like "%$query%" }
+                .map { it.toMindustryMap() }
         }
 
     override suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean {
@@ -290,6 +302,8 @@ class SimpleMindustryMapManager(
                 .where { MindustryMapGamemodeTable.map eq map }
                 .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
         }
+
+    private fun ColumnSet.selectAllButFile() = select(MindustryMapTable.fields - MindustryMapTable.file)
 
     private suspend fun ResultRow.toMindustryMap() =
         MindustryMap(

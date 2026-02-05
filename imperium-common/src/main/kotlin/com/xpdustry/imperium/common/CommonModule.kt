@@ -30,7 +30,6 @@ import com.xpdustry.imperium.common.config.ImperiumConfigProvider
 import com.xpdustry.imperium.common.config.MessengerConfig
 import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.NetworkConfig
-import com.xpdustry.imperium.common.config.StorageConfig
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.content.SimpleMindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
@@ -54,9 +53,6 @@ import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleAddressWhitelist
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
-import com.xpdustry.imperium.common.storage.LocalStorageBucket
-import com.xpdustry.imperium.common.storage.MinioStorageBucket
-import com.xpdustry.imperium.common.storage.StorageBucket
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.SimpleUserManager
@@ -64,7 +60,6 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.common.webhook.WebhookMessageSenderImpl
-import java.nio.file.Path
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.function.Supplier
@@ -90,7 +85,7 @@ fun MutableInstanceManager.registerCommonModule() {
 
     provider<AccountManager> { SimpleAccountManager(get(), get(), get()) }
 
-    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get(), get(), get()) }
+    provider<MindustryMapManager> { SimpleMindustryMapManager(get(), get()) }
 
     provider<PunishmentManager> { SimplePunishmentManager(get(), get(), get(), get()) }
 
@@ -129,13 +124,6 @@ fun MutableInstanceManager.registerCommonModule() {
     provider<AddressWhitelist> { SimpleAddressWhitelist(get()) }
 
     provider<Executor>("main") { MoreExecutors.directExecutor() }
-
-    provider<StorageBucket> {
-        when (val config = get<ImperiumConfig>().storage) {
-            is StorageConfig.Local -> LocalStorageBucket(get<Path>("directory").resolve("storage"))
-            is StorageConfig.Minio -> MinioStorageBucket(config, get())
-        }
-    }
 
     provider<MetricsRegistry> {
         val config = get<ImperiumConfig>()

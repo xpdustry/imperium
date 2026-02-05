@@ -12,7 +12,6 @@ dependencies {
     api(libs.rabbitmq.client)
     api(libs.okhttp)
     api(libs.caffeine)
-    api(libs.minio)
 
     api(libs.slf4j.api)
     testApi(libs.slf4j.simple)
@@ -36,6 +35,7 @@ dependencies {
     testRuntimeOnly(libs.mariadb)
 
     api(libs.influxdb)
+    implementation(libs.mariadb)
 }
 
 // We love OOMs :^)

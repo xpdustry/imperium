@@ -1,14 +1,5 @@
 # Docker compose file for local testing
 services:
-  # The RabbitMQ instance for inter-server communication
-  # This image comes with an admin frontend available at http://localhost:15672
-  # login with guest:guest
-  rabbitmq:
-    image: rabbitmq:4-management
-    ports:
-      - "5672:5672"
-      - "15672:15672"
-
   # The Mariadb database
   # login with root:root
   mariadb:
@@ -17,17 +8,3 @@ services:
       - "3306:3306"
     environment:
       MARIADB_ROOT_PASSWORD: root
-
-  # For storing shared files such as maps, admin frontend available at http://localhost:9001,
-  # login with minioadmin:minioadmin
-  minio:
-    image: minio/minio:latest
-    command: server --console-address ":9001" /data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
-      interval: 30s
-      timeout: 20s
-      retries: 3

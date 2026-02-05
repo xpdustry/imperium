@@ -33,7 +33,6 @@ jda = "5.6.1"
 cloud-core = "2.0.0"
 # cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
-minio = "8.6.0"
 flex = "1.2.0"
 influxdb = "7.3.0"
 
@@ -53,7 +52,6 @@ junit-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "jun
 junit-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
 testcontainers = { module = "org.testcontainers:testcontainers", version.ref = "testcontainers" }
 testcontainers-junit-jupiter = { module = "org.testcontainers:testcontainers-junit-jupiter", version.ref = "testcontainers" }
-testcontainers-minio = { module = "org.testcontainers:testcontainers-minio", version.ref = "testcontainers" }
 testcontainers-mariadb = { module = "org.testcontainers:testcontainers-mariadb", version.ref = "testcontainers" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
@@ -84,7 +82,6 @@ jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
 # cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
 ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasick" }
-minio = { module = "io.minio:minio", version.ref = "minio" }
 flex = { module = "com.xpdustry:flex", version.ref = "flex" }
 influxdb = { module = "com.influxdb:influxdb-client-kotlin", version.ref = "influxdb" }
 

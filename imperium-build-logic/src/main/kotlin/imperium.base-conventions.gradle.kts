@@ -46,7 +46,6 @@ dependencies {
 
     testImplementation(libs.testcontainers)
     testImplementation(libs.testcontainers.junit.jupiter)
-    testImplementation(libs.testcontainers.minio)
     testImplementation(libs.testcontainers.mariadb)
 }
 

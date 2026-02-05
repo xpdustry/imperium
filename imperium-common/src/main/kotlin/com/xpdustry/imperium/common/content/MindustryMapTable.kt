@@ -17,6 +17,7 @@
  */
 package com.xpdustry.imperium.common.content
 
+import com.xpdustry.imperium.common.misc.mediumblob
 import com.xpdustry.imperium.common.user.UserTable
 import java.time.Duration
 import org.jetbrains.exposed.dao.id.IntIdTable
@@ -30,6 +31,7 @@ object MindustryMapTable : IntIdTable("mindustry_map") {
     val name = varchar("name", 64)
     val description = text("description").nullable()
     val author = varchar("author", 64).nullable()
+    val file = mediumblob("file")
     val width = integer("width")
     val height = integer("height")
     val lastUpdate = timestamp("last_update").defaultExpression(CurrentTimestamp)
