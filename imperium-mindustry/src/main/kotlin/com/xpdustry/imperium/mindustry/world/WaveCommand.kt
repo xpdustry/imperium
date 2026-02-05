@@ -116,14 +116,14 @@ class WaveCommand(instances: InstanceManager) :
     override fun getVoteSessionDetails(session: VoteManager.Session<Int>): String =
         "Type [accent]/ws y[] to vote to skip [accent]${session.objective}[] wave(s)."
 
-    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) = runMindustryThread {
-        ImperiumScope.MAIN.launch {
-            repeat(session.objective) {
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) {
+        repeat(session.objective) {
+            runMindustryThread {
                 Vars.logic.runWave()
-                // 3.75 seconds with 15 waves selected, less than default thread timeout
-                // Delay for performance and qol
-                delay(250)
             }
+            // 3.75 seconds with 15 waves selected.
+            // Delay for performance and qol
+            delay(250)
         }
         Call.sendMessage("[green]Skipped ${session.objective} wave(s).")
     }
