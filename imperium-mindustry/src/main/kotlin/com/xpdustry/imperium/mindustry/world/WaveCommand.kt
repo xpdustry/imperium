@@ -27,9 +27,11 @@ import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
@@ -37,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.delay
 import mindustry.Vars
 import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
@@ -82,7 +85,9 @@ class WaveCommand(instances: InstanceManager) :
         sender.reply("Ran $count wave(s).")
     }
 
-    @ImperiumCommand(["wave", "skip"], Rank.MODERATOR)
+    @ImperiumCommand(["wave", "skip"], Rank.EVERYONE)
+    // Players have requested ways to skip waves in survival, Is that a good idea?
+    @Scope(MindustryGamemode.TOWER_DEFENSE)
     @ClientSide
     fun onWaveSkip(sender: CommandSender) {
         waveSkipInterface.create(sender.player).show()
@@ -109,9 +114,13 @@ class WaveCommand(instances: InstanceManager) :
     override fun getVoteSessionDetails(session: VoteManager.Session<Int>): String =
         "Type [accent]/ws y[] to vote to skip [accent]${session.objective}[] wave(s)."
 
-    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) = runMindustryThread {
-        Vars.state.wave += session.objective
-        Vars.state.wavetime = Vars.state.rules.waveSpacing
+    override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Int>) {
+        repeat(session.objective) {
+            runMindustryThread { Vars.logic.runWave() }
+            // 3.75 seconds with 15 waves selected.
+            // Delay for performance and qol
+            delay(250)
+        }
         Call.sendMessage("[green]Skipped ${session.objective} wave(s).")
     }
 }
