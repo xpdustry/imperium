@@ -122,7 +122,7 @@ class FlexListener(instances: InstanceManager) : ImperiumApplication.Listener {
             val msg = context.message
             // https://github.com/mindustry-antigrief/mindustry-client/blob/fbfaec47aec4e4ec26b8ab49cbb47a1396e3b503/core/src/mindustry/client/communication/InvisibleCharCoder.kt#L14
             CompletableFuture.completedFuture(
-                if (msg.takeLast(2).all { (0xF80 .. 0x107F).contains(it.code) }) msg.dropLast(2) else msg
+                if (msg.takeLast(2).all { (0xF80..0x107F).contains(it.code) }) msg.dropLast(2) else msg
             )
         }
 
