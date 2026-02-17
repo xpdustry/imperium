@@ -52,10 +52,8 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
     private val notified = PlayerMap<Unit>(plugin)
 
     override fun onImperiumInit() {
-        /**
-         * TODO: TapEvent is not covered here but it is a valid way to show a player is there however how to detect if
-         *   its just a miss click? Do TapEvents occur if the window isnt focused?
-         */
+        // TODO: TapEvent is not covered here but it is a valid way to show a player is there however how to detect if
+        // its just a miss click? Do TapEvents occur if the window isnt focused?
         Vars.netServer.admins.addActionFilter { action ->
             onDisturbingThePeace(action.player)
             true
