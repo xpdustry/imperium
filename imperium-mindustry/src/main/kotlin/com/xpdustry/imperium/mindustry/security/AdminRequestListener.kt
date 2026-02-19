@@ -199,7 +199,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         }
 
         if (
-            (packet.other.admin() && senderRank <= Rank.ADMIN) &&
+            (packet.other.admin() && senderRank < Rank.ADMIN) &&
                 (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)
         ) {
             logger.warn(
