@@ -38,7 +38,7 @@ influxdb = "7.3.0"
 
 # gradle plugins
 toxopid = "4.1.2"
-indra = "3.2.0"
+indra = "4.0.0"
 spotless = "8.0.0"
 shadow = "9.3.1"
 
