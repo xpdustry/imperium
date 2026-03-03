@@ -459,7 +459,18 @@ private val CYAN_PREFIX = text(">>> ", CYAN)
 
 fun cyan_prefix(component: Component): Component = components(CYAN_PREFIX, space(), component)
 
-fun player_afk(enabled: Boolean): Component =
-    components(WHITE, text(">>> ", CYAN), translatable("imperium.player.afk.${if (enabled) "enabled" else "disabled"}"))
-
 fun player_afk_kick(): Component = components(WHITE, translatable("imperium.player.afk.kicked", SCARLET))
+
+fun is_player_afk(boolean: Boolean, player: String): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable("imperium.player.afk.$boolean", TranslationArguments.array(text(player, ORANGE))),
+    )
+
+fun player_afk_announcement(boolean: Boolean, player: String): Component =
+    components(
+        WHITE,
+        text(">>> ", CYAN),
+        translatable("imperium.player.afk.announcement.$boolean", TranslationArguments.array(text(player, ORANGE))),
+    )

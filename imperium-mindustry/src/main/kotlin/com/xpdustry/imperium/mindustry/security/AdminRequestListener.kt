@@ -168,16 +168,23 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 }
             }
 
-        Vars.net.handleServer(AdminRequestCallPacket::class.java, ::interceptAdminRequest)
+        Vars.net.handleServer(AdminRequestCallPacket::class.java) { con, packet ->
+            ImperiumScope.MAIN.launch {
+                // TODO We REALLY need a proper local account cache...
+                val playerRank = runCatching { getUserRank(con.player) }.getOrNull() ?: Rank.EVERYONE
+                runMindustryThread { interceptAdminRequest(con, packet, playerRank) }
+            }
+        }
     }
 
-    private fun interceptAdminRequest(con: NetConnection, packet: AdminRequestCallPacket) {
+    private fun interceptAdminRequest(con: NetConnection, packet: AdminRequestCallPacket, playerRank: Rank) {
         if (con.player == null) {
             logger.warn("Received admin request from non-existent player (uuid: {}, ip: {})", con.uuid, con.address)
             return
         }
 
-        if (!con.player.admin()) {
+        // Allow undercover staff to use the admin menu
+        if (playerRank < Rank.OVERSEER || !con.player.admin()) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action without permission",
                 con.player.plainName(),
@@ -195,7 +202,10 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             return
         }
 
-        if (packet.other.admin() && (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)) {
+        if (
+            (packet.other.admin() && playerRank < Rank.ADMIN) &&
+                (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)
+        ) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action on the admin {} ({})",
                 con.player.plainName(),
@@ -270,7 +280,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 Call.infoMessage(requester.con, "Player not found.")
                 return@launch
             }
-            val canSeeInfo = (accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE) >= Rank.ADMIN
+            val canSeeInfo = getUserRank(requester) >= Rank.ADMIN
             val historic = users.findNamesAndAddressesById(user.id)
             Call.traceInfo(
                 requester.con,
@@ -317,6 +327,11 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 )
             }
         }
+
+    private suspend fun getUserRank(requester: Player): Rank {
+        val account = accounts.selectBySession(requester.sessionKey) ?: return Rank.EVERYONE
+        return account.rank
+    }
 
     companion object {
         private val logger by LoggerDelegate()

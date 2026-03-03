@@ -17,21 +17,26 @@
  */
 package com.xpdustry.imperium.mindustry.security
 
-import arc.math.geom.Point2
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
+import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
+import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
-import com.xpdustry.imperium.mindustry.translation.player_afk
+import com.xpdustry.imperium.mindustry.translation.is_player_afk
+import com.xpdustry.imperium.mindustry.translation.player_afk_announcement
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import java.time.Duration
 import java.time.Instant
+import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
 import mindustry.Vars
 import mindustry.game.EventType
@@ -44,10 +49,11 @@ interface AfkManager {
 class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
     AfkManager, ImperiumApplication.Listener {
     private val lastActivity = PlayerMap<Instant>(plugin)
-    private val lastPosition = PlayerMap<Int>(plugin)
     private val notified = PlayerMap<Unit>(plugin)
 
     override fun onImperiumInit() {
+        // TODO: TapEvent is not covered here but it is a valid way to show a player is there however how to detect if
+        // its just a miss click? Do TapEvents occur if the window isnt focused?
         Vars.netServer.admins.addActionFilter { action ->
             onDisturbingThePeace(action.player)
             true
@@ -66,27 +72,31 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
 
     @TaskHandler(interval = 15, unit = MindustryTimeUnit.SECONDS)
     fun onPlayerAfkUpdate() {
-        Entities.getPlayers().forEach { player ->
-            val new = Point2.pack(player.tileX(), player.tileY())
-            val old = lastPosition.set(player, new)
-            if (old != new) {
-                onDisturbingThePeace(player)
-            }
-
-            val duration = getAfkDuration(player).toKotlinDuration()
-            when {
-                duration >= config.mindustry.afkDelay -> {
-                    if (notified.set(player, Unit) != Unit) player.asAudience.sendMessage(player_afk(enabled = true))
-                }
-                duration >= config.mindustry.afkKickDelay -> {
-                    player.asAudience.kick(player_afk_kick(), Duration.ZERO)
-                }
-            }
+        for (player in Entities.getPlayers()) {
+            checkAfkStatus(player)
         }
     }
 
     override fun isPlayerAfk(player: Player): Boolean {
         return getAfkDuration(player).toKotlinDuration() >= config.mindustry.afkDelay
+    }
+
+    private fun checkAfkStatus(player: Player) {
+        val duration = getAfkDuration(player).toKotlinDuration()
+
+        when {
+            duration >= config.mindustry.afkKickDelay -> {
+                player.asAudience.kick(player_afk_kick(), Duration.ZERO)
+            }
+            duration >= config.mindustry.afkDelay -> {
+                if (notified.set(player, Unit) != Unit) {
+                    Distributor.get()
+                        .audienceProvider
+                        .players
+                        .sendMessage(player_afk_announcement(true, player.plainName()))
+                }
+            }
+        }
     }
 
     private fun getAfkDuration(player: Player): Duration {
@@ -96,9 +106,25 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
     // PERSONA!!
     private fun onDisturbingThePeace(player: Player) {
         if (isPlayerAfk(player)) {
-            player.asAudience.sendMessage(player_afk(enabled = false))
+            Distributor.get().audienceProvider.players.sendMessage(player_afk_announcement(false, player.plainName()))
         }
         notified.remove(player)
         lastActivity[player] = Instant.now()
+    }
+
+    @ImperiumCommand(["afk"])
+    @ClientSide
+    @ServerSide
+    fun isAfkCommand(sender: CommandSender, target: Player? = null) {
+        if (target == null) {
+            if (sender.isPlayer) {
+                val afkInstant = Instant.now().minus((config.mindustry.afkDelay).toJavaDuration())
+                lastActivity[sender.player] = afkInstant
+                checkAfkStatus(sender.player)
+            } else sender.error("Console must specify a player. You can't be afk as console.")
+        } else {
+            val isAfk = isPlayerAfk(target)
+            sender.reply(is_player_afk(isAfk, target.plainName()))
+        }
     }
 }
