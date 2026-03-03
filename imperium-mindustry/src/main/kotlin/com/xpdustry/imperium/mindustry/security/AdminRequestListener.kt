@@ -54,7 +54,6 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
 import mindustry.game.Team
@@ -169,18 +168,23 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                 }
             }
 
-        Vars.net.handleServer(AdminRequestCallPacket::class.java, ::interceptAdminRequest)
+        Vars.net.handleServer(AdminRequestCallPacket::class.java) { con, packet ->
+            ImperiumScope.MAIN.launch {
+                // TODO We REALLY need a proper local account cache...
+                val playerRank = runCatching { getUserRank(con.player) }.getOrNull() ?: Rank.EVERYONE
+                runMindustryThread { interceptAdminRequest(con, packet, playerRank) }
+            }
+        }
     }
 
-    private fun interceptAdminRequest(con: NetConnection, packet: AdminRequestCallPacket) {
+    private fun interceptAdminRequest(con: NetConnection, packet: AdminRequestCallPacket, playerRank: Rank) {
         if (con.player == null) {
             logger.warn("Received admin request from non-existent player (uuid: {}, ip: {})", con.uuid, con.address)
             return
         }
-        val senderRank = runBlocking { getUserRank(con.player) }
 
         // Allow undercover staff to use the admin menu
-        if (senderRank < Rank.OVERSEER || !con.player.admin()) {
+        if (playerRank < Rank.OVERSEER || !con.player.admin()) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action without permission",
                 con.player.plainName(),
@@ -199,7 +203,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
         }
 
         if (
-            (packet.other.admin() && senderRank < Rank.ADMIN) &&
+            (packet.other.admin() && playerRank < Rank.ADMIN) &&
                 (packet.action != AdminAction.switchTeam && packet.action != AdminAction.wave)
         ) {
             logger.warn(
