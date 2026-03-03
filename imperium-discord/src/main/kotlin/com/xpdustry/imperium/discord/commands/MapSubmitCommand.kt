@@ -42,7 +42,10 @@ import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
+import java.awt.image.BufferedImage
+import java.io.IOException
 import java.net.URI
+import javax.imageio.ImageIO
 import kotlin.io.path.createTempFile
 import kotlin.io.path.deleteExisting
 import kotlinx.coroutines.future.await
@@ -96,21 +99,13 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
         val tempFile = createTempFile()
         map.proxy.downloadToPath(tempFile).await()
         val metaResult = content.parseMap(tempFile.toFile())
-        val previewResult = content.renderMap(tempFile.toFile())
         if (metaResult.isFailure) {
             val ex = metaResult.exceptionOrNull()!!
             logger.error("Invalid map file", ex)
             reply.sendMessage("Invalid map file: " + ex.message).await()
             return
         }
-        if (previewResult.isFailure) {
-            val ex = previewResult.exceptionOrNull()!!
-            logger.error("Invalid map file", ex)
-            reply.sendMessage("Invalid map file: " + ex.message).await()
-            return
-        }
         val meta = metaResult.getOrThrow()
-        val preview = previewResult.getOrThrow()
 
         if (meta.width > MindustryMap.MAX_MAP_SIDE_SIZE || meta.height > MindustryMap.MAX_MAP_SIDE_SIZE) {
             reply
@@ -120,6 +115,12 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
                 .await()
             return
         }
+
+        val previewResult = content.renderMap(tempFile.toFile())
+        if (previewResult.isFailure) {
+            logger.error("Failed to render map preview", previewResult.exceptionOrNull())
+        }
+        val preview = previewResult.getOrDefault(FALLBACK_PREVIEW)
 
         val channel =
             discord.getMainServer().getTextChannelById(config.discord.channels.maps)
@@ -138,7 +139,7 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
                             field("Name", meta.name.stripMindustryColors(), false)
                             field("Author", meta.author.stripMindustryColors(), false)
                             field("Description", meta.description.stripMindustryColors(), false)
-                            field("Size", "${preview.width} x ${preview.height}", false)
+                            field("Size", "${meta.width} x ${meta.height}", false)
                             if (notes != null) {
                                 field("Notes", notes, false)
                             }
@@ -292,5 +293,11 @@ class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listene
         private const val MAP_ACCEPT_BUTTON = "map-submission-accept:2"
         private const val MAP_REJECT_BUTTON = "map-submission-reject:2"
         private val logger by LoggerDelegate()
+        private val FALLBACK_PREVIEW: BufferedImage by lazy {
+            MapSubmitCommand::class
+                .java
+                .getResourceAsStream("/com/xpdustry/imperium/discord/map_preview_error.png")
+                ?.use { ImageIO.read(it) } ?: throw IOException("Failed to load fallback map preview image")
+        }
     }
 }
