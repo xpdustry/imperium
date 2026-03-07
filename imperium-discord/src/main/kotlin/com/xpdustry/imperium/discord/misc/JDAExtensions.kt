@@ -10,6 +10,9 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.components.MessageTopLevelComponent
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent
 import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
@@ -21,10 +24,6 @@ import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
 import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.EventListener
-import net.dv8tion.jda.api.interactions.components.ActionComponent
-import net.dv8tion.jda.api.interactions.components.ActionRow
-import net.dv8tion.jda.api.interactions.components.ItemComponent
-import net.dv8tion.jda.api.interactions.components.LayoutComponent
 import net.dv8tion.jda.api.requests.RestAction
 import net.dv8tion.jda.api.utils.AttachedFile
 import net.dv8tion.jda.api.utils.FileUpload
@@ -50,15 +49,9 @@ suspend fun Message.disableComponents() {
     editMessageComponents(components.map { it.disableComponent() }).await()
 }
 
-private fun LayoutComponent.disableComponent(): ActionRow =
+private fun MessageTopLevelComponent.disableComponent(): MessageTopLevelComponent =
     when (this) {
-        is ActionRow -> ActionRow.of(components.map { it.disableComponent() })
-        else -> error("Unsupported component type: ${this::class}")
-    }
-
-private fun ItemComponent.disableComponent(): ItemComponent =
-    when (this) {
-        is ActionComponent -> asDisabled()
+        is ActionRow -> asDisabled()
         else -> error("Unsupported component type: ${this::class}")
     }
 
@@ -80,7 +73,7 @@ inline fun MessageCreateBuilder(
     content: String = "",
     embeds: Collection<MessageEmbed> = emptyList(),
     files: Collection<FileUpload> = emptyList(),
-    components: Collection<LayoutComponent> = emptyList(),
+    components: Collection<MessageTopLevelComponent> = emptyList(),
     tts: Boolean = false,
     mentions: Mentions = Mentions.default(),
     builder: InlineMessage<MessageCreateData>.() -> Unit = {},
@@ -102,7 +95,7 @@ inline fun MessageCreate(
     content: String = "",
     embeds: Collection<MessageEmbed> = emptyList(),
     files: Collection<FileUpload> = emptyList(),
-    components: Collection<LayoutComponent> = emptyList(),
+    components: Collection<MessageTopLevelComponent> = emptyList(),
     tts: Boolean = false,
     mentions: Mentions = Mentions.default(),
     builder: InlineMessage<MessageCreateData>.() -> Unit = {},
@@ -110,7 +103,7 @@ inline fun MessageCreate(
 
 class InlineMessage<T>(val builder: AbstractMessageBuilder<T, *>) {
     internal val configuredEmbeds = mutableListOf<MessageEmbed>()
-    internal val configuredComponents = mutableListOf<LayoutComponent>()
+    internal val configuredComponents = mutableListOf<MessageTopLevelComponent>()
     internal val configuredFiles = mutableListOf<AttachedFile>()
     internal var set = 0
 
@@ -147,11 +140,11 @@ class InlineMessage<T>(val builder: AbstractMessageBuilder<T, *>) {
 
     val components = ComponentAccumulator(this.configuredComponents, this)
 
-    fun actionRow(vararg components: ItemComponent) {
-        this.components += ActionRow.of(*components)
+    fun actionRow(vararg components: ActionRowChildComponent) {
+        this.components += ActionRow.of(components.toList())
     }
 
-    fun actionRow(components: Collection<ItemComponent>) {
+    fun actionRow(components: Collection<ActionRowChildComponent>) {
         this.components += ActionRow.of(components)
     }
 
@@ -226,25 +219,25 @@ class EmbedAccumulator(private val builder: InlineMessage<*>) {
 }
 
 class ComponentAccumulator(
-    private val config: MutableList<LayoutComponent>,
+    private val config: MutableList<MessageTopLevelComponent>,
     private val builder: InlineMessage<*>? = null,
 ) {
-    operator fun plusAssign(components: Collection<LayoutComponent>) {
+    operator fun plusAssign(components: Collection<MessageTopLevelComponent>) {
         builder?.let { it.set = it.set or SetFlags.COMPONENTS }
         config += components
     }
 
-    operator fun plusAssign(component: LayoutComponent) {
+    operator fun plusAssign(component: MessageTopLevelComponent) {
         builder?.let { it.set = it.set or SetFlags.COMPONENTS }
         config += component
     }
 
-    operator fun minusAssign(components: Collection<LayoutComponent>) {
+    operator fun minusAssign(components: Collection<MessageTopLevelComponent>) {
         builder?.let { it.set = it.set or SetFlags.COMPONENTS }
         config -= components.toSet()
     }
 
-    operator fun minusAssign(component: LayoutComponent) {
+    operator fun minusAssign(component: MessageTopLevelComponent) {
         builder?.let { it.set = it.set or SetFlags.COMPONENTS }
         config -= component
     }

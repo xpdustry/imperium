@@ -21,10 +21,10 @@ import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.misc.disableComponents
 import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.buttons.Button
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
-import net.dv8tion.jda.api.interactions.components.ActionRow
-import net.dv8tion.jda.api.interactions.components.buttons.Button
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 
 class ReportListener(instances: InstanceManager) : ImperiumApplication.Listener {
