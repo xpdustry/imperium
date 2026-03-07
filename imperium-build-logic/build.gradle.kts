@@ -7,7 +7,6 @@ repositories {
 }
 
 dependencies {
-    implementation(libs.indra.licenser.spotless)
     implementation(libs.indra.common)
     implementation(libs.toxopid)
     implementation(libs.spotless)

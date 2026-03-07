@@ -1,18 +1,35 @@
-import java.util.regex.Pattern
-import net.kyori.indra.git.IndraGitExtension
-import org.eclipse.jgit.api.Git
+import net.kyori.indra.git.internal.IndraGitService
 import org.eclipse.jgit.lib.Constants
 import org.gradle.api.DefaultTask
-import org.gradle.api.Task
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
+import org.gradle.api.services.ServiceReference
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
-import org.gradle.kotlin.dsl.getByType
+import org.gradle.kotlin.dsl.named
+import java.util.regex.Pattern
 
-open class GenerateImperiumChangelog : DefaultTask() {
+abstract class GenerateImperiumChangelog : DefaultTask() {
 
-    @OutputFile
-    val target: RegularFileProperty = project.objects.fileProperty()
+    @get:OutputFile
+    abstract val target: RegularFileProperty
+
+    @get:ServiceReference(IndraGitService.SERVICE_NAME)
+    abstract val gitService: Property<IndraGitService>
+
+    @get:Internal
+    abstract val projectDirectory: DirectoryProperty
+
+    @get:Internal
+    abstract val projectDisplayName: Property<String>
+
+    init {
+        projectDirectory.fileValue(project.projectDir)
+        projectDisplayName.convention(project.displayName)
+    }
 
     fun onlyIfHasUpstream() {
         onlyIf("run only if upstream repo is available") { task ->
@@ -23,6 +40,7 @@ open class GenerateImperiumChangelog : DefaultTask() {
 
     @TaskAction
     fun generate() {
+        val git = gitService.get().git(projectDirectory.get().asFile, projectDisplayName.get())!!
         val latest = git.repository.resolve("v" + project.rootProject.file("VERSION.txt").readText().trim())
             ?: error("The version in VERSION.txt is not available")
         val head = git.repository.resolve(Constants.HEAD)!!
@@ -44,7 +62,5 @@ open class GenerateImperiumChangelog : DefaultTask() {
     companion object {
         private val ACCEPTED_SUFFIX =
             Pattern.compile("^(?<verb>feat|fix)(\\((?<scope>mindustry|discord)\\))?:", Pattern.CASE_INSENSITIVE)
-        private val Task.git: Git
-            get() = project.rootProject.extensions.getByType<IndraGitExtension>().git()!!
     }
 }
