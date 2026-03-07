@@ -9,7 +9,6 @@ dependencies {
     api(libs.guava)
     api(libs.hoplite.core)
     api(libs.hoplite.yaml)
-    api(libs.rabbitmq.client)
     api(libs.okhttp)
     api(libs.caffeine)
 
