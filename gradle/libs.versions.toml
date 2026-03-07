@@ -33,7 +33,7 @@ cloud-core = "2.0.0"
 # cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
 flex = "1.2.0"
-influxdb = "7.3.0"
+influxdb = "7.5.0"
 
 # gradle plugins
 toxopid = "4.1.2"
