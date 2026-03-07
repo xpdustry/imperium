@@ -52,7 +52,7 @@ dependencies {
 spotless {
     kotlin {
         ktfmt().kotlinlangStyle().configure { it.setMaxWidth(120) }
-        licenseHeader(toLongComment(rootProject.file("LICENSE_HEADER.md").readText()))
+        licenseHeader("// SPDX-License-Identifier: GPL-3.0-only")
         trimTrailingWhitespace()
         endWithNewline()
     }
