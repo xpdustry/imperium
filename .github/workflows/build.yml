@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -51,14 +51,14 @@ jobs:
           echo "DISCORD_ARTIFACT_PATH=$(gradle :imperium-discord:getArtifactPath -q)" >> $GITHUB_ENV
 
       - name: Upload Mindustry artifact to Actions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: imperium-mindustry
           path: "${{ env.MINDUSTRY_ARTIFACT_PATH }}"
           if-no-files-found: error
 
       - name: Upload Discord artifacts to Actions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: imperium-discord
           path: "${{ env.DISCORD_ARTIFACT_PATH }}"
@@ -70,6 +70,6 @@ jobs:
 
       - name: Commit Formatted Code
         if: ${{ github.event_name != 'pull_request' }}
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "style: Format code"

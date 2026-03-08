@@ -11,7 +11,7 @@ jobs:
       version: "${{ steps.setup.outputs.version }}"
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-tags: true
           fetch-depth: 0
@@ -57,7 +57,7 @@ jobs:
         run: gradle incrementVersionFile
 
       - name: Commit Incremented Version
-        uses: stefanzweifel/git-auto-commit-action@v6
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           branch: "${{ github.event.release.target_commitish }}"
           commit_message: "chore: Increment version"
@@ -69,7 +69,7 @@ jobs:
     needs: [ github ]
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           ref: "refs/tags/v${{ needs.github.outputs.version }}"
           fetch-tags: true
