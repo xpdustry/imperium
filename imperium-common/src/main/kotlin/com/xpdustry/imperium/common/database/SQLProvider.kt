@@ -11,9 +11,10 @@ import kotlin.io.path.absolutePathString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
-import org.jetbrains.exposed.v1.jdbc.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.v1.jdbc.transactions.suspendTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 
 interface SQLProvider {
@@ -67,5 +68,5 @@ class SimpleSQLProvider(private val config: DatabaseConfig, private val director
     override fun <T> newTransaction(block: () -> T): T = transaction { block() }
 
     override suspend fun <T> newSuspendTransaction(block: suspend () -> T): T =
-        newSuspendedTransaction(scope.coroutineContext, database) { block() }
+        withContext(scope.coroutineContext) { suspendTransaction(database) { block() } }
 }
