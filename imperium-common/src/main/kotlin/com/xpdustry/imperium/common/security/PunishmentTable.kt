@@ -2,11 +2,11 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.user.UserTable
-import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
-import org.jetbrains.exposed.sql.javatime.duration
-import org.jetbrains.exposed.sql.javatime.timestamp
+import org.jetbrains.exposed.v1.core.ReferenceOption
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
+import org.jetbrains.exposed.v1.javatime.duration
+import org.jetbrains.exposed.v1.javatime.timestamp
 
 object PunishmentTable : IntIdTable("punishment") {
     val target = reference("target", UserTable, onDelete = ReferenceOption.CASCADE)

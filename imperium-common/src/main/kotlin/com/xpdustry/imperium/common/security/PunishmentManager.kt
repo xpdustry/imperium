@@ -14,14 +14,15 @@ import kotlin.time.Duration
 import kotlin.time.toJavaDuration
 import kotlin.time.toKotlinDuration
 import kotlinx.serialization.Serializable
-import org.jetbrains.exposed.sql.JoinType
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.insertAndGetId
-import org.jetbrains.exposed.sql.or
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.update
+import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.or
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
+import org.jetbrains.exposed.v1.jdbc.insertAndGetId
+import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.update
 
 interface PunishmentManager {
 
@@ -82,10 +83,8 @@ class SimplePunishmentManager(
 
     override suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment> =
         provider.newSuspendTransaction {
-            var query = Op.build { UserAddressTable.address eq identity.address.address }
-            users.findByUuid(identity.uuid)?.id?.let { id ->
-                query = query.or(Op.build { (PunishmentTable.target eq id) })
-            }
+            var query = UserAddressTable.address eq identity.address.address
+            users.findByUuid(identity.uuid)?.id?.let { id -> query = query or (PunishmentTable.target eq id) }
             PunishmentTable.join(
                     UserAddressTable,
                     JoinType.LEFT,

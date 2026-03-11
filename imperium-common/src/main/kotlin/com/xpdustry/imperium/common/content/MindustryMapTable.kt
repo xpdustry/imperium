@@ -4,12 +4,12 @@ package com.xpdustry.imperium.common.content
 import com.xpdustry.imperium.common.misc.mediumblob
 import com.xpdustry.imperium.common.user.UserTable
 import java.time.Duration
-import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
-import org.jetbrains.exposed.sql.javatime.duration
-import org.jetbrains.exposed.sql.javatime.timestamp
+import org.jetbrains.exposed.v1.core.ReferenceOption
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
+import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
+import org.jetbrains.exposed.v1.javatime.duration
+import org.jetbrains.exposed.v1.javatime.timestamp
 
 object MindustryMapTable : IntIdTable("mindustry_map") {
     val name = varchar("name", 64)

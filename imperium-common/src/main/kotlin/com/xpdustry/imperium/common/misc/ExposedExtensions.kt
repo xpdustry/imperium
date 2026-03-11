@@ -1,17 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.misc
 
-import org.jetbrains.exposed.sql.BlobColumnType
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.FieldSet
-import org.jetbrains.exposed.sql.IColumnType
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.SqlExpressionBuilder
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import org.jetbrains.exposed.v1.core.BlobColumnType
+import org.jetbrains.exposed.v1.core.Column
+import org.jetbrains.exposed.v1.core.FieldSet
+import org.jetbrains.exposed.v1.core.IColumnType
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.statements.api.ExposedBlob
+import org.jetbrains.exposed.v1.jdbc.selectAll
 
-fun FieldSet.exists(where: SqlExpressionBuilder.() -> Op<Boolean>): Boolean = !selectAll().where(where).empty()
+fun FieldSet.exists(where: () -> Op<Boolean>): Boolean = !selectAll().where(where).empty()
 
 fun Table.mediumblob(name: String): Column<ExposedBlob> = registerColumn(name, MediumBlobColumnType())
 
