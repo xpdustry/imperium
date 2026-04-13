@@ -17,8 +17,9 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
-import com.xpdustry.nohorny.image.NoHornyResult
-import com.xpdustry.nohorny.image.analyzer.ImageAnalyzerEvent
+import com.xpdustry.nohorny.client.ClassificationEvent
+import com.xpdustry.nohorny.common.MindustryImageRenderer
+import com.xpdustry.nohorny.common.Rating
 import java.awt.image.BufferedImage
 import kotlin.time.Duration.Companion.days
 import kotlinx.coroutines.launch
@@ -32,11 +33,11 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
     private val codec = instances.get<IdentifierCodec>()
 
     @EventHandler
-    fun onImageLogicAnalyzer(event: ImageAnalyzerEvent) =
+    fun onImageLogicAnalyzer(event: ClassificationEvent) =
         ImperiumScope.MAIN.launch {
-            when (event.result.rating) {
-                NoHornyResult.Rating.SAFE -> Unit
-                NoHornyResult.Rating.WARNING -> {
+            when (event.rating) {
+                Rating.SAFE -> Unit
+                Rating.WARN -> {
                     logger.debug(
                         "Cluster in rect ({}, {}, {}, {}) is possibly unsafe.",
                         event.group.x,
@@ -57,15 +58,12 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                                         append(" by user `$id`")
                                     }
                                     appendLine()
-                                    for ((entry, percent) in event.result.details) {
-                                        appendLine("- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
-                                    }
                                 },
-                            attachments = listOf(event.image.toUnsafeAttachment()),
+                            attachments = listOf(MindustryImageRenderer.render(event.group).toUnsafeAttachment()),
                         ),
                     )
                 }
-                NoHornyResult.Rating.UNSAFE -> {
+                Rating.NSFW -> {
                     logger.info(
                         "Cluster in rect ({}, {}, {}, {}) is unsafe. Destroying blocks.",
                         event.group.x,
@@ -91,11 +89,8 @@ class NoHornyListener(instances: InstanceManager) : ImperiumApplication.Listener
                                 buildString {
                                     appendLine("**NSFW image detected**")
                                     appendLine("Related to punishment `${codec.encode(punishment)}`")
-                                    for ((entry, percent) in event.result.details) {
-                                        appendLine("- ${entry.name}: ${"%.1f %%".format(percent * 100)}")
-                                    }
                                 },
-                            attachments = listOf(event.image.toUnsafeAttachment()),
+                            attachments = listOf(MindustryImageRenderer.render(event.group).toUnsafeAttachment()),
                         ),
                     )
                 }

@@ -27,7 +27,7 @@ mariadb = "3.5.7"
 caffeine = "3.2.3"
 prettytime = "5.0.9.Final"
 time4j = "4.38"
-nohorny = "3.0.3"
+nohorny = "4.0.0-beta.1"
 jda = "6.3.1"
 cloud-core = "2.0.0"
 # cloud-translations = "1.0.0-SNAPSHOT"
@@ -74,7 +74,8 @@ mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mari
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
 time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
-nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
+nohorny = { module = "com.xpdustry:nohorny-client", version.ref = "nohorny" }
+nohorny-common = { module = "com.xpdustry:nohorny-common", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
 # cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
