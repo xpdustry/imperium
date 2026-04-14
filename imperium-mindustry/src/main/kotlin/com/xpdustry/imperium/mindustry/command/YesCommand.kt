@@ -60,7 +60,9 @@ class YesCommand(instances: InstanceManager) : ImperiumApplication.Listener {
             return
         }
         val response = Vars.netServer.clientCommands.handleMessage(command, sender.player)
-        if (response.type != CommandHandler.ResponseType.valid && response.type != CommandHandler.ResponseType.noCommand) {
+        if (
+            response.type != CommandHandler.ResponseType.valid && response.type != CommandHandler.ResponseType.noCommand
+        ) {
             Vars.netServer.invalidHandler.handle(sender.player, response)?.let(sender.player::sendMessage)
         }
     }
