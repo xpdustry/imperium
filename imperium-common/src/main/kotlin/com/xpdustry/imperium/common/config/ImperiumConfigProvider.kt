@@ -25,7 +25,6 @@ object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addDefaultPreprocessors()
             .addDefaultParamMappers()
             .addParameterMapper(KebabCaseParamMapper)
-            .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
             .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
