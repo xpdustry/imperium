@@ -8,8 +8,6 @@ import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.flex.FlexAPI
-import com.xpdustry.flex.message.MessageContext
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -31,6 +29,8 @@ import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.PunishmentMessage
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.chat.MindustryMessageContext
+import com.xpdustry.imperium.mindustry.chat.MindustryMessagePipeline
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -45,7 +45,6 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
-import kotlinx.coroutines.future.future
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -72,6 +71,7 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
     private val badWordsCounter = SimpleRateLimiter<MUUID>(3, 10.minutes)
     private val config = instances.get<ImperiumConfig>()
     private val codec = instances.get<IdentifierCodec>()
+    private val messages = instances.get<MindustryMessagePipeline>()
 
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { message ->
@@ -154,46 +154,42 @@ class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Liste
             return@addActionFilter true
         }
 
-        FlexAPI.get().messages.register("mute", Priority.HIGH) { ctx ->
-            ImperiumScope.MAIN.future {
-                if (!ctx.filter || ctx.kind != MessageContext.Kind.CHAT) return@future ctx.message
-                val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
-                val muted = runMindustryThread {
-                    cache[player.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
-                }
-                if (muted != null) {
-                    ctx.sender.sendMessage(punishment_message(muted, codec))
-                    ""
-                } else {
-                    ctx.message
-                }
+        messages.register("mute", Priority.HIGH) { ctx ->
+            if (!ctx.filter || ctx.kind != MindustryMessageContext.Kind.CHAT) return@register ctx.message
+            val player = ctx.sender as? PlayerAudience ?: return@register ctx.message
+            val muted = runMindustryThread {
+                cache[player.player]?.firstOrNull { it.type == Punishment.Type.MUTE && !it.expired }
+            }
+            if (muted != null) {
+                ctx.sender.sendMessage(punishment_message(muted, codec))
+                ""
+            } else {
+                ctx.message
             }
         }
 
-        FlexAPI.get().messages.register("bad_word", Priority.HIGH) { ctx ->
-            ImperiumScope.MAIN.future {
-                if (!ctx.filter || ctx.kind != MessageContext.Kind.CHAT) return@future ctx.message
-                val player = ctx.sender as? PlayerAudience ?: return@future ctx.message
-                val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
-                if (rank >= Rank.MODERATOR) return@future ctx.message
+        messages.register("bad_word", Priority.HIGH) { ctx ->
+            if (!ctx.filter || ctx.kind != MindustryMessageContext.Kind.CHAT) return@register ctx.message
+            val player = ctx.sender as? PlayerAudience ?: return@register ctx.message
+            val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
+            if (rank >= Rank.MODERATOR) return@register ctx.message
 
-                val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
-                if (words.isNotEmpty()) {
-                    if (badWordsCounter.incrementAndCheck(MUUID.from(player.player))) {
-                        ctx.sender.sendMessage(warning("bad_word", words.toString()))
-                    } else {
-                        punishments.punish(
-                            config.server.identity,
-                            users.getByIdentity(player.player.identity).id,
-                            "Bad words: $words",
-                            Punishment.Type.MUTE,
-                            1.hours,
-                        )
-                    }
-                    ""
+            val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))
+            if (words.isNotEmpty()) {
+                if (badWordsCounter.incrementAndCheck(MUUID.from(player.player))) {
+                    ctx.sender.sendMessage(warning("bad_word", words.toString()))
                 } else {
-                    ctx.message
+                    punishments.punish(
+                        config.server.identity,
+                        users.getByIdentity(player.player.identity).id,
+                        "Bad words: $words",
+                        Punishment.Type.MUTE,
+                        1.hours,
+                    )
                 }
+                ""
+            } else {
+                ctx.message
             }
         }
 

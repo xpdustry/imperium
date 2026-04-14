@@ -4,7 +4,6 @@ package com.xpdustry.imperium.mindustry.metrics
 import arc.Core
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.flex.message.FlexPlayerChatEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.inject.InstanceManager
@@ -17,6 +16,7 @@ import com.xpdustry.imperium.common.metrics.SystemMetricCollector
 import com.xpdustry.imperium.common.metrics.UniqueCounter
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.chat.MindustryPlayerChatEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.net.InetAddress
@@ -73,7 +73,7 @@ class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener
     }
 
     @EventHandler
-    fun onPlayerChat(event: FlexPlayerChatEvent) {
+    fun onPlayerChat(event: MindustryPlayerChatEvent) {
         chatCounter.inc()
     }
 

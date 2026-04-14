@@ -35,7 +35,7 @@ dependencies {
     compileOnly(libs.distributor.permission.rank)
     compileOnly(libs.nohorny)
     compileOnly(libs.nohorny.common)
-    compileOnly(libs.flex)
+    implementation(libs.flex.translator)
     implementation(libs.jsoup)
     implementation(libs.ahocorasick)
 }
@@ -130,13 +130,6 @@ val downloadNoHorny by tasks.registering(GithubAssetDownload::class) {
     version = libs.versions.nohorny.map { "v$it" }
 }
 
-val downloadFlex by tasks.registering(GithubAssetDownload::class) {
-    owner = "xpdustry"
-    repo = "flex"
-    asset = "flex.jar"
-    version = libs.versions.flex.map { "v$it" }
-}
-
 tasks.register<MindustryExec>("runMindustryDesktop2") {
     group = Toxopid.TASK_GROUP_NAME
     configureDesktop()
@@ -149,7 +142,6 @@ tasks.runMindustryServer {
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
-        downloadFlex,
         pluginLibs,
         downloadSql4md,
         downloadDistributorCommon,
@@ -166,7 +158,6 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadKotlinRuntime,
         downloadNoHorny,
         downloadSlf4md,
-        downloadFlex,
         pluginLibs,
         downloadSql4md,
         downloadDistributorCommon,
