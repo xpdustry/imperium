@@ -12,6 +12,10 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
+import com.xpdustry.imperium.mindustry.misc.asAudience
+import com.xpdustry.imperium.mindustry.translation.command_unknown
+import com.xpdustry.imperium.mindustry.translation.command_yes_confirm
+import com.xpdustry.imperium.mindustry.translation.command_yes_failure_no_pending
 import mindustry.Vars
 import mindustry.game.EventType
 
@@ -29,12 +33,18 @@ class YesCommand(instances: InstanceManager) : ImperiumApplication.Listener {
                     val input = lastInputs[player]
                     val suggestion = findSuggestion(response.runCommand)
                     if (input != null && suggestion != null) {
-                        pendingCommands[player] = replaceCommand(input, suggestion.text)
+                        val command = replaceCommand(input, suggestion.text)
+                        pendingCommands[player] = command
+                        player.asAudience.sendMessage(command_yes_confirm(command))
+                        null
+                    } else {
+                        player.asAudience.sendMessage(command_unknown())
+                        null
                     }
                 } else {
                     pendingCommands.remove(player)
+                    delegate.handle(player, response)
                 }
-                delegate.handle(player, response)
             }
     }
 
@@ -56,7 +66,7 @@ class YesCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     fun onYesCommand(sender: CommandSender) {
         val command = pendingCommands.remove(sender.player)
         if (command == null) {
-            sender.error("There is no command to confirm.")
+            sender.reply(command_yes_failure_no_pending())
             return
         }
         val response = Vars.netServer.clientCommands.handleMessage(command, sender.player)
