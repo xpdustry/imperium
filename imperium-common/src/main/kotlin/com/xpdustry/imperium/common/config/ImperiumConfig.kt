@@ -111,7 +111,7 @@ data class DiscordConfig(
 
     data class Categories(val liveChat: Long = 0)
 
-    data class Channels(val notifications: Long = 0, val maps: Long = 0, val reports: Long = 0)
+    data class Channels(val notifications: Long = 0, val maps: Long = 0, val reports: Long = 0, val support: Long = 0)
 }
 
 data class MindustryConfig(
