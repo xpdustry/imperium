@@ -19,6 +19,8 @@ interface SQLDatabase {
 
         fun push(value: Boolean): PreparedStatementBuilder
 
+        fun push(value: Double): PreparedStatementBuilder
+
         fun push(value: Float): PreparedStatementBuilder
 
         fun push(value: ByteArray): PreparedStatementBuilder
@@ -42,6 +44,8 @@ interface SQLDatabase {
         fun getLong(name: String): Long?
 
         fun getBoolean(name: String): Boolean?
+
+        fun getDouble(name: String): Double?
 
         fun getFloat(name: String): Float?
 

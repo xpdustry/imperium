@@ -33,7 +33,6 @@ dependencies {
     testRuntimeOnly(libs.h2)
     testRuntimeOnly(libs.mariadb)
 
-    api(libs.influxdb)
     implementation(libs.mariadb)
 }
 
