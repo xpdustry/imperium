@@ -1,16 +1,16 @@
 [versions]
 # platforms
-kotlin-core = "2.3.10"
+kotlin-core = "2.3.20"
 kotlin-coroutine = "1.10.2"
 kotlin-runtime = "4.3.4"
-kotlinx-serialization = "1.10.0"
+kotlinx-serialization = "1.11.0"
 java = "25"
 mindustry = "154.3"
 
 # libraries
 distributor = "4.2.0"
 junit = "6.0.3"
-testcontainers = "2.0.3"
+testcontainers = "2.0.4"
 guava = "33.5.0-jre"
 hoplite = "3.0.0.RC3"
 slf4j = "2.0.17"
@@ -21,14 +21,14 @@ okhttp = "5.3.2"
 classgraph = "4.8.184"
 logback = "1.5.32"
 hikari = "7.0.2"
-exposed = "1.1.1"
+exposed = "1.2.0"
 h2 = "2.4.240"
-mariadb = "3.5.7"
+mariadb = "3.5.8"
 caffeine = "3.2.3"
 prettytime = "5.0.9.Final"
 time4j = "4.38"
 nohorny = "4.0.0-beta.1"
-jda = "6.3.1"
+jda = "6.4.1"
 cloud-core = "2.0.0"
 # cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
@@ -37,8 +37,8 @@ flex = "1.2.0"
 # gradle plugins
 toxopid = "4.2.0"
 indra = "4.0.0"
-spotless = "8.3.0"
-shadow = "9.3.2"
+spotless = "8.4.0"
+shadow = "9.4.1"
 
 [libraries]
 # libraries
