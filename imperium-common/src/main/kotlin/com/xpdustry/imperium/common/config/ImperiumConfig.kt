@@ -12,6 +12,7 @@ import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.webhook.WebhookChannel
 import java.awt.Color
 import java.net.InetAddress
+import java.net.URI
 import java.net.URL
 import java.util.Locale
 import kotlin.time.Duration
@@ -120,6 +121,7 @@ data class MindustryConfig(
     val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
     val hub: Hub = Hub(),
     val history: History = History(),
+    val chat: Chat = Chat(),
     val color: Color = Color.WHITE,
     val world: World = World(),
     val security: Security = Security(),
@@ -170,6 +172,48 @@ data class MindustryConfig(
             val outline: Boolean = false,
             val background: Boolean = false,
         )
+    }
+
+    data class Chat(
+        val fooClientCompatibility: Boolean = true,
+        val joinMessages: Boolean = true,
+        val quitMessages: Boolean = true,
+        val name: Name = Name(),
+        val translation: Translation = Translation(),
+    ) {
+        data class Name(
+            val enabled: Boolean = true,
+            val maximumNameSize: Int = 512,
+            val updateInterval: Duration = 500.milliseconds,
+        ) {
+            init {
+                require(maximumNameSize >= 1) { "maximumNameSize must be greater than 0, got $maximumNameSize" }
+                require(updateInterval > Duration.ZERO) {
+                    "updateInterval must be greater than 0, got $updateInterval"
+                }
+            }
+        }
+
+        data class Translation(val backend: Backend = Backend.None) {
+            sealed interface Backend {
+                data object None : Backend
+
+                data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret? = null) : Backend
+
+                data class DeepL(val deeplApiKey: Secret) : Backend
+
+                data class GoogleBasic(val googleBasicApiKey: Secret) : Backend
+
+                data class Rolling(val translators: List<Backend>, val fallback: Backend = None) : Backend
+
+                data class Caching(
+                    val successRetention: Duration = 10.minutes,
+                    val failureRetention: Duration = 10.seconds,
+                    val maximumSize: Int = 1000,
+                    val cachingTranslator: Backend,
+                ) : Backend
+            }
+        }
     }
 }
 

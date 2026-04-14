@@ -28,8 +28,8 @@ import com.xpdustry.imperium.mindustry.account.AchievementCommand
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatCommand
-import com.xpdustry.imperium.mindustry.chat.FlexListener
 import com.xpdustry.imperium.mindustry.chat.HereCommand
+import com.xpdustry.imperium.mindustry.chat.MindustryChatListener
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.command.YesCommand
@@ -118,6 +118,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AccountListener::class,
                 AccountCommand::class,
                 ChatCommand::class,
+                MindustryChatListener::class,
                 HistoryCommand::class,
                 BridgeChatMessageListener::class,
                 ReportCommand::class,
@@ -156,7 +157,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 LogicListener::class,
                 SaveCommand::class,
                 AntiGriefListener::class,
-                FlexListener::class,
                 MetricsListener::class,
                 ChangelogCommand::class,
                 DayNightCycleListener::class,
