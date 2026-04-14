@@ -287,6 +287,18 @@ fun announcement_impending_explosion_alert(block: Block, x: Int, y: Int): Compon
 fun command_team_success(team: Team): Component =
     translatable("imperium.command.team.success", TranslationArguments.array(translatable(team, from(team.color))))
 
+fun command_yes_confirm(command: String): Component =
+    translatable(
+        "imperium.command.yes.confirm",
+        TranslationArguments.array(text(command, LIGHT_GRAY), text("/yes", ACCENT)),
+        SCARLET,
+    )
+
+fun command_yes_failure_no_pending(): Component = translatable("imperium.command.yes.failure.no-pending", SCARLET)
+
+fun command_unknown(): Component =
+    translatable("imperium.command.unknown", TranslationArguments.array(text("/help", ACCENT)), SCARLET)
+
 fun command_achievements(achievements: List<Achievement>): Component =
     if (achievements.isEmpty()) {
         error("No achievements")
