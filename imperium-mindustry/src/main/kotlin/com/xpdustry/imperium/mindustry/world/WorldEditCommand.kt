@@ -11,6 +11,9 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.misc.Rotation
 import com.xpdustry.imperium.mindustry.misc.reloadWorldData
+import com.xpdustry.imperium.mindustry.misc.setBlocksNet
+import com.xpdustry.imperium.mindustry.misc.setFloorsNet
+import com.xpdustry.imperium.mindustry.misc.setOverlaysNet
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
@@ -70,19 +73,25 @@ class WorldEditCommand : ImperiumApplication.Listener {
             return
         }
 
+        val floorTiles = mutableListOf<mindustry.world.Tile>()
+        val overlayTiles = mutableListOf<mindustry.world.Tile>()
+        val blockTiles = mutableListOf<mindustry.world.Tile>()
         repeat(w) { ox ->
             repeat(h) { oy ->
                 if (ox % size == 0 && oy % size == 0) {
                     val tile = Vars.world.tile(x + ox, y + oy)
-                    floor?.let { tile.setFloorNet(it.asFloor()) }
-                    overlay?.let { tile.setOverlayNet(it.asFloor()) }
+                    floor?.let { floorTiles += tile }
+                    overlay?.let { overlayTiles += tile }
                     if (block != null && (override || tile.getLinkedTilesAs(block, Seq()).all { it.build == null })) {
-                        tile.setNet(Blocks.air)
-                        tile.setNet(block, team, rotation.ordinal)
+                        blockTiles += tile
                     }
                 }
             }
         }
+
+        floor?.let { floorTiles.setFloorsNet(it) }
+        overlay?.let { overlayTiles.setOverlaysNet(it) }
+        block?.let { blockTiles.setBlocksNet(it, team, rotation.ordinal) }
 
         // Reindex the spawn blocks
         if (overlay == Blocks.spawn) {
