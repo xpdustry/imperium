@@ -1,18 +1,18 @@
 [versions]
 # platforms
-kotlin-core = "2.3.10"
+kotlin-core = "2.3.20"
 kotlin-coroutine = "1.10.2"
-kotlin-runtime = "4.3.4"
-kotlinx-serialization = "1.10.0"
+kotlin-runtime = "4.3.5"
+kotlinx-serialization = "1.11.0"
 java = "25"
-mindustry = "154.3"
+mindustry = "157"
 
 # libraries
 distributor = "4.2.0"
 junit = "6.0.3"
-testcontainers = "2.0.3"
+testcontainers = "2.0.4"
 guava = "33.5.0-jre"
-hoplite = "2.9.0"
+hoplite = "3.0.0.RC3"
 slf4j = "2.0.17"
 slf4md = "1.2.0"
 sql4md = "1.2.0"
@@ -21,25 +21,24 @@ okhttp = "5.3.2"
 classgraph = "4.8.184"
 logback = "1.5.32"
 hikari = "7.0.2"
-exposed = "1.1.1"
+exposed = "1.2.0"
 h2 = "2.4.240"
-mariadb = "3.5.7"
+mariadb = "3.5.8"
 caffeine = "3.2.3"
 prettytime = "5.0.9.Final"
 time4j = "4.38"
-nohorny = "3.0.3"
-jda = "6.3.1"
+nohorny = "4.0.0-beta.1"
+jda = "6.4.1"
 cloud-core = "2.0.0"
 # cloud-translations = "1.0.0-SNAPSHOT"
 ahocorasick = "0.6.3"
 flex = "1.2.0"
-influxdb = "7.5.0"
 
 # gradle plugins
 toxopid = "4.2.0"
 indra = "4.0.0"
-spotless = "8.3.0"
-shadow = "9.3.2"
+spotless = "8.4.0"
+shadow = "9.4.1"
 
 [libraries]
 # libraries
@@ -74,13 +73,13 @@ mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mari
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
 time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }
-nohorny = { module = "com.xpdustry:nohorny", version.ref = "nohorny" }
+nohorny = { module = "com.xpdustry:nohorny-client", version.ref = "nohorny" }
+nohorny-common = { module = "com.xpdustry:nohorny-common", version.ref = "nohorny" }
 jda = { module = "net.dv8tion:JDA", version.ref = "jda" }
 cloud-core = { module = "org.incendo:cloud-core", version.ref = "cloud-core" }
 # cloud-translations-core = { module = "org.incendo:cloud-translations-core", version.ref = "cloud-translations" }
 ahocorasick = { module = "org.ahocorasick:ahocorasick", version.ref = "ahocorasick" }
 flex = { module = "com.xpdustry:flex", version.ref = "flex" }
-influxdb = { module = "com.influxdb:influxdb-client-kotlin", version.ref = "influxdb" }
 
 # gradle plugins
 toxopid = { module = "com.xpdustry:toxopid", version.ref = "toxopid" }

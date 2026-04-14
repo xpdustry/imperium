@@ -15,6 +15,7 @@ import java.net.InetAddress
 import java.net.URL
 import java.util.Locale
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -177,11 +178,15 @@ data class WebserverConfig(val port: Int = 8080, val host: InetAddress = InetAdd
 sealed interface MetricConfig {
     data object None : MetricConfig
 
+    data class SQL(val interval: Duration = 10.seconds, val retention: Duration = 14.days) : MetricConfig
+
+    @Deprecated("InfluxDB has been removed. Use SQL metrics instead.")
     data class InfluxDB(
         val endpoint: URL,
         val token: Secret,
         val organization: String,
         val bucket: String = "imperium",
         val interval: Duration = 10.seconds,
+        val retention: Duration = 14.days,
     ) : MetricConfig
 }

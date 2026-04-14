@@ -99,6 +99,12 @@ private class PreparedStatementBuilderImpl(private val raw: String, private val 
         return this
     }
 
+    override fun push(value: Double): SQLDatabase.PreparedStatementBuilder {
+        statement.setDouble(index, value)
+        index++
+        return this
+    }
+
     override fun push(value: Float): SQLDatabase.PreparedStatementBuilder {
         statement.setFloat(index, value)
         index++
@@ -171,6 +177,11 @@ private class RowImpl(private val set: ResultSet) : SQLDatabase.Row {
 
     override fun getBoolean(name: String): Boolean? {
         val value = set.getBoolean(name)
+        return if (set.wasNull()) null else value
+    }
+
+    override fun getDouble(name: String): Double? {
+        val value = set.getDouble(name)
         return if (set.wasNull()) null else value
     }
 

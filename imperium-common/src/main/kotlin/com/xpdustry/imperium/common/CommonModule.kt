@@ -27,8 +27,8 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.inject.provider
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.SQLMessageService
-import com.xpdustry.imperium.common.metrics.InfluxDBRegistry
 import com.xpdustry.imperium.common.metrics.MetricsRegistry
+import com.xpdustry.imperium.common.metrics.SQLMetricsRegistry
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnApiIoDetection
@@ -109,10 +109,13 @@ fun MutableInstanceManager.registerCommonModule() {
 
     provider<Executor>("main") { MoreExecutors.directExecutor() }
 
+    @Suppress("DEPRECATION")
     provider<MetricsRegistry> {
         val config = get<ImperiumConfig>()
-        when (config.metrics) {
-            is MetricConfig.InfluxDB -> InfluxDBRegistry(config.server, config.metrics, get())
+        when (val metrics = config.metrics) {
+            is MetricConfig.InfluxDB ->
+                SQLMetricsRegistry(config.server, MetricConfig.SQL(metrics.interval, metrics.retention), get())
+            is MetricConfig.SQL -> SQLMetricsRegistry(config.server, metrics, get())
             is MetricConfig.None -> MetricsRegistry.None
         }
     }

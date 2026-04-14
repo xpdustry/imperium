@@ -34,6 +34,7 @@ dependencies {
     compileOnly(libs.distributor.common)
     compileOnly(libs.distributor.permission.rank)
     compileOnly(libs.nohorny)
+    compileOnly(libs.nohorny.common)
     compileOnly(libs.flex)
     implementation(libs.jsoup)
     implementation(libs.ahocorasick)
@@ -125,7 +126,7 @@ val downloadDistributorPermissionRank by tasks.registering(GithubAssetDownload::
 val downloadNoHorny by tasks.registering(GithubAssetDownload::class) {
     owner = "xpdustry"
     repo = "nohorny"
-    asset = "nohorny.jar"
+    asset = "nohorny-client.jar"
     version = libs.versions.nohorny.map { "v$it" }
 }
 

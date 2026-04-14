@@ -25,11 +25,10 @@ object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
             .addDefaultPreprocessors()
             .addDefaultParamMappers()
             .addParameterMapper(KebabCaseParamMapper)
-            .addDefaultPropertySources()
             .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
             .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
-            // .strict() TODO Re-enable when hoplite 2.9.1 comes out, see https://github.com/sksamuel/hoplite/pull/509
+            .strict()
             .withReport()
             .withReportPrintFn(logger::debug)
             .withExplicitSealedTypes("_type")

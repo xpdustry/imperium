@@ -32,6 +32,7 @@ import com.xpdustry.imperium.mindustry.chat.FlexListener
 import com.xpdustry.imperium.mindustry.chat.HereCommand
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
+import com.xpdustry.imperium.mindustry.command.YesCommand
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.control.ControlListener
@@ -129,6 +130,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 RockTheVoteCommand::class,
                 CoreBlockListener::class,
                 HelpCommand::class,
+                YesCommand::class,
                 WaveCommand::class,
                 KillAllCommand::class,
                 DumpCommand::class,

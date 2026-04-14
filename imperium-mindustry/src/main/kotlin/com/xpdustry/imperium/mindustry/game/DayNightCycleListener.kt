@@ -12,6 +12,7 @@ import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.misc.dayNightCycle
 import mindustry.Vars
 import mindustry.gen.Call
+import mindustry.io.JsonIO
 
 class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
 
@@ -19,7 +20,7 @@ class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Li
 
     @EventHandler
     fun onMenuToPlayEvent(event: MenuToPlayEvent) {
-        if (!Vars.state.rules.lighting) {
+        if (!Vars.state.rules.fog && !Vars.state.rules.lighting) {
             Vars.state.map.dayNightCycle = true
             Vars.state.rules.lighting = true
         }
@@ -27,9 +28,10 @@ class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Li
 
     @TaskHandler(interval = 1, unit = MindustryTimeUnit.SECONDS)
     fun onSolarCycleUpdate() {
-        if (!Vars.state.isGame || !Vars.state.rules.lighting || !Vars.state.map.dayNightCycle) return
+        if (!Vars.state.isGame || Vars.state.rules.fog || !Vars.state.rules.lighting || !Vars.state.map.dayNightCycle)
+            return
         val time = ((System.currentTimeMillis() / 1000L) % cycle) / (cycle * 0.5F)
         Vars.state.rules.ambientLight.a = Interp.sine.apply(0F, 0.8F, time)
-        Call.setRules(Vars.state.rules)
+        Call.setRule("ambientLight", JsonIO.write(Vars.state.rules.ambientLight))
     }
 }
