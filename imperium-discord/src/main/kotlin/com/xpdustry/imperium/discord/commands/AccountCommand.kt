@@ -14,18 +14,18 @@ import com.xpdustry.imperium.common.inject.InstanceManager
 import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.string.Password
-import com.xpdustry.imperium.discord.misc.await
-import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
-import net.dv8tion.jda.api.components.buttons.Button
-import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import com.xpdustry.imperium.discord.command.MenuCommand
 import com.xpdustry.imperium.discord.misc.MessageCreate
-import net.dv8tion.jda.api.components.actionrow.ActionRow
+import com.xpdustry.imperium.discord.misc.await
 import com.xpdustry.imperium.discord.service.DiscordService
-import net.dv8tion.jda.api.entities.User
-import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import java.security.SecureRandom
 import kotlin.math.absoluteValue
+import net.dv8tion.jda.api.components.actionrow.ActionRow
+import net.dv8tion.jda.api.components.buttons.Button
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
+import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 
 class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val accounts = instances.get<AccountManager>()
@@ -33,7 +33,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     private val discord = instances.get<DiscordService>()
     private val config = instances.get<ImperiumConfig>()
     // maps a randId to an account id
-    private val buttonMapping = mutableMapOf<Int,Int>()
+    private val buttonMapping = mutableMapOf<Int, Int>()
 
     @ImperiumCommand(["account", "edit", "rank"], Rank.ADMIN)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
@@ -91,7 +91,9 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
             id = accounts.selectByDiscord(target.toLong())?.id
         }
         if (id == null) {
-            reply.sendMessage("Account cannot be recovered, please contact Zetamap or Phinner for manual recovery.").await()
+            reply
+                .sendMessage("Account cannot be recovered, please contact Zetamap or Phinner for manual recovery.")
+                .await()
             return
         }
         val account = accounts.selectById(id) ?: reply.sendMessage("Account not found.").await()
@@ -105,11 +107,19 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         val secure = SecureRandom()
         val randId = secure.nextInt().absoluteValue // no negatives
         buttonMapping[randId] = id // can be duplicate, but low chance due to limited account recoveries
-        channel.sendMessage(MessageCreate {
-            // How do i translate this
-            content = "${targetUser.asMention} Your account recovery has been requested by ${interaction.user.asMention}. Please confirm by pressing the button below."
-            components += ActionRow.of(Button.primary("confirm_recovery:$randId:${targetUser.idLong}", "Confirm Recovery"))
-        }).await()
+        channel
+            .sendMessage(
+                MessageCreate {
+                    // How do i translate this
+                    content =
+                        "${targetUser.asMention} Your account recovery has been requested by ${interaction.user.asMention}. Please confirm by pressing the button below."
+                    components +=
+                        ActionRow.of(
+                            Button.primary("confirm_recovery:$randId:${targetUser.idLong}", "Confirm Recovery")
+                        )
+                }
+            )
+            .await()
         reply.sendMessage("Recovery request sent to the user.").await()
     }
 
@@ -128,12 +138,17 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         val result = accounts.setPassword(accountId, Password(code))
         when (result) {
             AccountResult.Success -> {
-                val ignored = interaction.reply("Your password has been set to `$code`. Please change it after logging in.").setEphemeral(true).await()
+                val ignored =
+                    interaction
+                        .reply("Your password has been set to `$code`. Please change it after logging in.")
+                        .setEphemeral(true)
+                        .await()
                 val ignored2 = interaction.message.editMessageComponents().setComponents().await()
                 Unit
             }
             is AccountResult.InvalidPassword -> {
-                val ignored = interaction.reply("Invalid password: ${result.missing.joinToString()}").setEphemeral(true).await()
+                val ignored =
+                    interaction.reply("Invalid password: ${result.missing.joinToString()}").setEphemeral(true).await()
                 Unit
             }
             else -> {
@@ -157,9 +172,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
         val secureRandom = SecureRandom()
         val start: StringBuilder = StringBuilder()
         start.append("!1P") // ensure the code passes password req
-        return start.append((1..6)
-            .map { charPool[secureRandom.nextInt(charPool.length)] }
-            .joinToString("")).toString()
+        return start.append((1..6).map { charPool[secureRandom.nextInt(charPool.length)] }.joinToString("")).toString()
     }
 
     companion object {
