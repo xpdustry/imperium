@@ -188,9 +188,7 @@ data class MindustryConfig(
         ) {
             init {
                 require(maximumNameSize >= 1) { "maximumNameSize must be greater than 0, got $maximumNameSize" }
-                require(updateInterval > Duration.ZERO) {
-                    "updateInterval must be greater than 0, got $updateInterval"
-                }
+                require(updateInterval > Duration.ZERO) { "updateInterval must be greater than 0, got $updateInterval" }
             }
         }
 
