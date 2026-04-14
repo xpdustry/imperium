@@ -4,11 +4,24 @@ package com.xpdustry.imperium.mindustry.world
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
+import com.xpdustry.distributor.api.component.TextComponent.text
+import com.xpdustry.distributor.api.gui.Action
+import com.xpdustry.distributor.api.gui.BiAction
+import com.xpdustry.distributor.api.gui.Window
+import com.xpdustry.distributor.api.gui.menu.ListTransformer
+import com.xpdustry.distributor.api.gui.menu.MenuManager
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
+import com.xpdustry.imperium.mindustry.misc.component1
+import com.xpdustry.imperium.mindustry.misc.component2
+import com.xpdustry.imperium.mindustry.misc.component3
+import com.xpdustry.imperium.mindustry.misc.key
 import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -22,13 +35,15 @@ import mindustry.game.EventType
 import mindustry.game.Gamemode
 import mindustry.game.Team
 import mindustry.gen.Call
+import mindustry.gen.Player
 import mindustry.type.Item
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
 
-class ReviveCoreCommand : ImperiumApplication.Listener {
+class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listener {
     private val destroyedCores = linkedMapOf<TilePosition, DestroyedCore>()
     private val reviveCooldowns = mutableMapOf<Team, Instant>()
+    private val menu = createMenu(instances.get())
 
     @EventHandler
     fun onBlockDestroyEvent(event: EventType.BlockDestroyEvent) {
@@ -45,25 +60,39 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["revivecore|rc"])
     @ClientSide
-    @ServerSide
-    fun onReviveCoreListShortcut(sender: CommandSender) {
-        onReviveCoreListCommand(sender, 1)
+    fun onReviveCoreCommand(sender: CommandSender) {
+        val cores = getDestroyedCores()
+        if (cores.isEmpty()) {
+            sender.reply("No destroyed cores can be revived right now.")
+            return
+        }
+        menu.create(sender.player).show()
     }
 
-    @ImperiumCommand(["revivecore|rc"])
+    @ImperiumCommand(["revivecore|rc", "list"])
     @ClientSide
-    fun onReviveCoreCommand(sender: CommandSender, @Range(min = "0") id: Int) {
-        reviveCore(sender, sender.player.team(), id, client = true)
+    fun onReviveCoreListCommand(sender: CommandSender) {
+        onReviveCoreCommand(sender)
     }
 
     @ImperiumCommand(["revivecore|rc"])
     @ServerSide
     fun onReviveCoreCommand(sender: CommandSender, @AllTeams team: Team, @Range(min = "0") id: Int) {
-        reviveCore(sender, team, id, client = false)
+        val core = getDestroyedCores().getOrNull(id)
+        if (core == null) {
+            sender.error("Invalid revive core id. Use `rc list` to view revivable cores.")
+            return
+        }
+
+        val result = reviveCore(team, core, null)
+        if (result.success) {
+            sender.reply(result.message)
+        } else {
+            sender.error(result.message)
+        }
     }
 
     @ImperiumCommand(["revivecore|rc", "list"])
-    @ClientSide
     @ServerSide
     fun onReviveCoreListCommand(sender: CommandSender, @Range(min = "1") page: Int = 1) {
         val cores = getDestroyedCores()
@@ -82,59 +111,73 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
         val firstId = (page - 1) * PAGE_SIZE
         sender.reply(
             buildString {
-                appendLine("[accent]List of revivable cores[]")
+                appendLine("List of revivable cores")
                 appendLine("------------------------------")
-                pageEntries.forEachIndexed { index, core ->
-                    appendLine(
-                        "[orange]#${firstId + index}[] ${core.block.localizedName} " +
-                            "[lightgray](${core.tileX}, ${core.tileY})[] - ${formatCost(reviveCost(core.block))}"
-                    )
-                }
-                append("Page [accent]$page[] of [accent]${pages.size}[]")
+                pageEntries.forEachIndexed { index, core -> appendLine("#${firstId + index} ${renderCore(core)}") }
+                append("Page $page of ${pages.size}")
             }
         )
     }
 
-    private fun reviveCore(sender: CommandSender, team: Team, id: Int, client: Boolean) {
-        val cores = getDestroyedCores()
-        val core = cores.getOrNull(id)
-        if (core == null) {
-            sender.error("Invalid revive core id. Use /rc list to view revivable cores.")
-            return
+    private fun createMenu(plugin: MindustryPlugin): MenuManager =
+        MenuManager.create(plugin).apply {
+            addTransformer { (pane, _, viewer) ->
+                pane.title = text("Revive Core")
+                pane.content = text(menuContent(viewer))
+            }
+            addTransformer(
+                ListTransformer<DestroyedCore>()
+                    .setProvider { getDestroyedCores() }
+                    .setRenderer { core -> text(renderCore(core)) }
+                    .setHeight(8)
+                    .setChoiceAction(
+                        BiAction.with(REVIVE_CORE)
+                            .then(BiAction.from(Action.delegate(this@ReviveCoreCommand::onReviveCoreSelection)))
+                    )
+            )
         }
 
+    private fun onReviveCoreSelection(window: Window): Action {
+        val core = window.state[REVIVE_CORE]!!
+        val result = reviveCore(window.viewer.team(), core, window.viewer)
+        val action =
+            if (result.success) {
+                Action.hideAll()
+            } else {
+                Action(Window::show)
+            }
+        return action.then(Action.audience { it.sendAnnouncement(text(result.message)) })
+    }
+
+    private fun reviveCore(team: Team, core: DestroyedCore, player: Player?): ReviveResult {
         if (!isTileAvailable(core)) {
             destroyedCores.remove(TilePosition(core.tileX, core.tileY))
-            sender.error("That core can no longer be revived.")
-            return
+            return ReviveResult(false, "That core can no longer be revived.")
         }
 
         val cooldown = getRemainingCooldown(team)
         if (cooldown > Duration.ZERO) {
-            sender.error("Your team must wait ${formatDuration(cooldown)} before reviving another core.")
-            return
+            return ReviveResult(false, "Your team must wait ${formatDuration(cooldown)} before reviving another core.")
         }
 
         val cost = reviveCost(core.block)
         val items = team.items()
         if (cost.any { !items.has(it.item, it.amount) }) {
-            sender.error("Not enough items to revive ${core.block.localizedName}. Need ${formatCost(cost)}.")
-            return
+            return ReviveResult(
+                false,
+                "Not enough items to revive ${core.block.localizedName}. Need ${formatCost(cost)}.",
+            )
         }
 
         cost.forEach { items.remove(it.item, it.amount) }
-        Call.constructFinish(
-            Vars.world.tile(core.tileX, core.tileY),
-            core.block,
-            if (client) sender.player.unit() else null,
-            0,
-            team,
-            false,
-        )
+        Call.constructFinish(Vars.world.tile(core.tileX, core.tileY), core.block, player?.unit(), 0, team, false)
 
         destroyedCores.remove(TilePosition(core.tileX, core.tileY))
         reviveCooldowns[team] = Instant.now().plus(COOLDOWN.toJavaDuration())
-        sender.reply("Revived ${core.block.localizedName} at (${core.tileX}, ${core.tileY}) for ${formatCost(cost)}.")
+        return ReviveResult(
+            true,
+            "Revived ${core.block.localizedName} at (${core.tileX}, ${core.tileY}) for ${formatCost(cost)}.",
+        )
     }
 
     private fun getDestroyedCores(): List<DestroyedCore> {
@@ -162,8 +205,20 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
         return if (remaining.isNegative) Duration.ZERO else remaining.toKotlinDuration()
     }
 
+    private fun menuContent(viewer: Player): String {
+        val cooldown = getRemainingCooldown(viewer.team())
+        return if (cooldown > Duration.ZERO) {
+            "Select a destroyed core to revive.\nCooldown: ${formatDuration(cooldown)} remaining."
+        } else {
+            "Select a destroyed core to revive."
+        }
+    }
+
+    private fun renderCore(core: DestroyedCore): String =
+        "${core.block.localizedName} (${core.tileX}, ${core.tileY}) - ${formatCost(reviveCost(core.block))}"
+
     private fun formatCost(cost: List<ItemRequirement>): String =
-        cost.joinToString(" + ") { requirement -> "[accent]${requirement.amount}[] ${requirement.item.localizedName}" }
+        cost.joinToString(" + ") { requirement -> "${requirement.amount} ${requirement.item.localizedName}" }
 
     private fun formatDuration(duration: Duration): String =
         duration.toComponents { minutes, seconds, _ ->
@@ -180,7 +235,10 @@ class ReviveCoreCommand : ImperiumApplication.Listener {
 
     private data class ItemRequirement(val item: Item, val amount: Int)
 
+    private data class ReviveResult(val success: Boolean, val message: String)
+
     private companion object {
+        private val REVIVE_CORE = key<DestroyedCore>("revive_core")
         const val PAGE_SIZE = 5
         const val DEFAULT_COST_FACTOR = 3000
         const val ATTACK_COST_FACTOR = 1000
