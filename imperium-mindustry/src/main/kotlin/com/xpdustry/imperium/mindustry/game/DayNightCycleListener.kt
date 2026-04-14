@@ -31,6 +31,6 @@ class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Li
             return
         val time = ((System.currentTimeMillis() / 1000L) % cycle) / (cycle * 0.5F)
         Vars.state.rules.ambientLight.a = Interp.sine.apply(0F, 0.8F, time)
-        Call.setRules(Vars.state.rules)
+        Call.setRule("ambientLight", Vars.state.rules.ambientLight)
     }
 }
