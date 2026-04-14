@@ -23,6 +23,8 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.misc.setBlocksNet
+import com.xpdustry.imperium.mindustry.misc.setOverlaysNet
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.max
@@ -227,14 +229,17 @@ class ExcavateCommand(instances: InstanceManager) :
         for (y in area.y1..area.y2) {
             delay(100.milliseconds)
             runMindustryThread {
+                val tiles = mutableListOf<mindustry.world.Tile>()
+                val overlays = mutableListOf<mindustry.world.Tile>()
                 for (x in area.x1..area.x2) {
                     val tile = Vars.world.tile(x, y)
                     if (!(tile.block()?.isStatic == true || tile.block() is TreeBlock)) {
                         continue
                     }
-                    val floor = tile.floor()
-                    Call.setTile(tile, Blocks.air, Team.derelict, 0)
-                    Call.setFloor(tile, floor, Blocks.air)
+                    tiles += tile
+                    if (tile.overlay() != Blocks.air) {
+                        overlays += tile
+                    }
                     Call.effect(
                         Fx.flakExplosion,
                         x.toFloat() * Vars.tilesize,
@@ -243,6 +248,8 @@ class ExcavateCommand(instances: InstanceManager) :
                         Color.white,
                     )
                 }
+                tiles.setBlocksNet(Blocks.air, Team.derelict)
+                overlays.setOverlaysNet(Blocks.air)
                 val cx = area.x1 + ((area.x2 - area.x1) / 2F) * Vars.tilesize
                 Call.soundAt(Sounds.blockPlace1, cx, y.toFloat() * Vars.tilesize, 1F, getNextPitch(sequence))
             }
