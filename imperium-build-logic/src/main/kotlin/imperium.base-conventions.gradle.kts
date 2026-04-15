@@ -30,6 +30,7 @@ kotlin {
     compilerOptions {
         javaParameters = true
         jvmTarget = JvmTarget.fromTarget(libs.versions.java.get())
+        freeCompilerArgs.add("-XXLanguage:+UnnamedLocalVariables") // TODO Remove when it hits stable
     }
 }
 
