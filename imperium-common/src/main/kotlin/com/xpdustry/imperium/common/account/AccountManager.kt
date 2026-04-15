@@ -62,6 +62,8 @@ interface AccountManager {
 
     suspend fun updatePassword(account: Int, oldPassword: Password, newPassword: Password): AccountResult
 
+    suspend fun setPassword(account: Int, password: Password): AccountResult
+
     suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean
 
     suspend fun selectAchievements(account: Int): Map<Achievement, Boolean>
@@ -195,6 +197,22 @@ class SimpleAccountManager(
             }
 
             val hash = ImperiumArgon2.create(newPassword)
+            AccountTable.update({ AccountTable.id eq account }) {
+                it[passwordHash] = hash.hash
+                it[passwordSalt] = hash.salt
+            }
+
+            return@newSuspendTransaction AccountResult.Success
+        }
+
+    override suspend fun setPassword(account: Int, password: Password): AccountResult =
+        provider.newSuspendTransaction {
+            val missing = DEFAULT_PASSWORD_REQUIREMENTS.findMissingPasswordRequirements(password)
+            if (missing.isNotEmpty()) {
+                return@newSuspendTransaction AccountResult.InvalidPassword(missing)
+            }
+
+            val hash = ImperiumArgon2.create(password)
             AccountTable.update({ AccountTable.id eq account }) {
                 it[passwordHash] = hash.hash
                 it[passwordSalt] = hash.salt
