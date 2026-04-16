@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.mindustry.security
 
+import arc.Core
 import arc.Events
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
@@ -11,7 +12,6 @@ import com.xpdustry.distributor.api.gui.input.TextInputManager
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -25,12 +25,11 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
-import com.xpdustry.imperium.mindustry.misc.component3
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -58,7 +57,7 @@ class AdminRequestListener(
     private val plugin: MindustryPlugin,
     private val punishments: PunishmentManager,
     private val users: UserManager,
-    private val accounts: AccountManager,
+    private val store: DataStoreService,
     private val codec: IdentifierCodec,
 ) : ImperiumApplication.Listener {
     private lateinit var adminActionInterface: WindowManager
@@ -154,11 +153,9 @@ class AdminRequestListener(
             }
 
         Vars.net.handleServer(AdminRequestCallPacket::class.java) { con, packet ->
-            ImperiumScope.MAIN.launch {
-                // TODO We REALLY need a proper local account cache...
-                val playerRank = runCatching { getUserRank(con.player) }.getOrNull() ?: Rank.EVERYONE
-                runMindustryThread { interceptAdminRequest(con, packet, playerRank) }
-            }
+            val player = con.player ?: return@handleServer
+            val playerRank = store.selectAccountBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE
+            Core.app.post { interceptAdminRequest(con, packet, playerRank) }
         }
     }
 
@@ -295,28 +292,23 @@ class AdminRequestListener(
             )
         }
 
-    private fun handleWaveSkip(requester: Player) =
-        ImperiumScope.MAIN.launch {
-            val rank = accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE
-            if (rank >= Rank.MODERATOR) {
-                runMindustryThread {
-                    Vars.logic.skipWave()
-                    logger.info("{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
-                }
-            } else {
-                requester.showInfoMessage("You don't have permission to skip the wave.")
-                logger.warn(
-                    "{} ({}) attempted to skip the wave without permission",
-                    requester.plainName(),
-                    requester.uuid(),
-                )
-            }
+    private fun handleWaveSkip(requester: Player) {
+        val rank = store.selectAccountBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
+        if (rank >= Rank.MODERATOR) {
+            Vars.logic.skipWave()
+            logger.info("{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
+        } else {
+            requester.showInfoMessage("You don't have permission to skip the wave.")
+            logger.warn(
+                "{} ({}) attempted to skip the wave without permission",
+                requester.plainName(),
+                requester.uuid(),
+            )
         }
-
-    private suspend fun getUserRank(requester: Player): Rank {
-        val account = accounts.selectBySession(requester.sessionKey) ?: return Rank.EVERYONE
-        return account.rank
     }
+
+    private fun getUserRank(requester: Player): Rank =
+        store.selectAccountBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
 
     companion object {
         private val logger by LoggerDelegate()

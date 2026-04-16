@@ -5,7 +5,7 @@ import arc.util.Strings
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -28,7 +28,7 @@ import mindustry.game.EventType
 class BridgeChatMessageListener(
     private val config: ImperiumConfig,
     private val messenger: MessageService,
-    private val accounts: AccountManager,
+    private val accounts: AccountService,
     private val messages: MindustryMessagePipeline,
 ) : ImperiumApplication.Listener {
 

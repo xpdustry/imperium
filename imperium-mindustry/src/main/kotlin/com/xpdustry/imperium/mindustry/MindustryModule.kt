@@ -32,6 +32,7 @@ import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
 import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +51,7 @@ internal fun DependencyService.Binder.registerMindustryModule(plugin: MindustryP
 
     // Gameplay services.
     bindToImpl<Historian, SimpleHistorian>()
+    bindToImpl<DataStoreService, DataStoreService>()
     bindToImpl<ClientDetector, SimpleClientDetector>()
     bindToImpl<GatekeeperPipeline, SimpleGatekeeperPipeline>()
     bindToImpl<BadWordDetector, SimpleBadWordDetector>()

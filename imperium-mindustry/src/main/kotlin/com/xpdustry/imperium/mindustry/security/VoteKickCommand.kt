@@ -13,10 +13,8 @@ import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
@@ -43,6 +41,7 @@ import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import java.net.InetAddress
 import java.util.Collections
@@ -51,7 +50,6 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
-import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
@@ -74,7 +72,7 @@ class VoteKickCommand(
     private val config: ImperiumConfig,
     private val users: UserManager,
     private val marks: MarkedPlayerManager,
-    private val accounts: AccountManager,
+    private val store: DataStoreService,
     private val afk: AfkManager,
     plugin: MindustryPlugin,
 ) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes), ImperiumApplication.Listener {
@@ -99,15 +97,9 @@ class VoteKickCommand(
 
     @EventHandler
     internal fun onPlayerLogin(event: PlayerLoginEvent) {
-        ImperiumScope.MAIN.launch {
-            val rank = accounts.selectBySession(event.player.sessionKey)?.rank
-            if (rank != null && rank >= Rank.OVERSEER) {
-                runMindustryThread {
-                    manager.sessions.values
-                        .filter { it.objective.target == event.player }
-                        .forEach { it.failure(event.player) }
-                }
-            }
+        val rank = store.selectAccountBySessionKey(event.player.sessionKey)?.account?.rank
+        if (rank != null && rank >= Rank.OVERSEER) {
+            manager.sessions.values.filter { it.objective.target == event.player }.forEach { it.failure(event.player) }
         }
     }
 

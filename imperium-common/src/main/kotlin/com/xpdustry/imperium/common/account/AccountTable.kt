@@ -26,7 +26,10 @@ object AccountSessionTable : Table("account_session") {
     val uuid = long("uuid")
     val usid = long("usid")
     val address = binary("address", 16)
-    val expiration = timestamp("creation")
+    val server = varchar("server", 32).default("")
+    val creation = timestamp("creation").defaultExpression(CurrentTimestamp)
+    val lastLogin = timestamp("last_login").defaultExpression(CurrentTimestamp)
+    val expiration = timestamp("expiration").defaultExpression(CurrentTimestamp)
     override val primaryKey = PrimaryKey(uuid, usid, address)
 }
 
@@ -39,8 +42,8 @@ object AccountAchievementTable : Table("account_achievement") {
 
 object AccountMetadataTable : Table("account_metadata") {
     val account = reference("account_id", AccountTable, onDelete = ReferenceOption.CASCADE)
-    val key = varchar("key", 32)
-    val value = varchar("value", 64)
+    val key = varchar("key", 64)
+    val value = text("value")
     override val primaryKey = PrimaryKey(account, key)
 }
 
