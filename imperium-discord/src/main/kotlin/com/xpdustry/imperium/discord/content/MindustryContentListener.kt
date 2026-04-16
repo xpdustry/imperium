@@ -3,9 +3,8 @@ package com.xpdustry.imperium.discord.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.content.MindustryMap
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.image.inputStream
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.discord.misc.Embed
@@ -27,9 +26,9 @@ import net.dv8tion.jda.api.entities.channel.middleman.MessageChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 import net.dv8tion.jda.api.utils.FileUpload
 
-class MindustryContentListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val discord = instances.get<DiscordService>()
-    private val content = instances.get<MindustryContentHandler>()
+@Inject
+class MindustryContentListener(private val discord: DiscordService, private val content: MindustryContentHandler) :
+    ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->

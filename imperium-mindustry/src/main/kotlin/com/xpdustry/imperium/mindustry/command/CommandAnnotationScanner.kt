@@ -13,6 +13,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
@@ -52,6 +53,7 @@ import org.incendo.cloud.setting.ManagerSetting
 
 // import org.incendo.cloud.translations.TranslationBundle
 
+@Inject
 class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val config: ImperiumConfig) :
     PluginAnnotationProcessor<Void> {
     private lateinit var clientCommandManager: MindustryCommandManager<CommandSender>

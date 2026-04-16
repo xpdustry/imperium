@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.application
 
-import com.xpdustry.imperium.common.inject.InstanceManager
+import com.xpdustry.imperium.common.dependency.DependencyService
 
 interface ImperiumApplication {
 
-    val instances: InstanceManager
+    val instances: DependencyService
 
     fun init()
 

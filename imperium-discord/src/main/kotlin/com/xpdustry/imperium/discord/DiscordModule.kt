@@ -2,10 +2,9 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
-import com.xpdustry.imperium.common.inject.MutableInstanceManager
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.provider
+import com.xpdustry.imperium.common.dependency.DependencyService
 import com.xpdustry.imperium.common.network.Discovery
+import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.discord.command.DiscordCommandDispatcher
 import com.xpdustry.imperium.discord.content.MindustryContentHandler
@@ -13,21 +12,29 @@ import com.xpdustry.imperium.discord.content.MindustryToolContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
-import java.util.function.Supplier
 import kotlin.io.path.Path
 
-fun MutableInstanceManager.registerDiscordModule() {
-    provider<DiscordService> { SimpleDiscordService(get(), get(), get()) }
+fun DependencyService.Binder.registerDiscordModule() {
+    // Runtime.
+    bindToImpl<DiscordService, SimpleDiscordService>()
+    bindToFunc<Path>(::createDiscordDirectory, "directory")
 
-    provider<Path>("directory") { Path(".") }
+    // Server identity.
+    bindToFunc<DiscoveryDataSupplier>(::createDiscordDiscoveryDataSupplier)
+    bindToFunc<ImperiumVersion>(::createDiscordImperiumVersion)
 
-    provider<AnnotationScanner> { DiscordCommandDispatcher(get(), get()) }
-
-    provider<MindustryContentHandler> { MindustryToolContentHandler(get()) }
-
-    provider<Supplier<Discovery.Data>>("discovery") { Supplier { Discovery.Data.Discord } }
-
-    provider<ImperiumVersion> {
-        ImperiumVersion.parse(this::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText())
-    }
+    // Discord tooling.
+    bindToImpl<AnnotationScanner, DiscordCommandDispatcher>()
+    bindToImpl<MindustryContentHandler, MindustryToolContentHandler>()
 }
+
+private fun createDiscordDirectory(): Path = Path(".")
+
+private fun createDiscordDiscoveryDataSupplier(): DiscoveryDataSupplier = DiscoveryDataSupplier {
+    Discovery.Data.Discord
+}
+
+private fun createDiscordImperiumVersion(): ImperiumVersion =
+    ImperiumVersion.parse(
+        SimpleDiscordService::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText()
+    )

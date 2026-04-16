@@ -11,8 +11,7 @@ import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -35,10 +34,10 @@ import mindustry.game.EventType.Trigger
 import mindustry.gen.Groups
 import mindustry.gen.Unit as MindustryUnit
 
-class FormationListener(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class FormationListener constructor(private val accounts: AccountManager) : ImperiumApplication.Listener {
 
     private val interval = Interval()
-    private val accounts = instances.get<AccountManager>()
     private val formations = mutableMapOf<Int, FormationContext>()
 
     @TriggerHandler(Trigger.update)

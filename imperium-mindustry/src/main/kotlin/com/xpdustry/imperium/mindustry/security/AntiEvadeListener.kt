@@ -5,8 +5,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.user.User
@@ -17,8 +16,8 @@ import kotlin.time.toJavaDuration
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
-class AntiEvadeListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val users = instances.get<UserManager>()
+@Inject
+class AntiEvadeListener constructor(private val users: UserManager) : ImperiumApplication.Listener {
     private val quits =
         buildCache<MindustryUUID, String> {
             maximumSize(1000)

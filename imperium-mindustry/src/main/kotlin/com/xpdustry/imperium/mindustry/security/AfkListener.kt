@@ -10,6 +10,7 @@ import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -30,6 +31,7 @@ interface AfkManager {
     fun isPlayerAfk(player: Player): Boolean
 }
 
+@Inject
 class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
     AfkManager, ImperiumApplication.Listener {
     private val lastActivity = PlayerMap<Instant>(plugin)

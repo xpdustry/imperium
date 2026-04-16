@@ -7,10 +7,9 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -29,9 +28,9 @@ import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
 
-class CoreBlockListener(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class CoreBlockListener constructor(private val config: ImperiumConfig) : ImperiumApplication.Listener {
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
-    private val config = instances.get<ImperiumConfig>()
     private val damageRateLimiter =
         SimpleRateLimiter<CoreClusterDamageKey>(1, config.mindustry.world.coreDamageAlertDelay)
 

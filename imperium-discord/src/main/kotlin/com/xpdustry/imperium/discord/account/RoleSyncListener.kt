@@ -7,8 +7,7 @@ import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
@@ -19,10 +18,12 @@ import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.api.events.guild.update.GuildUpdateBoostCountEvent
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class RoleSyncListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val discord = instances.get<DiscordService>()
-    private val accounts = instances.get<AccountManager>()
-    private val messenger = instances.get<MessageService>()
+@Inject
+class RoleSyncListener(
+    private val discord: DiscordService,
+    private val accounts: AccountManager,
+    private val messenger: MessageService,
+) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<GuildMemberJoinEvent> { discord.syncRoles(it.member) }

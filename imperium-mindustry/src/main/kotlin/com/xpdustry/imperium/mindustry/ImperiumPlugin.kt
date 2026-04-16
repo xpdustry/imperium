@@ -8,6 +8,7 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.translation.BundleTranslationSource
 import com.xpdustry.distributor.api.translation.ResourceBundles
 import com.xpdustry.distributor.api.translation.TranslationSource
@@ -16,8 +17,6 @@ import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
@@ -33,7 +32,6 @@ import com.xpdustry.imperium.mindustry.chat.MindustryChatListener
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
 import com.xpdustry.imperium.mindustry.command.YesCommand
-import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.control.ControlListener
 import com.xpdustry.imperium.mindustry.formation.FormationListener
@@ -81,17 +79,12 @@ import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
-    private val application = MindustryImperiumApplication()
+    private val application = MindustryImperiumApplication(this)
 
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        with(application.instances) {
-            registerApplication(application)
-            registerCommonModule()
-            registerMindustryModule(this@ImperiumPlugin)
-            createAll()
-        }
+        application.createAll()
 
         registerService(
             TranslationSource::class,
@@ -107,10 +100,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             },
         )
 
-        registerService(
-            ComponentRendererProvider::class,
-            ImperiumComponentRendererProvider(application.instances.get()),
-        )
+        registerService(ComponentRendererProvider::class, application.instances.get<ComponentRendererProvider>())
 
         sequenceOf(
                 ConventionListener::class,
@@ -176,7 +166,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         val processor =
             PluginAnnotationProcessor.compose(
-                CommandAnnotationScanner(this, application.instances.get()),
+                application.instances.get<CommandAnnotationScanner>(),
                 PluginAnnotationProcessor.tasks(this),
                 PluginAnnotationProcessor.events(this),
                 PluginAnnotationProcessor.triggers(this),
@@ -201,7 +191,14 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         Distributor.get().serviceManager.register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }
 
-    private inner class MindustryImperiumApplication : BaseImperiumApplication(logger) {
+    private inner class MindustryImperiumApplication(plugin: MindustryPlugin) :
+        BaseImperiumApplication(
+            logger,
+            modules = {
+                registerCommonModule()
+                registerMindustryModule(plugin)
+            },
+        ) {
         private var exited = false
 
         override fun exit(status: ExitStatus) {

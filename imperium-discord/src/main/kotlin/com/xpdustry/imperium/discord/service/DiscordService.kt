@@ -6,6 +6,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
@@ -41,6 +42,7 @@ interface DiscordService {
     suspend fun syncRoles(member: Member)
 }
 
+@Inject
 class SimpleDiscordService(
     private val config: ImperiumConfig,
     private val http: OkHttpClient,

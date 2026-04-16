@@ -14,14 +14,14 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.jvmErasure
 import okio.withLock
 
-class DependencyService(val configure: Binder.() -> Unit) {
+class DependencyService(configure: Binder.() -> Unit) {
 
     private val factories = hashMapOf<Key<*>, (ResolutionContext) -> Any>()
     private val instances = linkedMapOf<Key<*>, Any>()
     private val lock = ReentrantLock()
 
     init {
-        Binder().configure()
+        Binder(this).configure()
     }
 
     inline fun <reified T : Any> get(name: String = ""): T = this.get(T::class, name)
@@ -60,28 +60,13 @@ class DependencyService(val configure: Binder.() -> Unit) {
             return key.type.cast(instance)
         }
 
-    private fun KFunction<*>.getParametersWithKeys() =
-        parameters.associateWith {
-            require(it.kind == KParameter.Kind.VALUE) { "${it.name} is not a value parameter in $this" }
-            Key(it.type.jvmErasure, it.findAnnotation<Named>()?.value ?: "")
-        }
-
-    private fun <T : Any> KClass<T>.getInjectableConstructor(): KFunction<T> {
-        if (this.hasAnnotation<Inject>()) {
-            return this.primaryConstructor
-                ?: error("$this has @Inject at the top level, but has no primary constructor")
-        }
-        return this.constructors.firstOrNull { it.hasAnnotation<Inject>() }
-            ?: error("No injectable constructor for $this")
-    }
-
-    inner class Binder {
+    class Binder internal constructor(private val service: DependencyService) {
 
         inline fun <reified T : Any> bindToProv(name: String = "", noinline provider: () -> T) =
             bindToProv(T::class, name, provider)
 
         fun <T : Any> bindToProv(type: KClass<T>, name: String, provider: () -> T) {
-            factories[Key(type, name)] = { provider() }
+            service.factories[Key(type, name)] = { provider() }
         }
 
         inline fun <reified T : Any, reified I : T> bindToImpl(name: String = "") = bindToImpl(T::class, name, I::class)
@@ -96,7 +81,7 @@ class DependencyService(val configure: Binder.() -> Unit) {
         fun <T : Any> bindToFunc(type: KClass<T>, name: String, function: KFunction<T>) {
             val _ = function.getParametersWithKeys()
             function.isAccessible = true
-            factories[Key(type, name)] = { resolve(function, it) }
+            service.factories[Key(type, name)] = { service.resolve(function, it) }
         }
     }
 
@@ -107,4 +92,21 @@ class DependencyService(val configure: Binder.() -> Unit) {
     }
 
     private data class ResolutionContext(val visiting: SequencedSet<Key<*>> = linkedSetOf())
+
+    private companion object {
+        private fun KFunction<*>.getParametersWithKeys() =
+            parameters.associateWith {
+                require(it.kind == KParameter.Kind.VALUE) { "${it.name} is not a value parameter in $this" }
+                Key(it.type.jvmErasure, it.findAnnotation<Named>()?.value ?: "")
+            }
+
+        private fun <T : Any> KClass<T>.getInjectableConstructor(): KFunction<T> {
+            if (this.hasAnnotation<Inject>()) {
+                return this.primaryConstructor
+                    ?: error("$this has @Inject at the top level, but has no primary constructor")
+            }
+            return this.constructors.firstOrNull { it.hasAnnotation<Inject>() }
+                ?: error("No injectable constructor for $this")
+        }
+    }
 }

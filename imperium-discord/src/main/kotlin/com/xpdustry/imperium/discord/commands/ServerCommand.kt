@@ -10,8 +10,7 @@ import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.discord.misc.Embed
@@ -23,12 +22,14 @@ import java.util.Locale
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class ServerCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val discovery = instances.get<Discovery>()
-    private val tracker = instances.get<PlayerTracker>()
-    private val application = instances.get<ImperiumApplication>()
-    private val messenger = instances.get<MessageService>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class ServerCommand(
+    private val discovery: Discovery,
+    private val tracker: PlayerTracker,
+    private val application: ImperiumApplication,
+    private val messenger: MessageService,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["server", "list"])
     suspend fun onServerList(interaction: SlashCommandInteraction) =

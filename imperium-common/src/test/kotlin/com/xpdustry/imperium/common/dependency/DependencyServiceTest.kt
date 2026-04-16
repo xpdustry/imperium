@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.dependency
 
+import java.util.function.Supplier
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
@@ -139,6 +140,16 @@ class DependencyServiceTest {
             }
 
         assertTrue(exception.message!!.contains("not a value parameter"))
+    }
+
+    @Test
+    fun `rejects generic binding keys`() {
+        val exception =
+            assertThrows(IllegalArgumentException::class.java) {
+                DependencyService { bindToProv<Supplier<String>> { Supplier { "hello" } } }
+            }
+
+        assertTrue(exception.message!!.contains("should not have type parameters"))
     }
 
     private fun life(): Int = 42

@@ -13,7 +13,6 @@ import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.TimeUnit
-import java.util.function.Supplier
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -23,9 +22,10 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+@com.xpdustry.imperium.common.dependency.Inject
 class SimpleDiscovery(
     private val messenger: MessageService,
-    private val discoveryDataProvider: Supplier<Discovery.Data>,
+    private val discoveryDataSupplier: DiscoveryDataSupplier,
     private val config: ImperiumConfig,
 ) : Discovery, ImperiumApplication.Listener {
 
@@ -77,7 +77,7 @@ class SimpleDiscovery(
         logger.trace("Sending {} discovery message", type.name)
         try {
             messenger.broadcast(
-                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataProvider.get()), type)
+                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataSupplier.get()), type)
             )
         } catch (e: Exception) {
             logger.error("Failed to send discovery message", e)

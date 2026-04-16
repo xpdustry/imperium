@@ -8,25 +8,23 @@ import com.sksamuel.hoplite.ExperimentalHoplite
 import com.sksamuel.hoplite.KebabCaseParamMapper
 import com.sksamuel.hoplite.addPathSource
 import com.sksamuel.hoplite.fp.getOrElse
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.InstanceProvider
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.nio.file.Path
 
-object ImperiumConfigProvider : InstanceProvider<ImperiumConfig> {
+object ImperiumConfigProvider {
     private val logger by LoggerDelegate()
 
     @OptIn(ExperimentalHoplite::class)
-    override fun create(instances: InstanceManager) =
+    fun loadConfig(@Named("directory") directory: Path): ImperiumConfig =
         ConfigLoaderBuilder.empty()
             .withClassLoader(ImperiumConfigProvider::class.java.classLoader)
             .addDefaultDecoders()
             .addDefaultPreprocessors()
             .addDefaultParamMappers()
             .addParameterMapper(KebabCaseParamMapper)
-            .addDefaultParsers() // YamlParser is loaded via ServiceLoader here
-            .addPathSource(instances.get<Path>("directory").resolve("config.yaml"), optional = true, allowEmpty = true)
+            .addDefaultParsers()
+            .addPathSource(directory.resolve("config.yaml"), optional = true, allowEmpty = true)
             .addDecoder(ColorDecoder())
             .strict()
             .withReport()

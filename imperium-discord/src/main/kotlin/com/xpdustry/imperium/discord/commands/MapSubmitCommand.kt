@@ -10,9 +10,8 @@ import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.image.inputStream
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -42,13 +41,14 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
-class MapSubmitCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val maps = instances.get<MindustryMapManager>()
-
-    private val content = instances.get<MindustryContentHandler>()
-    private val discord = instances.get<DiscordService>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class MapSubmitCommand(
+    private val config: ImperiumConfig,
+    private val maps: MindustryMapManager,
+    private val content: MindustryContentHandler,
+    private val discord: DiscordService,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["map", "submit"])
     suspend fun onMapSubmitCommand(

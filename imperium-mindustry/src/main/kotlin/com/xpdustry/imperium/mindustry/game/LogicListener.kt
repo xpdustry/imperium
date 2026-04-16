@@ -3,6 +3,7 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.dependency.Inject
 import java.io.ByteArrayInputStream
 import java.io.DataInputStream
 import java.util.zip.InflaterInputStream
@@ -13,7 +14,8 @@ import mindustry.logic.LUnitControl
 import mindustry.net.Administration
 import mindustry.world.blocks.logic.LogicBlock
 
-class LogicListener : ImperiumApplication.Listener {
+@Inject
+class LogicListener constructor() : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter { action ->

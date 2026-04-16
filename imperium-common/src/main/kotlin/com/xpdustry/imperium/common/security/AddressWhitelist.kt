@@ -3,6 +3,7 @@ package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.exists
 import java.net.InetAddress
 import org.jetbrains.exposed.v1.core.eq
@@ -23,6 +24,7 @@ interface AddressWhitelist {
 
 typealias AddressWithReason = Pair<InetAddress, String>
 
+@Inject
 class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhitelist, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {

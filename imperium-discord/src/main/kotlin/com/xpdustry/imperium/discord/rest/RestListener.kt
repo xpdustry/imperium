@@ -6,8 +6,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializableInetAddress
@@ -18,12 +17,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
-class RestListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
-    private val discovery = instances.get<Discovery>()
-    private val tracker = instances.get<PlayerTracker>()
-    private val config = instances.get<ImperiumConfig>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class RestListener(
+    private val discovery: Discovery,
+    private val tracker: PlayerTracker,
+    private val config: ImperiumConfig,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     private lateinit var server: HttpServer
 

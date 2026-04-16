@@ -12,14 +12,14 @@ import com.xpdustry.distributor.api.gui.input.TextInputManager
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.player.MUUID
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -68,18 +68,19 @@ data class VotekickEvent(val target: Player, val type: Type) {
     }
 }
 
-class VoteKickCommand(instances: InstanceManager) :
-    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", instances.get(), 1.minutes),
-    ImperiumApplication.Listener {
+@Inject
+class VoteKickCommand(
+    private val punishments: PunishmentManager,
+    private val config: ImperiumConfig,
+    private val users: UserManager,
+    private val marks: MarkedPlayerManager,
+    private val accounts: AccountManager,
+    private val afk: AfkManager,
+    plugin: MindustryPlugin,
+) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes), ImperiumApplication.Listener {
 
-    private val punishments = instances.get<PunishmentManager>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
-    private val config = instances.get<ImperiumConfig>()
-    private val users = instances.get<UserManager>()
-    private val marks = instances.get<MarkedPlayerManager>()
-    private val accounts = instances.get<AccountManager>()
-    private val afk = instances.get<AfkManager>()
     private val recentBans =
         Collections.newSetFromMap(buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
 

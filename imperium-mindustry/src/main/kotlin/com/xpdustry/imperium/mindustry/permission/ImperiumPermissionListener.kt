@@ -18,8 +18,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
@@ -34,12 +33,13 @@ import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-class ImperiumPermissionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
-    private val plugin = instances.get<MindustryPlugin>()
-    private val config = instances.get<ImperiumConfig>()
-    private val accounts = instances.get<AccountManager>()
-    private val users = instances.get<UserManager>()
+@Inject
+class ImperiumPermissionListener(
+    private val plugin: MindustryPlugin,
+    private val config: ImperiumConfig,
+    private val accounts: AccountManager,
+    private val users: UserManager,
+) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<List<RankNode>>(plugin)
 
     override fun onImperiumInit() {

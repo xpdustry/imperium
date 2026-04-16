@@ -8,8 +8,7 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.time.TimeRenderer
@@ -34,11 +33,13 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.FileUpload
 
-internal class MapCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val maps = instances.get<MindustryMapManager>()
-    private val content = instances.get<MindustryContentHandler>()
-    private val renderer = instances.get<TimeRenderer>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+internal class MapCommand(
+    private val maps: MindustryMapManager,
+    private val content: MindustryContentHandler,
+    private val renderer: TimeRenderer,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["map", "info"])
     suspend fun onMapInfo(interaction: SlashCommandInteraction, id: String) {

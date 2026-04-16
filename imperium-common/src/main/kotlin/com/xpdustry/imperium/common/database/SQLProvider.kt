@@ -4,6 +4,8 @@ package com.xpdustry.imperium.common.database
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
@@ -23,7 +25,8 @@ interface SQLProvider {
     suspend fun <T> newSuspendTransaction(block: suspend () -> T): T
 }
 
-class SimpleSQLProvider(private val config: DatabaseConfig, private val directory: Path) :
+@Inject
+class SimpleSQLProvider(private val config: DatabaseConfig, @Named("directory") private val directory: Path) :
     SQLProvider, ImperiumApplication.Listener {
 
     private val parent = SupervisorJob()

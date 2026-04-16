@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.application
 
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.MutableInstanceManager
-import com.xpdustry.imperium.common.inject.SimpleMutableInstanceManager
+import com.xpdustry.imperium.common.dependency.DependencyService
 import kotlin.reflect.KClass
 import org.slf4j.Logger
 
-open class BaseImperiumApplication(private val logger: Logger) : ImperiumApplication {
+open class BaseImperiumApplication(private val logger: Logger, modules: (DependencyService.Binder.() -> Unit)? = null) :
+    ImperiumApplication {
 
     private val _listeners = arrayListOf<ImperiumApplication.Listener>()
     private val initialized = arrayListOf<ImperiumApplication.Listener>()
     val listeners: List<ImperiumApplication.Listener> = _listeners
-    override val instances: MutableInstanceManager = SimpleMutableInstanceManager {
-        if (it is ImperiumApplication.Listener) register(it)
+
+    @Suppress("LeakingThis")
+    override val instances = DependencyService {
+        bindToProv<ImperiumApplication> { this@BaseImperiumApplication }
+        modules?.invoke(this)
     }
 
     fun register(listener: ImperiumApplication.Listener) {
@@ -25,20 +27,15 @@ open class BaseImperiumApplication(private val logger: Logger) : ImperiumApplica
     }
 
     fun register(listener: KClass<out ImperiumApplication.Listener>) {
-        var constructor = listener.constructors.find { it.parameters.isEmpty() }
-        if (constructor != null) {
-            register(constructor.call())
-            return
-        }
-        constructor =
-            listener.constructors.find {
-                it.parameters.size == 1 && it.parameters[0].type.classifier == InstanceManager::class
+        @Suppress("UNCHECKED_CAST") register(instances.create(listener as KClass<ImperiumApplication.Listener>))
+    }
+
+    fun createAll() {
+        for (instance in instances.getAll()) {
+            if (instance is ImperiumApplication.Listener) {
+                register(instance)
             }
-        if (constructor != null) {
-            register(constructor.call(instances))
-            return
         }
-        throw IllegalArgumentException("Cannot find a valid constructor for listener: ${listener.simpleName}")
     }
 
     override fun init() {

@@ -4,6 +4,7 @@ package com.xpdustry.imperium.common.webhook
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.WebhookBackendConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.common.version.ImperiumVersion
@@ -26,6 +27,7 @@ interface WebhookMessageSender {
     suspend fun send(channel: WebhookChannel, message: WebhookMessage)
 }
 
+@Inject
 class WebhookMessageSenderImpl(config: ImperiumConfig, http: OkHttpClient, version: ImperiumVersion) :
     WebhookMessageSender {
     private val channels = EnumMap<WebhookChannel, WebhookBackend>(WebhookChannel::class.java)

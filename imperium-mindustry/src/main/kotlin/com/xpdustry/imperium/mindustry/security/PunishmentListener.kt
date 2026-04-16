@@ -7,6 +7,7 @@ import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
@@ -15,8 +16,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -58,20 +58,23 @@ import mindustry.world.Tile
 import mindustry.world.blocks.logic.LogicBlock
 import mindustry.world.blocks.logic.MessageBlock
 
-class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val accounts = instances.get<AccountManager>()
-    private val messenger = instances.get<MessageService>()
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
+@Inject
+class PunishmentListener(
+    private val accounts: AccountManager,
+    private val messenger: MessageService,
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val gatekeeper: GatekeeperPipeline,
+    private val badWords: BadWordDetector,
+    private val config: ImperiumConfig,
+    private val codec: IdentifierCodec,
+    private val messages: MindustryMessagePipeline,
+    private val plugin: MindustryPlugin,
+) : ImperiumApplication.Listener {
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
-    private val cache = PlayerMap<List<Punishment>>(instances.get())
-    private val kicking = PlayerMap<Boolean>(instances.get())
-    private val gatekeeper = instances.get<GatekeeperPipeline>()
-    private val badWords = instances.get<BadWordDetector>()
+    private val cache = PlayerMap<List<Punishment>>(plugin)
+    private val kicking = PlayerMap<Boolean>(plugin)
     private val badWordsCounter = SimpleRateLimiter<MUUID>(3, 10.minutes)
-    private val config = instances.get<ImperiumConfig>()
-    private val codec = instances.get<IdentifierCodec>()
-    private val messages = instances.get<MindustryMessagePipeline>()
 
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { message ->

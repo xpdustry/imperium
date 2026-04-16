@@ -6,10 +6,9 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.discord.misc.await
@@ -32,10 +31,9 @@ suspend fun getPlayerHistory(messenger: MessageService, server: String, player: 
     }
 }
 
-class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-
-    private val messenger = instances.get<MessageService>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class HistoryCommand constructor(private val messenger: MessageService, private val codec: IdentifierCodec) :
+    ImperiumApplication.Listener {
 
     @ImperiumCommand(["history"])
     suspend fun onHistoryCommand(

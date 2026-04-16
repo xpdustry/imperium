@@ -9,8 +9,7 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -28,11 +27,12 @@ import mindustry.game.EventType
 import mindustry.game.EventType.GameOverEvent
 import mindustry.server.ServerControl
 
-class ControlListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
-    private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<MessageService>()
-    private val application = instances.get<ImperiumApplication>()
+@Inject
+class ControlListener(
+    private val config: ImperiumConfig,
+    private val messenger: MessageService,
+    private val application: ImperiumApplication,
+) : ImperiumApplication.Listener {
     private var job: Job? = null
         set(value) {
             field?.cancel()

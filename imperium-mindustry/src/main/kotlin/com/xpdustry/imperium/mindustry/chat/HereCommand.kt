@@ -4,10 +4,12 @@ package com.xpdustry.imperium.mindustry.chat
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import mindustry.gen.Call
 
-class HereCommand : ImperiumApplication.Listener {
+@Inject
+class HereCommand constructor() : ImperiumApplication.Listener {
 
     @ImperiumCommand(["here"])
     @ClientSide

@@ -5,9 +5,7 @@ import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.MutableInstanceManager
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.provider
+import com.xpdustry.imperium.common.dependency.DependencyService
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.TestMessenger
 import com.xpdustry.imperium.common.registerCommonModule
@@ -36,9 +34,15 @@ class SimpleAccountManagerTest {
 
     @BeforeEach
     fun init() {
-        application = BaseImperiumApplication(LoggerFactory.getLogger(this::class.java))
-        application.instances.registerCommonModule()
-        application.instances.registerAccountTestModule()
+        application =
+            BaseImperiumApplication(
+                LoggerFactory.getLogger(this::class.java),
+                modules = {
+                    registerCommonModule()
+                    registerAccountTestModule()
+                },
+            )
+        application.createAll()
         manager = application.instances.get<AccountManager>() as SimpleAccountManager
         application.init()
     }
@@ -140,12 +144,12 @@ class SimpleAccountManagerTest {
         return String(chars)
     }
 
-    private fun MutableInstanceManager.registerAccountTestModule() {
-        provider<ImperiumConfig> {
+    private fun DependencyService.Binder.registerAccountTestModule() {
+        bindToProv<ImperiumConfig> {
             ImperiumConfig(database = DatabaseConfig.H2(memory = true, database = UUID.randomUUID().toString()))
         }
-        provider<MessageService> { TestMessenger() }
-        provider<Path>("directory") { tempDir }
+        bindToProv<MessageService> { TestMessenger() }
+        bindToProv<Path>("directory") { tempDir }
     }
 
     companion object {

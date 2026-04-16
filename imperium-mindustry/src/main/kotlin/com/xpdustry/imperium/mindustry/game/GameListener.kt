@@ -7,8 +7,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.map.MapLoader
@@ -30,9 +29,9 @@ import mindustry.game.EventType
 import mindustry.io.SaveIO
 import mindustry.net.Administration
 
-class GameListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val maps = instances.get<MindustryMapManager>()
+@Inject
+class GameListener constructor(private val config: ImperiumConfig, private val maps: MindustryMapManager) :
+    ImperiumApplication.Listener {
     private val autoSave = Vars.saveDirectory.child("auto_imperium.${Vars.saveExtension}")
     private val logger by LoggerDelegate()
 

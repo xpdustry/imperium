@@ -10,14 +10,14 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
@@ -46,12 +46,15 @@ import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-class RatingListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val users = instances.get<UserManager>()
-    private val maps = instances.get<MindustryMapManager>()
-    private val delays = PlayerMap<Long>(instances.get())
+@Inject
+class RatingListener(
+    private val users: UserManager,
+    private val maps: MindustryMapManager,
+    private val plugin: MindustryPlugin,
+) : ImperiumApplication.Listener {
+    private val delays = PlayerMap<Long>(plugin)
     private val menu =
-        MenuManager.create(instances.get()).apply {
+        MenuManager.create(plugin).apply {
             addTransformer { (pane, state) ->
                 pane.title = gui_rate_map_title()
 

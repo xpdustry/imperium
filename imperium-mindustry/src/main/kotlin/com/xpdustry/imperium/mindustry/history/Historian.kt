@@ -9,6 +9,7 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
 import com.xpdustry.imperium.common.message.MessageService
@@ -64,6 +65,7 @@ fun List<HistoryEntry>.normalize(limit: Int) =
         .take(limit)
         .toList()
 
+@Inject
 class SimpleHistorian(
     private val imperium: ImperiumConfig,
     private val config: ImperiumConfig,

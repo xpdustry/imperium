@@ -2,6 +2,7 @@
 package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
@@ -27,6 +28,7 @@ interface PlayerTracker {
     )
 }
 
+@Inject
 open class RequestingPlayerTracker(protected val messenger: MessageService) :
     PlayerTracker, ImperiumApplication.Listener {
 

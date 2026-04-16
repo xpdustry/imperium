@@ -15,8 +15,7 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.collection.enumSetAllOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
@@ -45,13 +44,15 @@ import okhttp3.OkHttpClient
 
 private val logger = logger("ROOT")
 
-class GatekeeperListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val pipeline = instances.get<GatekeeperPipeline>()
-    private val vpn = instances.get<VpnDetection>()
-    private val http = instances.get<OkHttpClient>()
-    private val config = instances.get<ImperiumConfig>()
-    private val whitelist = instances.get<AddressWhitelist>()
-    private val badWords = instances.get<BadWordDetector>()
+@Inject
+class GatekeeperListener(
+    private val pipeline: GatekeeperPipeline,
+    private val vpn: VpnDetection,
+    private val http: OkHttpClient,
+    private val config: ImperiumConfig,
+    private val whitelist: AddressWhitelist,
+    private val badWords: BadWordDetector,
+) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         if (!config.mindustry.security.gatekeeper) {

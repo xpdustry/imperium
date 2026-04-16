@@ -11,6 +11,7 @@ import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor.ACCENT
 import com.xpdustry.distributor.api.translation.TranslationArguments.array
 import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.history.config.BlockConfig
@@ -24,6 +25,7 @@ interface HistoryRenderer {
     suspend fun render(entries: List<HistoryEntry>, actor: HistoryActor): Component
 }
 
+@Inject
 class SimpleHistoryRenderer(
     private val users: UserManager,
     private val codec: IdentifierCodec,

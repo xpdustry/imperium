@@ -11,17 +11,16 @@ import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.getMindustryVersion
 import mindustry.gen.Call
 import mindustry.gen.Player
 
-class SwitchCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val discovery = instances.get<Discovery>()
-    private val plugin = instances.get<MindustryPlugin>()
+@Inject
+class SwitchCommand constructor(private val discovery: Discovery, private val plugin: MindustryPlugin) :
+    ImperiumApplication.Listener {
     private val menu = SwitchWindowManager(plugin, discovery)
 
     @ImperiumCommand(["switch"])

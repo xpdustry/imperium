@@ -4,6 +4,7 @@ package com.xpdustry.imperium.common.security
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.user.UserAddressTable
@@ -65,6 +66,7 @@ data class PunishmentMessage(
     }
 }
 
+@Inject
 class SimplePunishmentManager(
     private val provider: SQLProvider,
     private val messenger: MessageService,

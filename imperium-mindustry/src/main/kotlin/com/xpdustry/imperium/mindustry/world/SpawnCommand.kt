@@ -7,6 +7,7 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.translation.spawned
@@ -16,6 +17,7 @@ import mindustry.game.Team
 import mindustry.type.UnitType
 import org.incendo.cloud.annotation.specifier.Range
 
+@Inject
 class SpawnCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["spawn"], Rank.ADMIN)

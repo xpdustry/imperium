@@ -6,13 +6,13 @@ import arc.math.Mathf
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -30,13 +30,16 @@ import mindustry.gen.Call
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Range
 
-class HistoryCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val historian = instances.get<Historian>()
-    private val taps = PlayerMap<PlayerTap>(instances.get())
-    private val users = instances.get<UserManager>()
-    private val config = instances.get<ImperiumConfig>()
-    private val historyRenderer = instances.get<HistoryRenderer>()
-    private val heatmapViewers = PlayerMap<Boolean>(instances.get())
+@Inject
+class HistoryCommand(
+    private val historian: Historian,
+    private val users: UserManager,
+    private val config: ImperiumConfig,
+    private val historyRenderer: HistoryRenderer,
+    private val plugin: MindustryPlugin,
+) : ImperiumApplication.Listener {
+    private val taps = PlayerMap<PlayerTap>(plugin)
+    private val heatmapViewers = PlayerMap<Boolean>(plugin)
 
     @TaskHandler(interval = 1L, delay = 1L, unit = MindustryTimeUnit.SECONDS)
     internal fun onHeatmapViewUpdate() {

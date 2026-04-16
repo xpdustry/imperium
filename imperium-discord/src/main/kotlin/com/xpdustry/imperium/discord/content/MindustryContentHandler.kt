@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.discord.content
 
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.await
 import java.awt.image.BufferedImage
@@ -47,6 +48,7 @@ data class ParsedMindustryMapMetadata(
     val height: Int,
 )
 
+@Inject
 class MindustryToolContentHandler(private val http: OkHttpClient) : MindustryContentHandler {
 
     private val json = Json {

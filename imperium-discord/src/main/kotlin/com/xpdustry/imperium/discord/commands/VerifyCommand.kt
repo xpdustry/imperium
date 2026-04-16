@@ -6,8 +6,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -22,12 +21,14 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
-class VerifyCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val discord = instances.get<DiscordService>()
-    private val accounts = instances.get<AccountManager>()
+@Inject
+class VerifyCommand(
+    private val config: ImperiumConfig,
+    private val discord: DiscordService,
+    private val accounts: AccountManager,
+    private val messenger: MessageService,
+) : ImperiumApplication.Listener {
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)
-    private val messenger = instances.get<MessageService>()
     private val pending = buildCache<Int, Verification> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     override fun onImperiumInit() {

@@ -13,8 +13,7 @@ import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
@@ -25,11 +24,13 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 
-class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<MessageService>()
-    private val accounts = instances.get<AccountManager>()
-    private val messages = instances.get<MindustryMessagePipeline>()
+@Inject
+class BridgeChatMessageListener(
+    private val config: ImperiumConfig,
+    private val messenger: MessageService,
+    private val accounts: AccountManager,
+    private val messages: MindustryMessagePipeline,
+) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         messenger.subscribe<BridgeChatMessage> {

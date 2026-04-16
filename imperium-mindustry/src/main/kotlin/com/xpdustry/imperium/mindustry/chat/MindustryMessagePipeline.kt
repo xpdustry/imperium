@@ -5,6 +5,7 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.distributor.api.audience.PlayerAudience
 import com.xpdustry.distributor.api.key.StandardKeys
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
@@ -46,6 +47,7 @@ interface MindustryMessagePipeline : ProcessorPipeline<MindustryMessageContext, 
     )
 }
 
+@Inject
 class SimpleMindustryMessagePipeline(
     private val formatter: MindustryAudienceFormatter,
     private val clients: ClientDetector,

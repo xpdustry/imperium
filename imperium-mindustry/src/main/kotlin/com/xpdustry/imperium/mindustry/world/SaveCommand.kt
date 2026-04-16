@@ -26,9 +26,8 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.functional.ImperiumResult
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -60,13 +59,15 @@ import mindustry.Vars
 import mindustry.gen.Iconc
 import mindustry.io.SaveIO
 
-class SaveCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class SaveCommand(
+    private val plugin: MindustryPlugin,
+    private val renderer: TimeRenderer,
+    private val config: ImperiumConfig,
+) : ImperiumApplication.Listener {
 
-    private val plugin = instances.get<MindustryPlugin>()
-    private val text = TextInputManager.create(instances.get())
-    private val menu = MenuManager.create(instances.get())
-    private val renderer = instances.get<TimeRenderer>()
-    private val config = instances.get<ImperiumConfig>()
+    private val text = TextInputManager.create(plugin)
+    private val menu = MenuManager.create(plugin)
 
     init {
         menu.addTransformer(

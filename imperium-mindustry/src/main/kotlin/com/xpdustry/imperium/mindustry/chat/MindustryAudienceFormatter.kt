@@ -14,6 +14,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.user.User
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 import mindustry.gen.Iconc
 import mindustry.graphics.Pal
 
+@Inject
 class MindustryAudienceFormatter(
     plugin: MindustryPlugin,
     private val config: ImperiumConfig,

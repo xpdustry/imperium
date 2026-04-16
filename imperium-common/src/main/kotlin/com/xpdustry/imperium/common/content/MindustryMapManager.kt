@@ -3,6 +3,7 @@ package com.xpdustry.imperium.common.content
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.database.SQLProvider
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.exists
 import java.io.InputStream
@@ -78,6 +79,7 @@ interface MindustryMapManager {
     suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean
 }
 
+@Inject
 class SimpleMindustryMapManager(private val provider: SQLProvider, private val messenger: MessageService) :
     MindustryMapManager, ImperiumApplication.Listener {
 

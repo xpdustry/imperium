@@ -2,6 +2,7 @@
 package com.xpdustry.imperium.common.time
 
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import java.time.Instant
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
@@ -20,6 +21,7 @@ interface TimeRenderer {
     fun renderRelativeInstant(instant: Instant, locale: Locale? = null): String
 }
 
+@Inject
 class SimpleTimeRenderer(private val config: ImperiumConfig) : TimeRenderer {
 
     override fun renderDuration(duration: Duration, locale: Locale?): String =

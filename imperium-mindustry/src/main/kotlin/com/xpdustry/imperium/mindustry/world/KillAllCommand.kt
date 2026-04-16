@@ -7,13 +7,13 @@ import com.xpdustry.distributor.api.component.NumberComponent.number
 import com.xpdustry.distributor.api.component.TextComponent.space
 import com.xpdustry.distributor.api.component.TranslatableComponent.translatable
 import com.xpdustry.distributor.api.component.style.ComponentColor
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.translation.TranslationArguments.array
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
@@ -23,14 +23,16 @@ import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.formation.FormationAI
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import kotlin.time.Duration.Companion.seconds
 import mindustry.game.Team
 import mindustry.gen.Call
 import mindustry.type.UnitType
 import org.incendo.cloud.annotation.specifier.Range
 
-class KillAllCommand(instances: InstanceManager) :
-    AbstractVoteCommand<Unit>(instances.get(), "killall", instances.get(), 30.seconds), ImperiumApplication.Listener {
+@Inject
+class KillAllCommand constructor(private val afk: AfkManager, plugin: MindustryPlugin) :
+    AbstractVoteCommand<Unit>(plugin, "killall", afk, 30.seconds), ImperiumApplication.Listener {
 
     @ImperiumCommand(["killall|ku"])
     @Scope(MindustryGamemode.SANDBOX)

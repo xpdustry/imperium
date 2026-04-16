@@ -5,11 +5,13 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import mindustry.Vars
 import mindustry.core.GameState
 
-class PauseListener : ImperiumApplication.Listener {
+@Inject
+class PauseListener constructor() : ImperiumApplication.Listener {
 
     @ImperiumCommand(["pause"], rank = Rank.MODERATOR)
     @ClientSide

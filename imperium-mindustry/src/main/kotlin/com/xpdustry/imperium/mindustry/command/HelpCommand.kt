@@ -7,6 +7,7 @@ import com.xpdustry.distributor.api.command.CommandHelp
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.asList
@@ -14,7 +15,8 @@ import kotlin.math.ceil
 import mindustry.Vars
 import org.incendo.cloud.annotation.specifier.Greedy
 
-class HelpCommand : ImperiumApplication.Listener {
+@Inject
+class HelpCommand constructor() : ImperiumApplication.Listener {
 
     @ImperiumCommand(["help"])
     @ClientSide

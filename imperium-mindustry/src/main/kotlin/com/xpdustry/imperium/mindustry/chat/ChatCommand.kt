@@ -8,8 +8,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -18,10 +17,12 @@ import mindustry.Vars
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 
-class ChatCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val messenger = instances.get<MessageService>()
-    private val config = instances.get<ImperiumConfig>()
-    private val messages = instances.get<MindustryMessagePipeline>()
+@Inject
+class ChatCommand(
+    private val messenger: MessageService,
+    private val config: ImperiumConfig,
+    private val messages: MindustryMessagePipeline,
+) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["t"])
     @ClientSide

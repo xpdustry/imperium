@@ -6,8 +6,7 @@ import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
@@ -17,10 +16,12 @@ import com.xpdustry.imperium.discord.service.DiscordService
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
-class MindustryBridgeListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val discord = instances.get<DiscordService>()
-    private val messenger = instances.get<MessageService>()
-    private val config = instances.get<ImperiumConfig>()
+@Inject
+class MindustryBridgeListener(
+    private val discord: DiscordService,
+    private val messenger: MessageService,
+    private val config: ImperiumConfig,
+) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->

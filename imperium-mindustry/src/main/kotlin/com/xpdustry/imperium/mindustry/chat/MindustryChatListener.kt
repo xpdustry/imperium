@@ -17,8 +17,7 @@ import com.xpdustry.flex.translator.UnsupportedLanguageException
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.user.User
@@ -41,12 +40,14 @@ import mindustry.net.NetConnection
 import mindustry.net.Packets.KickReason
 import mindustry.net.ValidateException
 
-class MindustryChatListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val formatter = instances.get<MindustryAudienceFormatter>()
-    private val messages = instances.get<MindustryMessagePipeline>()
-    private val translator = instances.get<Translator>()
-    private val users = instances.get<UserManager>()
+@Inject
+class MindustryChatListener(
+    private val config: ImperiumConfig,
+    private val formatter: MindustryAudienceFormatter,
+    private val messages: MindustryMessagePipeline,
+    private val translator: Translator,
+    private val users: UserManager,
+) : ImperiumApplication.Listener {
     private var nameJob: Job? = null
 
     override fun onImperiumInit() {

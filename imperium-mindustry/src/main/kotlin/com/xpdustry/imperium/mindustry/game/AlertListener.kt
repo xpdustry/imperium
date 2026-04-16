@@ -10,8 +10,7 @@ import com.xpdustry.distributor.api.annotation.TriggerHandler
 import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.mindustry.misc.isCoreBuilding
 import com.xpdustry.imperium.mindustry.misc.isSourceBlock
@@ -30,12 +29,12 @@ import mindustry.world.blocks.power.NuclearReactor
 import mindustry.world.blocks.production.Incinerator
 import mindustry.world.consumers.ConsumeItemExplode
 
-class AlertListener(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class AlertListener constructor(private val config: ImperiumConfig) : ImperiumApplication.Listener {
 
     private val explosives = MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
     private val generators = IntSet()
-    private val generatorsRateLimiter =
-        SimpleRateLimiter<Int>(1, instances.get<ImperiumConfig>().mindustry.world.explosiveDamageAlertDelay)
+    private val generatorsRateLimiter = SimpleRateLimiter<Int>(1, config.mindustry.world.explosiveDamageAlertDelay)
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {

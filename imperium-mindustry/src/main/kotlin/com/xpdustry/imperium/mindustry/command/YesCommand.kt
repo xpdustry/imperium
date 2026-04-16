@@ -8,8 +8,7 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -19,8 +18,8 @@ import com.xpdustry.imperium.mindustry.translation.command_yes_failure_no_pendin
 import mindustry.Vars
 import mindustry.game.EventType
 
-class YesCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
+@Inject
+class YesCommand constructor(private val plugin: MindustryPlugin) : ImperiumApplication.Listener {
     private val lastInputs = PlayerMap<String>(plugin)
     private val pendingCommands = PlayerMap<String>(plugin)
 

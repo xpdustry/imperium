@@ -6,9 +6,11 @@ import com.xpdustry.distributor.api.component.render.ComponentRenderer
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
 import com.xpdustry.distributor.api.key.StandardKeys
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.time.TimeRenderer
 import java.util.Locale
 
+@Inject
 class ImperiumComponentRendererProvider(renderer: TimeRenderer) : ComponentRendererProvider {
 
     private val duration = DurationComponentRenderer(renderer)

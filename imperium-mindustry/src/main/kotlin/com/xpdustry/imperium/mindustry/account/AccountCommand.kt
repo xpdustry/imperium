@@ -3,12 +3,12 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.buildCache
@@ -25,13 +25,16 @@ import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
 
-class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val accounts = instances.get<AccountManager>()
-    private val users = instances.get<UserManager>()
-    private val messenger = instances.get<MessageService>()
-    private val login = LoginWindow(instances.get(), accounts)
-    private val register = RegisterWindow(instances.get(), accounts)
-    private val changePassword = ChangePasswordWindow(instances.get(), accounts)
+@Inject
+class AccountCommand(
+    private val accounts: AccountManager,
+    private val users: UserManager,
+    private val messenger: MessageService,
+    private val plugin: MindustryPlugin,
+) : ImperiumApplication.Listener {
+    private val login = LoginWindow(plugin, accounts)
+    private val register = RegisterWindow(plugin, accounts)
+    private val changePassword = ChangePasswordWindow(plugin, accounts)
     private val verifications = buildCache<Int, Int> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     @ImperiumCommand(["login"])

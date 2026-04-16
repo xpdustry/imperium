@@ -4,8 +4,6 @@ package com.xpdustry.imperium.discord
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.discord.account.RoleSyncListener
 import com.xpdustry.imperium.discord.bridge.MindustryBridgeListener
@@ -30,7 +28,14 @@ import org.slf4j.LoggerFactory
 
 private val LOGGER = LoggerFactory.getLogger(ImperiumDiscord::class.java)
 
-class ImperiumDiscord : BaseImperiumApplication(LOGGER) {
+class ImperiumDiscord :
+    BaseImperiumApplication(
+        LOGGER,
+        modules = {
+            registerCommonModule()
+            registerDiscordModule()
+        },
+    ) {
     override fun exit(status: ExitStatus) {
         super.exit(status)
         exitProcess(status.ordinal)
@@ -40,12 +45,7 @@ class ImperiumDiscord : BaseImperiumApplication(LOGGER) {
 fun main() {
     val application = ImperiumDiscord()
 
-    with(application.instances) {
-        registerApplication(application)
-        registerCommonModule()
-        registerDiscordModule()
-        createAll()
-    }
+    application.createAll()
 
     sequenceOf(
             MindustryBridgeListener::class,

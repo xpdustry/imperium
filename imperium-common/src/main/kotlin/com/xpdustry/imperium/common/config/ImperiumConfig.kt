@@ -221,14 +221,4 @@ sealed interface MetricConfig {
     data object None : MetricConfig
 
     data class SQL(val interval: Duration = 10.seconds, val retention: Duration = 14.days) : MetricConfig
-
-    @Deprecated("InfluxDB has been removed. Use SQL metrics instead.")
-    data class InfluxDB(
-        val endpoint: URL,
-        val token: Secret,
-        val organization: String,
-        val bucket: String = "imperium",
-        val interval: Duration = 10.seconds,
-        val retention: Duration = 14.days,
-    ) : MetricConfig
 }

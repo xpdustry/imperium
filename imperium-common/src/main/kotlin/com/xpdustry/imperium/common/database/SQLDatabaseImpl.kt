@@ -4,6 +4,8 @@ package com.xpdustry.imperium.common.database
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
@@ -17,7 +19,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
 // TODO Add parent job to wait for transaction completion on close...
-internal class SQLDatabaseImpl(private val config: ImperiumConfig, private val directory: Path) :
+@Inject
+internal class SQLDatabaseImpl(private val config: ImperiumConfig, @Named("directory") private val directory: Path) :
     SQLDatabase, ImperiumApplication.Listener {
     private lateinit var source: HikariDataSource
 

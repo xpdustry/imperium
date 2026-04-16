@@ -16,8 +16,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
@@ -54,12 +53,14 @@ private val PUNISHMENT_REASON = key<String>("punishment_reason")
 private val PUNISHMENT_TARGET = key<Identity.Mindustry>("punishment_target")
 private val PUNISHMENT_TYPE = key<Punishment.Type>("punishment_type")
 
-class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
-    private val accounts = instances.get<AccountManager>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class AdminRequestListener(
+    private val plugin: MindustryPlugin,
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val accounts: AccountManager,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
     private lateinit var adminActionInterface: WindowManager
 
     override fun onImperiumInit() {

@@ -2,13 +2,12 @@
 package com.xpdustry.imperium.discord.metrics
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.metrics.MetricsRegistry
 import com.xpdustry.imperium.common.metrics.SystemMetricCollector
 
-class MetricsListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val metrics = instances.get<MetricsRegistry>()
+@Inject
+class MetricsListener constructor(private val metrics: MetricsRegistry) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         metrics.register(SystemMetricCollector())

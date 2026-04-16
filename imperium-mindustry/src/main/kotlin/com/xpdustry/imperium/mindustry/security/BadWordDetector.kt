@@ -2,6 +2,7 @@
 package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.dependency.Inject
 import java.nio.file.FileSystems
 import java.nio.file.Files
 import kotlin.io.path.inputStream
@@ -26,6 +27,7 @@ enum class Category {
     HATE_SPEECH,
 }
 
+@Inject
 class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, ImperiumApplication.Listener {
 
     private lateinit var trie: PayloadTrie<Category>

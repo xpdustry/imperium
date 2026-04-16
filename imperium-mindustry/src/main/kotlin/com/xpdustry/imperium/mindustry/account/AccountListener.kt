@@ -14,8 +14,7 @@ import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.user.User
@@ -37,11 +36,13 @@ import mindustry.gen.Call
 import mindustry.gen.Iconc
 import mindustry.gen.Player
 
-class AccountListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val accounts = instances.get<AccountManager>()
-    private val users = instances.get<UserManager>()
+@Inject
+class AccountListener(
+    private val accounts: AccountManager,
+    private val users: UserManager,
+    private val messenger: MessageService,
+) : ImperiumApplication.Listener {
     private val playtime = ConcurrentHashMap<Player, Long>()
-    private val messenger = instances.get<MessageService>()
 
     override fun onImperiumInit() {
         messenger.subscribe<AchievementCompletedMessage> { message ->

@@ -4,8 +4,7 @@ package com.xpdustry.imperium.discord.security
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -24,14 +23,16 @@ import com.xpdustry.imperium.discord.service.DiscordService
 import java.awt.Color
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 
-class PunishmentListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val discord = instances.get<DiscordService>()
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
-    private val messenger = instances.get<MessageService>()
-    private val renderer = instances.get<TimeRenderer>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class PunishmentListener(
+    private val config: ImperiumConfig,
+    private val discord: DiscordService,
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val messenger: MessageService,
+    private val renderer: TimeRenderer,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         messenger.subscribe<PunishmentMessage> { (author, type, id, server, metadata) ->

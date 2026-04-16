@@ -8,11 +8,11 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.misc.toInetAddress
@@ -42,12 +42,15 @@ import java.net.InetAddress
 import kotlin.time.Duration.Companion.seconds
 import mindustry.gen.Player
 
-class ReportCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val reportInterface = MenuManager.create(instances.get())
-    private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<MessageService>()
+@Inject
+class ReportCommand(
+    private val config: ImperiumConfig,
+    private val messenger: MessageService,
+    private val users: UserManager,
+    private val plugin: MindustryPlugin,
+) : ImperiumApplication.Listener {
+    private val reportInterface = MenuManager.create(plugin)
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
-    private val users = instances.get<UserManager>()
 
     init {
         reportInterface.addTransformer(

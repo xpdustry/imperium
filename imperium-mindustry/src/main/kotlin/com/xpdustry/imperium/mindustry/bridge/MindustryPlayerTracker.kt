@@ -8,6 +8,7 @@ import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.user.UserManager
@@ -15,6 +16,7 @@ import com.xpdustry.imperium.mindustry.misc.identity
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
+@Inject
 class MindustryPlayerTracker(
     messenger: MessageService,
     private val config: ImperiumConfig,
