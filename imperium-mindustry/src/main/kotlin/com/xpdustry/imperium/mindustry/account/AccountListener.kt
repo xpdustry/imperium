@@ -56,7 +56,7 @@ class AccountListener(
     override fun onImperiumInit() {
         messenger.subscribe<AchievementCompletedMessage> { message ->
             for (player in Entities.getPlayersAsync()) {
-                if (store.selectAccountBySessionKey(player.sessionKey)?.account?.id == message.account) {
+                if (store.selectBySessionKey(player.sessionKey)?.account?.id == message.account) {
                     Call.warningToast(
                         player.con,
                         Iconc.infoCircle.code,
@@ -72,7 +72,7 @@ class AccountListener(
     internal fun onPlaytimeAchievementCheck() =
         ImperiumScope.MAIN.launch {
             for (player in Entities.getPlayersAsync()) {
-                val account = store.selectAccountBySessionKey(player.sessionKey)?.account ?: continue
+                val account = store.selectBySessionKey(player.sessionKey)?.account ?: continue
                 val now = System.currentTimeMillis()
                 val playtime = (now - (playtime[player] ?: now)).milliseconds
                 checkPlaytimeAchievements(account, playtime)

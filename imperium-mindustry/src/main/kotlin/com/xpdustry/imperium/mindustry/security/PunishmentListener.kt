@@ -174,7 +174,7 @@ class PunishmentListener(
         messages.register("bad_word", Priority.HIGH) { ctx ->
             if (!ctx.filter || ctx.kind != MindustryMessageContext.Kind.CHAT) return@register ctx.message
             val player = ctx.sender as? PlayerAudience ?: return@register ctx.message
-            val rank = store.selectAccountBySessionKey(player.player.sessionKey)?.account?.rank ?: Rank.EVERYONE
+            val rank = store.selectBySessionKey(player.player.sessionKey)?.account?.rank ?: Rank.EVERYONE
             if (rank >= Rank.MODERATOR) return@register ctx.message
 
             val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))

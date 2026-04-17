@@ -53,7 +53,7 @@ class ImperiumPermissionListener(
     }
 
     @EventHandler(priority = Priority.HIGH)
-    fun onPLayerLogin(event: PlayerLoginEvent) {
+    fun onPlayerLogin(event: PlayerLoginEvent) {
         updatePlayerRanks(event.player)
     }
 
@@ -63,17 +63,17 @@ class ImperiumPermissionListener(
     }
 
     @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
-    fun refreshPlayerRank() {
+    fun refreshPlayerRanks() {
         Entities.getPlayers().forEach(::updatePlayerRanks)
     }
 
     private fun updatePlayerRanks(player: Player) =
         ImperiumScope.MAIN.launch {
-            val account = store.selectAccountBySessionKey(player.sessionKey)
+            val stored = store.selectBySessionKey(player.sessionKey)
             val nodes = ArrayList<RankNode>()
-            val rank = account?.account?.rank ?: Rank.EVERYONE
+            val rank = stored?.account?.rank ?: Rank.EVERYONE
             nodes += EnumRankNode.linear(rank, "imperium", true)
-            nodes += account?.achievements.orEmpty().map { EnumRankNode.singular(it, "imperium") }
+            nodes += stored?.achievements.orEmpty().map { EnumRankNode.singular(it, "imperium") }
             val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
             runMindustryThread {
                 ranks[player] = Collections.unmodifiableList(nodes)

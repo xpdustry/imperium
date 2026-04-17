@@ -71,7 +71,7 @@ class DataStoreService(
         }
     }
 
-    fun selectAccountBySessionKey(key: SessionKey): StoredAccount? = data[key]
+    fun selectBySessionKey(key: SessionKey): StoredAccount? = data[key]
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {

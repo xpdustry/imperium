@@ -154,7 +154,7 @@ class AdminRequestListener(
 
         Vars.net.handleServer(AdminRequestCallPacket::class.java) { con, packet ->
             val player = con.player ?: return@handleServer
-            val playerRank = store.selectAccountBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE
+            val playerRank = store.selectBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE
             Core.app.post { interceptAdminRequest(con, packet, playerRank) }
         }
     }
@@ -293,7 +293,7 @@ class AdminRequestListener(
         }
 
     private fun handleWaveSkip(requester: Player) {
-        val rank = store.selectAccountBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
+        val rank = store.selectBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
         if (rank >= Rank.MODERATOR) {
             Vars.logic.skipWave()
             logger.info("{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
@@ -308,7 +308,7 @@ class AdminRequestListener(
     }
 
     private fun getUserRank(requester: Player): Rank =
-        store.selectAccountBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
+        store.selectBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
 
     companion object {
         private val logger by LoggerDelegate()

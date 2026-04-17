@@ -78,20 +78,20 @@ class MindustryAudienceFormatter(
 
     private suspend fun refreshPlayerData() {
         Entities.getPlayersAsync().forEach { player ->
-            val account = store.selectAccountBySessionKey(player.sessionKey)
+            val stored = store.selectBySessionKey(player.sessionKey)
             val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
             val rainbowName =
                 users.getSetting(player.uuid(), User.Setting.RAINBOW_NAME) &&
-                    (account?.let { Achievement.SUPPORTER in it.achievements } == true)
+                    (stored?.let { Achievement.SUPPORTER in it.achievements } == true)
             runMindustryThread {
                 hidden[player] = undercover
                 rainbow[player] = rainbowName
-                if (account == null) {
+                if (stored == null) {
                     hours.remove(player)
                     ranks.remove(player)
                 } else {
-                    hours[player] = account.account.playtime.inWholeHours.toInt()
-                    ranks[player] = account.account.rank
+                    hours[player] = stored.account.playtime.inWholeHours.toInt()
+                    ranks[player] = stored.account.rank
                 }
             }
         }

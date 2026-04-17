@@ -97,7 +97,7 @@ class VoteKickCommand(
 
     @EventHandler
     internal fun onPlayerLogin(event: PlayerLoginEvent) {
-        val rank = store.selectAccountBySessionKey(event.player.sessionKey)?.account?.rank
+        val rank = store.selectBySessionKey(event.player.sessionKey)?.account?.rank
         if (rank != null && rank >= Rank.OVERSEER) {
             manager.sessions.values.filter { it.objective.target == event.player }.forEach { it.failure(event.player) }
         }

@@ -136,18 +136,18 @@ class FormationListener(private val store: DataStoreService) : ImperiumApplicati
             return
         }
 
-        val account = store.selectAccountBySessionKey(sender.player.sessionKey)
+        val stored = store.selectBySessionKey(sender.player.sessionKey)
         var slots = 4
-        if (account != null) {
+        if (stored != null) {
             slots =
                 when {
-                    Achievement.HYPER in account.achievements -> 24
-                    Achievement.SUPPORTER in account.achievements -> 18 // p2w
-                    Achievement.ACTIVE in account.achievements -> 12
-                    account.account.rank >= Rank.VERIFIED -> 8
+                    Achievement.HYPER in stored.achievements -> 24
+                    Achievement.SUPPORTER in stored.achievements -> 18 // p2w
+                    Achievement.ACTIVE in stored.achievements -> 12
+                    stored.account.rank >= Rank.VERIFIED -> 8
                     else -> slots
                 }
-            val manual = account.metadata["formation_max_slots"]?.toIntOrNull()
+            val manual = stored.metadata["formation_max_slots"]?.toIntOrNull()
             if (manual != null) {
                 slots = max(slots, manual)
             }
@@ -172,8 +172,7 @@ class FormationListener(private val store: DataStoreService) : ImperiumApplicati
     @ClientSide
     fun onFormationPatternCommand(sender: CommandSender, pattern: FormationPatternEntry? = null) {
         val rank =
-            store.selectAccountBySessionKey(sender.player.sessionKey)?.account?.rank
-                ?: error("That ain't supposed to happen.")
+            store.selectBySessionKey(sender.player.sessionKey)?.account?.rank ?: error("That ain't supposed to happen.")
         if (pattern == null) {
             sender.reply(formation_pattern_list(rank))
             return

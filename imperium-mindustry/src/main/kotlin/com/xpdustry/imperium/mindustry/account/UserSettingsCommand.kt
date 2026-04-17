@@ -78,7 +78,7 @@ class UserSettingsCommand(
     private suspend fun loadUserSettings(player: Player): Map<User.Setting, Boolean> {
         val settings = users.getSettings(player.uuid()).toMutableMap()
         for (setting in User.Setting.entries) settings.putIfAbsent(setting, setting.default)
-        val achievements = store.selectAccountBySessionKey(player.sessionKey)?.achievements.orEmpty()
+        val achievements = store.selectBySessionKey(player.sessionKey)?.achievements.orEmpty()
         settings.keys.removeAll { it.deprecated || (it.achievement != null && it.achievement !in achievements) }
         return settings
     }
