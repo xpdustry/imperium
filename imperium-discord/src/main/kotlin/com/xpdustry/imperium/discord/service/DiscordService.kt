@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.discord.service
 
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.AccountAchievementService
+import com.xpdustry.imperium.common.account.AccountService
+import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -46,7 +48,8 @@ interface DiscordService {
 class SimpleDiscordService(
     private val config: ImperiumConfig,
     private val http: OkHttpClient,
-    private val accounts: AccountManager,
+    private val accounts: AccountService,
+    private val achievements: AccountAchievementService,
 ) : DiscordService, ImperiumApplication.Listener {
     override lateinit var jda: JDA
 
@@ -114,11 +117,12 @@ class SimpleDiscordService(
         val discord = account?.discord ?: return
         val member = getMainServer().getMemberById(discord) ?: return
         val current = member.roles.associateBy(Role::getIdLong)
+        val completedAchievements = achievements.selectAchievements(id)
 
-        for ((achievement, completed) in accounts.selectAchievements(id)) {
+        for (achievement in Achievement.entries) {
             val roleId = config.discord.achievements2roles[achievement] ?: continue
             val role = getMainServer().getRoleById(roleId) ?: continue
-            if (completed) {
+            if (achievement in completedAchievements) {
                 if (roleId in current.keys) continue
                 getMainServer().addRoleToMember(member.snowflake, role).await()
                 logger.debug(

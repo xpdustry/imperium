@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.discord.account
 
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.AccountAchievementService
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.AchievementCompletedMessage
 import com.xpdustry.imperium.common.account.RankChangeEvent
@@ -21,7 +22,8 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 @Inject
 class RoleSyncListener(
     private val discord: DiscordService,
-    private val accounts: AccountManager,
+    private val accounts: AccountService,
+    private val achievements: AccountAchievementService,
     private val messenger: MessageService,
 ) : ImperiumApplication.Listener {
 
@@ -39,7 +41,7 @@ class RoleSyncListener(
     private suspend fun syncServerBoosterRoles() {
         discord.getMainServer().boosters.forEach { member ->
             val account = accounts.selectByDiscord(member.idLong) ?: return@forEach
-            accounts.updateAchievement(account.id, Achievement.SUPPORTER, true)
+            achievements.updateAchievement(account.id, Achievement.SUPPORTER, true)
         }
     }
 

@@ -2,8 +2,10 @@
 package com.xpdustry.imperium.common
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.xpdustry.imperium.common.account.AccountManager
-import com.xpdustry.imperium.common.account.SimpleAccountManager
+import com.xpdustry.imperium.common.account.AccountAchievementService
+import com.xpdustry.imperium.common.account.AccountMetadataService
+import com.xpdustry.imperium.common.account.AccountService
+import com.xpdustry.imperium.common.account.MindustrySessionService
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
@@ -65,7 +67,10 @@ fun DependencyService.Binder.registerCommonModule() {
     bindToImpl<SQLDatabase, SQLDatabaseImpl>()
 
     // Domain services.
-    bindToImpl<AccountManager, SimpleAccountManager>()
+    bindToImpl<AccountService, AccountService>()
+    bindToImpl<AccountAchievementService, AccountAchievementService>()
+    bindToImpl<AccountMetadataService, AccountMetadataService>()
+    bindToImpl<MindustrySessionService, MindustrySessionService>()
     bindToImpl<MindustryMapManager, SimpleMindustryMapManager>()
     bindToImpl<PunishmentManager, SimplePunishmentManager>()
     bindToImpl<UserManager, SimpleUserManager>()

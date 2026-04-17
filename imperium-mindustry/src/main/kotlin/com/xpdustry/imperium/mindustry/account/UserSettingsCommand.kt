@@ -8,7 +8,6 @@ import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
@@ -21,6 +20,7 @@ import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.gui_close
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_description
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_entry
@@ -31,8 +31,8 @@ import mindustry.gen.Player
 @Inject
 class UserSettingsCommand(
     private val users: UserManager,
-    private val accounts: AccountManager,
-    private val plugin: MindustryPlugin,
+    private val store: DataStoreService,
+    plugin: MindustryPlugin,
 ) : ImperiumApplication.Listener {
     private val playerSettingsInterface = createPlayerSettingsInterface(plugin)
 
@@ -78,13 +78,7 @@ class UserSettingsCommand(
     private suspend fun loadUserSettings(player: Player): Map<User.Setting, Boolean> {
         val settings = users.getSettings(player.uuid()).toMutableMap()
         for (setting in User.Setting.entries) settings.putIfAbsent(setting, setting.default)
-        val achievements =
-            accounts
-                .selectBySession(player.sessionKey)
-                ?.let { accounts.selectAchievements(it.id) }
-                .orEmpty()
-                .filterValues { it }
-                .keys
+        val achievements = store.selectBySessionKey(player.sessionKey)?.achievements.orEmpty()
         settings.keys.removeAll { it.deprecated || (it.achievement != null && it.achievement !in achievements) }
         return settings
     }

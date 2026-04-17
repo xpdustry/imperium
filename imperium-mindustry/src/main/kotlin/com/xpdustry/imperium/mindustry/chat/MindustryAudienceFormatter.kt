@@ -8,7 +8,6 @@ import com.xpdustry.distributor.api.component.render.ComponentStringBuilder
 import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -25,6 +24,7 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.toHexString
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Job
@@ -38,7 +38,7 @@ import mindustry.graphics.Pal
 class MindustryAudienceFormatter(
     plugin: MindustryPlugin,
     private val config: ImperiumConfig,
-    private val accounts: AccountManager,
+    private val store: DataStoreService,
     private val users: UserManager,
 ) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<Rank>(plugin)
@@ -78,21 +78,20 @@ class MindustryAudienceFormatter(
 
     private suspend fun refreshPlayerData() {
         Entities.getPlayersAsync().forEach { player ->
-            val account = accounts.selectBySession(player.sessionKey)
+            val stored = store.selectBySessionKey(player.sessionKey)
             val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
             val rainbowName =
                 users.getSetting(player.uuid(), User.Setting.RAINBOW_NAME) &&
-                    account != null &&
-                    accounts.selectAchievement(account.id, Achievement.SUPPORTER)
+                    (stored?.let { Achievement.SUPPORTER in it.achievements } == true)
             runMindustryThread {
                 hidden[player] = undercover
                 rainbow[player] = rainbowName
-                if (account == null) {
+                if (stored == null) {
                     hours.remove(player)
                     ranks.remove(player)
                 } else {
-                    hours[player] = account.playtime.inWholeHours.toInt()
-                    ranks[player] = account.rank
+                    hours[player] = stored.account.playtime.inWholeHours.toInt()
+                    ranks[player] = stored.account.rank
                 }
             }
         }

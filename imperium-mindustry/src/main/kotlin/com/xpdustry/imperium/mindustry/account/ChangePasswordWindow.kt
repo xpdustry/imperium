@@ -11,8 +11,10 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.account.AccountService
+import com.xpdustry.imperium.common.account.MindustrySessionService
+import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.string.Password
 import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
@@ -20,7 +22,11 @@ import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.gui_failure_password_mismatch
 
-fun ChangePasswordWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowManager =
+fun ChangePasswordWindow(
+    plugin: MindustryPlugin,
+    accounts: AccountService,
+    sessions: MindustrySessionService,
+): WindowManager =
     TextFormWindowManager<ChangePwdPage>(
         plugin,
         "change-password",
@@ -32,7 +38,7 @@ fun ChangePasswordWindow(plugin: MindustryPlugin, accounts: AccountManager): Win
                 }
                 CoroutineAction(success = ChangePasswordResultAction()) { window ->
                     val account =
-                        accounts.selectBySession(window.viewer.sessionKey)
+                        sessions.selectAccount(accounts, window.viewer.sessionKey)
                             ?: return@CoroutineAction AccountResult.NotFound
                     accounts.updatePassword(
                         account.id,

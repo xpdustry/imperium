@@ -3,8 +3,8 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.imperium.common.account.AccountResult
-import com.xpdustry.imperium.common.security.PasswordRequirement
-import com.xpdustry.imperium.common.security.UsernameRequirement
+import com.xpdustry.imperium.common.string.StringRequirement
+import com.xpdustry.imperium.common.string.StringRequirement.Letter
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
 import mindustry.gen.Player
 
@@ -33,22 +33,16 @@ private fun handleAccountResult(result: AccountResult, player: Player, window: W
     player.showInfoMessage("[red]$message")
 }
 
-private fun getErrorMessage(requirement: PasswordRequirement) =
+private fun getErrorMessage(requirement: StringRequirement) =
     when (requirement) {
-        is PasswordRequirement.LowercaseLetter -> "It needs at least a lowercase letter."
-        is PasswordRequirement.UppercaseLetter -> "It needs at least a uppercase letter."
-        is PasswordRequirement.Number -> "It needs at least a number."
-        is PasswordRequirement.Symbol -> "It needs at least a symbol."
-        is PasswordRequirement.Length ->
-            "It needs to be between ${requirement.min} and ${requirement.max} characters long."
-    }
-
-private fun getErrorMessage(requirement: UsernameRequirement) =
-    when (requirement) {
-        is UsernameRequirement.InvalidSymbol ->
+        Letter.HAS_LOWERCASE -> "It needs at least a lowercase letter."
+        Letter.HAS_UPPERCASE -> "It needs at least a uppercase letter."
+        Letter.HAS_DIGIT -> "It needs at least a number."
+        Letter.HAS_SPACIAL_SYMBOL -> "It needs at least a symbol."
+        is StringRequirement.AllowedSpecialSymbol ->
             "It can only contain letters, numbers and ${requirement.allowed.joinToString()}."
-        is UsernameRequirement.Length ->
+        is StringRequirement.Length ->
             "It needs to be between ${requirement.min} and ${requirement.max} characters long."
-        is UsernameRequirement.Reserved -> "This username is reserved or already taken."
-        is UsernameRequirement.AllLowercase -> "Uppercase letters aren't allowed in the username."
+        is StringRequirement.Reserved -> "This username is reserved or already taken."
+        Letter.ALL_LOWERCASE -> "Uppercase letters aren't allowed in the username."
     }

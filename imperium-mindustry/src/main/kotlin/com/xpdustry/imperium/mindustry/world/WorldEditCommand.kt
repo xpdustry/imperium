@@ -11,13 +11,13 @@ import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.misc.Rotation
-import com.xpdustry.imperium.mindustry.misc.reloadWorldData
 import com.xpdustry.imperium.mindustry.misc.setBlocksNet
 import com.xpdustry.imperium.mindustry.misc.setFloorsNet
 import com.xpdustry.imperium.mindustry.misc.setOverlaysNet
 import mindustry.Vars
 import mindustry.content.Blocks
 import mindustry.game.Team
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.world.Block
@@ -26,7 +26,7 @@ import mindustry.world.blocks.environment.TreeBlock
 import org.incendo.cloud.annotation.specifier.Range
 
 @Inject
-class WorldEditCommand constructor() : ImperiumApplication.Listener {
+class WorldEditCommand : ImperiumApplication.Listener {
 
     @ImperiumCommand(["wedit"], Rank.MODERATOR)
     @ClientSide
@@ -98,7 +98,7 @@ class WorldEditCommand constructor() : ImperiumApplication.Listener {
         // Reindex the spawn blocks
         if (overlay == Blocks.spawn) {
             Vars.spawner.reset()
-            Groups.player.each(Player::reloadWorldData)
+            Groups.player.each { it.reloadWorldData() }
         }
 
         sender.reply(
@@ -114,5 +114,11 @@ class WorldEditCommand constructor() : ImperiumApplication.Listener {
                 append("for team ${team.coloredName()}.")
             }
         )
+    }
+
+    private fun Player.reloadWorldData() {
+        info.lastSyncTime = System.currentTimeMillis()
+        Call.worldDataBegin(con)
+        Vars.netServer.sendWorldData(this)
     }
 }

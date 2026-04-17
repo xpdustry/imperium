@@ -12,7 +12,6 @@ import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -28,6 +27,7 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.registerDistributorService
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.util.Collections
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
@@ -37,7 +37,7 @@ import mindustry.gen.Player
 class ImperiumPermissionListener(
     private val plugin: MindustryPlugin,
     private val config: ImperiumConfig,
-    private val accounts: AccountManager,
+    private val store: DataStoreService,
     private val users: UserManager,
 ) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<List<RankNode>>(plugin)
@@ -53,7 +53,7 @@ class ImperiumPermissionListener(
     }
 
     @EventHandler(priority = Priority.HIGH)
-    fun onPLayerLogin(event: PlayerLoginEvent) {
+    fun onPlayerLogin(event: PlayerLoginEvent) {
         updatePlayerRanks(event.player)
     }
 
@@ -63,18 +63,17 @@ class ImperiumPermissionListener(
     }
 
     @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
-    fun refreshPlayerRank() {
+    fun refreshPlayerRanks() {
         Entities.getPlayers().forEach(::updatePlayerRanks)
     }
 
     private fun updatePlayerRanks(player: Player) =
         ImperiumScope.MAIN.launch {
-            val account = accounts.selectBySession(player.sessionKey)
-            val achievements = account?.let { accounts.selectAchievements(it.id) }.orEmpty()
+            val stored = store.selectBySessionKey(player.sessionKey)
             val nodes = ArrayList<RankNode>()
-            val rank = account?.rank ?: Rank.EVERYONE
+            val rank = stored?.account?.rank ?: Rank.EVERYONE
             nodes += EnumRankNode.linear(rank, "imperium", true)
-            nodes += achievements.filterValues { it }.map { EnumRankNode.singular(it.key, "imperium") }
+            nodes += stored?.achievements.orEmpty().map { EnumRankNode.singular(it, "imperium") }
             val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
             runMindustryThread {
                 ranks[player] = Collections.unmodifiableList(nodes)

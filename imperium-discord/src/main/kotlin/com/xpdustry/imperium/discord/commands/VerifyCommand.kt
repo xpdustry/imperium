@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -25,7 +25,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 class VerifyCommand(
     private val config: ImperiumConfig,
     private val discord: DiscordService,
-    private val accounts: AccountManager,
+    private val accounts: AccountService,
     private val messenger: MessageService,
 ) : ImperiumApplication.Listener {
     private val limiter = SimpleRateLimiter<Long>(3, 10.minutes)

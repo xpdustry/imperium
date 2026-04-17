@@ -9,7 +9,6 @@ import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
@@ -37,6 +36,7 @@ import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.announcement_ban
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
@@ -60,7 +60,7 @@ import mindustry.world.blocks.logic.MessageBlock
 
 @Inject
 class PunishmentListener(
-    private val accounts: AccountManager,
+    private val store: DataStoreService,
     private val messenger: MessageService,
     private val punishments: PunishmentManager,
     private val users: UserManager,
@@ -69,7 +69,7 @@ class PunishmentListener(
     private val config: ImperiumConfig,
     private val codec: IdentifierCodec,
     private val messages: MindustryMessagePipeline,
-    private val plugin: MindustryPlugin,
+    plugin: MindustryPlugin,
 ) : ImperiumApplication.Listener {
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
     private val cache = PlayerMap<List<Punishment>>(plugin)
@@ -174,7 +174,7 @@ class PunishmentListener(
         messages.register("bad_word", Priority.HIGH) { ctx ->
             if (!ctx.filter || ctx.kind != MindustryMessageContext.Kind.CHAT) return@register ctx.message
             val player = ctx.sender as? PlayerAudience ?: return@register ctx.message
-            val rank = accounts.selectBySession(player.player.sessionKey)?.rank ?: Rank.EVERYONE
+            val rank = store.selectBySessionKey(player.player.sessionKey)?.account?.rank ?: Rank.EVERYONE
             if (rank >= Rank.MODERATOR) return@register ctx.message
 
             val words = badWords.findBadWords(ctx.message, enumSetOf(Category.HATE_SPEECH, Category.SEXUAL))

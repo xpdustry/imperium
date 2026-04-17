@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.discord.commands
 
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.AccountAchievementService
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -13,8 +14,12 @@ import com.xpdustry.imperium.discord.misc.await
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 @Inject
-class AccountCommand constructor(private val accounts: AccountManager, private val codec: IdentifierCodec) :
-    ImperiumApplication.Listener {
+class AccountCommand
+constructor(
+    private val accounts: AccountService,
+    private val achievements: AccountAchievementService,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["account", "edit", "rank"], Rank.ADMIN)
     suspend fun onAccountRankSet(interaction: SlashCommandInteraction, target: String, rank: Rank) {
@@ -57,7 +62,7 @@ class AccountCommand constructor(private val accounts: AccountManager, private v
             reply.sendMessage("Account not found.").await()
             return
         }
-        accounts.updateAchievement(id, achievement, completion)
+        achievements.updateAchievement(id, achievement, completion)
         reply.sendMessage("Set ${achievement.name} achievement to $completion.").await()
     }
 }
