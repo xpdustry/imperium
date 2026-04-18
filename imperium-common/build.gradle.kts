@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation("org.bouncycastle:bcprov-jdk18on:1.83")
+    implementation("org.bouncycastle:bcprov-jdk18on:1.84")
 
     api(libs.guava)
     api(libs.hoplite.core)
