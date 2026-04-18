@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.asAudience
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.SCARLET
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
@@ -108,9 +109,12 @@ class MindustryChatListener(
         }
 
         messages.register("admin-filter", Priority.HIGH) { context ->
-            val sender = context.sender as? PlayerAudience ?: return@register context.message
-            com.xpdustry.imperium.mindustry.misc.runMindustryThread {
-                Vars.netServer.admins.filterMessage(sender.player, context.message) ?: ""
+            if (
+                context.sender is PlayerAudience && context.kind == MindustryMessageContext.Kind.CHAT && context.filter
+            ) {
+                runMindustryThread { Vars.netServer.admins.filterMessage(context.sender.player, context.message) ?: "" }
+            } else {
+                context.message
             }
         }
 
