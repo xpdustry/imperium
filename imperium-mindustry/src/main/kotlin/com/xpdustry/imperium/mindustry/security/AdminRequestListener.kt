@@ -165,8 +165,10 @@ class AdminRequestListener(
             return
         }
 
+        val isStaff: Boolean = con.player.admin() || playerRank >= Rank.OVERSEER
+
         // Allow undercover staff to use the admin menu
-        if (playerRank < Rank.OVERSEER || !con.player.admin()) {
+        if (!isStaff) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action without permission",
                 con.player.plainName(),
