@@ -55,7 +55,11 @@ internal class MapCommand(
         val tempMapFile = createTempFile()
         withContext(Dispatchers.IO) {
             tempMapFile.outputStream().use { out -> maps.getMapInputStream(map.id)!!.copyTo(out) }
-            ImageIO.write(content.renderMap(tempMapFile.toFile()).getOrThrow(), "png", tempImageFile.toFile())
+            ImageIO.write(
+                content.renderMap(tempMapFile.toFile()).getOrElse { MapSubmitCommand.FALLBACK_PREVIEW },
+                "png",
+                tempImageFile.toFile(),
+            )
         }
 
         reply

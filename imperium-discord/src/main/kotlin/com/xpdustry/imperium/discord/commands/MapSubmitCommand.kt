@@ -277,7 +277,8 @@ class MapSubmitCommand(
         private const val MAP_ACCEPT_BUTTON = "map-submission-accept:2"
         private const val MAP_REJECT_BUTTON = "map-submission-reject:2"
         private val logger by LoggerDelegate()
-        private val FALLBACK_PREVIEW: BufferedImage by lazy {
+        // TODO Please, rewrite this shit...
+        val FALLBACK_PREVIEW: BufferedImage by lazy {
             MapSubmitCommand::class
                 .java
                 .getResourceAsStream("/com/xpdustry/imperium/discord/map_preview_error.png")

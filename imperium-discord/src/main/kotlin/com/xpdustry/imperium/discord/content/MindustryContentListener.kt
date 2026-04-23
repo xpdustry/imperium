@@ -7,6 +7,7 @@ import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.image.inputStream
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
+import com.xpdustry.imperium.discord.commands.MapSubmitCommand
 import com.xpdustry.imperium.discord.misc.Embed
 import com.xpdustry.imperium.discord.misc.MessageCreate
 import com.xpdustry.imperium.discord.misc.addSuspendingEventListener
@@ -137,7 +138,7 @@ class MindustryContentListener(private val discord: DiscordService, private val 
                                 channel.sendMessage("Failed to render map").await()
                                 return
                             }
-                            .getOrThrow()
+                            .getOrElse { MapSubmitCommand.FALLBACK_PREVIEW }
                     maps += Triple(metadata, preview, attachment)
                 } else {
                     delete = false
