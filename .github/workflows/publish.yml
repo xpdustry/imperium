@@ -6,7 +6,7 @@ on:
 jobs:
   github:
     name: "GitHub"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     outputs:
       version: "${{ steps.setup.outputs.version }}"
     steps:
@@ -65,7 +65,7 @@ jobs:
 
   maven:
     name: "Maven"
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     needs: [ github ]
     steps:
       - name: Checkout Repository
