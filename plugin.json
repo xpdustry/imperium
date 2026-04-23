@@ -6,5 +6,6 @@
   "java": true,
   "main": "com.xpdustry.imperium.mindustry.ImperiumPlugin",
   "repo": "Xpdustry/Imperium",
-  "dependencies": ["distributor-common", "kotlin-runtime", "nohorny", "sql4md"]
+  "dependencies": ["distributor-common", "kotlin-runtime", "nohorny", "sql4md-mariadb"],
+  "softDependencies": ["sql4md-h2"]
 }

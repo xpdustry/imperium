@@ -102,10 +102,17 @@ val downloadSlf4md by tasks.registering(GithubAssetDownload::class) {
     version = libs.versions.slf4md.map { "v$it" }
 }
 
-val downloadSql4md by tasks.registering(GithubAssetDownload::class) {
+val downloadSql4mdMariadb by tasks.registering(GithubAssetDownload::class) {
     owner = "xpdustry"
     repo = "sql4md"
-    asset = "sql4md.jar"
+    asset = "sql4md-mariadb.jar"
+    version = libs.versions.sql4md.map { "v$it" }
+}
+
+val downloadSql4mdH2 by tasks.registering(GithubAssetDownload::class) {
+    owner = "xpdustry"
+    repo = "sql4md"
+    asset = "sql4md-h2.jar"
     version = libs.versions.sql4md.map { "v$it" }
 }
 
@@ -143,7 +150,8 @@ tasks.runMindustryServer {
         downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
-        downloadSql4md,
+        downloadSql4mdMariadb,
+        downloadSql4mdH2,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )
@@ -159,7 +167,8 @@ tasks.register<MindustryExec>("runMindustryServer2") {
         downloadNoHorny,
         downloadSlf4md,
         pluginLibs,
-        downloadSql4md,
+        downloadSql4mdMariadb,
+        downloadSql4mdH2,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )
