@@ -5,8 +5,8 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.security.AfkManager
-import java.time.Instant
 import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
@@ -81,7 +81,7 @@ abstract class AbstractVoteCommand<O>(
             player.sendMessage("[scarlet]You have already voted.")
             return false
         }
-        if (session.start < Instant.ofEpochMilli(player.con.connectTime)) {
+        if (session.start < Instant.fromEpochMilliseconds(player.con.connectTime)) {
             player.sendMessage("[scarlet]You can't participate in this vote.")
             return false
         }

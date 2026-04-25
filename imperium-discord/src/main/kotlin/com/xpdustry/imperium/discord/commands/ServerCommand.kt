@@ -19,6 +19,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
 import java.util.Locale
+import kotlin.time.toJavaInstant
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
@@ -131,7 +132,7 @@ class ServerCommand(
             }
             for (entry in list) {
                 if (time) {
-                    append(TIME_FORMAT.format(entry.timestamp.atOffset(ZoneOffset.UTC)))
+                    append(TIME_FORMAT.format(entry.timestamp.toJavaInstant().atOffset(ZoneOffset.UTC)))
                     append(" ")
                 }
                 append("#")

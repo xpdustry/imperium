@@ -19,10 +19,10 @@ import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.translation.is_player_afk
 import com.xpdustry.imperium.mindustry.translation.player_afk_announcement
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
-import java.time.Duration
-import java.time.Instant
-import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
+import java.time.Duration as JavaDuration
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Instant
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.gen.Player
@@ -63,16 +63,14 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
         }
     }
 
-    override fun isPlayerAfk(player: Player): Boolean {
-        return getAfkDuration(player).toKotlinDuration() >= config.mindustry.afkDelay
-    }
+    override fun isPlayerAfk(player: Player): Boolean = getAfkDuration(player) >= config.mindustry.afkDelay
 
     private fun checkAfkStatus(player: Player) {
-        val duration = getAfkDuration(player).toKotlinDuration()
+        val duration = getAfkDuration(player)
 
         when {
             duration >= config.mindustry.afkKickDelay -> {
-                player.asAudience.kick(player_afk_kick(), Duration.ZERO)
+                player.asAudience.kick(player_afk_kick(), JavaDuration.ZERO)
             }
             duration >= config.mindustry.afkDelay -> {
                 if (notified.set(player, Unit) != Unit) {
@@ -85,9 +83,8 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
         }
     }
 
-    private fun getAfkDuration(player: Player): Duration {
-        return lastActivity[player]?.let { Duration.between(it, Instant.now()) } ?: Duration.ZERO
-    }
+    private fun getAfkDuration(player: Player): Duration =
+        lastActivity[player]?.let { Clock.System.now() - it } ?: Duration.ZERO
 
     // PERSONA!!
     private fun onDisturbingThePeace(player: Player) {
@@ -95,7 +92,7 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
             Distributor.get().audienceProvider.players.sendMessage(player_afk_announcement(false, player.plainName()))
         }
         notified.remove(player)
-        lastActivity[player] = Instant.now()
+        lastActivity[player] = Clock.System.now()
     }
 
     @ImperiumCommand(["afk"])
@@ -104,7 +101,7 @@ class AfkListener(private val config: ImperiumConfig, plugin: MindustryPlugin) :
     fun isAfkCommand(sender: CommandSender, target: Player? = null) {
         if (target == null) {
             if (sender.isPlayer) {
-                val afkInstant = Instant.now().minus((config.mindustry.afkDelay).toJavaDuration())
+                val afkInstant = Clock.System.now() - config.mindustry.afkDelay
                 lastActivity[sender.player] = afkInstant
                 checkAfkStatus(sender.player)
             } else sender.error("Console must specify a player. You can't be afk as console.")
