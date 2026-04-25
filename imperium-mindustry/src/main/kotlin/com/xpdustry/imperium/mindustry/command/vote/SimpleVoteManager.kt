@@ -6,12 +6,13 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import java.time.Instant
 import java.util.Objects
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
@@ -72,7 +73,7 @@ internal class SimpleVoteManager<O>(
 
         override var canceller: Player? = null
         override val id: UUID = UUID.randomUUID()
-        override val start: Instant = Instant.now()
+        override val start: Instant = Clock.System.now()
         override var required: Int = required(this)
         override val votes: Int
             get() = voters.values.sumOf(Vote::asInt)

@@ -7,12 +7,10 @@ import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.misc.exists
 import java.io.InputStream
-import java.time.Instant
 import java.util.function.Supplier
 import kotlin.math.roundToInt
+import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
 import org.jetbrains.exposed.v1.core.ColumnSet
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -179,7 +177,7 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
                         it[MindustryMapTable.author] = author
                         it[MindustryMapTable.width] = width
                         it[MindustryMapTable.height] = height
-                        it[MindustryMapTable.lastUpdate] = Instant.now()
+                        it[MindustryMapTable.lastUpdate] = Clock.System.now()
                         it[MindustryMapTable.file] = ExposedBlob(actual)
                     }
                 if (rows != 0) {
@@ -197,7 +195,7 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
                 it[MindustryMapGameTable.map] = map
                 it[server] = data.server
                 it[start] = data.start
-                it[playtime] = data.playtime.toJavaDuration()
+                it[playtime] = data.playtime
                 it[unitsCreated] = data.unitsCreated
                 it[ennemiesKilled] = data.ennemiesKilled
                 it[wavesLasted] = data.wavesLasted
@@ -241,8 +239,7 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
                 MindustryMapGameTable.select(MindustryMapGameTable.playtime.sum())
                     .where { MindustryMapGameTable.map eq map }
                     .firstOrNull()
-                    ?.get(MindustryMapGameTable.playtime.sum())
-                    ?.toKotlinDuration() ?: Duration.ZERO
+                    ?.get(MindustryMapGameTable.playtime.sum()) ?: Duration.ZERO
             val record =
                 MindustryMapGameTable.select(MindustryMapGameTable.id)
                     .where { MindustryMapGameTable.map eq map }
@@ -319,7 +316,7 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
                 MindustryMap.PlayThrough.Data(
                     server = this[MindustryMapGameTable.server],
                     start = this[MindustryMapGameTable.start],
-                    playtime = this[MindustryMapGameTable.playtime].toKotlinDuration(),
+                    playtime = this[MindustryMapGameTable.playtime],
                     unitsCreated = this[MindustryMapGameTable.unitsCreated],
                     ennemiesKilled = this[MindustryMapGameTable.ennemiesKilled],
                     wavesLasted = this[MindustryMapGameTable.wavesLasted],

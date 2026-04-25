@@ -77,7 +77,7 @@ class MapListener(
     }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
-        val file = cache.resolve("${map.id}_${map.lastUpdate.toEpochMilli()}.msav")
+        val file = cache.resolve("${map.id}_${map.lastUpdate.toEpochMilliseconds()}.msav")
         if (file.notExists()) {
             logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map.id)
             file.outputStream().use { output -> maps.getMapInputStream(map.id)!!.use { input -> input.copyTo(output) } }

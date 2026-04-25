@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.account
 
-import java.time.Instant
+import kotlin.time.Instant
 
 data class MindustrySession(
     val key: SessionKey,

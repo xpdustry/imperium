@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.database
 
-import java.time.Instant
+import kotlin.time.Instant
 
 interface SQLDatabase {
     suspend fun <R> transaction(block: suspend Handle.() -> R): R

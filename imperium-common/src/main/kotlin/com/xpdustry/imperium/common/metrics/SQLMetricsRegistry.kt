@@ -7,11 +7,12 @@ import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.database.SQLDatabase
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import java.time.Instant
 import java.util.concurrent.CopyOnWriteArraySet
-import kotlin.system.measureTimeMillis
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.toJavaDuration
+import kotlin.time.Instant
+import kotlin.time.measureTime
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -22,7 +23,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class SQLMetricsRegistry(
@@ -33,7 +33,7 @@ class SQLMetricsRegistry(
     private val collectors = CopyOnWriteArraySet<MetricsCollector>()
     private val lock = Mutex()
     private lateinit var job: Job
-    private var lastCleanupAt = Instant.EPOCH
+    private var lastCleanupAt = Instant.DISTANT_PAST
 
     override fun onImperiumInit() {
         require(config.interval.isPositive()) { "Metric interval must be positive" }
@@ -43,10 +43,9 @@ class SQLMetricsRegistry(
 
         job =
             ImperiumScope.IO.launch {
-                val interval = config.interval.inWholeMilliseconds
                 while (isActive) {
                     var count = 0
-                    val elapsed = measureTimeMillis {
+                    val elapsed = measureTime {
                         try {
                             count = write(shouldCleanup())
                         } catch (error: Throwable) {
@@ -54,7 +53,7 @@ class SQLMetricsRegistry(
                         }
                     }
                     logger.trace("Collected {} metrics, took {} milliseconds", count, elapsed)
-                    delay((interval - elapsed).coerceAtLeast(1))
+                    delay((config.interval - elapsed).coerceAtLeast(500.milliseconds))
                 }
             }
     }
@@ -134,9 +133,9 @@ class SQLMetricsRegistry(
                 if (cleanup) {
                     "DELETE FROM `metric_sample_v2` WHERE `created_at` < ?;"
                         .asPreparedStatement()
-                        .push(Instant.now().minus(config.retention.toJavaDuration()))
+                        .push(Clock.System.now() - config.retention)
                         .executeUpdate()
-                    lastCleanupAt = Instant.now()
+                    lastCleanupAt = Clock.System.now()
                 }
             }
 
@@ -144,8 +143,7 @@ class SQLMetricsRegistry(
         }
 
     private fun shouldCleanup(): Boolean {
-        val now = Instant.now()
-        return now.isAfter(lastCleanupAt.plus(CLEANUP_INTERVAL.coerceAtMost(config.retention).toJavaDuration()))
+        return Clock.System.now() > lastCleanupAt + CLEANUP_INTERVAL.coerceAtMost(config.retention)
     }
 
     private data class MetricSample(val name: String, val kind: String, val labels: String, val value: Double)

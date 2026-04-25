@@ -4,8 +4,8 @@ package com.xpdustry.imperium.common.user
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.dao.id.IntIdTable
-import org.jetbrains.exposed.v1.javatime.CurrentTimestamp
-import org.jetbrains.exposed.v1.javatime.timestamp
+import org.jetbrains.exposed.v1.datetime.CurrentTimestamp
+import org.jetbrains.exposed.v1.datetime.timestamp
 
 object UserTable : IntIdTable("user") {
     val uuid = long("uuid").uniqueIndex()

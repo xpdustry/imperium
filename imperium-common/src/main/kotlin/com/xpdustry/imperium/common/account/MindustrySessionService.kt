@@ -7,9 +7,9 @@ import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.string.ImperiumArgon2
 import com.xpdustry.imperium.common.string.Password
-import java.time.Instant
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
-import kotlin.time.toJavaDuration
+import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
@@ -31,7 +31,7 @@ class MindustrySessionService(
     override fun onImperiumInit() {
         provider.newTransaction {
             SchemaUtils.createMissingTablesAndColumns(AccountTable, AccountSessionTable)
-            AccountSessionTable.deleteWhere { expiration less Instant.now() }
+            AccountSessionTable.deleteWhere { expiration less Clock.System.now() }
         }
     }
 
@@ -42,7 +42,7 @@ class MindustrySessionService(
                     (AccountSessionTable.uuid eq key.uuid) and
                         (AccountSessionTable.usid eq key.usid) and
                         (AccountSessionTable.address eq key.address.address) and
-                        (AccountSessionTable.expiration greaterEq Instant.now())
+                        (AccountSessionTable.expiration greaterEq Clock.System.now())
                 }
                 .firstOrNull()
                 ?.toMindustrySession(key)
@@ -53,7 +53,7 @@ class MindustrySessionService(
             AccountSessionTable.selectAll()
                 .where {
                     (AccountSessionTable.account eq account) and
-                        (AccountSessionTable.expiration greaterEq Instant.now())
+                        (AccountSessionTable.expiration greaterEq Clock.System.now())
                 }
                 .map {
                     val address = java.net.InetAddress.getByAddress(it[AccountSessionTable.address])
@@ -76,7 +76,7 @@ class MindustrySessionService(
 
         provider.newSuspendTransaction {
             AccountSessionTable.upsert {
-                val now = Instant.now()
+                val now = Clock.System.now()
                 it[AccountSessionTable.account] = targetAccount.id
                 it[uuid] = key.uuid
                 it[usid] = key.usid
@@ -84,7 +84,7 @@ class MindustrySessionService(
                 it[server] = config.server.name
                 it[creation] = now
                 it[lastLogin] = now
-                it[expiration] = now.plus(SESSION_LIFETIME.toJavaDuration())
+                it[expiration] = now.plus(SESSION_LIFETIME)
             }
         }
 
@@ -110,7 +110,7 @@ class MindustrySessionService(
             }
         }
 
-    private fun org.jetbrains.exposed.v1.core.ResultRow.toMindustrySession(key: SessionKey) =
+    private fun ResultRow.toMindustrySession(key: SessionKey) =
         MindustrySession(
             key = key,
             account = this[AccountSessionTable.account].value,

@@ -10,11 +10,13 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
 import java.sql.*
-import java.time.Instant
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Instant
+import kotlin.time.toJavaInstant
+import kotlin.time.toKotlinInstant
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
@@ -121,7 +123,7 @@ private class PreparedStatementBuilderImpl(private val raw: String, private val 
     }
 
     override fun push(value: Instant): SQLDatabase.PreparedStatementBuilder {
-        statement.setTimestamp(index, Timestamp.from(value))
+        statement.setTimestamp(index, Timestamp.from(value.toJavaInstant()))
         index++
         return this
     }
@@ -195,7 +197,7 @@ private class RowImpl(private val set: ResultSet) : SQLDatabase.Row {
 
     override fun getBytes(name: String): ByteArray? = set.getBytes(name)
 
-    override fun getInstant(name: String): Instant? = set.getTimestamp(name).toInstant()
+    override fun getInstant(name: String): Instant? = set.getTimestamp(name)?.toInstant()?.toKotlinInstant()
 }
 
 private class CoroutineHandleElement(val handle: HandleImpl, val config: DatabaseConfig) :

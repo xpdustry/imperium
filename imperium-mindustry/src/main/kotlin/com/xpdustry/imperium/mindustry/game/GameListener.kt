@@ -16,7 +16,7 @@ import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.playtime
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.start
-import java.time.Instant
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -69,7 +69,7 @@ class GameListener constructor(private val config: ImperiumConfig, private val m
     @EventHandler
     internal fun onGameBeginEvent(event: MenuToPlayEvent) {
         if (Vars.state.map.start == null) {
-            Vars.state.map.start = Instant.now()
+            Vars.state.map.start = Clock.System.now()
         }
     }
 
@@ -78,7 +78,7 @@ class GameListener constructor(private val config: ImperiumConfig, private val m
         val playtime = Vars.state.map.playtime
         val stats = Vars.state.stats
         val waves = Vars.state.wave
-        val start = Vars.state.map.start ?: Instant.now()
+        val start = Vars.state.map.start ?: Clock.System.now()
         val mapId = Vars.state.map.id ?: return
         if (playtime < 1.minutes) return
         ImperiumScope.MAIN.launch {

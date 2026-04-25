@@ -19,7 +19,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_block
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_unit
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -76,11 +76,11 @@ class AntiGriefListener(
         val player = event.unit.player
         if (isNew[player] != true || marks.isMarked(player)) return
         val history = historian.getHistory(player.uuid())
-        val now = System.currentTimeMillis()
+        val now = Clock.System.now()
         val score =
             history
                 .asSequence()
-                .filter { (now - it.timestamp.epochSecond).milliseconds < 3.minutes }
+                .filter { (now - it.timestamp) < 3.minutes }
                 .map {
                     val sign =
                         when (it.type) {
