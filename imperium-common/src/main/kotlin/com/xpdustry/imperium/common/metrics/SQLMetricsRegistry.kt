@@ -9,6 +9,7 @@ import com.xpdustry.imperium.common.database.SQLDatabase
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlin.time.measureTime
@@ -52,7 +53,7 @@ class SQLMetricsRegistry(
                         }
                     }
                     logger.trace("Collected {} metrics, took {} milliseconds", count, elapsed)
-                    delay(config.interval)
+                    delay((config.interval - elapsed).coerceAtLeast(500.milliseconds))
                 }
             }
     }
