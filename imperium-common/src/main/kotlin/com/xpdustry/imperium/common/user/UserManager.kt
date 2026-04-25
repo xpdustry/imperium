@@ -12,7 +12,8 @@ import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toLongMuuid
 import com.xpdustry.imperium.common.security.Identity
 import java.net.InetAddress
-import java.time.Instant
+import kotlin.time.Clock
+import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -72,7 +73,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
                     return@newSuspendTransaction user
                 }
 
-                val now = Instant.now()
+                val now = Clock.System.now()
                 val identifier =
                     UserTable.insertAndGetId {
                             it[uuid] = identity.uuid.toLongMuuid()
@@ -97,7 +98,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
                     uuid = identity.uuid,
                     lastName = identity.name.stripMindustryColors(),
                     lastAddress = identity.address,
-                    lastJoin = Instant.EPOCH,
+                    lastJoin = Instant.fromEpochMilliseconds(0),
                     firstJoin = now,
                 )
             }
@@ -148,7 +149,7 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
                 it[lastName] = identity.name.stripMindustryColors()
                 it[lastAddress] = identity.address.address
                 it[timesJoined] = timesJoined.plus(1)
-                it[lastJoin] = Instant.now()
+                it[lastJoin] = Clock.System.now()
             }
 
             UserNameTable.insertIgnore {

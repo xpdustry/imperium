@@ -17,10 +17,7 @@ import com.xpdustry.imperium.common.string.StringRequirement
 import com.xpdustry.imperium.common.string.findMissingRequirements
 import java.security.MessageDigest
 import kotlin.time.Duration
-import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
@@ -165,9 +162,7 @@ class AccountService(
     suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean {
         val updated =
             provider.newSuspendTransaction {
-                AccountTable.update({ AccountTable.id eq account }) {
-                    it[playtime] = playtime.plus(duration.toJavaDuration())
-                } > 0
+                AccountTable.update({ AccountTable.id eq account }) { it[playtime] = playtime.plus(duration) } > 0
             }
         if (updated) {
             messenger.broadcast(AccountUpdate(account))
@@ -223,7 +218,7 @@ class AccountService(
             username = this[AccountTable.username],
             discord = this[AccountTable.discord],
             games = this[AccountTable.games],
-            playtime = this[AccountTable.playtime].toKotlinDuration(),
+            playtime = this[AccountTable.playtime],
             creation = this[AccountTable.creation],
             legacy = this[AccountTable.legacy],
             rank = this[AccountTable.rank],

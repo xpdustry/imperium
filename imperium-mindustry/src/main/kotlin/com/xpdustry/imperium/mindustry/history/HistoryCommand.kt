@@ -20,8 +20,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
-import java.time.Duration
-import java.time.Instant
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -36,7 +35,7 @@ class HistoryCommand(
     private val users: UserManager,
     private val config: ImperiumConfig,
     private val historyRenderer: HistoryRenderer,
-    private val plugin: MindustryPlugin,
+    plugin: MindustryPlugin,
 ) : ImperiumApplication.Listener {
     private val taps = PlayerMap<PlayerTap>(plugin)
     private val heatmapViewers = PlayerMap<Boolean>(plugin)
@@ -51,8 +50,7 @@ class HistoryCommand(
                         val x = player.tileX() + ox
                         val y = player.tileY() + oy
                         val entry = historian.getHistory(x, y).lastOrNull() ?: continue
-                        val minutes =
-                            Duration.between(entry.timestamp, Instant.now()).toMinutes().toInt().coerceAtMost(30)
+                        val minutes = (Clock.System.now() - entry.timestamp).inWholeMinutes.coerceAtMost(30)
                         val progress = minutes / 30F
                         val color = Color.orange.cpy().lerp(Color.blue, progress)
                         Call.label(

@@ -10,10 +10,8 @@ import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.user.UserAddressTable
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.common.user.UserTable
-import java.time.Instant
+import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.v1.core.JoinType
 import org.jetbrains.exposed.v1.core.ResultRow
@@ -116,7 +114,7 @@ class SimplePunishmentManager(
         if (latest != null) {
             provider.newSuspendTransaction {
                 PunishmentTable.update({ PunishmentTable.id eq latest.id }) {
-                    it[PunishmentTable.duration] = if (duration.isInfinite()) null else duration.toJavaDuration()
+                    it[PunishmentTable.duration] = if (duration.isInfinite()) null else duration
                     it[PunishmentTable.reason] = reason
                 }
             }
@@ -128,8 +126,7 @@ class SimplePunishmentManager(
                             it[target] = user
                             it[PunishmentTable.reason] = reason
                             it[PunishmentTable.type] = type
-                            it[PunishmentTable.duration] =
-                                if (duration.isInfinite()) null else duration.toJavaDuration()
+                            it[PunishmentTable.duration] = if (duration.isInfinite()) null else duration
                             it[server] = config.server.name
                         }
                         .value
@@ -161,7 +158,7 @@ class SimplePunishmentManager(
                 }
 
                 PunishmentTable.update({ PunishmentTable.id eq punishment }) {
-                    it[pardonTimestamp] = Instant.now()
+                    it[pardonTimestamp] = Clock.System.now()
                     it[pardonReason] = reason
                 }
 
@@ -192,7 +189,7 @@ class SimplePunishmentManager(
             target = this[PunishmentTable.target].value,
             reason = this[PunishmentTable.reason],
             type = this[PunishmentTable.type],
-            duration = this[PunishmentTable.duration]?.toKotlinDuration() ?: Duration.INFINITE,
+            duration = this[PunishmentTable.duration] ?: Duration.INFINITE,
             pardon = pardon,
             server = this[PunishmentTable.server],
             creation = this[PunishmentTable.creation],

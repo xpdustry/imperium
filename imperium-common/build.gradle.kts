@@ -24,7 +24,7 @@ dependencies {
 
     api(libs.exposed.core)
     api(libs.exposed.jdbc)
-    api(libs.exposed.java.time)
+    api(libs.exposed.kotlin.datetime)
     api(libs.exposed.json)
     api(libs.hikari)
 

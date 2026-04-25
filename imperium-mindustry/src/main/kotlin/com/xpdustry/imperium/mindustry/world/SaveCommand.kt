@@ -55,6 +55,7 @@ import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.moveTo
 import kotlin.io.path.name
 import kotlin.io.path.nameWithoutExtension
+import kotlin.time.toKotlinInstant
 import mindustry.Vars
 import mindustry.gen.Iconc
 import mindustry.io.SaveIO
@@ -284,10 +285,11 @@ class SaveCommand(
             .append(text("AUTO", LIGHT_GRAY), space(), name)
             .apply {
                 try {
+                    // TODO Monitor usage of k instant here
                     val extracted = result.groups["datetime"]!!.value
                     val datetime = LocalDateTime.parse(extracted, AUTO_SAVE_DATETIME_PARSER).toInstant(ZoneOffset.UTC)
                     val locale = viewer.metadata[StandardKeys.LOCALE] ?: config.language
-                    val relative = renderer.renderRelativeInstant(datetime, locale)
+                    val relative = renderer.renderRelativeInstant(datetime.toKotlinInstant(), locale)
                     append(newline(), text(relative, LIGHT_GRAY))
                 } catch (ignored: Exception) {}
             }
