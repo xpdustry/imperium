@@ -17,6 +17,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.Instant
 import kotlin.time.toJavaInstant
 import kotlin.time.toKotlinInstant
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
@@ -55,25 +56,27 @@ internal class SQLDatabaseImpl(private val config: ImperiumConfig, @Named("direc
         source.close()
     }
 
-    override suspend fun <R> transaction(block: suspend SQLDatabase.Handle.() -> R): R {
-        val element = currentCoroutineContext()[CoroutineHandleElement]
-        if (element != null && element.config == config) {
-            return block(element.handle)
-        }
-        return this.source.connection.use { connection ->
-            val handle = HandleImpl(connection)
-            try {
-                handle.connection.autoCommit = false
-                handle.connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-                val result = withContext(CoroutineHandleElement(handle, config.database)) { block(handle) }
-                handle.connection.commit()
-                return@use result
-            } catch (e: SQLException) {
-                handle.connection.rollback()
-                throw e
+    // TODO Rename to withTransaction
+    override suspend fun <R> transaction(block: suspend SQLDatabase.Handle.() -> R): R =
+        withContext(Dispatchers.IO) {
+            val element = currentCoroutineContext()[CoroutineHandleElement]
+            if (element != null && element.config == config) {
+                return@withContext block(element.handle)
+            }
+            return@withContext this@SQLDatabaseImpl.source.connection.use { connection ->
+                val handle = HandleImpl(connection)
+                try {
+                    handle.connection.autoCommit = false
+                    handle.connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+                    val result = withContext(CoroutineHandleElement(handle, config.database)) { block(handle) }
+                    handle.connection.commit()
+                    return@use result
+                } catch (e: SQLException) {
+                    handle.connection.rollback()
+                    throw e
+                }
             }
         }
-    }
 }
 
 private class PreparedStatementBuilderImpl(private val raw: String, private val statement: PreparedStatement) :

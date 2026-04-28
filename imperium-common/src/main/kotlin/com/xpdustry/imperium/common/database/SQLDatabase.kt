@@ -2,12 +2,13 @@
 package com.xpdustry.imperium.common.database
 
 import kotlin.time.Instant
+import org.intellij.lang.annotations.Language
 
 interface SQLDatabase {
     suspend fun <R> transaction(block: suspend Handle.() -> R): R
 
     interface Handle {
-        fun String.asPreparedStatement(): PreparedStatementBuilder
+        fun @receiver:Language("SQL") String.asPreparedStatement(): PreparedStatementBuilder
     }
 
     interface PreparedStatementBuilder {
