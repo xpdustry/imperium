@@ -69,6 +69,14 @@ sealed interface DatabaseConfig {
         val username: String = "root",
         val password: Secret = Secret("root"),
     ) : DatabaseConfig
+
+    data class PostgreSQL(
+        val host: String = "localhost",
+        val port: Int = 5432,
+        val database: String = "imperium",
+        val username: String = "postgres",
+        val password: Secret = Secret("postgres"),
+    ) : DatabaseConfig
 }
 
 sealed interface MessengerConfig {

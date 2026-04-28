@@ -24,6 +24,7 @@ hikari = "7.0.2"
 exposed = "1.2.0"
 h2 = "2.4.240"
 mariadb = "3.5.8"
+postgresql = "42.7.8"
 caffeine = "3.2.3"
 prettytime = "5.0.9.Final"
 time4j = "4.38"
@@ -70,6 +71,7 @@ exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "e
 exposed-kotlin-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 h2 = { module = "com.h2database:h2", version.ref = "h2" }
 mariadb = { module = "org.mariadb.jdbc:mariadb-java-client", version.ref = "mariadb" }
+postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 caffeine = { module = "com.github.ben-manes.caffeine:caffeine", version.ref = "caffeine" }
 prettytime = { module = "org.ocpsoft.prettytime:prettytime", version.ref = "prettytime" }
 time4j-core = { module = "net.time4j:time4j-core", version.ref = "time4j" }

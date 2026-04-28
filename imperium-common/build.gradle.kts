@@ -32,8 +32,10 @@ dependencies {
     api(libs.time4j.core)
     testRuntimeOnly(libs.h2)
     testRuntimeOnly(libs.mariadb)
+    testRuntimeOnly(libs.postgresql)
 
     implementation(libs.mariadb)
+    implementation(libs.postgresql)
 }
 
 // We love OOMs :^)

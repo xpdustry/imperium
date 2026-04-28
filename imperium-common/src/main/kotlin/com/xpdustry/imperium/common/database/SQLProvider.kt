@@ -51,7 +51,14 @@ class SimpleSQLProvider(private val config: DatabaseConfig, @Named("directory") 
                 }
             }
             is DatabaseConfig.MariaDB -> {
+                hikari.driverClassName = "org.mariadb.jdbc.Driver"
                 hikari.jdbcUrl = "jdbc:mariadb://${config.host}:${config.port}/${config.database}"
+                hikari.username = config.username
+                hikari.password = config.password.value
+            }
+            is DatabaseConfig.PostgreSQL -> {
+                hikari.driverClassName = "org.postgresql.Driver"
+                hikari.jdbcUrl = "jdbc:postgresql://${config.host}:${config.port}/${config.database}"
                 hikari.username = config.username
                 hikari.password = config.password.value
             }
