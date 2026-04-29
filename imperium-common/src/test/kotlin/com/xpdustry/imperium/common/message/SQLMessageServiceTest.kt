@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.message
 
-import com.sksamuel.hoplite.Secret
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -20,11 +19,7 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.mariadb.MariaDBContainer
 
-@Testcontainers
 class SQLMessageServiceTest {
     @TempDir private lateinit var tempDir: Path
 
@@ -36,20 +31,7 @@ class SQLMessageServiceTest {
 
     @BeforeEach
     fun init() {
-        database =
-            SQLDatabaseImpl(
-                ImperiumConfig(
-                    database =
-                        DatabaseConfig.MariaDB(
-                            host = MARIADB.host,
-                            port = MARIADB.firstMappedPort,
-                            username = MARIADB.username,
-                            database = MARIADB.databaseName,
-                            password = Secret(MARIADB.password),
-                        )
-                ),
-                tempDir,
-            )
+        database = SQLDatabaseImpl(ImperiumConfig(database = DatabaseConfig.H2()), tempDir)
         database.onImperiumInit()
         service1 = SQLMessageService(database, config1, ImperiumScope.MAIN)
         service2 = SQLMessageService(database, config2, ImperiumScope.MAIN)
@@ -128,8 +110,4 @@ class SQLMessageServiceTest {
     }
 
     @Serializable data class TestMessage(val content: String) : Message
-
-    companion object {
-        @Container private val MARIADB = MariaDBContainer("mariadb:latest")
-    }
 }

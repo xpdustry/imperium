@@ -1,6 +1,5 @@
 plugins {
     id("imperium.base-conventions")
-    application
     id("com.gradleup.shadow")
 }
 
@@ -8,23 +7,10 @@ version = rootProject.version
 
 dependencies {
     implementation(projects.imperiumCommon)
-    runtimeOnly(kotlin("stdlib"))
-    runtimeOnly(kotlin("reflect"))
     implementation(libs.logback.classic)
-    implementation(libs.jda) {
-        exclude(module = "opus-java")
-    }
-
-    implementation("com.github.Anuken.Mindustry:core:v${libs.versions.mindustry.get()}")
-    implementation("com.github.Anuken.Arc:arc-core:v${libs.versions.mindustry.get()}")
-
-    runtimeOnly(libs.mariadb)
+    implementation(libs.jda) { exclude(module = "opus-java") }
     runtimeOnly(libs.h2)
-}
-
-application {
-    applicationName = "ImperiumDiscord"
-    mainClass = "com.xpdustry.imperium.discord.ImperiumDiscordKt"
+    runtimeOnly(libs.mariadb)
 }
 
 tasks.shadowJar {
@@ -37,18 +23,24 @@ tasks.shadowJar {
     }
 
     minimize {
-        exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
         exclude(dependency("org.slf4j:slf4j-.*:.*"))
         exclude(dependency("ch.qos.logback:logback-.*:.*"))
-        exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
         exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
-        exclude(dependency("org.javacord:javacord-core:.*"))
         exclude(dependency(libs.exposed.jdbc.get()))
         exclude(dependency(libs.mariadb.get()))
         exclude(dependency(libs.caffeine.get()))
         exclude(dependency(libs.prettytime.get()))
         exclude(dependency(libs.time4j.core.get()))
         exclude(dependency(libs.h2.get()))
+    }
+
+    manifest {
+        attributes(
+            "Implementation-Title" to "ImperiumDiscord",
+            "Implementation-Version" to project.version,
+            "Implementation-Vendor" to "Xpdustry",
+            "Main-Class" to "com.xpdustry.imperium.discord.ImperiumDiscordKt",
+        )
     }
 }
 
@@ -60,6 +52,7 @@ tasks.register("getArtifactPath") {
     doLast { println(tasks.shadowJar.get().archiveFile.get().toString()) }
 }
 
-tasks.runShadow {
+tasks.register<JavaExec>("runBackend") {
     workingDir = temporaryDir
+    classpath(tasks.shadowJar)
 }

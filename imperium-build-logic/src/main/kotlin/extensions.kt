@@ -1,34 +1,8 @@
-import java.net.URI
 import java.time.Clock
 import java.time.LocalDateTime
 import org.gradle.accessors.dm.LibrariesForLibs
 import org.gradle.api.Project
-import org.gradle.api.artifacts.dsl.RepositoryHandler
 import org.gradle.kotlin.dsl.the
-
-fun RepositoryHandler.xpdustryMindustry() {
-    maven {
-        url = URI.create("https://maven.xpdustry.com/mindustry")
-        name = "xpdustry-mindustry"
-        mavenContent { releasesOnly() }
-    }
-}
-
-fun RepositoryHandler.xpdustryReleases() {
-    maven {
-        url = URI.create("https://maven.xpdustry.com/releases")
-        name = "xpdustry-releases"
-        mavenContent { releasesOnly() }
-    }
-}
-
-fun RepositoryHandler.xpdustrySnapshots() {
-    maven {
-        url = URI.create("https://maven.xpdustry.com/snapshots")
-        name = "xpdustry-snapshots"
-        mavenContent { snapshotsOnly() }
-    }
-}
 
 val Project.libs: LibrariesForLibs get() = the()
 

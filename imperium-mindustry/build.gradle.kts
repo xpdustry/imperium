@@ -8,7 +8,6 @@ import com.xpdustry.toxopid.task.MindustryExec
 
 plugins {
     id("imperium.base-conventions")
-    id("imperium.publishing-conventions")
     id("com.gradleup.shadow")
     id("com.xpdustry.toxopid")
 }
@@ -40,7 +39,7 @@ dependencies {
     implementation(libs.ahocorasick)
 }
 
-val generateResources by tasks.registering {
+val generateMetadata by tasks.registering {
     inputs.property("metadata", metadata)
     outputs.files(fileTree(temporaryDir))
     doLast {
@@ -58,7 +57,7 @@ tasks.shadowJar {
     archiveFileName.set("imperium-mindustry.jar")
     archiveClassifier.set("plugin")
 
-    from(generateResources, generateChangelog)
+    from(generateMetadata, generateChangelog)
 
     from(rootProject.file("LICENSE.md")) {
         into("META-INF")
@@ -137,39 +136,29 @@ val downloadNoHorny by tasks.registering(GithubAssetDownload::class) {
     version = libs.versions.nohorny.map { "v$it" }
 }
 
+// Second client for testing locally
 tasks.register<MindustryExec>("runMindustryDesktop2") {
     group = Toxopid.TASK_GROUP_NAME
     configureDesktop()
 }
 
-val pluginLibs = fileTree("libs") { include("*.jar") }
+val pluginDependencies = listOf(
+    downloadKotlinRuntime,
+    downloadNoHorny,
+    downloadSlf4md,
+    downloadSql4mdMariadb,
+    downloadSql4mdH2,
+    downloadDistributorCommon,
+    downloadDistributorPermissionRank,
+)
 
 tasks.runMindustryServer {
-    mods.from(
-        downloadKotlinRuntime,
-        downloadNoHorny,
-        downloadSlf4md,
-        pluginLibs,
-        downloadSql4mdMariadb,
-        downloadSql4mdH2,
-        downloadDistributorCommon,
-        downloadDistributorPermissionRank,
-    )
+    mods.from(pluginDependencies)
 }
 
 // Second server for testing discovery
 tasks.register<MindustryExec>("runMindustryServer2") {
     group = Toxopid.TASK_GROUP_NAME
     configureServer()
-    mods.from(
-        tasks.shadowJar,
-        downloadKotlinRuntime,
-        downloadNoHorny,
-        downloadSlf4md,
-        pluginLibs,
-        downloadSql4mdMariadb,
-        downloadSql4mdH2,
-        downloadDistributorCommon,
-        downloadDistributorPermissionRank,
-    )
+    mods.from(tasks.shadowJar, pluginDependencies)
 }

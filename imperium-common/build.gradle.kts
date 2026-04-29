@@ -1,6 +1,5 @@
 plugins {
     id("imperium.base-conventions")
-    id("imperium.publishing-conventions")
 }
 
 dependencies {
@@ -36,9 +35,4 @@ dependencies {
 
     implementation(libs.mariadb)
     implementation(libs.postgresql)
-}
-
-// We love OOMs :^)
-tasks.withType<Test> {
-    maxHeapSize = "4g"
 }

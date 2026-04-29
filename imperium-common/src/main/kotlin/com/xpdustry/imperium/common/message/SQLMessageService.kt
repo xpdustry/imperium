@@ -2,6 +2,7 @@
 package com.xpdustry.imperium.common.message
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLDatabase
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -57,15 +58,18 @@ internal class SQLMessageService(
                     .asPreparedStatement()
                     .executeSingleUpdate()
 
-                """
-                CREATE EVENT IF NOT EXISTS `message_queue_v2_cleanup`
-                ON SCHEDULE EVERY 10 MINUTE
-                DO
-                    DELETE FROM `message_queue_v2`
-                    WHERE `created_at` < CURRENT_TIMESTAMP() - INTERVAL 1 HOUR;
-                """
-                    .asPreparedStatement()
-                    .executeSingleUpdate()
+                // TODO Remove when switching to Postgres
+                if (config.database !is DatabaseConfig.H2) {
+                    """
+                    CREATE EVENT IF NOT EXISTS `message_queue_v2_cleanup`
+                    ON SCHEDULE EVERY 10 MINUTE
+                    DO
+                        DELETE FROM `message_queue_v2`
+                        WHERE `created_at` < TIMESTAMPADD(HOUR, -1, CURRENT_TIMESTAMP());
+                    """
+                        .asPreparedStatement()
+                        .executeSingleUpdate()
+                }
 
                 cursor =
                     "SELECT `counter` FROM `message_queue_v2` ORDER BY `counter` DESC LIMIT 1;"
@@ -143,8 +147,8 @@ internal class SQLMessageService(
                     """
                     SELECT `counter`, `sender`, `topic`, `payload`
                     FROM `message_queue_v2`
-                    WHERE `counter` > ? AND `sender` != ? AND (`created_at` > CURRENT_TIMESTAMP() - INTERVAL 30 SECOND)
-                    ORDER BY `counter` ASC;
+                    WHERE `counter` > ? AND `sender` != ? AND `created_at` > TIMESTAMPADD(SECOND, -30, CURRENT_TIMESTAMP())
+                    ORDER BY `counter`;
                     """
                         .asPreparedStatement()
                         .push(cursor)
