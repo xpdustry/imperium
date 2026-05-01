@@ -251,13 +251,15 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
             MindustryMap.Stats(score, difficulty, games, playtime, record)
         }
 
+    // TODO Implement proper streaming
     override suspend fun getMapInputStream(map: Int): InputStream? =
         provider.newSuspendTransaction {
             MindustryMapTable.select(MindustryMapTable.file)
                 .where { MindustryMapTable.id eq map }
                 .firstOrNull()
                 ?.get(MindustryMapTable.file)
-                ?.inputStream
+                ?.bytes
+                ?.inputStream()
         }
 
     override suspend fun searchMapByName(query: String): List<MindustryMap> =

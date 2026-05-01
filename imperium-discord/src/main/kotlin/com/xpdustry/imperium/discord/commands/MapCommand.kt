@@ -68,7 +68,7 @@ internal class MapCommand(
                     files += FileUpload.fromData(tempImageFile, "preview.png")
                     embeds += Embed {
                         color = MINDUSTRY_ACCENT_COLOR.rgb
-                        title = map.name
+                        title = map.name.ifBlank { "unnamed" }
                         field("Author", map.author ?: "Unknown", false)
                         field("Identifier", codec.encode(map.id), false)
                         field("Description", map.description ?: "Unknown", false)
