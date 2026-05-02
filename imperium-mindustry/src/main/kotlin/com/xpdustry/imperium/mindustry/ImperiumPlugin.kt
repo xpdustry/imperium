@@ -49,6 +49,7 @@ import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
+import com.xpdustry.imperium.mindustry.monitoring.BlockHoundService
 import com.xpdustry.imperium.mindustry.permission.ImperiumPermissionListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
@@ -82,6 +83,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
 
     override fun onLoad() {
+        application.register(BlockHoundService::class)
+
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
         application.createAll()
