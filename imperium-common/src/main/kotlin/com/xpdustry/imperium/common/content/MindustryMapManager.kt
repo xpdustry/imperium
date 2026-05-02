@@ -147,15 +147,16 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
         stream: Supplier<InputStream>,
     ): Int =
         stream.get().use { actual ->
+            val file = actual.readBytes()
             provider.newSuspendTransaction {
                 val id =
                     MindustryMapTable.insertAndGetId {
-                        it[MindustryMapTable.name] = MindustryMapTable.name
-                        it[MindustryMapTable.description] = MindustryMapTable.description
-                        it[MindustryMapTable.author] = MindustryMapTable.author
-                        it[MindustryMapTable.width] = MindustryMapTable.width
-                        it[MindustryMapTable.height] = MindustryMapTable.height
-                        it[MindustryMapTable.file] = ExposedBlob(actual)
+                        it[MindustryMapTable.name] = name
+                        it[MindustryMapTable.description] = description
+                        it[MindustryMapTable.author] = author
+                        it[MindustryMapTable.width] = width
+                        it[MindustryMapTable.height] = height
+                        it[MindustryMapTable.file] = ExposedBlob(file)
                     }
                 id.value
             }
@@ -170,6 +171,7 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
         stream: Supplier<InputStream>,
     ): Boolean =
         stream.get().use { actual ->
+            val file = actual.readBytes()
             provider.newSuspendTransaction {
                 val rows =
                     MindustryMapTable.update({ MindustryMapTable.id eq id }) {
@@ -178,7 +180,7 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
                         it[MindustryMapTable.width] = width
                         it[MindustryMapTable.height] = height
                         it[MindustryMapTable.lastUpdate] = Clock.System.now()
-                        it[MindustryMapTable.file] = ExposedBlob(actual)
+                        it[MindustryMapTable.file] = ExposedBlob(file)
                     }
                 if (rows != 0) {
                     messenger.broadcast(MapReloadMessage(getMapGamemodes(id)))

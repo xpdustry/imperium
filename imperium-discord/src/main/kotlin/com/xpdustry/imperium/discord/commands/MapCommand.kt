@@ -147,11 +147,12 @@ internal class MapCommand(
             reply.sendMessage("The map is no longer available").await()
             return
         }
+        val bytes = withContext(Dispatchers.IO) { stream.use { it.readBytes() } }
         reply
             .sendMessage(
                 MessageCreate {
                     content = "Here you go:"
-                    files += FileUpload.fromStreamSupplier("${codec.encode(id)}.msav") { stream }
+                    files += FileUpload.fromData(bytes, "${codec.encode(id)}.msav")
                 }
             )
             .await()

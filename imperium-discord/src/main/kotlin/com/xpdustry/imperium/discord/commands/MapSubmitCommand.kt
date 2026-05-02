@@ -172,44 +172,48 @@ class MapSubmitCommand(
         val reply = interaction.deferReply(true).await()
         val attachment = interaction.message.attachments.first()
         val tempFile = createTempFile()
-        attachment.proxy.downloadToPath(tempFile).await()
-        val meta = content.parseMap(tempFile.toFile()).getOrThrow()
+        try {
+            attachment.proxy.downloadToPath(tempFile).await()
+            val meta = content.parseMap(tempFile.toFile()).getOrThrow()
 
-        val target =
-            interaction.message.embeds.first().getFieldValue("Updating")?.let {
-                val result = maps.findMapById(codec.decode(it.replace("`", "")))
-                if (result == null) {
-                    reply.sendMessage("The map to update no longer exist! Report it to a moderator.").await()
-                    return
+            val target =
+                interaction.message.embeds.first().getFieldValue("Updating")?.let {
+                    val result = maps.findMapById(codec.decode(it.replace("`", "")))
+                    if (result == null) {
+                        reply.sendMessage("The map to update no longer exist! Report it to a moderator.").await()
+                        return
+                    }
+                    result
                 }
-                result
-            }
 
-        val id: Int
-        if (target == null) {
-            id =
-                maps.createMap(
-                    name = meta.name,
+            val id: Int
+            if (target == null) {
+                id =
+                    maps.createMap(
+                        name = meta.name,
+                        description = meta.description,
+                        author = meta.author,
+                        width = meta.width,
+                        height = meta.height,
+                        stream = { tempFile.toFile().inputStream() },
+                    )
+            } else {
+                id = target.id
+                maps.updateMap(
+                    id = target.id,
                     description = meta.description,
                     author = meta.author,
                     width = meta.width,
                     height = meta.height,
-                    stream = { attachment.proxy.download().join() },
+                    stream = { tempFile.toFile().inputStream() },
                 )
-        } else {
-            id = target.id
-            maps.updateMap(
-                id = target.id,
-                description = meta.description,
-                author = meta.author,
-                width = meta.width,
-                height = meta.height,
-                stream = { attachment.proxy.download().join() },
-            )
-        }
+            }
 
-        updateSubmissionEmbed(interaction, Color.GREEN, "accepted", id)
-        reply.sendMessage("Map submission uploaded! The map id is `${codec.encode(id)}`.").await()
+            updateSubmissionEmbed(interaction, Color.GREEN, "accepted", id)
+            reply.sendMessage("Map submission uploaded! The map id is `${codec.encode(id)}`.").await()
+        } finally {
+            tempFile.deleteExisting()
+        }
     }
 
     private suspend fun updateSubmissionEmbed(
