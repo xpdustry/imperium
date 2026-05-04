@@ -5,6 +5,7 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
@@ -32,13 +33,19 @@ class BlockHoundService(private val config: ImperiumConfig, private val webhook:
         job =
             ImperiumScope.MAIN.launch {
                 while (isActive) {
-                    // TODO In the future, replace with a tick time metric with an alert.
                     val blocked =
-                        runCatching { runMindustryThread(timeout = 10.seconds) { Unit } }
+                        runCatching { runMindustryThread(timeout = 10.seconds) { /* Nothin' */ } }
                             .fold(
                                 onSuccess = { false },
                                 onFailure = { error ->
-                                    if (error is TimeoutCancellationException) true else throw error
+                                    if (error is TimeoutCancellationException) true
+                                    else {
+                                        logger.error(
+                                            "An unexpected exception occurred while running the block hound",
+                                            error,
+                                        )
+                                        false
+                                    }
                                 },
                             )
                     val now = Clock.System.now()
@@ -96,4 +103,8 @@ class BlockHoundService(private val config: ImperiumConfig, private val webhook:
                     .toByteArray()
             )
         }
+
+    companion object {
+        private val logger by LoggerDelegate()
+    }
 }
