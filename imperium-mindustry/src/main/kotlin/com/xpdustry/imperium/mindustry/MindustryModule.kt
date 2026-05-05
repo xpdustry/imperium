@@ -5,6 +5,7 @@ import arc.Core
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.flex.translator.Translator
+import com.xpdustry.imperium.common.application.ImperiumPlatform
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
@@ -43,6 +44,7 @@ internal fun DependencyService.Binder.registerMindustryModule(plugin: MindustryP
     bindToProv<MindustryPlugin> { plugin }
     bindToFunc<Path>(::getPluginDirectory, "directory")
     bindToFunc<Executor>(::createMindustryMainExecutor, "main")
+    bindToProv<ImperiumPlatform> { ImperiumPlatform.MINDUSTRY }
 
     // Server identity.
     bindToFunc<DiscoveryDataSupplier>(::createMindustryDiscoveryDataSupplier)

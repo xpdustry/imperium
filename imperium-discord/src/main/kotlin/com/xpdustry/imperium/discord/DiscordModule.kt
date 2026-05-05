@@ -2,6 +2,7 @@
 package com.xpdustry.imperium.discord
 
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
+import com.xpdustry.imperium.common.application.ImperiumPlatform
 import com.xpdustry.imperium.common.dependency.DependencyService
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
@@ -16,6 +17,7 @@ import kotlin.io.path.Path
 
 fun DependencyService.Binder.registerDiscordModule() {
     // Runtime.
+    bindToProv<ImperiumPlatform> { ImperiumPlatform.BACKEND }
     bindToImpl<DiscordService, SimpleDiscordService>()
     bindToFunc<Path>(::createDiscordDirectory, "directory")
 

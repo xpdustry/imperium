@@ -45,6 +45,7 @@ data class ImperiumConfig(
     val mindustry: MindustryConfig = MindustryConfig(),
     val webserver: WebserverConfig = WebserverConfig(),
     val metrics: MetricConfig = MetricConfig.None,
+    val telemetry: OpenTelemetryConfig? = null,
 )
 
 data class NetworkConfig(
@@ -230,3 +231,9 @@ sealed interface MetricConfig {
 
     data class SQL(val interval: Duration = 10.seconds, val retention: Duration = 14.days) : MetricConfig
 }
+
+data class OpenTelemetryConfig(
+    val endpoint: URI,
+    val token: String? = null,
+    val collectionInterval: Duration = 10.seconds,
+)

@@ -19,6 +19,12 @@ dependencies {
     testApi(libs.kotlinx.coroutines.test)
     api(libs.kotlinx.serialization.json)
 
+    api(libs.opentelemetry.api)
+    api(libs.opentelemetry.sdk)
+    api(libs.opentelemetry.exporter.logging)
+    api(libs.opentelemetry.exporter.logging.otlp)
+    api(libs.opentelemetry.exporter.otlp)
+
     testApi(libs.classgraph)
 
     api(libs.exposed.core)

@@ -6,6 +6,7 @@ import com.xpdustry.imperium.common.account.AccountAchievementService
 import com.xpdustry.imperium.common.account.AccountMetadataService
 import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.MindustrySessionService
+import com.xpdustry.imperium.common.application.ImperiumPlatform
 import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
@@ -37,6 +38,7 @@ import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.security.SimpleAddressWhitelist
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
+import com.xpdustry.imperium.common.telemetry.OpenTelemetryService
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.SimpleUserManager
@@ -81,11 +83,13 @@ fun DependencyService.Binder.registerCommonModule() {
     bindToImpl<PlayerTracker, RequestingPlayerTracker>()
     bindToImpl<TimeRenderer, SimpleTimeRenderer>()
     bindToImpl<WebhookMessageSender, WebhookMessageSenderImpl>()
+    bindToImpl<OpenTelemetryService, OpenTelemetryService>()
     bindToFunc<MessageService>(::createMessageService)
     bindToFunc<MetricsRegistry>(::createMetricsRegistry)
 
     // Runtime.
     bindToFunc<ImperiumVersion>(::createImperiumVersion)
+    bindToProv<ImperiumPlatform> { ImperiumPlatform.UNKNOWN }
     bindToFunc<Executor>(::createMainExecutor, "main")
 }
 
