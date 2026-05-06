@@ -12,6 +12,7 @@ import com.xpdustry.imperium.discord.content.MindustryToolContentHandler
 import com.xpdustry.imperium.discord.service.DiscordService
 import com.xpdustry.imperium.discord.service.SimpleDiscordService
 import java.nio.file.Path
+import java.util.jar.Manifest
 import kotlin.io.path.Path
 
 fun DependencyService.Binder.registerDiscordModule() {
@@ -36,5 +37,7 @@ private fun createDiscordDiscoveryDataSupplier(): DiscoveryDataSupplier = Discov
 
 private fun createDiscordImperiumVersion(): ImperiumVersion =
     ImperiumVersion.parse(
-        SimpleDiscordService::class.java.getResourceAsStream("/imperium-version.txt")!!.reader().readText()
+        ImperiumDiscord::class.java.classLoader.getResourceAsStream("META-INF/MANIFEST.MF")!!.use { stream ->
+            Manifest(stream).mainAttributes.getValue("Implementation-Version")
+        }
     )
