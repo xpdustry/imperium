@@ -143,7 +143,7 @@ project(":imperium-common") {
         "api"("com.sksamuel.hoplite:hoplite-core:3.0.0.RC3")
         "api"("com.sksamuel.hoplite:hoplite-yaml:3.0.0.RC3")
         "api"("com.squareup.okhttp3:okhttp:5.3.2")
-        "api"("com.github.ben-manes.caffeine:caffeine:3.2.3")
+        "api"("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
         "api"("org.jetbrains.exposed:exposed-core:1.2.0")
         "api"("org.jetbrains.exposed:exposed-jdbc:1.2.0")
