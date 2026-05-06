@@ -245,7 +245,7 @@ project(":imperium-mindustry") {
         "implementation"("org.incendo:cloud-core:2.0.0")
         "compileOnly"("com.xpdustry:distributor-common:4.2.0")
         "compileOnly"("com.xpdustry:distributor-permission-rank:4.2.0")
-        "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.3")
+        "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.4-SNAPSHOT")
         "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.3")
         "implementation"("com.xpdustry:flex-translator:1.2.0")
         "implementation"("org.jsoup:jsoup:1.22.1")
