@@ -21,8 +21,8 @@ import java.time.LocalDateTime
 plugins {
     id("com.diffplug.spotless") version "8.4.0" apply false
     id("net.kyori.indra") version "4.0.0" apply false
-    kotlin("jvm") version "2.3.20" apply false
-    kotlin("plugin.serialization") version "2.3.20" apply false
+    kotlin("jvm") version "2.3.21" apply false
+    kotlin("plugin.serialization") version "2.3.21" apply false
     id("com.gradleup.shadow") version "9.4.1" apply false
     id("com.xpdustry.toxopid") version "4.2.0" apply false
 }
