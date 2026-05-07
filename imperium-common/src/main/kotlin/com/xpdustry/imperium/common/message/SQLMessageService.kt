@@ -58,7 +58,6 @@ internal class SQLMessageService(
                     .asPreparedStatement()
                     .executeSingleUpdate()
 
-                // TODO Remove when switching to Postgres
                 if (config.database !is DatabaseConfig.H2) {
                     """
                     CREATE EVENT IF NOT EXISTS `message_queue_v2_cleanup`

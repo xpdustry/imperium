@@ -113,7 +113,6 @@ subprojects {
         "testImplementation"("org.slf4j:slf4j-simple:2.0.17")
         "testImplementation"("io.github.classgraph:classgraph:4.8.184")
 
-        "testRuntimeOnly"("org.postgresql:postgresql:42.7.11")
         "testRuntimeOnly"("com.h2database:h2:2.4.240")
         "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
 
@@ -163,7 +162,6 @@ project(":imperium-backend") {
         "implementation"(project(":imperium-common"))
         "implementation"("ch.qos.logback:logback-classic:1.5.32")
         "implementation"("net.dv8tion:JDA:6.4.1") { exclude(module = "opus-java"); exclude(module = "tink") }
-        "runtimeOnly"("org.postgresql:postgresql:42.7.11")
         "runtimeOnly"("com.h2database:h2:2.4.240")
         "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
     }
@@ -227,7 +225,6 @@ project(":imperium-mindustry") {
                 ModDependency("nohorny"),
                 ModDependency("sql4md-mariadb"),
                 ModDependency("sql4md-h2", soft = true),
-                ModDependency("sql4md-postgresql", soft = true),
             ),
     )
 
@@ -314,13 +311,6 @@ project(":imperium-mindustry") {
         version = "v2.0.2"
     }
 
-    val downloadSql4mdPostgres = tasks.register<GithubAssetDownload>("downloadSql4mdPostgres") {
-        owner = "xpdustry"
-        repo = "sql4md"
-        asset = "sql4md-postgresql.jar"
-        version = "v2.0.2"
-    }
-
     val downloadDistributorCommon = tasks.register<GithubAssetDownload>("downloadDistributorCommon") {
         owner = "xpdustry"
         repo = "distributor"
@@ -353,7 +343,6 @@ project(":imperium-mindustry") {
         downloadSlf4md,
         downloadSql4mdMariadb,
         downloadSql4mdH2,
-        downloadSql4mdPostgres,
         downloadDistributorCommon,
         downloadDistributorPermissionRank,
     )

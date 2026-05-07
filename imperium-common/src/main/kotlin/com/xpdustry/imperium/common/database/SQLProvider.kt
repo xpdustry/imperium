@@ -56,12 +56,6 @@ class SimpleSQLProvider(private val config: DatabaseConfig, @Named("directory") 
                 hikari.username = config.username
                 hikari.password = config.password.value
             }
-            is DatabaseConfig.PostgreSQL -> {
-                hikari.driverClassName = "org.postgresql.Driver"
-                hikari.jdbcUrl = "jdbc:postgresql://${config.host}:${config.port}/${config.database}"
-                hikari.username = config.username
-                hikari.password = config.password.value
-            }
         }
 
         source = HikariDataSource(hikari)

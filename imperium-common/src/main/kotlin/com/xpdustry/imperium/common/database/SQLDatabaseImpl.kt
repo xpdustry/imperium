@@ -42,15 +42,8 @@ internal class SQLDatabaseImpl(private val config: ImperiumConfig, @Named("direc
                 hikari.username = database.username
                 hikari.password = database.password.value
             }
-            is DatabaseConfig.PostgreSQL -> {
-                hikari.driverClassName = "org.postgresql.Driver"
-                hikari.jdbcUrl = "jdbc:postgresql://${database.host}:${database.port}/${database.database}"
-                hikari.username = database.username
-                hikari.password = database.password.value
-            }
             is DatabaseConfig.H2 -> {
                 hikari.driverClassName = "org.h2.Driver"
-                // TODO Change MODE to PostgreSQL
                 hikari.jdbcUrl =
                     "jdbc:h2:file:${directory.resolve("${database.database}.h2").toAbsolutePath()};MODE=MYSQL;AUTO_SERVER=TRUE"
             }
@@ -169,7 +162,7 @@ private class PreparedStatementBuilderImpl(private val raw: String, private val 
     companion object {
         // MySQL/MariaDB handles this as a delete + insert in case of a duplicate, 2 operations therefore 2 updates
         private val INSERT_WITH_UPDATE_PATTERN =
-            Pattern.compile("^\\s*INSERT\\s+(.|\\s)*\\s+ON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\s+", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("^\\s*INSERT\\s+.*\\s+ON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\s+", Pattern.CASE_INSENSITIVE)
     }
 }
 
