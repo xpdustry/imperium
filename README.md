@@ -20,7 +20,7 @@ For simply compiling the project, run `./gradlew shadowJar`.
 If you also want to run the tests, first, make sure docker is running, then run `./gradlew build`.
 
 If you only want to compile one of the subprojects,
-just prefix the task name with the subproject name such as `./gradlew :imperium-discord:shadowJar`.
+just prefix the task name with the subproject name such as `./gradlew :imperium-backend:shadowJar`.
 
 ## Testing
 
@@ -53,7 +53,7 @@ To play on this server, you can start a mindustry client by running `./gradlew i
 ### Discord
 
 First, create discord bot and a test server for it (there are plenty of online tutorials for that).
-Then create the base configuration file named `config.yaml` in the directory `imperium-discord/build/tmp/runShadow`,
+Then create the base configuration file named `config.yaml` in the directory `imperium-backend/build/tmp/runShadow`,
 with the following content:
 ```yaml
 discord:
@@ -80,7 +80,7 @@ webserver:
   port: 8080
 ```
 
-Then you can start the discord bot by running `./gradlew imperium-discord:runShadow`.
+Then you can start the discord bot by running `./gradlew imperium-backend:runShadow`.
 
 > If it's the first time you run it, it will automatically download mindustry assets from GitHub,
 > this might take less than a minute. (Or more if you have potato internet `;-;`)

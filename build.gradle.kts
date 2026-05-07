@@ -156,7 +156,7 @@ project(":imperium-common") {
     }
 }
 
-project(":imperium-discord") {
+project(":imperium-backend") {
     apply(plugin = "com.gradleup.shadow")
 
     dependencies {
@@ -169,7 +169,7 @@ project(":imperium-discord") {
     }
 
     val shadowJar = tasks.named<ShadowJar>(ShadowJar.SHADOW_JAR_TASK_NAME) {
-        archiveFileName.set("imperium-discord.jar")
+        archiveFileName.set("imperium-backend.jar")
 
         minimize {
             exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
@@ -188,7 +188,7 @@ project(":imperium-discord") {
 
         manifest {
             attributes(
-                "Main-Class" to "com.xpdustry.imperium.discord.ImperiumDiscordKt",
+                "Main-Class" to "com.xpdustry.imperium.backend.ImperiumBackendKt",
                 "Implementation-Title" to "ImperiumBackend",
                 "Implementation-Version" to project.version.toString()
             )

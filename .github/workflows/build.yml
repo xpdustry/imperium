@@ -70,7 +70,7 @@ jobs:
       - name: "Upload Backend Jar"
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          path: "imperium-discord/build/libs/imperium-discord.jar"
+          path: "imperium-backend/build/libs/imperium-backend.jar"
           archive: false
           if-no-files-found: error
 
@@ -82,7 +82,7 @@ jobs:
           tag_name: "v${{ steps.build.outputs.version }}"
           files: |
             imperium-mindustry/build/libs/imperium-mindustry.jar
-            imperium-discord/build/libs/imperium-discord.jar
+            imperium-backend/build/libs/imperium-backend.jar
 
       - name: "Bump Version"
         if: ${{ env.ORG_GRADLE_PROJECT_is_release == 'true' }}
