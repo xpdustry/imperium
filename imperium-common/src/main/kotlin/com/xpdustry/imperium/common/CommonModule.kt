@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common
 
-import com.google.common.util.concurrent.MoreExecutors
 import com.xpdustry.imperium.common.account.AccountAchievementService
 import com.xpdustry.imperium.common.account.AccountMetadataService
 import com.xpdustry.imperium.common.account.AccountService
@@ -47,7 +46,6 @@ import com.xpdustry.imperium.common.webhook.WebhookMessageSenderImpl
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.toJavaDuration
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
@@ -58,7 +56,7 @@ fun DependencyService.Binder.registerCommonModule() {
 
     // Network.
     bindToImpl<Discovery, SimpleDiscovery>()
-    bindToFunc<DiscoveryDataSupplier>(::createUnknownDiscoveryDataSupplier)
+    bindToProv<DiscoveryDataSupplier> { DiscoveryDataSupplier.Noop }
     bindToFunc<VpnDetection>(::createVpnDetection)
     bindToFunc<OkHttpClient>(::createOkHttpClient)
 
@@ -77,7 +75,7 @@ fun DependencyService.Binder.registerCommonModule() {
     bindToImpl<AddressWhitelist, SimpleAddressWhitelist>()
 
     // Shared services.
-    bindToFunc<IdentifierCodec>(::createIdentifierCodec)
+    bindToProv<IdentifierCodec> { ImperiumC6B36Codec }
     bindToImpl<PlayerTracker, RequestingPlayerTracker>()
     bindToImpl<TimeRenderer, SimpleTimeRenderer>()
     bindToImpl<WebhookMessageSender, WebhookMessageSenderImpl>()
@@ -85,8 +83,8 @@ fun DependencyService.Binder.registerCommonModule() {
     bindToFunc<MetricsRegistry>(::createMetricsRegistry)
 
     // Runtime.
-    bindToFunc<ImperiumVersion>(::createImperiumVersion)
-    bindToFunc<Executor>(::createMainExecutor, "main")
+    bindToProv<ImperiumVersion> { ImperiumVersion(1, 1, 1) }
+    bindToProv<Executor>(name = "main") { Executor(Runnable::run) }
 }
 
 private fun getDatabaseConfig(config: ImperiumConfig): DatabaseConfig = config.database
@@ -99,24 +97,14 @@ private fun createVpnDetection(config: ImperiumConfig, http: OkHttpClient): VpnD
 
 private fun createOkHttpClient(): OkHttpClient =
     OkHttpClient.Builder()
-        .connectTimeout(20.seconds.toJavaDuration())
-        .connectTimeout(20.seconds.toJavaDuration())
-        .readTimeout(20.seconds.toJavaDuration())
-        .writeTimeout(20.seconds.toJavaDuration())
+        .connectTimeout(20.seconds)
+        .connectTimeout(20.seconds)
+        .readTimeout(20.seconds)
+        .writeTimeout(20.seconds)
         .dispatcher(
             Dispatcher(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("imperium-okttp-", 0).factory()))
         )
         .build()
-
-private fun createIdentifierCodec(): IdentifierCodec = ImperiumC6B36Codec
-
-private fun createUnknownDiscoveryDataSupplier(): DiscoveryDataSupplier = DiscoveryDataSupplier {
-    Discovery.Data.Unknown
-}
-
-private fun createImperiumVersion(): ImperiumVersion = ImperiumVersion(1, 1, 1)
-
-private fun createMainExecutor(): Executor = MoreExecutors.directExecutor()
 
 private fun createMetricsRegistry(config: ImperiumConfig, database: SQLDatabase): MetricsRegistry =
     when (val metrics = config.metrics) {

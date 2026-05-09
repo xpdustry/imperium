@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.webhook
 
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.WebhookBackendConfig
 import com.xpdustry.imperium.common.dependency.Inject
@@ -10,6 +9,7 @@ import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.io.InputStream
 import java.util.EnumMap
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
@@ -57,7 +57,7 @@ private class DiscordWebhookBackend(
     private val version: ImperiumVersion,
 ) : WebhookBackend {
     override suspend fun send(message: WebhookMessage): Unit =
-        withContext(ImperiumScope.IO.coroutineContext) {
+        withContext(Dispatchers.IO) {
             try {
                 send0(message)
             } catch (e: Throwable) {
@@ -99,6 +99,7 @@ private class DiscordWebhookBackend(
                     null,
                     payload.toString().toRequestBody("application/json".toMediaType()),
                 )
+        // TODO Use temp files or pipes
         for ((index, attachment) in message.attachments.withIndex()) {
             form.addFormDataPart(
                 "files[$index]",
@@ -115,8 +116,8 @@ private class DiscordWebhookBackend(
                 .build()
 
         http.newCall(request).await().use { response ->
-            if (response.code / 100 != 2) {
-                logger.error("Failed to send webhook message $message: ${response.body?.charStream()?.readText()}")
+            if (response.code !in 200..202) {
+                logger.error("Failed to send webhook message $message: ${response.body.string()}")
             }
         }
     }

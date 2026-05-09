@@ -3,4 +3,8 @@ package com.xpdustry.imperium.common.network
 
 fun interface DiscoveryDataSupplier {
     fun get(): Discovery.Data
+
+    object Noop : DiscoveryDataSupplier {
+        override fun get() = Discovery.Data.Unknown
+    }
 }
