@@ -48,9 +48,11 @@ fun computeNextVersion(): String {
             ZoneOffset.UTC)
         if (timestamp.year == year && timestamp.monthValue == month){
             build += 1
+        } else {
+            year = timestamp.year
+            month = timestamp.monthValue
+            build = 0
         }
-        year = timestamp.year
-        month = timestamp.monthValue
     } else {
         build += 1
     }
