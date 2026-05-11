@@ -45,8 +45,8 @@ jobs:
       - name: "Build Artifact"
         id: build
         run: |
-          # Bin the time for CalVer
-          timestamp="$(date --iso-8601=seconds)"
+          # Pin the time for CalVer
+          timestamp="$(date +%s)"
           echo "ORG_GRADLE_PROJECT_build_timestamp=$timestamp" >> "$GITHUB_ENV"
           export ORG_GRADLE_PROJECT_build_timestamp="$timestamp"
           # Actual build

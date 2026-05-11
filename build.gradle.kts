@@ -16,7 +16,9 @@ import org.gradle.kotlin.dsl.configure
 import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.register
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
-import java.time.LocalDateTime
+import java.time.Instant
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 plugins {
     id("com.diffplug.spotless") version "8.4.0" apply false
@@ -41,7 +43,9 @@ fun computeNextVersion(): String {
     var (year, month, build) = parts
 
     if (findProperty("is_release").toString().toBoolean()) {
-        val timestamp = LocalDateTime.parse(property("build_timestamp").toString())
+        val timestamp = ZonedDateTime.ofInstant(
+            Instant.ofEpochSecond(property("build_timestamp").toString().toLong()),
+            ZoneOffset.UTC)
         if (timestamp.year == year && timestamp.monthValue == month){
             build += 1
         }
