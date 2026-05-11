@@ -45,9 +45,14 @@ jobs:
       - name: "Build Artifact"
         id: build
         run: |
-          echo "ORG_GRADLE_PROJECT_build_timestamp=$(date --iso-8601=seconds)" >> "$GITHUB_ENV"
+          # Bin the time for CalVer
+          timestamp="$(date --iso-8601=seconds)"
+          echo "ORG_GRADLE_PROJECT_build_timestamp=$timestamp" >> "$GITHUB_ENV"
+          export ORG_GRADLE_PROJECT_build_timestamp="$timestamp"
+          # Actual build
           ./gradlew build -x spotlessCheck
           ./gradlew spotlessCheck
+          # Export the version
           version="$(./gradlew properties -q | grep '^version:' | cut -d ':' -f 2 | xargs)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
