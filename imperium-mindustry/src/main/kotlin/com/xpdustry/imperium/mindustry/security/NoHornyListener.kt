@@ -33,9 +33,12 @@ class NoHornyListener(
 ) : ImperiumApplication.Listener {
 
     @EventHandler
-    fun onImageLogicAnalyzer(event: ClassificationEvent) =
+    fun onImageLogicAnalyzer(event: ClassificationEvent) {
+        if (!config.mindustry.noHornyAutoBan) {
+            return
+        }
         ImperiumScope.MAIN.launch {
-            when (event.rating) {
+            when (event.response.rating) {
                 Rating.SAFE -> Unit
                 Rating.WARN -> {
                     webhook.send(
@@ -55,6 +58,7 @@ class NoHornyListener(
                         ),
                     )
                 }
+
                 Rating.NSFW -> {
                     val user = event.author?.uuid?.let { users.findByUuid(it) } ?: return@launch
                     val punishment =
@@ -80,6 +84,7 @@ class NoHornyListener(
                 }
             }
         }
+    }
 
     private fun BufferedImage.toUnsafeAttachment() =
         WebhookMessage.Attachment("SPOILER_image.jpg", "NSFW image", "image/jpeg".toMediaType()) {
