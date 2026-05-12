@@ -115,8 +115,8 @@ subprojects {
         "testImplementation"("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
         "implementation"("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
-        "implementation"("org.slf4j:slf4j-api:2.0.17")
-        "testImplementation"("org.slf4j:slf4j-simple:2.0.17")
+        "implementation"("org.slf4j:slf4j-api:2.0.18")
+        "testImplementation"("org.slf4j:slf4j-simple:2.0.18")
         "testImplementation"("io.github.classgraph:classgraph:4.8.184")
 
         "testRuntimeOnly"("com.h2database:h2:2.4.240")
