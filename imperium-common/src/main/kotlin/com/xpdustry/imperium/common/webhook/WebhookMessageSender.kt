@@ -2,13 +2,11 @@
 package com.xpdustry.imperium.common.webhook
 
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.config.WebhookBackendConfig
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import java.io.InputStream
-import java.util.EnumMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.addJsonObject
@@ -24,39 +22,19 @@ import okhttp3.RequestBody.Companion.toRequestBody
 
 interface WebhookMessageSender {
 
-    suspend fun send(channel: WebhookChannel, message: WebhookMessage)
-}
-
-@Inject
-class WebhookMessageSenderImpl(config: ImperiumConfig, http: OkHttpClient, version: ImperiumVersion) :
-    WebhookMessageSender {
-    private val channels = EnumMap<WebhookChannel, WebhookBackend>(WebhookChannel::class.java)
-
-    init {
-        config.webhooks.entries.forEach { (channel, backend) ->
-            channels[channel] =
-                when (backend) {
-                    is WebhookBackendConfig.Discord -> DiscordWebhookBackend(http, config, backend, version)
-                }
-        }
-    }
-
-    override suspend fun send(channel: WebhookChannel, message: WebhookMessage) {
-        channels[channel]?.send(message)
-    }
-}
-
-private interface WebhookBackend {
     suspend fun send(message: WebhookMessage)
 }
 
-private class DiscordWebhookBackend(
-    private val http: OkHttpClient,
+@Inject
+class WebhookMessageSenderImpl(
     private val config: ImperiumConfig,
-    private val webhookConfig: WebhookBackendConfig.Discord,
+    private val http: OkHttpClient,
     private val version: ImperiumVersion,
-) : WebhookBackend {
-    override suspend fun send(message: WebhookMessage): Unit =
+) : WebhookMessageSender {
+    override suspend fun send(message: WebhookMessage) {
+        if (config.webhook == null) {
+            return
+        }
         withContext(Dispatchers.IO) {
             try {
                 send0(message)
@@ -64,8 +42,12 @@ private class DiscordWebhookBackend(
                 logger.error("Fatal error sending webhook message", e)
             }
         }
+    }
 
     private suspend fun send0(message: WebhookMessage) {
+        if (config.webhook == null) {
+            return
+        }
         val payload = buildJsonObject {
             put("username", config.server.displayName)
             put("content", message.content)
@@ -111,7 +93,7 @@ private class DiscordWebhookBackend(
         val request =
             Request.Builder()
                 .addHeader("User-Agent", "Imperium (https://github.com/xpdustry/imperium, v$version)")
-                .url(webhookConfig.discordWebhookUrl)
+                .url(config.webhook.discordWebhookUrl)
                 .post(form.build())
                 .build()
 

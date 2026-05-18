@@ -6,7 +6,6 @@ import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
-import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -57,7 +56,6 @@ class BlockHoundService(private val config: ImperiumConfig, private val webhook:
                                     stack.any { it.className.startsWith("mindustry", ignoreCase = true) }
                             }
                         webhook.send(
-                            WebhookChannel.CONSOLE,
                             WebhookMessage(
                                 content =
                                     buildString {
@@ -67,7 +65,7 @@ class BlockHoundService(private val config: ImperiumConfig, private val webhook:
                                         )
                                     },
                                 attachments = listOf(createThreadDumpAttachment(candidates)),
-                            ),
+                            )
                         )
                     }
                     delay(5.seconds)
