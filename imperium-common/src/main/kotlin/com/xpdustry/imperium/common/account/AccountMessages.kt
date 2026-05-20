@@ -10,5 +10,3 @@ import kotlinx.serialization.Serializable
 data class AchievementUpdate(val account: Int, val achievement: Achievement, val completed: Boolean) : Message
 
 @Serializable data class MetadataUpdate(val account: Int, val key: String, val value: String?) : Message
-
-@Serializable data class AchievementCompletedMessage(val account: Int, val achievement: Achievement) : Message

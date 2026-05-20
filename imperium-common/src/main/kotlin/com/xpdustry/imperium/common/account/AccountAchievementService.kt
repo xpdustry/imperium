@@ -66,9 +66,6 @@ class AccountAchievementService(
         }
 
         messenger.broadcast(AchievementUpdate(account, achievement, completed))
-        if (completed) {
-            messenger.broadcast(AchievementCompletedMessage(account, achievement))
-        }
         return true
     }
 }

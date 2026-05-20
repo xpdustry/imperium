@@ -7,7 +7,7 @@ import com.xpdustry.imperium.backend.service.DiscordService
 import com.xpdustry.imperium.common.account.AccountAchievementService
 import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Achievement
-import com.xpdustry.imperium.common.account.AchievementCompletedMessage
+import com.xpdustry.imperium.common.account.AchievementUpdate
 import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -30,9 +30,13 @@ class RoleSyncListener(
     override fun onImperiumInit() {
         discord.jda.addSuspendingEventListener<GuildMemberJoinEvent> { discord.syncRoles(it.member) }
 
-        messenger.subscribe<RankChangeEvent> { (id) -> discord.syncRoles(id) }
+        messenger.subscribe<RankChangeEvent> { message -> discord.syncRoles(message.account) }
 
-        messenger.subscribe<AchievementCompletedMessage> { (id, _) -> discord.syncRoles(id) }
+        messenger.subscribe<AchievementUpdate> { message ->
+            if (message.completed) {
+                discord.syncRoles(message.account)
+            }
+        }
 
         runBlocking { syncServerBoosterRoles() }
         discord.jda.addSuspendingEventListener<GuildUpdateBoostCountEvent> { _ -> syncServerBoosterRoles() }

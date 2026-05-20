@@ -13,7 +13,7 @@ import com.xpdustry.imperium.common.account.AccountAchievementService
 import com.xpdustry.imperium.common.account.AccountMetadataService
 import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Achievement
-import com.xpdustry.imperium.common.account.AchievementCompletedMessage
+import com.xpdustry.imperium.common.account.AchievementUpdate
 import com.xpdustry.imperium.common.account.MindustrySessionService
 import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -54,7 +54,10 @@ class AccountListener(
     private val playtime = ConcurrentHashMap<Player, Long>()
 
     override fun onImperiumInit() {
-        messenger.subscribe<AchievementCompletedMessage> { message ->
+        messenger.subscribe<AchievementUpdate> { message ->
+            if (!message.completed) {
+                return@subscribe
+            }
             for (player in Entities.getPlayersAsync()) {
                 if (store.selectBySessionKey(player.sessionKey)?.account?.id == message.account) {
                     Call.warningToast(
