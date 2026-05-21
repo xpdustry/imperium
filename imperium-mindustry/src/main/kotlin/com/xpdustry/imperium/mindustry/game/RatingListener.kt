@@ -13,11 +13,12 @@ import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
@@ -41,6 +42,7 @@ import com.xpdustry.imperium.mindustry.translation.gui_rate_map_title
 import com.xpdustry.imperium.mindustry.translation.gui_submit
 import com.xpdustry.imperium.mindustry.translation.selected
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
@@ -50,7 +52,8 @@ import mindustry.gen.Player
 class RatingListener(
     private val users: UserManager,
     private val maps: MindustryMapManager,
-    private val plugin: MindustryPlugin,
+    plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val delays = PlayerMap<Long>(plugin)
     private val menu =
@@ -83,7 +86,10 @@ class RatingListener(
                     MenuOption.of(gui_close(), Window::hide),
                     MenuOption.of(
                         gui_submit(),
-                        CoroutineAction(success = BiAction.from(HideAllAndAnnounceAction(gui_rate_map_success()))) {
+                        CoroutineAction(
+                            scope,
+                            success = BiAction.from(HideAllAndAnnounceAction(gui_rate_map_success())),
+                        ) {
                             maps.saveRating(
                                 Vars.state.map.id!!,
                                 users.getByIdentity(it.viewer.identity).id,
@@ -114,7 +120,7 @@ class RatingListener(
         delays.entries.toList().forEach { (player, time) ->
             if (now - time > 10.minutes.inWholeMilliseconds) {
                 delays.remove(player)
-                ImperiumScope.MAIN.launch { tryOpenRatingMenu(player, true) }
+                scope.launch { tryOpenRatingMenu(player, true) }
             }
         }
     }

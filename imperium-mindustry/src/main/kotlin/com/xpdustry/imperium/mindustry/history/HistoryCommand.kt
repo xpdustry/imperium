@@ -9,10 +9,11 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -22,6 +23,7 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
@@ -36,6 +38,7 @@ class HistoryCommand(
     private val config: ImperiumConfig,
     private val historyRenderer: HistoryRenderer,
     plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val taps = PlayerMap<PlayerTap>(plugin)
     private val heatmapViewers = PlayerMap<Boolean>(plugin)
@@ -68,7 +71,7 @@ class HistoryCommand(
 
     @EventHandler
     internal fun onPlayerTapEvent(event: EventType.TapEvent) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAP_TILE_LOG)) {
                 val last = taps[event.player]
                 if (

@@ -11,11 +11,12 @@ import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.collection.enumSetAllOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
@@ -29,6 +30,7 @@ import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 import java.time.Duration
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.core.Version
@@ -52,6 +54,7 @@ class GatekeeperListener(
     private val config: ImperiumConfig,
     private val whitelist: AddressWhitelist,
     private val badWords: BadWordDetector,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -59,7 +62,7 @@ class GatekeeperListener(
             logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")
         }
 
-        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.mindustry.security))
+        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.mindustry.security, scope))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register("links", Priority.NORMAL) { context ->
             if (context.name.containsLink()) {
@@ -80,7 +83,7 @@ class GatekeeperListener(
         }
 
         Vars.net.handleServer(Packets.ConnectPacket::class.java) { con, packet ->
-            interceptPlayerConnection(con, packet, pipeline, config.mindustry)
+            interceptPlayerConnection(con, packet, pipeline, config.mindustry, scope)
         }
     }
 
@@ -94,6 +97,7 @@ private fun interceptPlayerConnection(
     packet: Packets.ConnectPacket,
     pipeline: GatekeeperPipeline,
     config: MindustryConfig,
+    scope: CoroutineScope,
 ) {
     if (con.kicked) return
 
@@ -250,7 +254,7 @@ private fun interceptPlayerConnection(
 
     // To not spam the clients, we do our own verification through the pipeline, then we can safely
     // create the player
-    ImperiumScope.MAIN.launch {
+    scope.launch {
         val result =
             if (config.security.gatekeeper) {
                 pipeline.pump(

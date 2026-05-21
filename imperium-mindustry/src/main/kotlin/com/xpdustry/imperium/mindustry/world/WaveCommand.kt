@@ -11,9 +11,11 @@ import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
@@ -24,14 +26,15 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.AfkManager
 import java.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import mindustry.Vars
 import mindustry.gen.Call
 import org.incendo.cloud.annotation.specifier.Range
 
 @Inject
-class WaveCommand constructor(private val afk: AfkManager, plugin: MindustryPlugin) :
-    AbstractVoteCommand<Int>(plugin, "wave-skip", afk, 45.seconds), ImperiumApplication.Listener {
+class WaveCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope) :
+    AbstractVoteCommand<Int>(plugin, "wave-skip", afk, 45.seconds, scope), ImperiumApplication.Listener {
     private val waveSkipInterface =
         MenuManager.create(plugin).apply {
             addTransformer { (pane) ->

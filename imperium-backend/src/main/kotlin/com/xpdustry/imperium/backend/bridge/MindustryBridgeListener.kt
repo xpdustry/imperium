@@ -5,14 +5,17 @@ import com.xpdustry.imperium.backend.misc.addSuspendingEventListener
 import com.xpdustry.imperium.backend.misc.await
 import com.xpdustry.imperium.backend.service.DiscordService
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
+import kotlinx.coroutines.CoroutineScope
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent
 
@@ -21,10 +24,11 @@ class MindustryBridgeListener(
     private val discord: DiscordService,
     private val messenger: MessageService,
     private val config: ImperiumConfig,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        discord.jda.addSuspendingEventListener<MessageReceivedEvent> { event ->
+        discord.jda.addSuspendingEventListener<MessageReceivedEvent>(scope) { event ->
             if (event.isWebhookMessage || event.message.author.isBot || event.message.author.isSystem) {
                 return@addSuspendingEventListener
             }

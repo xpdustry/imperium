@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.backend.misc
 
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.security.Identity
 import java.time.temporal.TemporalAccessor
 import java.util.EnumSet
 import kotlin.reflect.KProperty
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.EmbedBuilder
@@ -33,10 +33,11 @@ import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.dv8tion.jda.api.utils.messages.MessageEditBuilder
 import net.dv8tion.jda.api.utils.messages.MessageRequest
 
-inline fun <reified T : GenericEvent> JDA.addSuspendingEventListener(crossinline listener: suspend (T) -> Unit) {
-    addEventListener(
-        EventListener { event -> ImperiumScope.MAIN.launch { (event as? T)?.let { casted -> listener(casted) } } }
-    )
+inline fun <reified T : GenericEvent> JDA.addSuspendingEventListener(
+    scope: CoroutineScope,
+    crossinline listener: suspend (T) -> Unit,
+) {
+    addEventListener(EventListener { event -> scope.launch { (event as? T)?.let { casted -> listener(casted) } } })
 }
 
 inline val Member.snowflake: UserSnowflake

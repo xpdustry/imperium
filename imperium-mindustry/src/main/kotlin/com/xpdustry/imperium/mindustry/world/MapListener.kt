@@ -3,7 +3,6 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.files.Fi
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
@@ -21,6 +20,7 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.io.MapIO
@@ -56,7 +56,7 @@ class MapListener(
         Vars.maps.reload()
 
         val pool =
-            runBlocking(ImperiumScope.IO.coroutineContext) {
+            runBlocking(Dispatchers.IO) {
                 maps.findAllMapsByGamemode(config.mindustry.gamemode).mapNotNull {
                     try {
                         downloadMapFromPool(it)

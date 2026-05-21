@@ -5,7 +5,8 @@ import com.xpdustry.imperium.common.account.AccountAchievementService
 import com.xpdustry.imperium.common.account.AccountMetadataService
 import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.MindustrySessionService
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
+import com.xpdustry.imperium.common.async.createImperiumScope
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.config.DatabaseConfig
@@ -23,6 +24,7 @@ import com.xpdustry.imperium.common.database.SQLDatabaseImpl
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.database.SimpleSQLProvider
 import com.xpdustry.imperium.common.dependency.DependencyService
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.SQLMessageService
 import com.xpdustry.imperium.common.metrics.MetricsRegistry
@@ -46,6 +48,7 @@ import com.xpdustry.imperium.common.webhook.WebhookMessageSenderImpl
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import okhttp3.Dispatcher
 import okhttp3.OkHttpClient
 
@@ -85,6 +88,7 @@ fun DependencyService.Binder.registerCommonModule() {
     // Runtime.
     bindToProv<ImperiumVersion> { ImperiumVersion(1, 1, 1) }
     bindToProv<Executor>(name = "main") { Executor(Runnable::run) }
+    bindToProv<CoroutineScope>(name = IMPERIUM_SCOPE) { createImperiumScope() }
 }
 
 private fun getDatabaseConfig(config: ImperiumConfig): DatabaseConfig = config.database
@@ -106,14 +110,22 @@ private fun createOkHttpClient(): OkHttpClient =
         )
         .build()
 
-private fun createMetricsRegistry(config: ImperiumConfig, database: SQLDatabase): MetricsRegistry =
+private fun createMetricsRegistry(
+    config: ImperiumConfig,
+    database: SQLDatabase,
+    @Named(IMPERIUM_SCOPE) scope: CoroutineScope,
+): MetricsRegistry =
     when (val metrics = config.metrics) {
-        is MetricConfig.SQL -> SQLMetricsRegistry(config.server, metrics, database)
+        is MetricConfig.SQL -> SQLMetricsRegistry(config.server, metrics, database, scope)
         is MetricConfig.None -> MetricsRegistry.None
     }
 
-private fun createMessageService(config: ImperiumConfig, database: SQLDatabase): MessageService =
+private fun createMessageService(
+    config: ImperiumConfig,
+    database: SQLDatabase,
+    @Named(IMPERIUM_SCOPE) scope: CoroutineScope,
+): MessageService =
     when (config.messenger) {
         MessengerConfig.Noop -> MessageService.Noop
-        MessengerConfig.SQL -> SQLMessageService(database, config, ImperiumScope.IO)
+        MessengerConfig.SQL -> SQLMessageService(database, config, scope)
     }

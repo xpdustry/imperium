@@ -21,10 +21,11 @@ import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.SCARLET
+import kotlinx.coroutines.CoroutineScope
 
 val REMEMBER_LOGIN_WARNING = key("remember-login-warning", Boolean::class.javaObjectType)
 
-fun LoginWindow(plugin: MindustryPlugin, sessions: MindustrySessionService): WindowManager =
+fun LoginWindow(plugin: MindustryPlugin, sessions: MindustrySessionService, scope: CoroutineScope): WindowManager =
     TextFormWindowManager<LoginPage>(
         plugin,
         "login",
@@ -36,7 +37,7 @@ fun LoginWindow(plugin: MindustryPlugin, sessions: MindustrySessionService): Win
         },
         submit =
             BiAction.delegate { _, data ->
-                CoroutineAction(success = LoginResultAction()) { window ->
+                CoroutineAction(scope, success = LoginResultAction()) { window ->
                     sessions.login(
                         window.viewer.sessionKey,
                         data[LoginPage.USERNAME]!!,

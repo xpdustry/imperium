@@ -2,9 +2,10 @@
 package com.xpdustry.imperium.mindustry.monitoring
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
@@ -14,6 +15,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
@@ -22,15 +24,18 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 
 @Inject
-class BlockHoundService(private val config: ImperiumConfig, private val webhook: WebhookMessageSender) :
-    ImperiumApplication.Listener {
+class BlockHoundService(
+    private val config: ImperiumConfig,
+    private val webhook: WebhookMessageSender,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
 
     private var job: Job? = null
     private var lastWarn: Instant? = null
 
     init {
         job =
-            ImperiumScope.MAIN.launch {
+            scope.launch {
                 while (isActive) {
                     val blocked =
                         runCatching { runMindustryThread(timeout = 10.seconds) { /* Nothin' */ } }

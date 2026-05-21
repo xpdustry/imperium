@@ -4,8 +4,9 @@ package com.xpdustry.imperium.mindustry.security
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.user.User
@@ -13,11 +14,13 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
 @Inject
-class AntiEvadeListener constructor(private val users: UserManager) : ImperiumApplication.Listener {
+class AntiEvadeListener(private val users: UserManager, @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope) :
+    ImperiumApplication.Listener {
     private val quits =
         buildCache<MindustryUUID, String> {
             maximumSize(1000)
@@ -30,7 +33,7 @@ class AntiEvadeListener constructor(private val users: UserManager) : ImperiumAp
         if (event.player.info.plainLastName() != previous) {
             for (player in Entities.getPlayers()) {
                 if (player.uuid() == event.player.uuid()) continue
-                ImperiumScope.MAIN.launch {
+                scope.launch {
                     if (users.getSetting(player.uuid(), User.Setting.ANTI_BAN_EVADE)) {
                         player.sendMessage(
                             "[orange]Warning, the player [accent]${event.player.info.plainLastName()}[] has changed his name. He was [accent]$previous[]."

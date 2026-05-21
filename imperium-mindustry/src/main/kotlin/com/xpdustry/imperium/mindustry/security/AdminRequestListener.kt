@@ -14,9 +14,10 @@ import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
@@ -35,6 +36,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
@@ -59,6 +61,7 @@ class AdminRequestListener(
     private val users: UserManager,
     private val store: DataStoreService,
     private val codec: IdentifierCodec,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private lateinit var adminActionInterface: WindowManager
 
@@ -74,7 +77,7 @@ class AdminRequestListener(
                     Action.hideAll()
                         .then(Action.with(PUNISHMENT_REASON, input))
                         .then(
-                            CoroutineAction { window ->
+                            CoroutineAction(scope) { window ->
                                 val target = users.getByIdentity(window.state[PUNISHMENT_TARGET]!!)
                                 punishments.punish(
                                     window.viewer.identity,
@@ -257,7 +260,7 @@ class AdminRequestListener(
     }
 
     private fun handleTraceInfo(requester: Player, target: Player) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val user = users.findByUuid(target.uuid())
             if (user == null) {
                 // This should never happen

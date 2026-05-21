@@ -9,8 +9,10 @@ import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.MindustrySessionService
 import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.buildCache
@@ -26,6 +28,7 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 
 @Inject
 class AccountCommand(
@@ -34,10 +37,11 @@ class AccountCommand(
     private val users: UserManager,
     private val messenger: MessageService,
     private val plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
-    private val login = LoginWindow(plugin, sessions)
-    private val register = RegisterWindow(plugin, accounts)
-    private val changePassword = ChangePasswordWindow(plugin, accounts, sessions)
+    private val login = LoginWindow(plugin, sessions, scope)
+    private val register = RegisterWindow(plugin, accounts, scope)
+    private val changePassword = ChangePasswordWindow(plugin, accounts, sessions, scope)
     private val verifications = buildCache<Int, Int> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     @ImperiumCommand(["login"])

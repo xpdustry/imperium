@@ -10,10 +10,13 @@ import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.AchievementUpdate
 import com.xpdustry.imperium.common.account.RankChangeEvent
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.events.guild.member.GuildMemberJoinEvent
 import net.dv8tion.jda.api.events.guild.update.GuildUpdateBoostCountEvent
@@ -25,10 +28,11 @@ class RoleSyncListener(
     private val accounts: AccountService,
     private val achievements: AccountAchievementService,
     private val messenger: MessageService,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
-        discord.jda.addSuspendingEventListener<GuildMemberJoinEvent> { discord.syncRoles(it.member) }
+        discord.jda.addSuspendingEventListener<GuildMemberJoinEvent>(scope) { discord.syncRoles(it.member) }
 
         messenger.subscribe<RankChangeEvent> { message -> discord.syncRoles(message.account) }
 
@@ -39,7 +43,7 @@ class RoleSyncListener(
         }
 
         runBlocking { syncServerBoosterRoles() }
-        discord.jda.addSuspendingEventListener<GuildUpdateBoostCountEvent> { _ -> syncServerBoosterRoles() }
+        discord.jda.addSuspendingEventListener<GuildUpdateBoostCountEvent>(scope) { _ -> syncServerBoosterRoles() }
     }
 
     private suspend fun syncServerBoosterRoles() {

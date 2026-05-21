@@ -5,8 +5,9 @@ import arc.Core
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.metrics.Counter
 import com.xpdustry.imperium.common.metrics.GaugeMetric
 import com.xpdustry.imperium.common.metrics.Metric
@@ -20,6 +21,7 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.net.InetAddress
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mindustry.Vars
@@ -27,8 +29,11 @@ import mindustry.game.EventType
 import mindustry.game.Team
 
 @Inject
-class MetricsListener constructor(private val metrics: MetricsRegistry, private val users: UserManager) :
-    ImperiumApplication.Listener {
+class MetricsListener(
+    private val metrics: MetricsRegistry,
+    private val users: UserManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
     private val joinCounter = Counter("mindustry_events_join_total")
     private val quitCounter = Counter("mindustry_events_quit_total")
     private val chatCounter = Counter("mindustry_events_chat_total")
@@ -50,7 +55,7 @@ class MetricsListener constructor(private val metrics: MetricsRegistry, private 
 
     @EventHandler(priority = Priority.LOW)
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             uniPlayersCounter += event.player.con.address.toInetAddress()
             joinCounter.inc()
 

@@ -5,9 +5,10 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.user.UserManager
@@ -21,6 +22,7 @@ import com.xpdustry.imperium.mindustry.translation.marked_griefer_block
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_unit
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
@@ -35,6 +37,7 @@ class AntiGriefListener(
     private val users: UserManager,
     private val marks: MarkedPlayerManager,
     private val plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val isNew = PlayerMap<Boolean>(plugin)
     private val control = PlayerMap<Int>(plugin)
@@ -42,7 +45,7 @@ class AntiGriefListener(
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val info = users.getByIdentity(event.player.identity)
             runMindustryThread { isNew[event.player] = info.timesJoined < 10 }
         }

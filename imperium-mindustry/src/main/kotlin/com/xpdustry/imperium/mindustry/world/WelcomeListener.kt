@@ -10,9 +10,10 @@ import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
@@ -27,13 +28,17 @@ import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_discord
 import com.xpdustry.imperium.mindustry.translation.gui_welcome_button_rules
 import com.xpdustry.imperium.mindustry.translation.gui_welcome_content
 import com.xpdustry.imperium.mindustry.translation.gui_welcome_title
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Call
 
 @Inject
-class WelcomeListener constructor(private val users: UserManager, plugin: MindustryPlugin) :
-    ImperiumApplication.Listener {
+class WelcomeListener(
+    private val users: UserManager,
+    plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
     private val rulesInterface: WindowManager
     private val welcomeInterface: WindowManager
 
@@ -75,7 +80,7 @@ class WelcomeListener constructor(private val users: UserManager, plugin: Mindus
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) {
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             if (users.getSetting(event.player.uuid(), User.Setting.SHOW_WELCOME_MESSAGE)) {
                 runMindustryThread { welcomeInterface.create(event.player).show() }
             }

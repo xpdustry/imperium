@@ -8,18 +8,20 @@ import com.xpdustry.distributor.api.audience.Audience
 import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
@@ -30,6 +32,7 @@ class BridgeChatMessageListener(
     private val messenger: MessageService,
     private val accounts: AccountService,
     private val messages: MindustryMessagePipeline,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
@@ -66,7 +69,7 @@ class BridgeChatMessageListener(
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
@@ -78,7 +81,7 @@ class BridgeChatMessageListener(
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
@@ -90,7 +93,7 @@ class BridgeChatMessageListener(
 
     @EventHandler
     fun onPlayerChat(event: MindustryPlayerChatEvent) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
@@ -108,17 +111,13 @@ class BridgeChatMessageListener(
             } else {
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
-        ImperiumScope.MAIN.launch {
-            messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false))
-        }
+        scope.launch { messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false)) }
     }
 
     @EventHandler
     fun onNextMap(event: EventType.PlayEvent) {
         val message = "New game started on **\"${Vars.state.map.name().stripMindustryColors()}\"**."
-        ImperiumScope.MAIN.launch {
-            messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false))
-        }
+        scope.launch { messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false)) }
     }
 
     companion object {

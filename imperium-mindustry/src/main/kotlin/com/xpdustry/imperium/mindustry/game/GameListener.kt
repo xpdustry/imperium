@@ -3,11 +3,12 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.version.MindustryVersion
 import com.xpdustry.imperium.mindustry.map.MapLoader
@@ -20,6 +21,7 @@ import kotlin.time.Clock
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -30,13 +32,16 @@ import mindustry.io.SaveIO
 import mindustry.net.Administration
 
 @Inject
-class GameListener constructor(private val config: ImperiumConfig, private val maps: MindustryMapManager) :
-    ImperiumApplication.Listener {
+class GameListener(
+    private val config: ImperiumConfig,
+    private val maps: MindustryMapManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
     private val autoSave = Vars.saveDirectory.child("auto_imperium.${Vars.saveExtension}")
     private val logger by LoggerDelegate()
 
     override fun onImperiumInit() {
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             while (isActive) {
                 delay(5.seconds)
                 if (Vars.state.state != GameState.State.playing || Vars.state.gameOver) continue
@@ -44,7 +49,7 @@ class GameListener constructor(private val config: ImperiumConfig, private val m
             }
         }
 
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             while (isActive) {
                 delay(1.minutes)
                 runMindustryThread {
@@ -81,7 +86,7 @@ class GameListener constructor(private val config: ImperiumConfig, private val m
         val start = Vars.state.map.start ?: Clock.System.now()
         val mapId = Vars.state.map.id ?: return
         if (playtime < 1.minutes) return
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             maps.addMapGame(
                 mapId,
                 MindustryMap.PlayThrough.Data(

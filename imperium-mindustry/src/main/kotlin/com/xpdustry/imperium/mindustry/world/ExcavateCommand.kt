@@ -8,12 +8,13 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
@@ -34,6 +35,7 @@ import kotlin.math.min
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -55,8 +57,9 @@ class ExcavateCommand(
     private val config: ImperiumConfig,
     private val afk: AfkManager,
     plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) :
-    AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", afk, 1.minutes),
+    AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", afk, 1.minutes, scope),
     ImperiumApplication.Listener {
 
     private val areas = PlayerMap<ExcavateArea>(plugin)
@@ -66,7 +69,7 @@ class ExcavateCommand(
         item =
             Vars.content.item(config.mindustry.world.excavationItem)
                 ?: error("${config.mindustry.world.excavationItem} is not a valid mindustry item.")
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             while (isActive) {
                 delay(1.seconds)
                 if (Vars.state.isPlaying) {

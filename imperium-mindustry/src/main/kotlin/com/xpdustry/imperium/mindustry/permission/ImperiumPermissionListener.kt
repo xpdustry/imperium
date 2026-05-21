@@ -15,9 +15,10 @@ import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
@@ -29,6 +30,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.util.Collections
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
@@ -39,6 +41,7 @@ class ImperiumPermissionListener(
     private val config: ImperiumConfig,
     private val store: DataStoreService,
     private val users: UserManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<List<RankNode>>(plugin)
 
@@ -68,7 +71,7 @@ class ImperiumPermissionListener(
     }
 
     private fun updatePlayerRanks(player: Player) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val stored = store.selectBySessionKey(player.sessionKey)
             val nodes = ArrayList<RankNode>()
             val rank = stored?.account?.rank ?: Rank.EVERYONE

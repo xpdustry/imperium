@@ -11,13 +11,14 @@ import com.xpdustry.imperium.backend.service.DiscordService
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import java.time.Duration
@@ -34,6 +35,7 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.memberFunctions
 import kotlin.reflect.jvm.isAccessible
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.entities.Message
@@ -58,8 +60,11 @@ import net.dv8tion.jda.api.interactions.components.ComponentInteraction
 import net.dv8tion.jda.api.interactions.modals.ModalInteraction
 
 @Inject
-class DiscordCommandDispatcher(private val discord: DiscordService, private val config: ImperiumConfig) :
-    AnnotationScanner {
+class DiscordCommandDispatcher(
+    private val discord: DiscordService,
+    private val config: ImperiumConfig,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : AnnotationScanner {
     private val typeHandlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
     private val slashTree = CommandNode("root", parent = null)
     private val menuHandlers = mutableMapOf<String, InteractionHandler<out ComponentInteraction>>()
@@ -90,11 +95,11 @@ class DiscordCommandDispatcher(private val discord: DiscordService, private val 
     override fun process() {
         compileSlashCommands()
 
-        discord.jda.addSuspendingEventListener<SlashCommandInteractionEvent> { event ->
+        discord.jda.addSuspendingEventListener<SlashCommandInteractionEvent>(scope) { event ->
             handleSlashCommand(event.interaction)
         }
 
-        discord.jda.addSuspendingEventListener<GenericComponentInteractionCreateEvent> { event ->
+        discord.jda.addSuspendingEventListener<GenericComponentInteractionCreateEvent>(scope) { event ->
             handleInteraction(
                 id = event.componentId,
                 interaction = event.interaction,
@@ -106,7 +111,7 @@ class DiscordCommandDispatcher(private val discord: DiscordService, private val 
             )
         }
 
-        discord.jda.addSuspendingEventListener<ModalInteractionEvent> { event ->
+        discord.jda.addSuspendingEventListener<ModalInteractionEvent>(scope) { event ->
             handleInteraction(
                 id = event.modalId,
                 interaction = event.interaction,
@@ -358,7 +363,7 @@ class DiscordCommandDispatcher(private val discord: DiscordService, private val 
             if (config.discord.globalCommands) {
                 discord.jda.updateCommands().addCommands(compiled).await()
                 discord.getMainServer().retrieveCommands().await().forEach {
-                    ImperiumScope.MAIN.launch { discord.getMainServer().deleteCommandById(it.idLong).await() }
+                    scope.launch { discord.getMainServer().deleteCommandById(it.idLong).await() }
                 }
             } else {
                 discord.getMainServer().updateCommands().addCommands(compiled).await()

@@ -21,11 +21,13 @@ import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.translation.gui_failure_password_mismatch
+import kotlinx.coroutines.CoroutineScope
 
 fun ChangePasswordWindow(
     plugin: MindustryPlugin,
     accounts: AccountService,
     sessions: MindustrySessionService,
+    scope: CoroutineScope,
 ): WindowManager =
     TextFormWindowManager<ChangePwdPage>(
         plugin,
@@ -36,7 +38,7 @@ fun ChangePasswordWindow(
                     return@delegate Action(Window::show)
                         .then(Action.audience { it.sendAnnouncement(gui_failure_password_mismatch()) })
                 }
-                CoroutineAction(success = ChangePasswordResultAction()) { window ->
+                CoroutineAction(scope, success = ChangePasswordResultAction()) { window ->
                     val account =
                         sessions.selectAccount(accounts, window.viewer.sessionKey)
                             ?: return@CoroutineAction AccountResult.NotFound

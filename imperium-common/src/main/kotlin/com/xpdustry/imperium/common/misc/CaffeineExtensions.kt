@@ -4,7 +4,8 @@ package com.xpdustry.imperium.common.misc
 import com.github.benmanes.caffeine.cache.AsyncCache
 import com.github.benmanes.caffeine.cache.Cache
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.xpdustry.imperium.common.async.ImperiumScope
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import kotlinx.coroutines.future.await
@@ -21,5 +22,8 @@ fun <K : Any, V : Any> buildAsyncCache(configure: Caffeine<K, V>.() -> Unit): As
     return builder.buildAsync()
 }
 
-suspend fun <K : Any, V : Any> AsyncCache<K, V>.getSuspending(key: K, compute: suspend (K) -> V): V =
-    get(key) { k, _ -> ImperiumScope.IO.async { compute(k) }.asCompletableFuture() }.await()
+suspend fun <K : Any, V : Any> AsyncCache<K, V>.getSuspending(
+    key: K,
+    scope: CoroutineScope,
+    compute: suspend (K) -> V,
+): V = get(key) { k, _ -> scope.async(Dispatchers.IO) { compute(k) }.asCompletableFuture() }.await()

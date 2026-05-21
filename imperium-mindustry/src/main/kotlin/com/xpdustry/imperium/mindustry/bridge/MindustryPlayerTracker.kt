@@ -3,16 +3,18 @@ package com.xpdustry.imperium.mindustry.bridge
 
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.bridge.PlayerTracker
 import com.xpdustry.imperium.common.bridge.RequestingPlayerTracker
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.identity
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
@@ -21,6 +23,7 @@ class MindustryPlayerTracker(
     messenger: MessageService,
     private val config: ImperiumConfig,
     private val users: UserManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : RequestingPlayerTracker(messenger), ImperiumApplication.Listener {
 
     private val joins = LimitedList<PlayerTracker.Entry>(30)
@@ -40,7 +43,7 @@ class MindustryPlayerTracker(
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val id = users.getByIdentity(event.player.identity).id
             val entry = PlayerTracker.Entry(event.player.identity, id)
             joins.add(entry)
@@ -49,5 +52,5 @@ class MindustryPlayerTracker(
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
-        ImperiumScope.MAIN.launch { online.remove(users.getByIdentity(event.player.identity).id)!! }
+        scope.launch { online.remove(users.getByIdentity(event.player.identity).id)!! }
 }

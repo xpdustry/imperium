@@ -2,7 +2,6 @@
 package com.xpdustry.imperium.common.metrics
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.MetricConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.database.SQLDatabase
@@ -13,6 +12,7 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 import kotlin.time.measureTime
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -29,6 +29,7 @@ class SQLMetricsRegistry(
     private val server: ServerConfig,
     private val config: MetricConfig.SQL,
     private val database: SQLDatabase,
+    private val scope: CoroutineScope,
 ) : MetricsRegistry, ImperiumApplication.Listener {
     private val collectors = CopyOnWriteArraySet<MetricsCollector>()
     private val lock = Mutex()
@@ -42,7 +43,7 @@ class SQLMetricsRegistry(
         runBlocking { createSchema() }
 
         job =
-            ImperiumScope.IO.launch {
+            scope.launch {
                 while (isActive) {
                     var count = 0
                     val elapsed = measureTime {

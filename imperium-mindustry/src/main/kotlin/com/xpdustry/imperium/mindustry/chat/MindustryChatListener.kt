@@ -15,9 +15,10 @@ import com.xpdustry.flex.translator.RateLimitedException
 import com.xpdustry.flex.translator.Translator
 import com.xpdustry.flex.translator.UnsupportedLanguageException
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.user.User
@@ -28,6 +29,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.SCARLET
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.future.await
@@ -49,6 +51,7 @@ class MindustryChatListener(
     private val messages: MindustryMessagePipeline,
     private val translator: Translator,
     private val users: UserManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private var nameJob: Job? = null
 
@@ -62,7 +65,7 @@ class MindustryChatListener(
 
         if (config.mindustry.chat.name.enabled) {
             nameJob =
-                ImperiumScope.MAIN.launch {
+                scope.launch {
                     while (isActive) {
                         try {
                             updatePlayerNames()
@@ -174,7 +177,7 @@ class MindustryChatListener(
         Distributor.get().eventBus.post(EventType.PlayerChatEvent(audience.player, message))
 
         val prefix = Vars.netServer.clientCommands.getPrefix()
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val isCommand = message.startsWith(prefix)
             var forServer =
                 messages.pump(

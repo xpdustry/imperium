@@ -10,10 +10,11 @@ import com.xpdustry.distributor.api.gui.popup.PopupPane.AlignementX
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.collection.LimitedList
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
@@ -29,6 +30,7 @@ import kotlin.math.abs
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.Team
@@ -37,8 +39,12 @@ import mindustry.type.Item
 import mindustry.world.blocks.storage.CoreBlock.CoreBuild
 
 @Inject
-class ResourceHudListener(private val users: UserManager, private val config: ImperiumConfig, plugin: MindustryPlugin) :
-    ImperiumApplication.Listener {
+class ResourceHudListener(
+    private val users: UserManager,
+    private val config: ImperiumConfig,
+    plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
     private val teams = mutableMapOf<Team, ResourceTracker>()
     private val popup = PopupManager.create(plugin)
 
@@ -82,7 +88,7 @@ class ResourceHudListener(private val users: UserManager, private val config: Im
     fun onHUDUpdate() {
         if (!config.mindustry.world.displayResourceTracker || !Vars.state.isPlaying) return
         updateResourceTrackers()
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             for (player in Entities.getPlayersAsync()) {
                 val enabled = users.getSetting(player.uuid(), User.Setting.RESOURCE_HUD)
                 Core.app.post {

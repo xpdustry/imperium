@@ -11,11 +11,12 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.collection.enumSetOf
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -45,6 +46,7 @@ import java.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -70,6 +72,7 @@ class PunishmentListener(
     private val codec: IdentifierCodec,
     private val messages: MindustryMessagePipeline,
     plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val messageCooldowns = SimpleRateLimiter<MindustryUUID>(1, 3.seconds)
     private val cache = PlayerMap<List<Punishment>>(plugin)
@@ -220,8 +223,7 @@ class PunishmentListener(
             }
     }
 
-    @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) = ImperiumScope.MAIN.launch { refreshPunishments(event.player) }
+    @EventHandler fun onPlayerJoin(event: EventType.PlayerJoin) = scope.launch { refreshPunishments(event.player) }
 
     private fun Player.sendMessageRateLimited(message: Component) {
         if (messageCooldowns.incrementAndCheck(uuid())) {

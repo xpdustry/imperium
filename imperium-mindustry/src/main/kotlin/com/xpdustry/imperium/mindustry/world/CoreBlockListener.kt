@@ -4,10 +4,11 @@ package com.xpdustry.imperium.mindustry.world
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.geometry.Cluster
 import com.xpdustry.imperium.common.geometry.ClusterManager
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -16,6 +17,7 @@ import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -29,14 +31,16 @@ import mindustry.world.blocks.storage.CoreBlock
 import org.incendo.cloud.annotation.specifier.Range
 
 @Inject
-class CoreBlockListener constructor(private val config: ImperiumConfig) : ImperiumApplication.Listener {
+class CoreBlockListener
+constructor(private val config: ImperiumConfig, @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope) :
+    ImperiumApplication.Listener {
     private val managers = mutableMapOf<Team, ClusterManager<Unit>>()
     private val damageRateLimiter =
         SimpleRateLimiter<CoreClusterDamageKey>(1, config.mindustry.world.coreDamageAlertDelay)
 
     override fun onImperiumInit() {
         if (!config.mindustry.world.displayCoreId) return
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             while (isActive) {
                 delay(1.seconds)
                 if (!Vars.state.isPlaying) continue

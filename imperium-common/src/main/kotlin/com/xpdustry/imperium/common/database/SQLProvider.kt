@@ -2,7 +2,6 @@
 package com.xpdustry.imperium.common.database
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.dependency.Named
@@ -10,9 +9,7 @@ import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
@@ -29,8 +26,6 @@ interface SQLProvider {
 class SimpleSQLProvider(private val config: DatabaseConfig, @Named("directory") private val directory: Path) :
     SQLProvider, ImperiumApplication.Listener {
 
-    private val parent = SupervisorJob()
-    private val scope = CoroutineScope(ImperiumScope.IO.coroutineContext + parent)
     private lateinit var database: Database
     private lateinit var source: HikariDataSource
 
@@ -64,13 +59,11 @@ class SimpleSQLProvider(private val config: DatabaseConfig, @Named("directory") 
     }
 
     override fun onImperiumExit() {
-        parent.complete()
-        runBlocking { parent.join() }
         source.close()
     }
 
     override fun <T> newTransaction(block: () -> T): T = transaction { block() }
 
     override suspend fun <T> newSuspendTransaction(block: suspend () -> T): T =
-        withContext(scope.coroutineContext) { suspendTransaction(database) { block() } }
+        withContext(Dispatchers.IO) { suspendTransaction(database) { block() } }
 }

@@ -11,9 +11,10 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.BLURPLE
 import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.user.User
@@ -27,6 +28,7 @@ import com.xpdustry.imperium.mindustry.misc.toHexString
 import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.text.DecimalFormat
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -40,6 +42,7 @@ class MindustryAudienceFormatter(
     private val config: ImperiumConfig,
     private val store: DataStoreService,
     private val users: UserManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<Rank>(plugin)
     private val hours = PlayerMap<Int>(plugin)
@@ -49,7 +52,7 @@ class MindustryAudienceFormatter(
 
     override fun onImperiumInit() {
         refreshJob =
-            ImperiumScope.MAIN.launch {
+            scope.launch {
                 while (isActive) {
                     refreshPlayerData()
                     delay(2.seconds)

@@ -9,13 +9,15 @@ import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.permission.Permission
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
@@ -50,6 +52,7 @@ class SimpleDiscordService(
     private val http: OkHttpClient,
     private val accounts: AccountService,
     private val achievements: AccountAchievementService,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : DiscordService, ImperiumApplication.Listener {
     override lateinit var jda: JDA
 
@@ -71,16 +74,16 @@ class SimpleDiscordService(
 
         // This is goofy, why do I need these to receive thread messages too
         getMainServer().threadChannels.forEach { thread ->
-            if (!thread.isJoined) ImperiumScope.MAIN.launch { thread.join().await() }
+            if (!thread.isJoined) scope.launch { thread.join().await() }
         }
 
-        jda.addSuspendingEventListener<ChannelCreateEvent> { event ->
+        jda.addSuspendingEventListener<ChannelCreateEvent>(scope) { event ->
             if (!event.channelType.isThread) return@addSuspendingEventListener
             val thread = event.channel.asThreadChannel()
             if (!thread.isJoined) thread.join().await()
         }
 
-        jda.addSuspendingEventListener<ThreadRevealedEvent> { event ->
+        jda.addSuspendingEventListener<ThreadRevealedEvent>(scope) { event ->
             if (!event.thread.isJoined) event.thread.join().await()
         }
     }

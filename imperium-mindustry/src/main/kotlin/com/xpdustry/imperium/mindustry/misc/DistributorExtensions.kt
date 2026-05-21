@@ -18,7 +18,6 @@ import com.xpdustry.distributor.api.key.MutableKeyContainer
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.distributor.api.util.TypeToken
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.mindustry.ImperiumPlugin
 import com.xpdustry.imperium.mindustry.translation.gui_error
 import kotlin.coroutines.resume
@@ -28,6 +27,7 @@ import kotlin.reflect.jvm.javaType
 import kotlin.reflect.typeOf
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
@@ -127,11 +127,12 @@ private val DEFAULT_FAILURE_ACTION =
 
 @Suppress("FunctionName")
 fun <T : Any> CoroutineAction(
+    scope: CoroutineScope,
     success: BiAction<T> = BiAction.from(Action.none()),
     failure: BiAction<Throwable> = DEFAULT_FAILURE_ACTION,
     block: suspend (Window) -> T,
 ): Action = Action { window ->
-    ImperiumScope.MAIN.launch {
+    scope.launch {
         try {
             val result = block(window)
             runMindustryThread { success.act(window, result) }

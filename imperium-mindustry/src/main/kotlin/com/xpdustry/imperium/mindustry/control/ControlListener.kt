@@ -4,12 +4,13 @@ package com.xpdustry.imperium.mindustry.control
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
 import com.xpdustry.imperium.common.control.toExitStatus
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.mindustry.misc.Entities
@@ -19,6 +20,7 @@ import com.xpdustry.imperium.mindustry.translation.server_restart_delay
 import com.xpdustry.imperium.mindustry.translation.server_restart_game_over
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -32,6 +34,7 @@ class ControlListener(
     private val config: ImperiumConfig,
     private val messenger: MessageService,
     private val application: ImperiumApplication,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private var job: Job? = null
         set(value) {
@@ -61,7 +64,7 @@ class ControlListener(
         if (immediate || Entities.getPlayers().isEmpty() || Vars.state.gameOver) {
             everyone.sendMessage(server_restart_delay(reason, 10.seconds))
             job =
-                ImperiumScope.MAIN.launch {
+                scope.launch {
                     delay(10.seconds)
                     doAction(action)
                 }
@@ -69,7 +72,7 @@ class ControlListener(
             everyone.sendMessage(server_restart_game_over(reason))
             onEvent<GameOverEvent> {
                 job =
-                    ImperiumScope.MAIN.launch {
+                    scope.launch {
                         delay(5.seconds)
                         doAction(action)
                     }
@@ -77,14 +80,14 @@ class ControlListener(
         } else if (config.mindustry.gamemode == MindustryGamemode.HUB) {
             everyone.sendMessage(server_restart_delay(reason, 10.seconds))
             job =
-                ImperiumScope.MAIN.launch {
+                scope.launch {
                     delay(10.seconds)
                     doAction(action)
                 }
         } else {
             everyone.sendMessage(server_restart_delay(reason, 5.minutes))
             job =
-                ImperiumScope.MAIN.launch {
+                scope.launch {
                     delay(5.minutes)
                     doAction(action)
                 }

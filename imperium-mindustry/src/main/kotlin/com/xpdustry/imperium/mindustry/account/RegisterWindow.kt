@@ -18,8 +18,9 @@ import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.translation.gui_failure_password_mismatch
+import kotlinx.coroutines.CoroutineScope
 
-fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountService): WindowManager =
+fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountService, scope: CoroutineScope): WindowManager =
     TextFormWindowManager<RegisterPage>(
         plugin,
         "register",
@@ -29,7 +30,7 @@ fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountService): WindowMan
                     return@delegate Action(Window::show)
                         .then(Action.audience { it.sendAnnouncement(gui_failure_password_mismatch()) })
                 }
-                CoroutineAction(success = RegisterResultAction()) { _ ->
+                CoroutineAction(scope, success = RegisterResultAction()) { _ ->
                     accounts.register(data[RegisterPage.USERNAME]!!, Password(data[RegisterPage.PASSWORD]!!))
                 }
             },

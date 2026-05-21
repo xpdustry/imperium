@@ -13,8 +13,9 @@ import com.xpdustry.imperium.common.account.MindustrySessionService
 import com.xpdustry.imperium.common.account.SessionKey
 import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
@@ -22,6 +23,7 @@ import com.xpdustry.imperium.mindustry.account.PlayerLogoutEvent
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import java.util.EnumSet.noneOf
 import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 
@@ -32,6 +34,7 @@ class DataStoreService(
     private val metadata: AccountMetadataService,
     private val sessions: MindustrySessionService,
     private val messenger: MessageService,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val data = ConcurrentHashMap<SessionKey, StoredAccount>()
 
@@ -94,7 +97,7 @@ class DataStoreService(
     }
 
     private fun load(key: SessionKey) {
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val account =
                 sessions.selectAccount(accounts, key)
                     ?: run {

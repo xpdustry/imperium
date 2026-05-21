@@ -9,8 +9,10 @@ import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -26,6 +28,7 @@ import com.xpdustry.imperium.mindustry.translation.gui_user_settings_description
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_entry
 import com.xpdustry.imperium.mindustry.translation.gui_user_settings_title
 import com.xpdustry.imperium.mindustry.translation.user_setting_description
+import kotlinx.coroutines.CoroutineScope
 import mindustry.gen.Player
 
 @Inject
@@ -33,6 +36,7 @@ class UserSettingsCommand(
     private val users: UserManager,
     private val store: DataStoreService,
     plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val playerSettingsInterface = createPlayerSettingsInterface(plugin)
 
@@ -60,10 +64,11 @@ class UserSettingsCommand(
                             MenuOption.of(
                                 gui_user_settings_entry(setting, value),
                                 CoroutineAction(
+                                    scope,
                                     success =
                                         BiAction.from(
                                             Action.compute(SETTINGS) { it + (setting to !value) }.then(Window::show)
-                                        )
+                                        ),
                                 ) {
                                     users.setSetting(it.viewer.uuid(), setting, !value)
                                 },

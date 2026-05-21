@@ -15,9 +15,11 @@ import com.xpdustry.distributor.api.player.MUUID
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -50,6 +52,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
@@ -75,7 +78,10 @@ class VoteKickCommand(
     private val store: DataStoreService,
     private val afk: AfkManager,
     plugin: MindustryPlugin,
-) : AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes), ImperiumApplication.Listener {
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) :
+    AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes, scope),
+    ImperiumApplication.Listener {
 
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()

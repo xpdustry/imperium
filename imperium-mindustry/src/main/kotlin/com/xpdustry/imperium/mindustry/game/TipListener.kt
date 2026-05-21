@@ -3,11 +3,13 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.announcement_tip
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -22,12 +24,13 @@ enum class Tip {
 }
 
 @Inject
-class TipListener constructor(private val config: ImperiumConfig) : ImperiumApplication.Listener {
+class TipListener(private val config: ImperiumConfig, @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope) :
+    ImperiumApplication.Listener {
     private var index = 0
     private val tips = Tip.entries.shuffled()
 
     override fun onImperiumInit() {
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             while (isActive) {
                 delay(config.mindustry.tipsDelay)
                 runMindustryThread { showNextTip() }

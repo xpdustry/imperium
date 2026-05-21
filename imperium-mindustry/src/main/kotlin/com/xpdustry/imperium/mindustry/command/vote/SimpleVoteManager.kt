@@ -4,7 +4,6 @@ package com.xpdustry.imperium.mindustry.command.vote
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import java.util.Objects
 import java.util.UUID
@@ -13,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Instant
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
@@ -23,6 +23,7 @@ internal class SimpleVoteManager<O>(
     private val required: (VoteManager.Session<O>) -> Int,
     private val duration: Duration,
     private val finished: (VoteManager.Session<O>) -> Unit,
+    private val scope: CoroutineScope,
 ) : VoteManager<O> {
     private val _sessions = ConcurrentHashMap<UUID, SimpleSession>()
     override val sessions: Map<UUID, VoteManager.Session<O>> = _sessions
@@ -44,7 +45,7 @@ internal class SimpleVoteManager<O>(
     override fun start(objective: O): VoteManager.Session<O> {
         val session = SimpleSession(objective, null)
         _sessions[session.id] = session
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             delay(duration)
             session.tryFinishWithStatus(VoteManager.Status.FAILURE)
         }
@@ -54,7 +55,7 @@ internal class SimpleVoteManager<O>(
     override fun start(objective: O, initiator: Player, vote: Vote): VoteManager.Session<O> {
         val session = SimpleSession(objective, initiator)
         _sessions[session.id] = session
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             delay(duration)
             session.tryFinishWithStatus(VoteManager.Status.FAILURE)
         }

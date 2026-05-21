@@ -10,18 +10,20 @@ import com.xpdustry.imperium.backend.misc.await
 import com.xpdustry.imperium.backend.misc.disableComponents
 import com.xpdustry.imperium.backend.service.DiscordService
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.MINDUSTRY_ACCENT_COLOR
 import com.xpdustry.imperium.common.misc.buildCache
 import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.buttons.Button
@@ -38,6 +40,7 @@ class MapSearchCommand(
     private val discord: DiscordService,
     private val maps: MindustryMapManager,
     private val codec: IdentifierCodec,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val states =
         buildCache<Long, MapSearchState> {
@@ -47,7 +50,7 @@ class MapSearchCommand(
             removalListener<Long, MapSearchState> { key, value, cause ->
                 if (key == null || value == null || !(cause == RemovalCause.EXPLICIT || cause == RemovalCause.EXPIRED))
                     return@removalListener
-                ImperiumScope.MAIN.launch { disableMessageComponents(key, value.channel) }
+                scope.launch { disableMessageComponents(key, value.channel) }
             }
         }
 

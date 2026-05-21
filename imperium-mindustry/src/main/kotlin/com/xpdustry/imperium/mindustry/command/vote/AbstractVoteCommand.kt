@@ -2,11 +2,11 @@
 package com.xpdustry.imperium.mindustry.command.vote
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.security.AfkManager
 import kotlin.time.Duration
 import kotlin.time.Instant
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.gen.Player
 
@@ -15,6 +15,7 @@ abstract class AbstractVoteCommand<O>(
     private val name: String,
     private val afk: AfkManager,
     duration: Duration,
+    private val scope: CoroutineScope,
 ) {
     protected val manager: VoteManager<O> =
         SimpleVoteManager(
@@ -22,6 +23,7 @@ abstract class AbstractVoteCommand<O>(
             required = { getRequiredVotes(it, getParticipants(it).count()) },
             duration = duration,
             finished = ::onVoteSessionClose,
+            scope = scope,
         )
 
     protected fun onVoteSessionStart(player: Player, session: VoteManager.Session<O>?, objective: O) {
@@ -105,12 +107,12 @@ abstract class AbstractVoteCommand<O>(
                         "[scarlet]The [orange]'$name'[] vote has failed."
                     }
                 getParticipants(session).forEach { it.sendMessage(message) }
-                ImperiumScope.MAIN.launch { onVoteSessionFailure(session) }
+                scope.launch { onVoteSessionFailure(session) }
             }
             VoteManager.Status.SUCCESS -> {
                 val message = "[green]The [orange]'$name'[] vote has succeeded."
                 getParticipants(session).forEach { it.sendMessage(message) }
-                ImperiumScope.MAIN.launch { onVoteSessionSuccess(session) }
+                scope.launch { onVoteSessionSuccess(session) }
             }
             VoteManager.Status.RUNNING -> {
                 error("Vote session is still running.")

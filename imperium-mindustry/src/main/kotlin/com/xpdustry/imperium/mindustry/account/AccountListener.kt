@@ -17,8 +17,9 @@ import com.xpdustry.imperium.common.account.AchievementUpdate
 import com.xpdustry.imperium.common.account.MindustrySessionService
 import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.user.User
@@ -35,6 +36,7 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Call
@@ -50,6 +52,7 @@ class AccountListener(
     private val store: DataStoreService,
     private val users: UserManager,
     private val messenger: MessageService,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val playtime = ConcurrentHashMap<Player, Long>()
 
@@ -73,7 +76,7 @@ class AccountListener(
 
     @TaskHandler(delay = 1L, interval = 1L, unit = MindustryTimeUnit.MINUTES)
     internal fun onPlaytimeAchievementCheck() =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             for (player in Entities.getPlayersAsync()) {
                 val account = store.selectBySessionKey(player.sessionKey)?.account ?: continue
                 val now = System.currentTimeMillis()
@@ -85,7 +88,7 @@ class AccountListener(
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {
         playtime[event.player] = System.currentTimeMillis()
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             users.incrementJoins(event.player.identity)
             val account = sessions.selectAccount(accounts, event.player.sessionKey) ?: return@launch
             event.player.asAudience.sendMessage(
@@ -102,7 +105,7 @@ class AccountListener(
     @EventHandler
     internal fun onGameOver(event: EventType.GameOverEvent) {
         Entities.getPlayers().forEach { player ->
-            ImperiumScope.MAIN.launch {
+            scope.launch {
                 val account = sessions.selectAccount(accounts, player.sessionKey) ?: return@launch
                 accounts.incrementGames(account.id)
             }
@@ -112,7 +115,7 @@ class AccountListener(
     @EventHandler
     internal fun onPlayerLeave(event: EventType.PlayerLeave) {
         val playerPlaytime = playtime.remove(event.player)
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val now = System.currentTimeMillis()
             val account = sessions.selectAccount(accounts, event.player.sessionKey)
             if (account != null) {
