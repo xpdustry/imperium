@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.SCARLET
@@ -63,8 +64,12 @@ class MindustryChatListener(
             nameJob =
                 ImperiumScope.MAIN.launch {
                     while (isActive) {
-                        updatePlayerNames()
-                        delay(config.mindustry.chat.name.updateInterval)
+                        try {
+                            updatePlayerNames()
+                        } catch (e: Exception) {
+                            LOGGER.error("Failed to update player's names", e)
+                            delay(config.mindustry.chat.name.updateInterval)
+                        }
                     }
                 }
         }
@@ -255,9 +260,9 @@ class MindustryChatListener(
             return
         }
 
-        com.xpdustry.imperium.mindustry.misc.Entities.getPlayersAsync().forEach { player ->
+        Entities.getPlayersAsync().forEach { player ->
             val result = formatter.formatName(player.asAudience)
-            com.xpdustry.imperium.mindustry.misc.runMindustryThread {
+            runMindustryThread {
                 if (result.length > config.mindustry.chat.name.maximumNameSize) {
                     LOGGER.warn("Possible name overflow for player {} ({}), resetting.", player.name(), player.uuid())
                     player.name(player.info.lastName)
