@@ -360,7 +360,7 @@ project(":imperium-mindustry") {
         owner = "xpdustry"
         repo = "nohorny"
         asset = "nohorny-client.jar"
-        version = "v4.0.0-beta.3"
+        version = "v4.0.0-beta.6"
     }
 
     tasks.register<MindustryExec>("runMindustryDesktop2") {
