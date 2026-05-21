@@ -14,7 +14,6 @@ import com.xpdustry.imperium.backend.commands.PlayerCommand
 import com.xpdustry.imperium.backend.commands.ServerCommand
 import com.xpdustry.imperium.backend.commands.VerifyCommand
 import com.xpdustry.imperium.backend.commands.WhitelistCommand
-import com.xpdustry.imperium.backend.content.MindustryContentListener
 import com.xpdustry.imperium.backend.metrics.MetricsListener
 import com.xpdustry.imperium.backend.rest.RestListener
 import com.xpdustry.imperium.backend.security.PunishmentListener
@@ -63,7 +62,6 @@ fun main() {
             RestListener::class,
             MapSearchCommand::class,
             MapSubmitCommand::class,
-            MindustryContentListener::class,
             HistoryCommand::class,
             MetricsListener::class,
         )

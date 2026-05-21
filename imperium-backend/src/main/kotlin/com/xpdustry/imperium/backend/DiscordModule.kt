@@ -2,8 +2,8 @@
 package com.xpdustry.imperium.backend
 
 import com.xpdustry.imperium.backend.command.DiscordCommandDispatcher
+import com.xpdustry.imperium.backend.content.AnukenMindustryContentHandler
 import com.xpdustry.imperium.backend.content.MindustryContentHandler
-import com.xpdustry.imperium.backend.content.MindustryToolContentHandler
 import com.xpdustry.imperium.backend.service.DiscordService
 import com.xpdustry.imperium.backend.service.SimpleDiscordService
 import com.xpdustry.imperium.common.annotation.AnnotationScanner
@@ -26,7 +26,7 @@ fun DependencyService.Binder.registerDiscordModule() {
 
     // Discord tooling.
     bindToImpl<AnnotationScanner, DiscordCommandDispatcher>()
-    bindToImpl<MindustryContentHandler, MindustryToolContentHandler>()
+    bindToImpl<MindustryContentHandler, AnukenMindustryContentHandler>()
 }
 
 private fun createDiscordDirectory(): Path = Path(".")

@@ -32,6 +32,7 @@ plugins {
 group = "com.xpdustry"
 description = "The core of the chaotic neutral network."
 version = computeNextVersion()
+val mindustryVersion = "157"
 
 fun computeNextVersion(): String {
     val parts = rootProject.file("VERSION.txt")
@@ -163,6 +164,11 @@ project(":imperium-common") {
 
 project(":imperium-backend") {
     apply(plugin = "com.gradleup.shadow")
+    apply(plugin = "com.xpdustry.toxopid")
+
+    val toxopid = extensions.getByType<ToxopidExtension>()
+    toxopid.compileVersion = "v$mindustryVersion"
+    toxopid.platforms = setOf()
 
     dependencies {
         "implementation"(project(":imperium-common"))
@@ -170,10 +176,29 @@ project(":imperium-backend") {
         "implementation"("net.dv8tion:JDA:6.4.1") { exclude(module = "opus-java"); exclude(module = "tink") }
         "runtimeOnly"("com.h2database:h2:2.4.240")
         "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+        "implementation"(toxopid.dependencies.mindustryCore)
+        "implementation"(toxopid.dependencies.arcCore)
+    }
+
+    val mindustryDesktopJar = tasks.named<GithubAssetDownload>(GithubAssetDownload.MINDUSTRY_DESKTOP_DOWNLOAD_TASK_NAME)
+        .map { it.output }
+
+    tasks.named<ProcessResources>(JavaPlugin.PROCESS_TEST_RESOURCES_TASK_NAME) {
+        from(zipTree(mindustryDesktopJar)) {
+            include("sprites/**")
+            include("maps/**")
+            include("baseparts/**")
+        }
     }
 
     val shadowJar = tasks.named<ShadowJar>(ShadowJar.SHADOW_JAR_TASK_NAME) {
         archiveFileName.set("imperium-backend.jar")
+
+        from(zipTree(mindustryDesktopJar)) {
+            include("sprites/**")
+            include("maps/**")
+            include("baseparts/**")
+        }
 
         minimize {
             exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
@@ -221,7 +246,7 @@ project(":imperium-mindustry") {
         version = rootProject.version.toString(),
         mainClass = "com.xpdustry.imperium.mindustry.ImperiumPlugin",
         repository = "xpdustry/imperium",
-        minGameVersion = "157",
+        minGameVersion = mindustryVersion,
         hidden = true,
         java = true,
         dependencies =
@@ -235,7 +260,7 @@ project(":imperium-mindustry") {
     )
 
     val toxopid = extensions.getByType<ToxopidExtension>()
-    toxopid.compileVersion = "v${metadata.minGameVersion}"
+    toxopid.compileVersion = "v$mindustryVersion"
     toxopid.platforms = setOf(ModPlatform.SERVER)
 
     dependencies {
