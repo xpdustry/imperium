@@ -80,9 +80,11 @@ import mindustry.io.SaveVersion
 class ImperiumPlugin : AbstractMindustryPlugin() {
     private val application = MindustryImperiumApplication(this)
 
-    override fun onLoad() {
-        application.register(BlockHoundService::class)
+    override fun onInit() {
+        application.register(application.instances.create<BlockHoundService>())
+    }
 
+    override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
         application.createAll()

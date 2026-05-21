@@ -28,7 +28,7 @@ class BlockHoundService(private val config: ImperiumConfig, private val webhook:
     private var job: Job? = null
     private var lastWarn: Instant? = null
 
-    override fun onImperiumInit() {
+    init {
         job =
             ImperiumScope.MAIN.launch {
                 while (isActive) {
