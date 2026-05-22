@@ -276,7 +276,7 @@ project(":imperium-mindustry") {
         "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.6")
         "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.6")
         "implementation"("com.xpdustry:flex-translator:1.2.0")
-        "implementation"("org.jsoup:jsoup:1.22.1")
+        "implementation"("org.jsoup:jsoup:1.22.2")
         "implementation"("org.ahocorasick:ahocorasick:0.6.3")
     }
 
