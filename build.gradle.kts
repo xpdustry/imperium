@@ -152,7 +152,7 @@ project(":imperium-common") {
         "api"("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
         "api"("org.jetbrains.exposed:exposed-core:1.3.0")
-        "api"("org.jetbrains.exposed:exposed-jdbc:1.2.0")
+        "api"("org.jetbrains.exposed:exposed-jdbc:1.3.1")
         "api"("org.jetbrains.exposed:exposed-kotlin-datetime:1.2.0")
         "api"("org.jetbrains.exposed:exposed-json:1.3.1")
         "api"("com.zaxxer:HikariCP:7.0.2")
