@@ -123,8 +123,8 @@ subprojects {
         "testRuntimeOnly"("com.h2database:h2:2.4.240")
         "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
 
-        "testImplementation"("org.junit.jupiter:junit-jupiter-api:6.0.3")
-        "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:6.0.3")
+        "testImplementation"("org.junit.jupiter:junit-jupiter-api:6.1.1")
+        "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:6.1.1")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
     }
 
