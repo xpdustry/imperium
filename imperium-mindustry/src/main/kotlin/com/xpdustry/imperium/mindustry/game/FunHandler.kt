@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.mindustry.game
 
 import arc.util.Log
@@ -17,10 +18,13 @@ import mindustry.gen.Player
 
 class FunHandler : ImperiumApplication.Listener {
 
+    @Suppress("UNREACHABLE_CODE")
     override fun onImperiumInit() {
         // TODO: rank check
         // Allows foos to teleport
         Vars.netServer.addPacketHandler("teleport") { _, data ->
+            // returns until rank check is made
+            return@addPacketHandler
             try {
                 val json = Jval.read(data)
                 val x = json.getFloat("x", 0f)
@@ -31,7 +35,7 @@ class FunHandler : ImperiumApplication.Listener {
                     setUnitPosition(player, x, y)
                 }
             } catch (e: Exception) {
-                Log.err("Error handling teleport packet", e)
+                Log.err("Error handling teleport packet")
             }
         }
     }
@@ -42,9 +46,9 @@ class FunHandler : ImperiumApplication.Listener {
     @ClientSide
     @ServerSide
     fun onTeleportCommand(sender: CommandSender, x: Float, y: Float, player: Player? = null) {
-        var players = player
-        if(player == null) players = sender.player
-        setUnitPosition(players, x, y)
+        if (player == null && sender.isServer) return sender.reply("Console must provide a player")
+        val target = player ?: sender.player
+        setUnitPosition(target, x, y)
     }
 
     fun setUnitPosition(player: Player, x: Float, y: Float) {
@@ -55,8 +59,10 @@ class FunHandler : ImperiumApplication.Listener {
     @ClientSide
     fun onStatusCommand(sender: CommandSender, status: String, length: String, player: Player? = null) {
         val statusEffect = Vars.content.statusEffect(status) ?: return sender.reply(command_arg_unknown(status))
-        val players = player ?: sender.player
-        val time = if (length == "infinite") Float.MAX_VALUE else length.toFloatOrNull() ?: return sender.reply(command_arg_unknown(length))
-        players.unit().apply(statusEffect, time)
+        val target = player ?: sender.player
+        val time =
+            if (length == "infinite") Float.MAX_VALUE
+            else length.toFloatOrNull() ?: return sender.reply(command_arg_unknown(length))
+        target.unit().apply(statusEffect, time)
     }
 }

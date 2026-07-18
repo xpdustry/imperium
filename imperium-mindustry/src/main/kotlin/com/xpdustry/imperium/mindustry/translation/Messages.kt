@@ -480,4 +480,5 @@ fun player_action_invalid_target(target: Any): Component =
         translatable("imperium.player.invalid.target", TranslationArguments.array(text(target.toString()))),
     )
 
-fun command_arg_unknown(arg: String): Component = components(SCARLET, translatable("imperium.command.arg.unknown", TranslationArguments.array(text(arg, ORANGE))))
+fun command_arg_unknown(arg: String): Component =
+    components(SCARLET, translatable("imperium.command.arg.unknown", TranslationArguments.array(text(arg, ORANGE))))

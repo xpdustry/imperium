@@ -99,8 +99,8 @@ class FoosClientDetector(
     }
 
     @EventHandler
-    fun resendPlayerData(event: PlayerLoginEvent, player: Player) {
-        sendPlayerData(player, true)
+    fun resendPlayerData(event: PlayerLoginEvent) {
+        sendPlayerData(event.player, true)
     }
 
     @EventHandler
@@ -122,20 +122,22 @@ class FoosClientDetector(
     }
 
     private fun sendPlayerData(player: Player, resend: Boolean = false) {
-        val json =
-            Jval.newObject().apply {
-                put("resend", resend)
-                put("currentName", player.name)
-                put("currentID", player.id)
-                put(
-                    "rank",
-                    store.selectBySessionKey(player.sessionKey)?.account?.rank?.ordinal ?: Rank.EVERYONE.ordinal,
-                )
-                // TODO: Add more senders, specifically for tile history
-                // and other player's information to admins
-                // using Jval.newArray()
-            }
-        Call.clientPacketReliable(player.con, "playerdata", json.toString())
+        scope.launch {
+            val json =
+                Jval.newObject().apply {
+                    put("resend", resend)
+                    put("currentName", player.name)
+                    put("currentID", player.id)
+                    put(
+                        "rank",
+                        store.selectBySessionKey(player.sessionKey)?.account?.rank?.ordinal ?: Rank.EVERYONE.ordinal,
+                    )
+                    // TODO: Add more senders, specifically for tile history
+                    // and other player's information to admins
+                    // using Jval.newArray()
+                }
+            Call.clientPacketReliable(player.con, "playerdata", json.toString())
+        }
     }
 
     override fun isFooClient(player: Player) = fooClients[player] == true
