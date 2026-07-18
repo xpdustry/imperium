@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.mindustry.game
 
+import arc.Core
 import arc.util.Log
 import arc.util.serialization.Jval
 import com.xpdustry.distributor.api.annotation.EventHandler
@@ -56,43 +57,44 @@ class FoosClientDetector(
         // TODO: rework to generic packet based moderation, where "type" = Punishment.Type
         Vars.netServer.addPacketHandler("foosFreeze") { playerObject, data ->
             scope.launch {
-                val audience = playerObject.asAudience
                 val rank = store.selectBySessionKey(playerObject.sessionKey)?.account?.rank ?: Rank.EVERYONE
 
                 if (rank < Rank.OVERSEER) {
-                    audience.sendMessage(player_action_disallowed())
+                    Core.app.post {
+                        playerObject.asAudience.sendMessage(player_action_disallowed())
+                    }
                     return@launch
                 }
 
-                try {
-                    val json = Jval.read(data)
+                Core.app.post {
+                    try {
+                        val json = Jval.read(data)
+                        val targetId = json.getInt("targetID", -1)
+                        val target = Groups.player.find { it.id == targetId }
 
-                    val targetId = json.getInt("targetID", -1)
-                    val target = Groups.player.find { it.id == targetId }
+                        if (target == null) {
+                            playerObject.asAudience.sendMessage(player_action_invalid_target(targetId))
+                            return@post
+                        }
 
-                    if (target == null) {
-                        audience.sendMessage(player_action_invalid_target(targetId))
-                        return@launch
+                        val reason = json.getString("reason", "Moderator Freeze")
+                        val duration = json.getLong("duration", 5.minutes.inWholeMilliseconds).milliseconds
+
+                        scope.launch {
+                            executePunishment(
+                                verb = "Froze",
+                                type = Punishment.Type.FREEZE,
+                                senderIdentity = playerObject.identity,
+                                reply = { msg -> playerObject.sendMessage(msg) },
+                                player = target,
+                                reason = reason,
+                                duration = duration,
+                            )
+                        }
+                    } catch (e: Exception) {
+                        Log.err("Failed to process foosFreeze packet from ${playerObject.name}", e)
+                        playerObject.sendMessage("Failed to process foosFreeze packet. Ensure you sent the correct data.")
                     }
-
-                    val defaultReason = "Moderator Freeze"
-                    val reason = json.getString("reason", defaultReason)
-
-                    val durationMs = json.getLong("duration", 5.minutes.inWholeMilliseconds)
-
-                    executePunishment(
-                        verb = "Froze",
-                        type = Punishment.Type.FREEZE,
-                        senderIdentity = playerObject.identity,
-                        reply = { msg -> playerObject.sendMessage(msg) },
-                        player = target,
-                        reason = reason,
-                        duration = durationMs.milliseconds,
-                    )
-                } catch (e: Exception) {
-                    Log.err("Failed to process foosFreeze packet from ${playerObject.name}", e)
-                    // TODO: should this be translated?
-                    playerObject.sendMessage("Failed to process foosFreeze packet. Ensure you sent the correct data.")
                 }
             }
         }
