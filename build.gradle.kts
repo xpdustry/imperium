@@ -23,7 +23,7 @@ import java.time.ZonedDateTime
 plugins {
     id("com.diffplug.spotless") version "8.6.0" apply false
     id("net.kyori.indra") version "4.0.0" apply false
-    kotlin("jvm") version "2.3.21" apply false
+    kotlin("jvm") version "2.4.10" apply false
     kotlin("plugin.serialization") version "2.3.21" apply false
     id("com.gradleup.shadow") version "9.4.2" apply false
     id("com.xpdustry.toxopid") version "4.2.0" apply false
@@ -32,7 +32,7 @@ plugins {
 group = "com.xpdustry"
 description = "The core of the chaotic neutral network."
 version = computeNextVersion()
-val mindustryVersion = "157"
+val mindustryVersion = "159"
 
 fun computeNextVersion(): String {
     val parts = rootProject.file("VERSION.txt")
@@ -318,7 +318,7 @@ project(":imperium-mindustry") {
         owner = "xpdustry"
         repo = "kotlin-runtime"
         asset = "kotlin-runtime.jar"
-        version = "v4.3.5+k.2.3.20"
+        version = "v4.3.8+k.2.4.10"
     }
 
     val downloadSlf4md = tasks.register<GithubAssetDownload>("downloadSlf4md") {
@@ -332,14 +332,14 @@ project(":imperium-mindustry") {
         owner = "xpdustry"
         repo = "sql4md"
         asset = "sql4md-mariadb.jar"
-        version = "v2.0.2"
+        version = "v2.1.0"
     }
 
     val downloadSql4mdH2 = tasks.register<GithubAssetDownload>("downloadSql4mdH2") {
         owner = "xpdustry"
         repo = "sql4md"
         asset = "sql4md-h2.jar"
-        version = "v2.0.2"
+        version = "v2.1.0"
     }
 
     val downloadDistributorCommon = tasks.register<GithubAssetDownload>("downloadDistributorCommon") {
@@ -360,7 +360,7 @@ project(":imperium-mindustry") {
         owner = "xpdustry"
         repo = "nohorny"
         asset = "nohorny-client.jar"
-        version = "v4.0.0-beta.6"
+        version = "v4.0.0-beta.7"
     }
 
     tasks.register<MindustryExec>("runMindustryDesktop2") {
