@@ -470,3 +470,14 @@ fun player_afk_announcement(boolean: Boolean, player: String): Component =
         text(">>> ", CYAN),
         translatable("imperium.player.afk.announcement.$boolean", TranslationArguments.array(text(player, ORANGE))),
     )
+
+fun player_action_disallowed(): Component = components(SCARLET, translatable("imperium.player.action.disallowed"))
+
+// Up to the function caller to make sure target is able to be .toString and be readable
+fun player_action_invalid_target(target: Any): Component =
+    components(
+        SCARLET,
+        translatable("imperium.player.invalid.target", TranslationArguments.array(text(target.toString()))),
+    )
+
+fun command_arg_unknown(arg: String): Component = components(SCARLET, translatable("imperium.command.arg.unknown", TranslationArguments.array(text(arg, ORANGE))))

@@ -18,7 +18,7 @@ import com.xpdustry.imperium.mindustry.chat.SimpleMindustryMessagePipeline
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.game.ClientDetector
-import com.xpdustry.imperium.mindustry.game.SimpleClientDetector
+import com.xpdustry.imperium.mindustry.game.FoosClientDetector
 import com.xpdustry.imperium.mindustry.history.Historian
 import com.xpdustry.imperium.mindustry.history.HistoryRenderer
 import com.xpdustry.imperium.mindustry.history.SimpleHistorian
@@ -52,7 +52,7 @@ internal fun DependencyService.Binder.registerMindustryModule(plugin: MindustryP
     // Gameplay services.
     bindToImpl<Historian, SimpleHistorian>()
     bindToImpl<DataStoreService, DataStoreService>()
-    bindToImpl<ClientDetector, SimpleClientDetector>()
+    bindToImpl<ClientDetector, FoosClientDetector>()
     bindToImpl<GatekeeperPipeline, SimpleGatekeeperPipeline>()
     bindToImpl<BadWordDetector, SimpleBadWordDetector>()
     bindToImpl<MarkedPlayerManager, SimpleMarkedPlayerManager>()
