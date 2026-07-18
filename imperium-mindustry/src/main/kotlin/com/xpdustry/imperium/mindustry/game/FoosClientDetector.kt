@@ -60,9 +60,7 @@ class FoosClientDetector(
                 val rank = store.selectBySessionKey(playerObject.sessionKey)?.account?.rank ?: Rank.EVERYONE
 
                 if (rank < Rank.OVERSEER) {
-                    Core.app.post {
-                        playerObject.asAudience.sendMessage(player_action_disallowed())
-                    }
+                    Core.app.post { playerObject.asAudience.sendMessage(player_action_disallowed()) }
                     return@launch
                 }
 
@@ -93,7 +91,9 @@ class FoosClientDetector(
                         }
                     } catch (e: Exception) {
                         Log.err("Failed to process foosFreeze packet from ${playerObject.name}", e)
-                        playerObject.sendMessage("Failed to process foosFreeze packet. Ensure you sent the correct data.")
+                        playerObject.sendMessage(
+                            "Failed to process foosFreeze packet. Ensure you sent the correct data."
+                        )
                     }
                 }
             }
