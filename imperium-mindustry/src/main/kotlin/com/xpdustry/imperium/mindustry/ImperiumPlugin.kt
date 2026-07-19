@@ -65,6 +65,7 @@ import com.xpdustry.imperium.mindustry.world.ItemCommand
 import com.xpdustry.imperium.mindustry.world.KillAllCommand
 import com.xpdustry.imperium.mindustry.world.MapListener
 import com.xpdustry.imperium.mindustry.world.ResourceHudListener
+import com.xpdustry.imperium.mindustry.world.ReviveCoreCommand
 import com.xpdustry.imperium.mindustry.world.RockTheVoteCommand
 import com.xpdustry.imperium.mindustry.world.SaveCommand
 import com.xpdustry.imperium.mindustry.world.SpawnCommand
@@ -154,6 +155,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 DayNightCycleListener::class,
                 ImperiumPermissionListener::class,
                 ItemCommand::class,
+                ReviveCoreCommand::class,
             )
             .forEach(application::register)
 
