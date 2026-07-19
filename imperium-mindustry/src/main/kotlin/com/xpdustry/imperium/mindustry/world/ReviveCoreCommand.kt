@@ -185,8 +185,16 @@ class ReviveCoreCommand(instances: InstanceManager) : ImperiumApplication.Listen
         return destroyedCores.values.toList()
     }
 
-    private fun isTileAvailable(core: DestroyedCore): Boolean =
-        Vars.world.tile(core.tileX, core.tileY)?.block() == Blocks.air
+    private fun isTileAvailable(core: DestroyedCore): Boolean {
+        for (dx in 0 until core.block.size) {
+            for (dy in 0 until core.block.size) {
+                val tile =
+                    Vars.world.tile(core.tileX + dx + core.block.sizeOffset, core.tileY + dy + core.block.sizeOffset)
+                if (tile?.block() != Blocks.air) return false
+            }
+        }
+        return true
+    }
 
     private fun reviveCost(core: CoreBlock): List<ItemRequirement> {
         val amount =
