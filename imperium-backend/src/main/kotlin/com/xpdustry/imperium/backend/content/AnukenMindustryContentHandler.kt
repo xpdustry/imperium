@@ -28,6 +28,7 @@ import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
 import java.io.DataInputStream
 import java.io.File
+import java.io.IOException
 import java.io.InputStream
 import java.nio.file.FileSystem
 import java.nio.file.FileSystemAlreadyExistsException
@@ -220,7 +221,11 @@ class AnukenMindustryContentHandler(@Named("directory") directory: Path) :
         SaveIO.readHeader(stream)
 
         val version = stream.readInt()
-        val reader = SaveIO.getSaveWriter(version)
+        val reader =
+            SaveIO.getSaveWriter(version)
+                ?: throw IOException(
+                    "Unknown save version: $version. Are you trying to load a save from a newer version?"
+                )
         val metadataHolder = arrayOf<StringMap?>(null)
 
         reader.readRegion("meta", stream, counter) { metadataHolder[0] = reader.readStringMap(it) }
@@ -258,8 +263,9 @@ class AnukenMindustryContentHandler(@Named("directory") directory: Path) :
             }
 
         try {
+            if (version >= 12) reader.skipChunk(stream)
             reader.readRegion("content", stream, counter) { reader.readContentHeader(it) }
-            if (version >= 11) reader.readRegion("content", stream, counter, reader::skipContentPatches)
+            if (version == 11) reader.skipChunk(stream)
             reader.readRegion("preview_map", stream, counter) {
                 reader.readMap(
                     it,
