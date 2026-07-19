@@ -8,8 +8,7 @@ import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
@@ -23,11 +22,13 @@ import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 import org.incendo.cloud.annotation.specifier.Quoted
 
-class ModerationCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
-    private val config = instances.get<ImperiumConfig>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class ModerationCommand(
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val config: ImperiumConfig,
+    private val codec: IdentifierCodec,
+) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     @ClientSide

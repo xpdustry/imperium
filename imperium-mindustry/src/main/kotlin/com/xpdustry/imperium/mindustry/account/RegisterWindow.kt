@@ -11,15 +11,16 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Window
 import com.xpdustry.distributor.api.gui.WindowManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.string.Password
 import com.xpdustry.imperium.mindustry.gui.TextFormWindowManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.translation.gui_failure_password_mismatch
+import kotlinx.coroutines.CoroutineScope
 
-fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowManager =
+fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountService, scope: CoroutineScope): WindowManager =
     TextFormWindowManager<RegisterPage>(
         plugin,
         "register",
@@ -29,7 +30,7 @@ fun RegisterWindow(plugin: MindustryPlugin, accounts: AccountManager): WindowMan
                     return@delegate Action(Window::show)
                         .then(Action.audience { it.sendAnnouncement(gui_failure_password_mismatch()) })
                 }
-                CoroutineAction(success = RegisterResultAction()) { _ ->
+                CoroutineAction(scope, success = RegisterResultAction()) { _ ->
                     accounts.register(data[RegisterPage.USERNAME]!!, Password(data[RegisterPage.PASSWORD]!!))
                 }
             },

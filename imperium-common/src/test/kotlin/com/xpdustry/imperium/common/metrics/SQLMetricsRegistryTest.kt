@@ -10,6 +10,8 @@ import java.nio.file.Path
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -39,6 +41,7 @@ class SQLMetricsRegistryTest {
                 ServerConfig("metric-test"),
                 MetricConfig.SQL(interval = 50.milliseconds, retention = 1.seconds),
                 database,
+                CoroutineScope(Dispatchers.Default),
             )
         registry.onImperiumInit()
     }

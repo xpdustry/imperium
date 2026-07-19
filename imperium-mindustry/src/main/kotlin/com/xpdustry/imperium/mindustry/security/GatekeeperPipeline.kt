@@ -3,12 +3,13 @@ package com.xpdustry.imperium.mindustry.security
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.component.Component
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.processing.AbstractProcessorPipeline
 import com.xpdustry.imperium.mindustry.processing.ProcessorPipeline
 import java.net.InetAddress
 import kotlin.time.Duration
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 data class GatekeeperContext(val name: String, val uuid: String, val usid: String, val address: InetAddress)
@@ -28,10 +29,11 @@ sealed interface GatekeeperResult {
 
 interface GatekeeperPipeline : ProcessorPipeline<GatekeeperContext, GatekeeperResult>
 
+@Inject
 class SimpleGatekeeperPipeline :
     GatekeeperPipeline, AbstractProcessorPipeline<GatekeeperContext, GatekeeperResult>("gatekeeper") {
     override suspend fun pump(context: GatekeeperContext) =
-        withContext(ImperiumScope.MAIN.coroutineContext) {
+        withContext(Dispatchers.Default) {
             for (processor in processors) {
                 val result =
                     try {

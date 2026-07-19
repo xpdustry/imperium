@@ -2,14 +2,21 @@
 package com.xpdustry.imperium.mindustry
 
 import arc.Core
+import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
+import com.xpdustry.flex.translator.Translator
 import com.xpdustry.imperium.common.bridge.PlayerTracker
-import com.xpdustry.imperium.common.inject.MutableInstanceManager
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.inject.provider
-import com.xpdustry.imperium.common.network.Discovery
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.config.MindustryConfig
+import com.xpdustry.imperium.common.dependency.DependencyService
+import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.version.ImperiumVersion
 import com.xpdustry.imperium.mindustry.bridge.MindustryPlayerTracker
+import com.xpdustry.imperium.mindustry.chat.MindustryAudienceFormatter
+import com.xpdustry.imperium.mindustry.chat.MindustryMessagePipeline
+import com.xpdustry.imperium.mindustry.chat.SimpleMindustryMessagePipeline
+import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
+import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.game.SimpleClientDetector
 import com.xpdustry.imperium.mindustry.history.Historian
@@ -25,34 +32,75 @@ import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
 import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.nio.file.Path
 import java.util.concurrent.Executor
-import java.util.function.Supplier
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 
-internal fun MutableInstanceManager.registerMindustryModule(plugin: MindustryPlugin) {
-    provider<Historian> { SimpleHistorian(get(), get(), get(), get(), get()) }
+internal fun DependencyService.Binder.registerMindustryModule(plugin: MindustryPlugin) {
+    // Plugin runtime.
+    bindToProv<MindustryPlugin> { plugin }
+    bindToFunc<Path>(::getPluginDirectory, "directory")
+    bindToFunc<Executor>(::createMindustryMainExecutor, "main")
 
-    provider<MindustryPlugin> { plugin }
+    // Server identity.
+    bindToFunc<DiscoveryDataSupplier>(::createMindustryDiscoveryDataSupplier)
+    bindToFunc<ImperiumVersion>(::createMindustryImperiumVersion)
+    bindToImpl<PlayerTracker, MindustryPlayerTracker>()
 
-    provider<GatekeeperPipeline> { SimpleGatekeeperPipeline() }
+    // Gameplay services.
+    bindToImpl<Historian, SimpleHistorian>()
+    bindToImpl<DataStoreService, DataStoreService>()
+    bindToImpl<ClientDetector, SimpleClientDetector>()
+    bindToImpl<GatekeeperPipeline, SimpleGatekeeperPipeline>()
+    bindToImpl<BadWordDetector, SimpleBadWordDetector>()
+    bindToImpl<MarkedPlayerManager, SimpleMarkedPlayerManager>()
+    bindToImpl<AfkManager, AfkListener>()
 
-    provider<Path>("directory") { plugin.directory }
+    // Chat and history.
+    bindToFunc<Translator>(::createTranslator)
+    bindToImpl<HistoryRenderer, SimpleHistoryRenderer>()
+    bindToImpl<MindustryAudienceFormatter, MindustryAudienceFormatter>()
+    bindToImpl<MindustryMessagePipeline, SimpleMindustryMessagePipeline>()
 
-    provider<Supplier<Discovery.Data>>("discovery") { Supplier(::getMindustryServerInfo) }
+    // UI integration.
+    bindToImpl<ComponentRendererProvider, ImperiumComponentRendererProvider>()
+    bindToImpl<CommandAnnotationScanner, CommandAnnotationScanner>()
+}
 
-    provider<ImperiumVersion> { ImperiumVersion.parse(get<MindustryPlugin>().metadata.version) }
+private fun getPluginDirectory(plugin: MindustryPlugin): Path = plugin.directory
 
-    provider<PlayerTracker> { MindustryPlayerTracker(get(), get(), get()) }
+private fun createMindustryDiscoveryDataSupplier(): DiscoveryDataSupplier =
+    DiscoveryDataSupplier(::getMindustryServerInfo)
 
-    provider<Executor>("main") { Executor(Core.app::post) }
+private fun createMindustryImperiumVersion(plugin: MindustryPlugin): ImperiumVersion =
+    ImperiumVersion.parse(plugin.metadata.version)
 
-    provider<ClientDetector> { SimpleClientDetector(get()) }
+private fun createMindustryMainExecutor(): Executor = Executor(Core.app::post)
 
-    provider<BadWordDetector> { SimpleBadWordDetector(get()) }
+private fun createTranslator(config: ImperiumConfig): Translator {
+    val executor = Dispatchers.IO.asExecutor()
 
-    provider<HistoryRenderer> { SimpleHistoryRenderer(get(), get(), get()) }
+    fun create(backend: MindustryConfig.Chat.Translation.Backend): Translator =
+        when (backend) {
+            is MindustryConfig.Chat.Translation.Backend.None -> Translator.noop()
+            is MindustryConfig.Chat.Translation.Backend.LibreTranslate ->
+                Translator.libreTranslate(backend.ltEndpoint, executor, backend.ltApiKey?.value)
+            is MindustryConfig.Chat.Translation.Backend.DeepL -> Translator.deepl(backend.deeplApiKey.value, executor)
+            is MindustryConfig.Chat.Translation.Backend.GoogleBasic ->
+                Translator.googleBasic(backend.googleBasicApiKey.value, executor)
+            is MindustryConfig.Chat.Translation.Backend.Rolling ->
+                Translator.rolling(backend.translators.map(::create), create(backend.fallback))
+            is MindustryConfig.Chat.Translation.Backend.Caching ->
+                Translator.caching(
+                    create(backend.cachingTranslator),
+                    executor,
+                    backend.maximumSize,
+                    backend.successRetention.inWholeMilliseconds.let(java.time.Duration::ofMillis),
+                    backend.failureRetention.inWholeMilliseconds.let(java.time.Duration::ofMillis),
+                )
+        }
 
-    provider<MarkedPlayerManager> { SimpleMarkedPlayerManager(plugin) }
-
-    provider<AfkManager> { AfkListener(get(), get()) }
+    return create(config.mindustry.chat.translation.backend)
 }

@@ -12,14 +12,14 @@ import com.xpdustry.distributor.api.gui.input.TextInputManager
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.player.MUUID
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
 import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.stripMindustryColors
@@ -43,6 +43,7 @@ import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.player_afk_kick
 import java.net.InetAddress
 import java.util.Collections
@@ -51,7 +52,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
 import mindustry.Vars
 import mindustry.core.NetServer
 import mindustry.game.EventType
@@ -68,18 +69,22 @@ data class VotekickEvent(val target: Player, val type: Type) {
     }
 }
 
-class VoteKickCommand(instances: InstanceManager) :
-    AbstractVoteCommand<VoteKickCommand.Context>(instances.get(), "votekick", instances.get(), 1.minutes),
+@Inject
+class VoteKickCommand(
+    private val punishments: PunishmentManager,
+    private val config: ImperiumConfig,
+    private val users: UserManager,
+    private val marks: MarkedPlayerManager,
+    private val store: DataStoreService,
+    private val afk: AfkManager,
+    plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) :
+    AbstractVoteCommand<VoteKickCommand.Context>(plugin, "votekick", afk, 1.minutes, scope),
     ImperiumApplication.Listener {
 
-    private val punishments = instances.get<PunishmentManager>()
     private val limiter = SimpleRateLimiter<InetAddress>(1, 60.seconds)
     private val votekickInterface = createVotekickInterface()
-    private val config = instances.get<ImperiumConfig>()
-    private val users = instances.get<UserManager>()
-    private val marks = instances.get<MarkedPlayerManager>()
-    private val accounts = instances.get<AccountManager>()
-    private val afk = instances.get<AfkManager>()
     private val recentBans =
         Collections.newSetFromMap(buildCache<MUUID, Boolean> { expireAfterWrite(1.minutes.toJavaDuration()) }.asMap())
 
@@ -98,15 +103,9 @@ class VoteKickCommand(instances: InstanceManager) :
 
     @EventHandler
     internal fun onPlayerLogin(event: PlayerLoginEvent) {
-        ImperiumScope.MAIN.launch {
-            val rank = accounts.selectBySession(event.player.sessionKey)?.rank
-            if (rank != null && rank >= Rank.OVERSEER) {
-                runMindustryThread {
-                    manager.sessions.values
-                        .filter { it.objective.target == event.player }
-                        .forEach { it.failure(event.player) }
-                }
-            }
+        val rank = store.selectBySessionKey(event.player.sessionKey)?.account?.rank
+        if (rank != null && rank >= Rank.OVERSEER) {
+            manager.sessions.values.filter { it.objective.target == event.player }.forEach { it.failure(event.player) }
         }
     }
 

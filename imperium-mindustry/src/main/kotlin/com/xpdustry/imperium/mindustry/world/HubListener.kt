@@ -6,14 +6,15 @@ import arc.math.geom.Geometry
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.MindustryConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.serialization.SerializablePolygon
@@ -41,14 +42,19 @@ import mindustry.gen.Iconc
 import mindustry.gen.Player
 import mindustry.gen.WorldLabel
 
-class HubListener(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class HubListener(
+    config: ImperiumConfig,
+    @Named("directory") directory: Path,
+    private val discovery: Discovery,
+    plugin: MindustryPlugin,
+) : ImperiumApplication.Listener {
 
-    private val config = instances.get<ImperiumConfig>().mindustry.hub
-    private val directory = instances.get<Path>("directory").resolve("hub")
+    private val config = config.mindustry.hub
+    private val directory = directory.resolve("hub")
     private val portals = mutableMapOf<String, Portal>()
-    private val building = PlayerMap<PortalBuilder>(instances.get())
-    private val discovery = instances.get<Discovery>()
-    private val debug = PlayerMap<Boolean>(instances.get())
+    private val building = PlayerMap<PortalBuilder>(plugin)
+    private val debug = PlayerMap<Boolean>(plugin)
 
     override fun onImperiumInit() {
         directory.toFile().mkdirs()

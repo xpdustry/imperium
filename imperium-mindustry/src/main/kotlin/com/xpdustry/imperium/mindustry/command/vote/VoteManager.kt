@@ -2,9 +2,9 @@
 package com.xpdustry.imperium.mindustry.command.vote
 
 import com.xpdustry.imperium.common.misc.MindustryUUID
-import java.time.Instant
 import java.util.UUID
 import kotlin.time.Duration
+import kotlin.time.Instant
 import mindustry.gen.Player
 
 interface VoteManager<O> {

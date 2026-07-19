@@ -8,11 +8,13 @@ import com.xpdustry.distributor.api.command.DescriptionFacade
 import com.xpdustry.distributor.api.command.cloud.MindustryCommandManager
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.name
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Flag
 import com.xpdustry.imperium.mindustry.command.annotation.RequireAchievement
@@ -35,6 +37,7 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaType
 import kotlin.time.Duration as KotlinDuration
 import kotlin.time.toKotlinDuration
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.future
 import mindustry.Vars
 import mindustry.server.ServerControl
@@ -52,8 +55,12 @@ import org.incendo.cloud.setting.ManagerSetting
 
 // import org.incendo.cloud.translations.TranslationBundle
 
-class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val config: ImperiumConfig) :
-    PluginAnnotationProcessor<Void> {
+@Inject
+class CommandAnnotationScanner(
+    private val plugin: MindustryPlugin,
+    private val config: ImperiumConfig,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : PluginAnnotationProcessor<Void> {
     private lateinit var clientCommandManager: MindustryCommandManager<CommandSender>
     private lateinit var serverCommandManager: MindustryCommandManager<CommandSender>
     private var initialized = false
@@ -118,7 +125,7 @@ class CommandAnnotationScanner(private val plugin: MindustryPlugin, private val 
         builder =
             builder.handler(
                 CommandExecutionHandler.FutureCommandExecutionHandler { ctx ->
-                    ImperiumScope.MAIN.future { callCommandFunction(container, function, ctx) }
+                    scope.future { callCommandFunction(container, function, ctx) }
                 }
             )
 

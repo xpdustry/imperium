@@ -5,15 +5,16 @@ import com.sun.management.HotSpotDiagnosticMXBean
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import java.lang.management.ManagementFactory
 import java.nio.file.Path
 
-class DumpCommand(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class DumpCommand constructor(@Named("directory") directory: Path) : ImperiumApplication.Listener {
 
-    private val directory = instances.get<Path>("directory").resolve("dumps")
+    private val directory = directory.resolve("dumps")
 
     override fun onImperiumInit() {
         directory.toFile().mkdirs()

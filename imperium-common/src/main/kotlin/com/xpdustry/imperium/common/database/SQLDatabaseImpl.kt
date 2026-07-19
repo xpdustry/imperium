@@ -4,20 +4,26 @@ package com.xpdustry.imperium.common.database
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import java.nio.file.Path
 import java.sql.*
-import java.time.Instant
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.coroutines.CoroutineContext
+import kotlin.time.Instant
+import kotlin.time.toJavaInstant
+import kotlin.time.toKotlinInstant
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.withContext
 
 // TODO Add parent job to wait for transaction completion on close...
-internal class SQLDatabaseImpl(private val config: ImperiumConfig, private val directory: Path) :
+@Inject
+internal class SQLDatabaseImpl(private val config: ImperiumConfig, @Named("directory") private val directory: Path) :
     SQLDatabase, ImperiumApplication.Listener {
     private lateinit var source: HikariDataSource
 
@@ -25,8 +31,8 @@ internal class SQLDatabaseImpl(private val config: ImperiumConfig, private val d
         val hikari = HikariConfig()
 
         hikari.poolName = "imperium-sql-pool-v2"
-        hikari.maximumPoolSize = 8
-        hikari.minimumIdle = 2
+        hikari.maximumPoolSize = Runtime.getRuntime().availableProcessors()
+        hikari.minimumIdle = 1
         hikari.dataSourceProperties["createDatabaseIfNotExist"] = "true"
 
         when (val database = this.config.database) {
@@ -50,25 +56,27 @@ internal class SQLDatabaseImpl(private val config: ImperiumConfig, private val d
         source.close()
     }
 
-    override suspend fun <R> transaction(block: suspend SQLDatabase.Handle.() -> R): R {
-        val element = currentCoroutineContext()[CoroutineHandleElement]
-        if (element != null && element.config == config) {
-            return block(element.handle)
-        }
-        return this.source.connection.use { connection ->
-            val handle = HandleImpl(connection)
-            try {
-                handle.connection.autoCommit = false
-                handle.connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-                val result = withContext(CoroutineHandleElement(handle, config.database)) { block(handle) }
-                handle.connection.commit()
-                return@use result
-            } catch (e: SQLException) {
-                handle.connection.rollback()
-                throw e
+    // TODO Rename to withTransaction
+    override suspend fun <R> transaction(block: suspend SQLDatabase.Handle.() -> R): R =
+        withContext(Dispatchers.IO) {
+            val element = currentCoroutineContext()[CoroutineHandleElement]
+            if (element != null && element.config == config) {
+                return@withContext block(element.handle)
+            }
+            return@withContext this@SQLDatabaseImpl.source.connection.use { connection ->
+                val handle = HandleImpl(connection)
+                try {
+                    handle.connection.autoCommit = false
+                    handle.connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
+                    val result = withContext(CoroutineHandleElement(handle, config.database)) { block(handle) }
+                    handle.connection.commit()
+                    return@use result
+                } catch (e: SQLException) {
+                    handle.connection.rollback()
+                    throw e
+                }
             }
         }
-    }
 }
 
 private class PreparedStatementBuilderImpl(private val raw: String, private val statement: PreparedStatement) :
@@ -118,7 +126,7 @@ private class PreparedStatementBuilderImpl(private val raw: String, private val 
     }
 
     override fun push(value: Instant): SQLDatabase.PreparedStatementBuilder {
-        statement.setTimestamp(index, Timestamp.from(value))
+        statement.setTimestamp(index, Timestamp.from(value.toJavaInstant()))
         index++
         return this
     }
@@ -154,7 +162,7 @@ private class PreparedStatementBuilderImpl(private val raw: String, private val 
     companion object {
         // MySQL/MariaDB handles this as a delete + insert in case of a duplicate, 2 operations therefore 2 updates
         private val INSERT_WITH_UPDATE_PATTERN =
-            Pattern.compile("^\\s*INSERT\\s+(.|\\s)*\\s+ON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\s+", Pattern.CASE_INSENSITIVE)
+            Pattern.compile("^\\s*INSERT\\s+.*\\s+ON\\s+DUPLICATE\\s+KEY\\s+UPDATE\\s+", Pattern.CASE_INSENSITIVE)
     }
 }
 
@@ -192,7 +200,7 @@ private class RowImpl(private val set: ResultSet) : SQLDatabase.Row {
 
     override fun getBytes(name: String): ByteArray? = set.getBytes(name)
 
-    override fun getInstant(name: String): Instant? = set.getTimestamp(name).toInstant()
+    override fun getInstant(name: String): Instant? = set.getTimestamp(name)?.toInstant()?.toKotlinInstant()
 }
 
 private class CoroutineHandleElement(val handle: HandleImpl, val config: DatabaseConfig) :

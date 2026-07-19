@@ -5,11 +5,13 @@ import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.translation.command_achievements
 
-class AchievementCommand : ImperiumApplication.Listener {
+@Inject
+class AchievementCommand constructor() : ImperiumApplication.Listener {
 
     @ImperiumCommand(["achievements"])
     @ClientSide

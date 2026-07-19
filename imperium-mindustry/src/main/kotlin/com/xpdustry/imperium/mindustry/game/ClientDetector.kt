@@ -3,6 +3,7 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import mindustry.Vars
 import mindustry.gen.Player
@@ -11,6 +12,7 @@ interface ClientDetector {
     fun isFooClient(player: Player): Boolean
 }
 
+@Inject
 class SimpleClientDetector(plugin: MindustryPlugin) : ClientDetector, ImperiumApplication.Listener {
 
     private val fooClients = PlayerMap<Boolean>(plugin)

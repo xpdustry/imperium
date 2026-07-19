@@ -4,7 +4,7 @@ package com.xpdustry.imperium.common.user
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.misc.MindustryUUID
 import java.net.InetAddress
-import java.time.Instant
+import kotlin.time.Instant
 
 data class User(
     val id: Int,

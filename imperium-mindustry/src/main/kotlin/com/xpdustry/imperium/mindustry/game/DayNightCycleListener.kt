@@ -7,15 +7,16 @@ import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.misc.dayNightCycle
 import mindustry.Vars
 import mindustry.gen.Call
+import mindustry.io.JsonIO
 
-class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Listener {
+@Inject
+class DayNightCycleListener constructor(private val config: ImperiumConfig) : ImperiumApplication.Listener {
 
-    private val cycle = instances.get<ImperiumConfig>().mindustry.world.dayNightCycleDuration.inWholeSeconds
+    private val cycle = config.mindustry.world.dayNightCycleDuration.inWholeSeconds
 
     @EventHandler
     fun onMenuToPlayEvent(event: MenuToPlayEvent) {
@@ -31,6 +32,6 @@ class DayNightCycleListener(instances: InstanceManager) : ImperiumApplication.Li
             return
         val time = ((System.currentTimeMillis() / 1000L) % cycle) / (cycle * 0.5F)
         Vars.state.rules.ambientLight.a = Interp.sine.apply(0F, 0.8F, time)
-        Call.setRules(Vars.state.rules)
+        Call.setRule("ambientLight", JsonIO.write(Vars.state.rules.ambientLight))
     }
 }

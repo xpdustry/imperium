@@ -5,76 +5,71 @@ import arc.util.Strings
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.audience.Audience
-import com.xpdustry.flex.FlexAPI
-import com.xpdustry.flex.message.FlexPlayerChatEvent
-import com.xpdustry.flex.message.MessageContext
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.bridge.BridgeChatMessage
 import com.xpdustry.imperium.common.bridge.MindustryPlayerMessage
 import com.xpdustry.imperium.common.bridge.MindustryServerMessage
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
 import com.xpdustry.imperium.mindustry.misc.Entities
-import kotlinx.coroutines.future.await
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 
-class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val messenger = instances.get<MessageService>()
-    private val accounts = instances.get<AccountManager>()
+@Inject
+class BridgeChatMessageListener(
+    private val config: ImperiumConfig,
+    private val messenger: MessageService,
+    private val accounts: AccountService,
+    private val messages: MindustryMessagePipeline,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         messenger.subscribe<BridgeChatMessage> {
             if (it.serverName != config.server.name) return@subscribe
 
             val forServer =
-                FlexAPI.get()
-                    .messages
-                    .pump(
-                        MessageContext(
-                            Audience.empty(),
-                            Distributor.get().audienceProvider.server,
-                            it.message,
-                            filter = true,
-                        )
+                messages.pump(
+                    MindustryMessageContext(
+                        Audience.empty(),
+                        Distributor.get().audienceProvider.server,
+                        it.message,
+                        filter = true,
                     )
-                    .await()
+                )
 
             if (forServer.isNotBlank()) {
                 ROOT_LOGGER.info("&fi&lcDiscord ({}&fi&lc): &fr&lw${forServer.stripMindustryColors()}", it.senderName)
             }
 
             val account = accounts.selectByDiscord(it.discord)
-            FlexAPI.get()
-                .messages
-                .broadcast(
-                    DiscordAudience(
-                        it.senderName,
-                        account?.rank ?: Rank.EVERYONE,
-                        account?.playtime?.inWholeHours?.toInt(),
-                        config.language,
-                    ),
-                    Distributor.get().audienceProvider.players,
-                    it.message,
-                )
-                .await()
+            messages.broadcast(
+                DiscordAudience(
+                    it.senderName,
+                    account?.rank ?: Rank.EVERYONE,
+                    account?.playtime?.inWholeHours?.toInt(),
+                    config.language,
+                ),
+                Distributor.get().audienceProvider.players,
+                it.message,
+            )
         }
     }
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
@@ -86,7 +81,7 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
 
     @EventHandler
     fun onPlayerQuit(event: EventType.PlayerLeave) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
@@ -97,8 +92,8 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
         }
 
     @EventHandler
-    fun onPlayerChat(event: FlexPlayerChatEvent) =
-        ImperiumScope.MAIN.launch {
+    fun onPlayerChat(event: MindustryPlayerChatEvent) =
+        scope.launch {
             messenger.broadcast(
                 MindustryPlayerMessage(
                     config.server.name,
@@ -116,17 +111,13 @@ class BridgeChatMessageListener(instances: InstanceManager) : ImperiumApplicatio
             } else {
                 "Game over! Team ${event.winner.name} is victorious with ${Entities.getPlayers().size} players online on map ${Vars.state.map.name().stripMindustryColors()}."
             }
-        ImperiumScope.MAIN.launch {
-            messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false))
-        }
+        scope.launch { messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false)) }
     }
 
     @EventHandler
     fun onNextMap(event: EventType.PlayEvent) {
         val message = "New game started on **\"${Vars.state.map.name().stripMindustryColors()}\"**."
-        ImperiumScope.MAIN.launch {
-            messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false))
-        }
+        scope.launch { messenger.broadcast(MindustryServerMessage(config.server.name, message, chat = false)) }
     }
 
     companion object {

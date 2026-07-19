@@ -9,9 +9,9 @@ import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.permission.Permission
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.webhook.WebhookChannel
 import java.awt.Color
 import java.net.InetAddress
+import java.net.URI
 import java.net.URL
 import java.util.Locale
 import kotlin.time.Duration
@@ -39,11 +39,11 @@ data class ImperiumConfig(
     val server: ServerConfig = ServerConfig("unknown"),
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,
-    val webhooks: Map<WebhookChannel, WebhookBackendConfig> = emptyMap(),
     val discord: DiscordConfig = DiscordConfig(),
     val mindustry: MindustryConfig = MindustryConfig(),
     val webserver: WebserverConfig = WebserverConfig(),
     val metrics: MetricConfig = MetricConfig.None,
+    val webhook: WebhookConfig? = null,
 )
 
 data class NetworkConfig(
@@ -89,9 +89,7 @@ data class ServerConfig(val name: String, val displayName: String = name.capital
     }
 }
 
-sealed interface WebhookBackendConfig {
-    data class Discord(val discordWebhookUrl: URL) : WebhookBackendConfig
-}
+data class WebhookConfig(val discordWebhookUrl: URL)
 
 // TODO Cleanup roles (ranks, permission, special) listing and lookup
 data class DiscordConfig(
@@ -102,7 +100,7 @@ data class DiscordConfig(
     val permissions2roles: Map<Permission, Long> = emptyMap(),
     val achievements2roles: Map<Achievement, Long> = emptyMap(),
     val globalCommands: Boolean = false,
-    val alertsRole: Long? = null,
+    val alertsRole: Long? = 1220450744394846310,
 ) {
     val roles2ranks: Map<Long, Rank> = ranks2roles.entries.associate { (key, value) -> value to key }
 
@@ -120,12 +118,14 @@ data class MindustryConfig(
     val quotes: List<String> = listOf("Bonjour", "The best mindustry server of all time"),
     val hub: Hub = Hub(),
     val history: History = History(),
+    val chat: Chat = Chat(),
     val color: Color = Color.WHITE,
     val world: World = World(),
     val security: Security = Security(),
     val tipsDelay: Duration = 5.minutes,
     val afkDelay: Duration = 10.minutes,
     val afkKickDelay: Duration = 15.minutes,
+    val noHornyAutoBan: Boolean = false,
 ) {
     init {
         if (afkDelay >= afkKickDelay) {
@@ -171,6 +171,46 @@ data class MindustryConfig(
             val background: Boolean = false,
         )
     }
+
+    data class Chat(
+        val fooClientCompatibility: Boolean = true,
+        val joinMessages: Boolean = true,
+        val quitMessages: Boolean = true,
+        val name: Name = Name(),
+        val translation: Translation = Translation(),
+    ) {
+        data class Name(
+            val enabled: Boolean = true,
+            val maximumNameSize: Int = 512,
+            val updateInterval: Duration = 500.milliseconds,
+        ) {
+            init {
+                require(maximumNameSize >= 1) { "maximumNameSize must be greater than 0, got $maximumNameSize" }
+                require(updateInterval > Duration.ZERO) { "updateInterval must be greater than 0, got $updateInterval" }
+            }
+        }
+
+        data class Translation(val backend: Backend = Backend.None) {
+            sealed interface Backend {
+                data object None : Backend
+
+                data class LibreTranslate(val ltEndpoint: URI, val ltApiKey: Secret? = null) : Backend
+
+                data class DeepL(val deeplApiKey: Secret) : Backend
+
+                data class GoogleBasic(val googleBasicApiKey: Secret) : Backend
+
+                data class Rolling(val translators: List<Backend>, val fallback: Backend = None) : Backend
+
+                data class Caching(
+                    val successRetention: Duration = 10.minutes,
+                    val failureRetention: Duration = 10.seconds,
+                    val maximumSize: Int = 1000,
+                    val cachingTranslator: Backend,
+                ) : Backend
+            }
+        }
+    }
 }
 
 data class WebserverConfig(val port: Int = 8080, val host: InetAddress = InetAddresses.forString("0.0.0.0"))
@@ -179,14 +219,4 @@ sealed interface MetricConfig {
     data object None : MetricConfig
 
     data class SQL(val interval: Duration = 10.seconds, val retention: Duration = 14.days) : MetricConfig
-
-    @Deprecated("InfluxDB has been removed. Use SQL metrics instead.")
-    data class InfluxDB(
-        val endpoint: URL,
-        val token: Secret,
-        val organization: String,
-        val bucket: String = "imperium",
-        val interval: Duration = 10.seconds,
-        val retention: Duration = 14.days,
-    ) : MetricConfig
 }

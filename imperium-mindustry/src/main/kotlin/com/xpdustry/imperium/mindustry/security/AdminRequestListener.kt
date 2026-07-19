@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.mindustry.security
 
+import arc.Core
 import arc.Events
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
@@ -11,13 +12,12 @@ import com.xpdustry.distributor.api.gui.input.TextInputManager
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
@@ -26,17 +26,17 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
-import com.xpdustry.imperium.mindustry.misc.component3
 import com.xpdustry.imperium.mindustry.misc.identity
 import com.xpdustry.imperium.mindustry.misc.key
-import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.misc.showInfoMessage
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.net.InetAddress
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType.AdminRequestEvent
@@ -54,12 +54,15 @@ private val PUNISHMENT_REASON = key<String>("punishment_reason")
 private val PUNISHMENT_TARGET = key<Identity.Mindustry>("punishment_target")
 private val PUNISHMENT_TYPE = key<Punishment.Type>("punishment_type")
 
-class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
-    private val punishments = instances.get<PunishmentManager>()
-    private val users = instances.get<UserManager>()
-    private val accounts = instances.get<AccountManager>()
-    private val codec = instances.get<IdentifierCodec>()
+@Inject
+class AdminRequestListener(
+    private val plugin: MindustryPlugin,
+    private val punishments: PunishmentManager,
+    private val users: UserManager,
+    private val store: DataStoreService,
+    private val codec: IdentifierCodec,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
     private lateinit var adminActionInterface: WindowManager
 
     override fun onImperiumInit() {
@@ -74,7 +77,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
                     Action.hideAll()
                         .then(Action.with(PUNISHMENT_REASON, input))
                         .then(
-                            CoroutineAction { window ->
+                            CoroutineAction(scope) { window ->
                                 val target = users.getByIdentity(window.state[PUNISHMENT_TARGET]!!)
                                 punishments.punish(
                                     window.viewer.identity,
@@ -153,11 +156,9 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             }
 
         Vars.net.handleServer(AdminRequestCallPacket::class.java) { con, packet ->
-            ImperiumScope.MAIN.launch {
-                // TODO We REALLY need a proper local account cache...
-                val playerRank = runCatching { getUserRank(con.player) }.getOrNull() ?: Rank.EVERYONE
-                runMindustryThread { interceptAdminRequest(con, packet, playerRank) }
-            }
+            val player = con.player ?: return@handleServer
+            val playerRank = store.selectBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE
+            Core.app.post { interceptAdminRequest(con, packet, playerRank) }
         }
     }
 
@@ -167,8 +168,10 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             return
         }
 
+        val isStaff: Boolean = con.player.admin() || playerRank >= Rank.OVERSEER
+
         // Allow undercover staff to use the admin menu
-        if (playerRank < Rank.OVERSEER || !con.player.admin()) {
+        if (!isStaff) {
             logger.warn(
                 "{} ({}) attempted to perform an admin action without permission",
                 con.player.plainName(),
@@ -257,7 +260,7 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
     }
 
     private fun handleTraceInfo(requester: Player, target: Player) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val user = users.findByUuid(target.uuid())
             if (user == null) {
                 // This should never happen
@@ -294,28 +297,23 @@ class AdminRequestListener(instances: InstanceManager) : ImperiumApplication.Lis
             )
         }
 
-    private fun handleWaveSkip(requester: Player) =
-        ImperiumScope.MAIN.launch {
-            val rank = accounts.selectBySession(requester.sessionKey)?.rank ?: Rank.EVERYONE
-            if (rank >= Rank.MODERATOR) {
-                runMindustryThread {
-                    Vars.logic.skipWave()
-                    logger.info("{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
-                }
-            } else {
-                requester.showInfoMessage("You don't have permission to skip the wave.")
-                logger.warn(
-                    "{} ({}) attempted to skip the wave without permission",
-                    requester.plainName(),
-                    requester.uuid(),
-                )
-            }
+    private fun handleWaveSkip(requester: Player) {
+        val rank = store.selectBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
+        if (rank >= Rank.MODERATOR) {
+            Vars.logic.skipWave()
+            logger.info("{} ({}) has skipped the wave", requester.plainName(), requester.uuid())
+        } else {
+            requester.showInfoMessage("You don't have permission to skip the wave.")
+            logger.warn(
+                "{} ({}) attempted to skip the wave without permission",
+                requester.plainName(),
+                requester.uuid(),
+            )
         }
-
-    private suspend fun getUserRank(requester: Player): Rank {
-        val account = accounts.selectBySession(requester.sessionKey) ?: return Rank.EVERYONE
-        return account.rank
     }
+
+    private fun getUserRank(requester: Player): Rank =
+        store.selectBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE
 
     companion object {
         private val logger by LoggerDelegate()

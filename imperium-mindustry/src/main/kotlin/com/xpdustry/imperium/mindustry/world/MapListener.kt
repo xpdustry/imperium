@@ -3,14 +3,13 @@ package com.xpdustry.imperium.mindustry.world
 
 import arc.files.Fi
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MapReloadMessage
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
@@ -21,16 +20,20 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectory
 import kotlin.io.path.notExists
 import kotlin.io.path.outputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
 import mindustry.io.MapIO
 import mindustry.maps.Map
 
-class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val maps = instances.get<MindustryMapManager>()
-    private val cache = instances.get<Path>("directory").resolve("map-pool")
-    private val messenger = instances.get<MessageService>()
+@Inject
+class MapListener(
+    private val config: ImperiumConfig,
+    private val maps: MindustryMapManager,
+    @Named("directory") directory: Path,
+    private val messenger: MessageService,
+) : ImperiumApplication.Listener {
+    private val cache = directory.resolve("map-pool")
 
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()
@@ -53,7 +56,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
         Vars.maps.reload()
 
         val pool =
-            runBlocking(ImperiumScope.IO.coroutineContext) {
+            runBlocking(Dispatchers.IO) {
                 maps.findAllMapsByGamemode(config.mindustry.gamemode).mapNotNull {
                     try {
                         downloadMapFromPool(it)
@@ -74,7 +77,7 @@ class MapListener(instances: InstanceManager) : ImperiumApplication.Listener {
     }
 
     private suspend fun downloadMapFromPool(map: MindustryMap): Map {
-        val file = cache.resolve("${map.id}_${map.lastUpdate.toEpochMilli()}.msav")
+        val file = cache.resolve("${map.id}_${map.lastUpdate.toEpochMilliseconds()}.msav")
         if (file.notExists()) {
             logger.debug("Downloading map {} (id={}) from serer pool.", map.name, map.id)
             file.outputStream().use { output -> maps.getMapInputStream(map.id)!!.use { input -> input.copyTo(output) } }

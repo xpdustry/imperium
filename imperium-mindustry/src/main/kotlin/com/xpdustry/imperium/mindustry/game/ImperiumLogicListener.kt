@@ -5,13 +5,12 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
 import mindustry.core.GameState
 import mindustry.game.EventType.StateChangeEvent
 
-class ImperiumLogicListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val plugin = instances.get<MindustryPlugin>()
+@Inject
+class ImperiumLogicListener constructor(private val plugin: MindustryPlugin) : ImperiumApplication.Listener {
 
     override fun onImperiumInit() {
         Distributor.get().eventBus.subscribe(StateChangeEvent::class.java, Priority.HIGH, plugin) { event ->

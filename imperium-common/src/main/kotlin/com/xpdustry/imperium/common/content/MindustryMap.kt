@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.content
 
-import java.time.Instant
 import kotlin.time.Duration
+import kotlin.time.Instant
 
 data class MindustryMap(
     val id: Int,

@@ -5,14 +5,16 @@ import arc.graphics.Color
 import arc.math.Mathf
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.content.MindustryMapManager
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.Scope
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
@@ -25,6 +27,7 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.setBlocksNet
 import com.xpdustry.imperium.mindustry.misc.setOverlaysNet
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.abs
 import kotlin.math.max
@@ -32,6 +35,7 @@ import kotlin.math.min
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -47,19 +51,25 @@ import mindustry.gen.Sounds
 import mindustry.type.Item
 import mindustry.world.blocks.environment.TreeBlock
 
-class ExcavateCommand(instances: InstanceManager) :
-    AbstractVoteCommand<ExcavateCommand.ExcavateData>(instances.get(), "excavate", instances.get(), 1.minutes),
+@Inject
+class ExcavateCommand(
+    private val maps: MindustryMapManager,
+    private val config: ImperiumConfig,
+    private val afk: AfkManager,
+    plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) :
+    AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", afk, 1.minutes, scope),
     ImperiumApplication.Listener {
 
-    private val areas = PlayerMap<ExcavateArea>(instances.get())
-    private val config = instances.get<ImperiumConfig>()
+    private val areas = PlayerMap<ExcavateArea>(plugin)
     private lateinit var item: Item
 
     override fun onImperiumInit() {
         item =
             Vars.content.item(config.mindustry.world.excavationItem)
                 ?: error("${config.mindustry.world.excavationItem} is not a valid mindustry item.")
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             while (isActive) {
                 delay(1.seconds)
                 if (Vars.state.isPlaying) {

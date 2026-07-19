@@ -2,10 +2,9 @@
 package com.xpdustry.imperium.common.security
 
 import com.xpdustry.imperium.common.misc.MindustryUUIDAsLong
-import java.time.Instant
+import kotlin.time.Clock
 import kotlin.time.Duration
-import kotlin.time.toJavaDuration
-import kotlin.time.toKotlinDuration
+import kotlin.time.Instant
 import kotlinx.serialization.Serializable
 
 data class Punishment(
@@ -19,15 +18,15 @@ data class Punishment(
     val creation: Instant,
 ) {
     val expired: Boolean
-        get() = pardon != null || (expiration ?: Instant.MAX) < Instant.now()
+        get() = pardon != null || (expiration?.let { it < Clock.System.now() } ?: false)
 
     val expiration: Instant?
-        get() = if (duration.isInfinite()) null else creation.plus(duration.toJavaDuration())
+        get() = if (duration.isInfinite()) null else creation.plus(duration)
 
     val remaining: Duration?
         get() {
             val expiration = expiration ?: return null
-            return java.time.Duration.between(Instant.now(), expiration).toKotlinDuration()
+            return (expiration - Clock.System.now())
         }
 
     data class Pardon(val timestamp: Instant, val reason: String)

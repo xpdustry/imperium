@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.common.message
 
-import com.sksamuel.hoplite.Secret
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
@@ -11,6 +9,8 @@ import java.nio.file.Path
 import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -20,15 +20,12 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import org.testcontainers.junit.jupiter.Container
-import org.testcontainers.junit.jupiter.Testcontainers
-import org.testcontainers.mariadb.MariaDBContainer
 
-@Testcontainers
 class SQLMessageServiceTest {
     @TempDir private lateinit var tempDir: Path
 
     private lateinit var database: SQLDatabaseImpl
+    private val scope = CoroutineScope(Dispatchers.Default)
     private val config1 = ImperiumConfig(server = ServerConfig("test1"))
     private val config2 = ImperiumConfig(server = ServerConfig("test2"))
     private lateinit var service1: SQLMessageService
@@ -36,23 +33,10 @@ class SQLMessageServiceTest {
 
     @BeforeEach
     fun init() {
-        database =
-            SQLDatabaseImpl(
-                ImperiumConfig(
-                    database =
-                        DatabaseConfig.MariaDB(
-                            host = MARIADB.host,
-                            port = MARIADB.firstMappedPort,
-                            username = MARIADB.username,
-                            database = MARIADB.databaseName,
-                            password = Secret(MARIADB.password),
-                        )
-                ),
-                tempDir,
-            )
+        database = SQLDatabaseImpl(ImperiumConfig(database = DatabaseConfig.H2()), tempDir)
         database.onImperiumInit()
-        service1 = SQLMessageService(database, config1, ImperiumScope.MAIN)
-        service2 = SQLMessageService(database, config2, ImperiumScope.MAIN)
+        service1 = SQLMessageService(database, config1, scope)
+        service2 = SQLMessageService(database, config2, scope)
         service1.onImperiumInit()
         service2.onImperiumInit()
     }
@@ -128,8 +112,4 @@ class SQLMessageServiceTest {
     }
 
     @Serializable data class TestMessage(val content: String) : Message
-
-    companion object {
-        @Container private val MARIADB = MariaDBContainer("mariadb:latest")
-    }
 }

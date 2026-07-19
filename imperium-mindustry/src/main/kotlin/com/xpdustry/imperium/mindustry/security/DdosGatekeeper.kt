@@ -5,7 +5,6 @@ import com.google.common.collect.Range
 import com.google.common.collect.RangeSet
 import com.google.common.collect.TreeRangeSet
 import com.google.common.net.InetAddresses
-import com.xpdustry.imperium.common.async.ImperiumScope
 import com.xpdustry.imperium.common.config.MindustryConfig
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.await
@@ -14,7 +13,9 @@ import java.io.IOException
 import java.math.BigInteger
 import java.net.Inet4Address
 import java.net.URI
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.withContext
@@ -42,10 +43,13 @@ private val PROVIDERS =
 // TODO
 //   shit is so efficient I am not even aware of the attacks,
 //   although I do want to have a notification
-class DdosGatekeeper(private val http: OkHttpClient, private val config: MindustryConfig.Security) :
-    Processor<GatekeeperContext, GatekeeperResult> {
+class DdosGatekeeper(
+    private val http: OkHttpClient,
+    private val config: MindustryConfig.Security,
+    scope: CoroutineScope,
+) : Processor<GatekeeperContext, GatekeeperResult> {
 
-    private val addresses: Deferred<RangeSet<BigInteger>> = ImperiumScope.MAIN.async { fetchAddressRanges() }
+    private val addresses: Deferred<RangeSet<BigInteger>> = scope.async { fetchAddressRanges() }
 
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         return if (addresses.await().contains(BigInteger(1, context.address.address))) {
@@ -56,7 +60,7 @@ class DdosGatekeeper(private val http: OkHttpClient, private val config: Mindust
     }
 
     private suspend fun fetchAddressRanges(): RangeSet<BigInteger> =
-        withContext(ImperiumScope.IO.coroutineContext) {
+        withContext(Dispatchers.IO) {
             if (!config.gatekeeper) return@withContext TreeRangeSet.create()
             logger.info("Fetching addresses from {} cloud providers", PROVIDERS.size)
             PROVIDERS.map { provider ->
@@ -112,7 +116,7 @@ private object AzureAddressProvider : JsonAddressProvider("azure") {
 
     // This goofy aah hacky code 💀
     override suspend fun fetchUri() =
-        withContext(ImperiumScope.IO.coroutineContext) {
+        withContext(Dispatchers.IO) {
             Jsoup.connect("https://www.microsoft.com/en-us/download/details.aspx?id=56519")
                 .get()
                 .select("a[href*=download.microsoft.com]")

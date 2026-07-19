@@ -8,6 +8,7 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.translation.BundleTranslationSource
 import com.xpdustry.distributor.api.translation.ResourceBundles
 import com.xpdustry.distributor.api.translation.TranslationSource
@@ -16,10 +17,7 @@ import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.inject.get
-import com.xpdustry.imperium.common.registerApplication
 import com.xpdustry.imperium.common.registerCommonModule
-import com.xpdustry.imperium.common.webhook.WebhookChannel
 import com.xpdustry.imperium.common.webhook.WebhookMessage
 import com.xpdustry.imperium.common.webhook.WebhookMessageSender
 import com.xpdustry.imperium.mindustry.account.AccountCommand
@@ -28,17 +26,16 @@ import com.xpdustry.imperium.mindustry.account.AchievementCommand
 import com.xpdustry.imperium.mindustry.account.UserSettingsCommand
 import com.xpdustry.imperium.mindustry.chat.BridgeChatMessageListener
 import com.xpdustry.imperium.mindustry.chat.ChatCommand
-import com.xpdustry.imperium.mindustry.chat.FlexListener
 import com.xpdustry.imperium.mindustry.chat.HereCommand
+import com.xpdustry.imperium.mindustry.chat.MindustryChatListener
 import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.command.HelpCommand
-import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
+import com.xpdustry.imperium.mindustry.command.YesCommand
 import com.xpdustry.imperium.mindustry.config.ConventionListener
 import com.xpdustry.imperium.mindustry.control.ControlListener
 import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.AntiGriefListener
-import com.xpdustry.imperium.mindustry.game.ChangelogCommand
 import com.xpdustry.imperium.mindustry.game.DayNightCycleListener
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
@@ -50,6 +47,7 @@ import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
+import com.xpdustry.imperium.mindustry.monitoring.BlockHoundService
 import com.xpdustry.imperium.mindustry.permission.ImperiumPermissionListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
 import com.xpdustry.imperium.mindustry.security.AntiEvadeListener
@@ -81,17 +79,16 @@ import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
 
 class ImperiumPlugin : AbstractMindustryPlugin() {
-    private val application = MindustryImperiumApplication()
+    private val application = MindustryImperiumApplication(this)
+
+    override fun onInit() {
+        application.register(application.instances.create<BlockHoundService>())
+    }
 
     override fun onLoad() {
         SaveVersion.addCustomChunk("imperium", ImperiumMetadataChunkReader)
 
-        with(application.instances) {
-            registerApplication(application)
-            registerCommonModule()
-            registerMindustryModule(this@ImperiumPlugin)
-            createAll()
-        }
+        application.createAll()
 
         registerService(
             TranslationSource::class,
@@ -107,10 +104,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             },
         )
 
-        registerService(
-            ComponentRendererProvider::class,
-            ImperiumComponentRendererProvider(application.instances.get()),
-        )
+        registerService(ComponentRendererProvider::class, application.instances.get<ComponentRendererProvider>())
 
         sequenceOf(
                 ConventionListener::class,
@@ -118,6 +112,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 AccountListener::class,
                 AccountCommand::class,
                 ChatCommand::class,
+                MindustryChatListener::class,
                 HistoryCommand::class,
                 BridgeChatMessageListener::class,
                 ReportCommand::class,
@@ -130,6 +125,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 RockTheVoteCommand::class,
                 CoreBlockListener::class,
                 HelpCommand::class,
+                YesCommand::class,
                 WaveCommand::class,
                 KillAllCommand::class,
                 DumpCommand::class,
@@ -155,9 +151,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 LogicListener::class,
                 SaveCommand::class,
                 AntiGriefListener::class,
-                FlexListener::class,
                 MetricsListener::class,
-                ChangelogCommand::class,
                 DayNightCycleListener::class,
                 ImperiumPermissionListener::class,
                 ItemCommand::class,
@@ -176,7 +170,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         val processor =
             PluginAnnotationProcessor.compose(
-                CommandAnnotationScanner(this, application.instances.get()),
+                application.instances.get<CommandAnnotationScanner>(),
                 PluginAnnotationProcessor.tasks(this),
                 PluginAnnotationProcessor.events(this),
                 PluginAnnotationProcessor.triggers(this),
@@ -185,9 +179,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         application.listeners.forEach(processor::process)
 
         runBlocking {
-            application.instances
-                .get<WebhookMessageSender>()
-                .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server has started."))
+            application.instances.get<WebhookMessageSender>().send(WebhookMessage(content = "The server has started."))
         }
 
         logger.info("Imperium plugin Loaded!")
@@ -201,7 +193,14 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
         Distributor.get().serviceManager.register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }
 
-    private inner class MindustryImperiumApplication : BaseImperiumApplication(logger) {
+    private inner class MindustryImperiumApplication(plugin: MindustryPlugin) :
+        BaseImperiumApplication(
+            logger,
+            modules = {
+                registerCommonModule()
+                registerMindustryModule(plugin)
+            },
+        ) {
         private var exited = false
 
         override fun exit(status: ExitStatus) {
@@ -210,7 +209,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             runBlocking {
                 instances
                     .get<WebhookMessageSender>()
-                    .send(WebhookChannel.CONSOLE, WebhookMessage(content = "The server is exiting with $status code."))
+                    .send(WebhookMessage(content = "The server is exiting with $status code."))
             }
             super.exit(status)
             when (status) {

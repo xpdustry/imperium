@@ -1,0 +1,189 @@
+// SPDX-License-Identifier: GPL-3.0-only
+package com.xpdustry.imperium.backend.service
+
+import com.xpdustry.imperium.backend.misc.addSuspendingEventListener
+import com.xpdustry.imperium.backend.misc.await
+import com.xpdustry.imperium.backend.misc.snowflake
+import com.xpdustry.imperium.common.account.AccountAchievementService
+import com.xpdustry.imperium.common.account.AccountService
+import com.xpdustry.imperium.common.account.Achievement
+import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
+import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
+import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.permission.Permission
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import net.dv8tion.jda.api.JDA
+import net.dv8tion.jda.api.JDABuilder
+import net.dv8tion.jda.api.entities.Guild
+import net.dv8tion.jda.api.entities.Member
+import net.dv8tion.jda.api.entities.Role
+import net.dv8tion.jda.api.entities.User
+import net.dv8tion.jda.api.events.channel.ChannelCreateEvent
+import net.dv8tion.jda.api.events.thread.ThreadRevealedEvent
+import net.dv8tion.jda.api.requests.GatewayIntent
+import net.dv8tion.jda.api.utils.FileProxy
+import net.dv8tion.jda.api.utils.MemberCachePolicy
+import okhttp3.OkHttpClient
+
+interface DiscordService {
+    val jda: JDA
+
+    fun getMainServer(): Guild
+
+    suspend fun isAllowed(user: User, rank: Rank): Boolean
+
+    suspend fun isAllowed(user: User, permission: Permission): Boolean
+
+    suspend fun syncRoles(id: Int)
+
+    suspend fun syncRoles(member: Member)
+}
+
+@Inject
+class SimpleDiscordService(
+    private val config: ImperiumConfig,
+    private val http: OkHttpClient,
+    private val accounts: AccountService,
+    private val achievements: AccountAchievementService,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : DiscordService, ImperiumApplication.Listener {
+    override lateinit var jda: JDA
+
+    override fun onImperiumInit() {
+        FileProxy.setDefaultHttpClient(http)
+        jda =
+            JDABuilder.create(
+                    GatewayIntent.MESSAGE_CONTENT,
+                    GatewayIntent.GUILD_MEMBERS,
+                    GatewayIntent.GUILD_MESSAGES,
+                    GatewayIntent.GUILD_MESSAGE_REACTIONS,
+                    GatewayIntent.DIRECT_MESSAGES,
+                    GatewayIntent.GUILD_EXPRESSIONS,
+                )
+                .setToken(config.discord.token.value)
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .build()
+                .awaitReady()
+
+        // This is goofy, why do I need these to receive thread messages too
+        getMainServer().threadChannels.forEach { thread ->
+            if (!thread.isJoined) scope.launch { thread.join().await() }
+        }
+
+        jda.addSuspendingEventListener<ChannelCreateEvent>(scope) { event ->
+            if (!event.channelType.isThread) return@addSuspendingEventListener
+            val thread = event.channel.asThreadChannel()
+            if (!thread.isJoined) thread.join().await()
+        }
+
+        jda.addSuspendingEventListener<ThreadRevealedEvent>(scope) { event ->
+            if (!event.thread.isJoined) event.thread.join().await()
+        }
+    }
+
+    override fun getMainServer(): Guild = jda.guildCache.first()
+
+    override suspend fun isAllowed(user: User, rank: Rank): Boolean {
+        if (rank == Rank.EVERYONE) {
+            return true
+        }
+        if ((accounts.selectByDiscord(user.idLong)?.rank ?: Rank.EVERYONE) >= rank) {
+            return true
+        }
+
+        var max = Rank.EVERYONE
+        for (role in (getMainServer().getMemberById(user.idLong)?.roles ?: emptyList())) {
+            max = maxOf(max, config.discord.roles2ranks[role.idLong] ?: Rank.EVERYONE)
+        }
+        return max >= rank
+    }
+
+    override suspend fun isAllowed(user: User, permission: Permission): Boolean =
+        getMainServer().getMemberById(user.idLong)?.roles?.any {
+            it.idLong == config.discord.permissions2roles[permission]
+        } ?: false
+
+    override suspend fun syncRoles(member: Member) {
+        val account = accounts.selectByDiscord(member.idLong) ?: return
+        syncRoles(account.id)
+    }
+
+    override suspend fun syncRoles(id: Int) {
+        val account = accounts.selectById(id)
+        val discord = account?.discord ?: return
+        val member = getMainServer().getMemberById(discord) ?: return
+        val current = member.roles.associateBy(Role::getIdLong)
+        val completedAchievements = achievements.selectAchievements(id)
+
+        for (achievement in Achievement.entries) {
+            val roleId = config.discord.achievements2roles[achievement] ?: continue
+            val role = getMainServer().getRoleById(roleId) ?: continue
+            if (achievement in completedAchievements) {
+                if (roleId in current.keys) continue
+                getMainServer().addRoleToMember(member.snowflake, role).await()
+                logger.debug(
+                    "Added achievement role {} (achievement={}) to {} (id={})",
+                    role.name,
+                    achievement,
+                    member.effectiveName,
+                    member.idLong,
+                )
+            } else {
+                if (roleId !in current.keys) continue
+                getMainServer().removeRoleFromMember(member.snowflake, role).await()
+                logger.debug(
+                    "Removed achievement role {} (achievement={}) from {} (id={})",
+                    role.name,
+                    achievement,
+                    member.effectiveName,
+                    member.idLong,
+                )
+            }
+        }
+
+        val ranks = account.rank.getRanksBelow()
+        for (rank in Rank.entries) {
+            val roleId = config.discord.ranks2roles[rank] ?: continue
+            val role = getMainServer().getRoleById(roleId) ?: continue
+            if (rank in ranks) {
+                if (roleId in current) continue
+                getMainServer().addRoleToMember(member.snowflake, role).await()
+                logger.debug(
+                    "Added rank role {} (rank={}) to {} (id={})",
+                    role.name,
+                    rank,
+                    member.effectiveName,
+                    member.idLong,
+                )
+            } else {
+                if (roleId !in current) continue
+                getMainServer().removeRoleFromMember(member.snowflake, role).await()
+                logger.debug(
+                    "Removed rank role {} (rank={}) from {} (id={})",
+                    role.name,
+                    rank,
+                    member.effectiveName,
+                    member.idLong,
+                )
+            }
+        }
+    }
+
+    override fun onImperiumExit() {
+        jda.shutdown()
+        if (!jda.awaitShutdown(15.seconds.toJavaDuration())) {
+            jda.shutdownNow()
+        }
+    }
+
+    companion object {
+        private val logger by LoggerDelegate()
+    }
+}

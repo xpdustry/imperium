@@ -3,11 +3,12 @@ package com.xpdustry.imperium.mindustry.game
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.security.RateLimiter
 import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.user.UserManager
@@ -19,8 +20,9 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.security.MarkedPlayerManager
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_block
 import com.xpdustry.imperium.mindustry.translation.marked_griefer_unit
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
@@ -28,18 +30,22 @@ import mindustry.world.Block
 import mindustry.world.blocks.power.PowerGenerator
 import mindustry.world.blocks.storage.StorageBlock
 
-class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val config = instances.get<ImperiumConfig>()
-    private val historian = instances.get<Historian>()
-    private val users = instances.get<UserManager>()
-    private val isNew = PlayerMap<Boolean>(instances.get())
-    private val control = PlayerMap<Int>(instances.get())
-    private val deaths = PlayerMap<RateLimiter<Unit>>(instances.get())
-    private val marks = instances.get<MarkedPlayerManager>()
+@Inject
+class AntiGriefListener(
+    private val config: ImperiumConfig,
+    private val historian: Historian,
+    private val users: UserManager,
+    private val marks: MarkedPlayerManager,
+    private val plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
+    private val isNew = PlayerMap<Boolean>(plugin)
+    private val control = PlayerMap<Int>(plugin)
+    private val deaths = PlayerMap<RateLimiter<Unit>>(plugin)
 
     @EventHandler
     fun onPlayerJoin(event: EventType.PlayerJoin) =
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val info = users.getByIdentity(event.player.identity)
             runMindustryThread { isNew[event.player] = info.timesJoined < 10 }
         }
@@ -73,11 +79,11 @@ class AntiGriefListener(instances: InstanceManager) : ImperiumApplication.Listen
         val player = event.unit.player
         if (isNew[player] != true || marks.isMarked(player)) return
         val history = historian.getHistory(player.uuid())
-        val now = System.currentTimeMillis()
+        val now = Clock.System.now()
         val score =
             history
                 .asSequence()
-                .filter { (now - it.timestamp.epochSecond).milliseconds < 3.minutes }
+                .filter { (now - it.timestamp) < 3.minutes }
                 .map {
                     val sign =
                         when (it.type) {

@@ -3,12 +3,16 @@ package com.xpdustry.imperium.mindustry.account
 
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.imperium.common.account.AccountManager
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.account.AccountService
+import com.xpdustry.imperium.common.account.MindustrySessionService
+import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.buildCache
@@ -24,20 +28,26 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
+import kotlinx.coroutines.CoroutineScope
 
-class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener {
-    private val accounts = instances.get<AccountManager>()
-    private val users = instances.get<UserManager>()
-    private val messenger = instances.get<MessageService>()
-    private val login = LoginWindow(instances.get(), accounts)
-    private val register = RegisterWindow(instances.get(), accounts)
-    private val changePassword = ChangePasswordWindow(instances.get(), accounts)
+@Inject
+class AccountCommand(
+    private val accounts: AccountService,
+    private val sessions: MindustrySessionService,
+    private val users: UserManager,
+    private val messenger: MessageService,
+    private val plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
+    private val login = LoginWindow(plugin, sessions, scope)
+    private val register = RegisterWindow(plugin, accounts, scope)
+    private val changePassword = ChangePasswordWindow(plugin, accounts, sessions, scope)
     private val verifications = buildCache<Int, Int> { expireAfterWrite(10.minutes.toJavaDuration()) }
 
     @ImperiumCommand(["login"])
     @ClientSide
     suspend fun onLoginCommand(sender: CommandSender) {
-        val account = accounts.selectBySession(sender.player.sessionKey)
+        val account = sessions.selectByKey(sender.player.sessionKey)
         val remember = users.getSetting(sender.player.uuid(), User.Setting.REMEMBER_LOGIN)
         runMindustryThread {
             if (account == null) {
@@ -59,10 +69,10 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["logout"])
     @ClientSide
     suspend fun onLogoutCommand(sender: CommandSender) {
-        if (accounts.selectBySession(sender.player.sessionKey) == null) {
+        if (sessions.selectByKey(sender.player.sessionKey) == null) {
             sender.player.sendMessage("You are not logged in!")
         } else {
-            accounts.logout(sender.player.sessionKey)
+            sessions.logout(sender.player.sessionKey)
             sender.player.admin = false
             sender.player.sendMessage("You have been logged out!")
             runMindustryThread { Distributor.get().eventBus.post(PlayerLogoutEvent(sender.player)) }
@@ -78,7 +88,7 @@ class AccountCommand(instances: InstanceManager) : ImperiumApplication.Listener 
     @ImperiumCommand(["verify"])
     @ClientSide
     suspend fun onVerifyCommand(sender: CommandSender) {
-        val account = accounts.selectBySession(sender.player.sessionKey)
+        val account = sessions.selectAccount(accounts, sender.player.sessionKey)
         if (account == null) {
             sender.error("You are not logged in!")
             return

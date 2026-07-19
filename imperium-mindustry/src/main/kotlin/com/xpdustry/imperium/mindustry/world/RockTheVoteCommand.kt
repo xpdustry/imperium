@@ -11,14 +11,15 @@ import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.menu.ListTransformer
 import com.xpdustry.distributor.api.gui.menu.MenuManager
 import com.xpdustry.distributor.api.gui.menu.MenuOption
+import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.content.MindustryMap
 import com.xpdustry.imperium.common.content.MindustryMapManager
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.vote.AbstractVoteCommand
 import com.xpdustry.imperium.mindustry.command.vote.Vote
@@ -29,22 +30,29 @@ import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.id
 import com.xpdustry.imperium.mindustry.misc.key
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
+import com.xpdustry.imperium.mindustry.security.AfkManager
 import com.xpdustry.imperium.mindustry.translation.LIGHT_GRAY
 import com.xpdustry.imperium.mindustry.translation.difficulty_name
 import com.xpdustry.imperium.mindustry.translation.gui_back
 import com.xpdustry.imperium.mindustry.translation.selected
 import kotlin.time.Duration.Companion.minutes
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.EventType
 import mindustry.game.Team
 import mindustry.maps.Map
 
-class RockTheVoteCommand(instances: InstanceManager) :
-    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(instances.get(), "RTV", instances.get(), 1.minutes),
+@Inject
+class RockTheVoteCommand(
+    private val maps: MindustryMapManager,
+    afk: AfkManager,
+    plugin: MindustryPlugin,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) :
+    AbstractVoteCommand<RockTheVoteCommand.MapSelector>(plugin, "RTV", afk, 1.minutes, scope),
     ImperiumApplication.Listener {
 
-    private val maps = instances.get<MindustryMapManager>()
     private val menu =
         MenuManager.create(plugin).apply {
             addTransformer { (pane) ->
@@ -116,7 +124,7 @@ class RockTheVoteCommand(instances: InstanceManager) :
     fun onRtvCommand(sender: CommandSender) {
         val window = menu.create(sender.player)
         val list = Vars.maps.customMaps().asList()
-        ImperiumScope.MAIN.launch {
+        scope.launch {
             val with =
                 list.map { map ->
                     MapWithDifficulty(map, maps.getMapStats(map.id ?: -1)?.difficulty ?: MindustryMap.Difficulty.NORMAL)

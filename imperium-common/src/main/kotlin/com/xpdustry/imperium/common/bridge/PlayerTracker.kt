@@ -2,13 +2,14 @@
 package com.xpdustry.imperium.common.bridge
 
 import com.xpdustry.imperium.common.application.ImperiumApplication
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.message.Message
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.security.Identity
-import com.xpdustry.imperium.common.serialization.SerializableJInstant
-import java.time.Instant
+import com.xpdustry.imperium.common.serialization.SerializableInstant
 import java.util.UUID
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.withTimeoutOrNull
@@ -23,10 +24,11 @@ interface PlayerTracker {
     data class Entry(
         val player: Identity.Mindustry,
         val playerId: Int,
-        val timestamp: SerializableJInstant = Instant.now(),
+        val timestamp: SerializableInstant = Clock.System.now(),
     )
 }
 
+@Inject
 open class RequestingPlayerTracker(protected val messenger: MessageService) :
     PlayerTracker, ImperiumApplication.Listener {
 

@@ -4,7 +4,7 @@ package com.xpdustry.imperium.common.serialization
 import com.google.common.net.InetAddresses
 import java.awt.Polygon
 import java.net.InetAddress
-import java.time.Instant
+import kotlin.time.Instant
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -26,10 +26,10 @@ object InetAddressSerializer : KSerializer<InetAddress> {
     override fun deserialize(decoder: Decoder): InetAddress = InetAddresses.forString(decoder.decodeString())
 }
 
-typealias SerializableJInstant = @Serializable(with = JavaInstantSerializer::class) Instant
+typealias SerializableInstant = @Serializable(with = InstantSerializer::class) Instant
 
-object JavaInstantSerializer : KSerializer<Instant> {
-    override val descriptor = PrimitiveSerialDescriptor("JavaInstant", PrimitiveKind.STRING)
+object InstantSerializer : KSerializer<Instant> {
+    override val descriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
 
     override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
 

@@ -6,6 +6,7 @@ import com.xpdustry.distributor.api.command.cloud.specifier.AllTeams
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import kotlin.math.absoluteValue
@@ -16,7 +17,8 @@ import mindustry.type.Item
 
 // TODO Translate this shi
 @Suppress("DuplicatedCode")
-class ItemCommand : ImperiumApplication.Listener {
+@Inject
+class ItemCommand constructor() : ImperiumApplication.Listener {
 
     @ImperiumCommand(["item", "add|a"], Rank.ADMIN)
     @ClientSide

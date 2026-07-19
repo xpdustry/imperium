@@ -12,14 +12,13 @@ import com.xpdustry.distributor.api.permission.rank.RankProvider
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.distributor.api.util.Priority
-import com.xpdustry.imperium.common.account.AccountManager
 import com.xpdustry.imperium.common.account.Achievement
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
-import com.xpdustry.imperium.common.inject.InstanceManager
-import com.xpdustry.imperium.common.inject.get
+import com.xpdustry.imperium.common.dependency.Inject
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
@@ -29,17 +28,21 @@ import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.registerDistributorService
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
+import com.xpdustry.imperium.mindustry.store.DataStoreService
 import java.util.Collections
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.game.EventType
 import mindustry.gen.Player
 
-class ImperiumPermissionListener(instances: InstanceManager) : ImperiumApplication.Listener {
-
-    private val plugin = instances.get<MindustryPlugin>()
-    private val config = instances.get<ImperiumConfig>()
-    private val accounts = instances.get<AccountManager>()
-    private val users = instances.get<UserManager>()
+@Inject
+class ImperiumPermissionListener(
+    private val plugin: MindustryPlugin,
+    private val config: ImperiumConfig,
+    private val store: DataStoreService,
+    private val users: UserManager,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
+) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<List<RankNode>>(plugin)
 
     override fun onImperiumInit() {
@@ -53,7 +56,7 @@ class ImperiumPermissionListener(instances: InstanceManager) : ImperiumApplicati
     }
 
     @EventHandler(priority = Priority.HIGH)
-    fun onPLayerLogin(event: PlayerLoginEvent) {
+    fun onPlayerLogin(event: PlayerLoginEvent) {
         updatePlayerRanks(event.player)
     }
 
@@ -63,18 +66,17 @@ class ImperiumPermissionListener(instances: InstanceManager) : ImperiumApplicati
     }
 
     @TaskHandler(interval = 5L, unit = MindustryTimeUnit.SECONDS)
-    fun refreshPlayerRank() {
+    fun refreshPlayerRanks() {
         Entities.getPlayers().forEach(::updatePlayerRanks)
     }
 
     private fun updatePlayerRanks(player: Player) =
-        ImperiumScope.MAIN.launch {
-            val account = accounts.selectBySession(player.sessionKey)
-            val achievements = account?.let { accounts.selectAchievements(it.id) }.orEmpty()
+        scope.launch {
+            val stored = store.selectBySessionKey(player.sessionKey)
             val nodes = ArrayList<RankNode>()
-            val rank = account?.rank ?: Rank.EVERYONE
+            val rank = stored?.account?.rank ?: Rank.EVERYONE
             nodes += EnumRankNode.linear(rank, "imperium", true)
-            nodes += achievements.filterValues { it }.map { EnumRankNode.singular(it.key, "imperium") }
+            nodes += stored?.achievements.orEmpty().map { EnumRankNode.singular(it, "imperium") }
             val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
             runMindustryThread {
                 ranks[player] = Collections.unmodifiableList(nodes)

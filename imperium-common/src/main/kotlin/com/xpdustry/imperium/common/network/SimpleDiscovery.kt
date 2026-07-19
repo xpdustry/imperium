@@ -7,15 +7,16 @@ import com.google.common.cache.RemovalCause
 import com.google.common.cache.RemovalListener
 import com.google.common.cache.RemovalNotification
 import com.xpdustry.imperium.common.application.ImperiumApplication
-import com.xpdustry.imperium.common.async.ImperiumScope
+import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.config.ImperiumConfig
+import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import java.util.concurrent.TimeUnit
-import java.util.function.Supplier
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -23,10 +24,12 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+@com.xpdustry.imperium.common.dependency.Inject
 class SimpleDiscovery(
     private val messenger: MessageService,
-    private val discoveryDataProvider: Supplier<Discovery.Data>,
+    private val discoveryDataSupplier: DiscoveryDataSupplier,
     private val config: ImperiumConfig,
+    @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : Discovery, ImperiumApplication.Listener {
 
     override val servers: Map<String, Discovery.Server>
@@ -56,7 +59,7 @@ class SimpleDiscovery(
         }
 
         heartbeatJob =
-            ImperiumScope.MAIN.launch {
+            scope.launch {
                 delay(Random.nextLong(5).seconds)
                 while (isActive) {
                     sendDiscovery(DiscoveryMessage.Type.DISCOVER)
@@ -70,14 +73,13 @@ class SimpleDiscovery(
         sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER)
     }
 
-    override fun heartbeat() =
-        runBlocking(ImperiumScope.MAIN.coroutineContext) { sendDiscovery(DiscoveryMessage.Type.DISCOVER) }
+    override fun heartbeat() = runBlocking { sendDiscovery(DiscoveryMessage.Type.DISCOVER) }
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
         logger.trace("Sending {} discovery message", type.name)
         try {
             messenger.broadcast(
-                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataProvider.get()), type)
+                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataSupplier.get()), type)
             )
         } catch (e: Exception) {
             logger.error("Failed to send discovery message", e)
