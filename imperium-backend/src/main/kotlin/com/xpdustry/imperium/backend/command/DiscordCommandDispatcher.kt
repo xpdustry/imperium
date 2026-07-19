@@ -17,10 +17,15 @@ import com.xpdustry.imperium.common.command.Lowercase
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
 import com.xpdustry.imperium.common.control.RemoteActionMessage
+import com.xpdustry.imperium.common.database.IdentifierCodec
+import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
+import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.security.PunishmentDuration
+import com.xpdustry.imperium.common.user.PlayerIDLike
+import com.xpdustry.imperium.common.user.UserManager
 import java.time.Duration
 import java.util.regex.Pattern
 import kotlin.reflect.KAnnotatedElement
@@ -63,6 +68,8 @@ import net.dv8tion.jda.api.interactions.modals.ModalInteraction
 class DiscordCommandDispatcher(
     private val discord: DiscordService,
     private val config: ImperiumConfig,
+    private val identifierCodec: IdentifierCodec,
+    private val users: UserManager,
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : AnnotationScanner {
     private val typeHandlers = mutableMapOf<KClass<*>, TypeHandler<*>>()
@@ -79,6 +86,7 @@ class DiscordCommandDispatcher(
         registerHandler(GuildChannelUnion::class, CHANNEL_TYPE_HANDLER)
         registerHandler(Message.Attachment::class, ATTACHMENT_TYPE_HANDLER)
         registerHandler(Duration::class, DURATION_TYPE_HANDLER)
+        registerHandler(PlayerIDLike::class, PlayerIDLikeTypeHandler(identifierCodec, users))
         registerHandler(PunishmentDuration::class, EnumTypeHandler(PunishmentDuration::class))
         registerHandler(MindustryGamemode::class, EnumTypeHandler(MindustryGamemode::class))
         registerHandler(Achievement::class, EnumTypeHandler(Achievement::class))
@@ -555,14 +563,14 @@ private data class InteractionHandler<T : Interaction>(
 )
 
 abstract class TypeHandler<T : Any>(val type: OptionType) {
-    abstract fun parse(option: OptionMapping, annotations: KAnnotatedElement): T?
+    abstract suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement): T?
 
     open fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) = Unit
 }
 
 private val STRING_TYPE_HANDLER =
     object : TypeHandler<String>(OptionType.STRING) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement): String {
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement): String {
             var result = option.asString
             if (annotations.hasAnnotation<Lowercase>()) result = result.lowercase()
             return result
@@ -578,7 +586,7 @@ private val STRING_TYPE_HANDLER =
 
 private val INT_TYPE_HANDLER =
     object : TypeHandler<Int>(OptionType.INTEGER) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asInt
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asInt
 
         override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
@@ -590,7 +598,7 @@ private val INT_TYPE_HANDLER =
 
 private val LONG_TYPE_HANDLER =
     object : TypeHandler<Long>(OptionType.INTEGER) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asLong
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asLong
 
         override fun apply(builder: OptionData, annotation: KAnnotatedElement, optional: Boolean) {
             annotation.findAnnotation<Range>()?.apply {
@@ -602,29 +610,29 @@ private val LONG_TYPE_HANDLER =
 
 private val BOOLEAN_TYPE_HANDLER =
     object : TypeHandler<Boolean>(OptionType.BOOLEAN) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asBoolean
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asBoolean
     }
 
 private val DISCORD_USER_TYPE_HANDLER =
     object : TypeHandler<User>(OptionType.USER) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asUser
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asUser
     }
 
 private val CHANNEL_TYPE_HANDLER =
     object : TypeHandler<GuildChannelUnion>(OptionType.CHANNEL) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asChannel
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asChannel
     }
 
 private val ATTACHMENT_TYPE_HANDLER =
     object : TypeHandler<Message.Attachment>(OptionType.ATTACHMENT) {
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asAttachment
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement) = option.asAttachment
     }
 
 private val DURATION_TYPE_HANDLER =
     object : TypeHandler<Duration>(OptionType.STRING) {
         private val durationPattern = Pattern.compile("(([1-9][0-9]+|[1-9])[dhms])")
 
-        override fun parse(option: OptionMapping, annotations: KAnnotatedElement): Duration {
+        override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement): Duration {
             val matcher = durationPattern.matcher(option.asString)
             var duration = Duration.ZERO
 
@@ -652,11 +660,28 @@ private val DURATION_TYPE_HANDLER =
         }
     }
 
+// TODO I do not like this...
+private class PlayerIDLikeTypeHandler(private val codec: IdentifierCodec, private val users: UserManager) :
+    TypeHandler<PlayerIDLike>(OptionType.STRING) {
+    override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement): PlayerIDLike {
+        val input = option.asString
+        val user =
+            if (input.isCRC32Muuid()) {
+                users.findByUuid(input)
+            } else {
+                input.toIntOrNull()?.takeIf { it >= 0 }?.let { users.findById(it) }
+                    ?: codec.tryDecode(input)?.let { users.findById(it) }
+            }
+        return user?.let { PlayerIDLike(it.id) }
+            ?: throw OptionParsingException("`${option.asString}` is not a known player UUID or ID")
+    }
+}
+
 private class EnumTypeHandler<T : Enum<T>>(
     private val klass: KClass<T>,
     private val renderer: (T) -> String = { it.name.lowercase().replace("_", " ") },
 ) : TypeHandler<T>(OptionType.STRING) {
-    override fun parse(option: OptionMapping, annotations: KAnnotatedElement): T? {
+    override suspend fun parse(option: OptionMapping, annotations: KAnnotatedElement): T? {
         return klass.java.enumConstants.firstOrNull { option.asString == it.name }
     }
 
