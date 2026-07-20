@@ -482,3 +482,10 @@ fun player_action_invalid_target(target: Any): Component =
 
 fun command_arg_unknown(arg: String): Component =
     components(SCARLET, translatable("imperium.command.arg.unknown", TranslationArguments.array(text(arg, ORANGE))))
+
+fun announcement_kick(target: String, reason: String): Component =
+    translatable(
+        "imperium.announcement.kick",
+        TranslationArguments.array(text(target, ORANGE), text(reason, ORANGE)),
+        SCARLET,
+    )

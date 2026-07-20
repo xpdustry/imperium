@@ -44,7 +44,7 @@ class FunHandler(
                         val player = Groups.player.find { it.id == targetID }
                         val navTp = json.getBool("navTp", false)
 
-                        if (player != null && rank <= Rank.OVERSEER) {
+                        if (player != null && rank >= Rank.OVERSEER) {
                             setUnitPosition(player, x, y)
                         } else if (clients.isFooClient(sender) && navTp) {
                             if (blockIsCore(x.toInt(), y.toInt())) setUnitPosition(sender, x, y)

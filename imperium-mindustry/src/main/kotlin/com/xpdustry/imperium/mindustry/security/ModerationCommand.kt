@@ -22,7 +22,6 @@ import kotlin.time.Duration.Companion.hours
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 import org.incendo.cloud.annotation.specifier.Quoted
-import kotlin.time.Duration.Companion.nanoseconds
 
 @Inject
 class ModerationCommand(
@@ -74,6 +73,7 @@ class ModerationCommand(
         player: Player,
         @Quoted reason: String = UNDEFINED_REASON,
     ) {
+        player.kick(reason)
         onPunishCommand("Kicked", Punishment.Type.KICK, sender, player, reason, PunishmentDuration.NONE.value)
     }
 

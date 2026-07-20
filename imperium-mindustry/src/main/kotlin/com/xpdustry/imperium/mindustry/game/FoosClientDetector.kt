@@ -151,7 +151,7 @@ class FoosClientDetector(
             "freeze" -> Punishment.Type.FREEZE
             "mute" -> Punishment.Type.MUTE
             "kick" -> Punishment.Type.KICK
-            else -> Punishment.Type.BAN
+            else -> Punishment.Type.KICK
         }
     }
 
