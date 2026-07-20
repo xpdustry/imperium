@@ -151,6 +151,7 @@ class FoosClientDetector(
             "freeze" -> Punishment.Type.FREEZE
             "mute" -> Punishment.Type.MUTE
             "kick" -> Punishment.Type.KICK
+            // Goal is moderation, therefore default to kick so something occurs
             else -> Punishment.Type.KICK
         }
     }
