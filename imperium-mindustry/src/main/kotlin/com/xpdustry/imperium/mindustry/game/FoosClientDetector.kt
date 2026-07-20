@@ -78,7 +78,7 @@ class FoosClientDetector(
                             return@post
                         }
 
-                        val reason = json.getString("reason", "Moderator Freeze")
+                        val reason = json.getString("reason", "Moderator Action")
                         val duration = json.getLong("duration", 5.minutes.inWholeMilliseconds).milliseconds
 
                         scope.launch {
