@@ -108,16 +108,11 @@ class MindustryAudienceFormatter(
             append(Iconc.discord)
             append("> ")
         }
-        append("[")
-        append(rankColor(sender))
-        append("]<[white]")
-        append(formatHours(sender))
-        append("[")
-        append(rankColor(sender))
-        append("]> [")
-        append(audienceColor(sender))
-        append("]")
-        append(formatName(sender))
+        if (sender is PlayerAudience) {
+            append(formatPlayerName(sender))
+        } else {
+            append(formatNameTag(formatName(sender), formatHours(sender), rankColor(sender), audienceColor(sender)))
+        }
         append(" [accent]>[white] ")
         append(message)
     }
@@ -158,23 +153,27 @@ class MindustryAudienceFormatter(
         }
 
     private fun formatPlayerName(audience: PlayerAudience): String {
-        val component =
-            audience.metadata[StandardKeys.DECORATED_NAME] ?: return audience.metadata[StandardKeys.NAME] ?: ""
-        if (rainbow[audience.player] == true && hidden[audience.player] != true) {
-            val plain = ComponentStringBuilder.plain(audience.metadata).append(component).toString()
-            val initial = (((System.currentTimeMillis() / 1000L) % 60) / 60F) * 360F
-            val color = Color().a(1F)
-            return buildString {
-                for ((index, char) in plain.withIndex()) {
-                    color.fromHsv(initial + (index * 8F), 0.55F, 0.9F)
-                    append("[#")
-                    append(color)
-                    append("]")
-                    append(char)
+        val component = audience.metadata[StandardKeys.DECORATED_NAME]
+        val name =
+            if (component == null) {
+                audience.metadata[StandardKeys.NAME] ?: ""
+            } else if (rainbow[audience.player] == true && hidden[audience.player] != true) {
+                val plain = ComponentStringBuilder.plain(audience.metadata).append(component).toString()
+                val initial = (((System.currentTimeMillis() / 1000L) % 60) / 60F) * 360F
+                val color = Color().a(1F)
+                buildString {
+                    for ((index, char) in plain.withIndex()) {
+                        color.fromHsv(initial + (index * 8F), 0.55F, 0.9F)
+                        append("[#")
+                        append(color)
+                        append("]")
+                        append(char)
+                    }
                 }
+            } else {
+                ComponentStringBuilder.mindustry(audience.metadata).append(component).toString()
             }
-        }
-        return ComponentStringBuilder.mindustry(audience.metadata).append(component).toString()
+        return formatNameTag(name, formatHours(audience), rankColor(audience), audienceColor(audience))
     }
 
     private fun decoratedName(audience: Audience): String =
@@ -193,6 +192,9 @@ class MindustryAudienceFormatter(
         }
 
     private fun ComponentColor.toHexString(): String = String.format("#%06X", rgb and 0xFFFFFF)
+
+    private fun formatNameTag(name: String, hours: String, rankColor: String, audienceColor: String): String =
+        "[$rankColor]<[white]$hours[$rankColor]> [$audienceColor]$name"
 
     companion object {
         val CHAOTIC_HOUR_FORMAT = DecimalFormat("000")
