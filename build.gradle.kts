@@ -276,10 +276,8 @@ project(":imperium-mindustry") {
         "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.7")
         "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.7")
         "implementation"("com.xpdustry:flex-translator:1.2.0")
-        "implementation"("org.jsoup:jsoup:1.22.2")
         "implementation"("org.ahocorasick:ahocorasick:0.6.3")
     }
-
 
     val generateMetadata by tasks.registering {
         val output = layout.buildDirectory.file("imperium-generated/plugin.json")

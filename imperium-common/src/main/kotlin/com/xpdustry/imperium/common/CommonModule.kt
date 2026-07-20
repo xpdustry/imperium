@@ -29,6 +29,7 @@ import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.SQLMessageService
 import com.xpdustry.imperium.common.metrics.MetricsRegistry
 import com.xpdustry.imperium.common.metrics.SQLMetricsRegistry
+import com.xpdustry.imperium.common.network.CachedVpnDetection
 import com.xpdustry.imperium.common.network.Discovery
 import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.network.SimpleDiscovery
@@ -93,10 +94,10 @@ fun DependencyService.Binder.registerCommonModule() {
 
 private fun getDatabaseConfig(config: ImperiumConfig): DatabaseConfig = config.database
 
-private fun createVpnDetection(config: ImperiumConfig, http: OkHttpClient): VpnDetection =
+private fun createVpnDetection(config: ImperiumConfig, http: OkHttpClient, provider: SQLProvider): VpnDetection =
     when (val vpn = config.network.vpnDetection) {
         is NetworkConfig.VpnDetectionConfig.None -> VpnDetection.Noop
-        is NetworkConfig.VpnDetectionConfig.VpnApiIo -> VpnApiIoDetection(vpn, http)
+        is NetworkConfig.VpnDetectionConfig.VpnApiIo -> CachedVpnDetection(VpnApiIoDetection(vpn, http), provider)
     }
 
 private fun createOkHttpClient(): OkHttpClient =
