@@ -2,7 +2,6 @@
 package com.xpdustry.imperium.mindustry.game
 
 import arc.Core
-import arc.util.Log
 import arc.util.serialization.Jval
 import com.xpdustry.distributor.api.command.CommandSender
 import com.xpdustry.imperium.common.account.Rank
@@ -20,7 +19,9 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.gen.Groups
 import mindustry.gen.Player
+import mindustry.type.UnitType
 import mindustry.world.blocks.storage.CoreBlock
+import org.incendo.cloud.annotation.specifier.Greedy
 
 // This class's only purpose is for enjoyment
 
@@ -48,9 +49,7 @@ class FunHandler(
                         } else if (clients.isFooClient(sender) && navTp) {
                             if (blockIsCore(x.toInt(), y.toInt())) setUnitPosition(sender, x, y)
                         }
-                    } catch (e: Exception) {
-                        Log.err("Error handling teleport packet")
-                    }
+                    } catch (_: Exception) { }
                 }
             }
         }
@@ -65,15 +64,42 @@ class FunHandler(
         setUnitPosition(target, x, y)
     }
 
-    @ImperiumCommand(["status"], Rank.MODERATOR)
+    @ImperiumCommand(["statuseffect|status"], Rank.MODERATOR)
     @ClientSide
     fun onStatusCommand(sender: CommandSender, status: String, length: String, player: Player? = null) {
         val statusEffect = Vars.content.statusEffect(status) ?: return sender.reply(command_arg_unknown(status))
         val target = player ?: sender.player
         val time =
-            if (length == "infinite") Float.MAX_VALUE
+            if (length == "infinite") Float.POSITIVE_INFINITY
             else length.toFloatOrNull() ?: return sender.reply(command_arg_unknown(length))
         target.unit().apply(statusEffect, time)
+        sender.reply("Added ${statusEffect.name} to ${target.plainName()}")
+    }
+
+    @ImperiumCommand(["changeunit|cu"], Rank.MODERATOR)
+    @ClientSide
+    fun onChangeUnitCommand(sender: CommandSender, unit: UnitType, target: Player = sender.player) {
+        // Is all this necessary? Is there a better way
+        val cunit = unit.create(target.team())
+        val tunit = target.unit()
+        cunit.x = tunit.x
+        cunit.y = tunit.y
+        cunit.rotation = tunit.rotation
+        cunit.isShooting(tunit.isShooting)
+        cunit.elevation(tunit.elevation)
+        target.unit(cunit)
+        // just in-case
+        target.unit().add()
+        sender.reply("Set ${target.plainName()}'s unit to ${unit.name}")
+    }
+
+    @ImperiumCommand(["changename"], Rank.MODERATOR)
+    @ClientSide
+    @ServerSide
+    fun onNameChangeCommand(sender: CommandSender, target: Player, @Greedy name: String) {
+        // How does this work with rainbow name enabled?
+        target.name(name)
+        sender.reply("Open tab list hehe")
     }
 
     fun setUnitPosition(player: Player, x: Float, y: Float) {
