@@ -49,7 +49,7 @@ class FunHandler(
                         } else if (clients.isFooClient(sender) && navTp) {
                             if (blockIsCore(x.toInt(), y.toInt())) setUnitPosition(sender, x, y)
                         }
-                    } catch (_: Exception) { }
+                    } catch (_: Exception) {}
                 }
             }
         }

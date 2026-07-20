@@ -101,11 +101,7 @@ class ModerationCommand(
     }
 
     @ImperiumCommand(["kick"], Rank.MODERATOR)
-    suspend fun onKickCommand(
-        interaction: SlashCommandInteraction,
-        player: PlayerIDLike,
-        reason: String,
-    ) {
+    suspend fun onKickCommand(interaction: SlashCommandInteraction, player: PlayerIDLike, reason: String) {
         onPunishCommand("Kicked", Punishment.Type.KICK, interaction, player, reason, PunishmentDuration.NONE.value)
     }
 

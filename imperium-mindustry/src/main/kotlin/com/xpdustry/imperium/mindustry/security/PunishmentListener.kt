@@ -54,7 +54,6 @@ import mindustry.content.Blocks
 import mindustry.game.EventType
 import mindustry.game.EventType.PlayerBanEvent
 import mindustry.game.EventType.PlayerIpBanEvent
-import mindustry.gen.Call
 import mindustry.gen.Player
 import mindustry.net.Administration
 import mindustry.world.Block
@@ -128,12 +127,10 @@ class PunishmentListener(
                             target.uuid(),
                             punishment.reason,
                         )
-                        Distributor.get().audienceProvider.players.sendMessage(
-                            announcement_kick(
-                                target.name.stripMindustryColors(),
-                                punishment.reason,
-                            )
-                        )
+                        Distributor.get()
+                            .audienceProvider
+                            .players
+                            .sendMessage(announcement_kick(target.name.stripMindustryColors(), punishment.reason))
                     }
                 }
             } else {

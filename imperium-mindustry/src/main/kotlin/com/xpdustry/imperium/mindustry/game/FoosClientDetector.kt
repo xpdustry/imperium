@@ -89,7 +89,7 @@ class FoosClientDetector(
                                 reply = { msg -> playerObject.sendMessage(msg) },
                                 player = target,
                                 reason = reason,
-                                duration = if(type == "kick") PunishmentDuration.NONE.value else duration,
+                                duration = if (type == "kick") PunishmentDuration.NONE.value else duration,
                             )
                         }
                     } catch (e: Exception) {

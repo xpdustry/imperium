@@ -68,11 +68,7 @@ class ModerationCommand(
     }
 
     @ImperiumCommand(["kick"], Rank.OVERSEER)
-    suspend fun onKickCommand(
-        sender: CommandSender,
-        player: Player,
-        @Quoted reason: String = UNDEFINED_REASON,
-    ) {
+    suspend fun onKickCommand(sender: CommandSender, player: Player, @Quoted reason: String = UNDEFINED_REASON) {
         player.kick(reason)
         onPunishCommand("Kicked", Punishment.Type.KICK, sender, player, reason, PunishmentDuration.NONE.value)
     }
