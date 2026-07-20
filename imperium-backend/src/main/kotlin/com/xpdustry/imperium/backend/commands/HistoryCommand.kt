@@ -5,13 +5,12 @@ import com.xpdustry.imperium.backend.misc.await
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.command.Lowercase
-import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.history.HistoryRequestMessage
 import com.xpdustry.imperium.common.history.HistoryResponseMessage
 import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
+import com.xpdustry.imperium.common.user.PlayerIDLike
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
@@ -32,22 +31,16 @@ suspend fun getPlayerHistory(messenger: MessageService, server: String, player: 
 }
 
 @Inject
-class HistoryCommand constructor(private val messenger: MessageService, private val codec: IdentifierCodec) :
-    ImperiumApplication.Listener {
+class HistoryCommand constructor(private val messenger: MessageService) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["history"])
     suspend fun onHistoryCommand(
         interaction: SlashCommandInteraction,
-        @Lowercase player: String,
+        player: PlayerIDLike,
         @Lowercase server: String,
     ) {
         val reply = interaction.deferReply(true).await()
-        val identifier = codec.tryDecode(player)
-        if (identifier == null) {
-            reply.sendMessage("Invalid player id.").await()
-            return
-        }
-        val history = getPlayerHistory(messenger, server, identifier)
+        val history = getPlayerHistory(messenger, server, player.id)
         if (history == null) {
             reply.sendMessage("No history found.").await()
         } else {

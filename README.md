@@ -1,4 +1,4 @@
-# imperium
+# Imperium
 
 [![Translation status](https://hosted.weblate.org/widget/imperium/svg-badge.svg)](https://hosted.weblate.org/engage/imperium/)
 
@@ -12,49 +12,41 @@ They are hosted on [Weblate](https://hosted.weblate.org/projects/imperium/).
 ## Building
 
 You will need:
-- Java 17
-- Docker
 
-For simply compiling the project, run `./gradlew shadowJar`.
+- Java 25
 
-If you also want to run the tests, first, make sure docker is running, then run `./gradlew build`.
+To compile the deployable JARs, run `./gradlew shadowJar`.
+
+To run the tests, run `./gradlew test`. A complete build, including formatting checks and tests, can be run
+with `./gradlew build`.
 
 If you only want to compile one of the subprojects,
-just prefix the task name with the subproject name such as `./gradlew :imperium-backend:shadowJar`.
+prefix the task name with the subproject name, such as `./gradlew :imperium-backend:shadowJar`.
 
 ## Testing
 
-Imperium needs a mariadb database, a rabbitmq server and a s3 server to run in production.
-But for local testing, it will default to h2, a noop message broker and local file storage.
-If you wish to test with the production setup, use the provided docker-compose file.
-You will simply have to run `docker-compose up -d` once, then update the [configuration file](imperium-common/src/main/kotlin/com/xpdustry/imperium/common/config/ImperiumConfig.kt) accordingly.
-
-> Some of the docker-compose services have an admin interface, more details in the [docker-compose file](docker-compose.yaml).
+Imperium defaults to an H2 database and a no-op message broker, so no external services are required for local tests.
+Production uses MariaDB for persistent and shared data. To test with MariaDB, start the service from the provided
+[Compose file](docker-compose.yaml) with `docker compose up -d`, then set the database and message broker options in
+your `config.yaml`. The available options and defaults are defined in
+[ImperiumConfig.kt](imperium-common/src/main/kotlin/com/xpdustry/imperium/common/config/ImperiumConfig.kt).
 
 ### Mindustry
 
-First, create the base configuration file named `config.yaml` in the directory `imperium-mindustry/build/tmp/runMindustryServer/config/mods/imperium`,
-with the following content:
-```yaml
-# Enable this so the server create presets for easier testing, look out for warnings in the console
-# DO NOT USE IT IN PRODUCTION
-testing: true
+To start a local Mindustry server, run `./gradlew :imperium-mindustry:runMindustryServer`.
 
-mindustry:
-  gamemode: SURVIVAL
-```
-
-Then for starting a local mindustry server, run `./gradlew imperium-mindustry:runMindustryServer`.
 - This will start a server that you can interact with in the console.
 
-To play on this server, you can start a mindustry client by running `./gradlew imperium-mindustry:runMindustryClient`.
-- This client is isolated from your local mindustry installation so no need to worry about your data.
+To play on this server, start a Mindustry client with `./gradlew :imperium-mindustry:runMindustryDesktop`.
+
+- This client is isolated from your local Mindustry installation, so it will not affect your data.
 
 ### Discord
 
-First, create discord bot and a test server for it (there are plenty of online tutorials for that).
-Then create the base configuration file named `config.yaml` in the directory `imperium-backend/build/tmp/runShadow`,
-with the following content:
+First, create a Discord bot and a test server for it (there are plenty of online tutorials for that).
+Then create the base configuration file named `config.yaml` in the directory
+`imperium-backend/build/tmp/runApplication` with the following content:
+
 ```yaml
 discord:
   token: "your discord bot token"
@@ -80,9 +72,9 @@ webserver:
   port: 8080
 ```
 
-Then you can start the discord bot by running `./gradlew imperium-backend:runShadow`.
+Then start the backend with `./gradlew :imperium-backend:runApplication`.
 
-> If it's the first time you run it, it will automatically download mindustry assets from GitHub,
+> If it's the first time you run it, it will automatically download Mindustry assets from GitHub,
 > this might take less than a minute. (Or more if you have potato internet `;-;`)
 
 ## Support

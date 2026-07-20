@@ -98,8 +98,10 @@ class WebhookMessageSenderImpl(
                 .build()
 
         http.newCall(request).await().use { response ->
-            if (response.code !in 200..202) {
-                logger.error("Failed to send webhook message $message: ${response.body.string()}")
+            if (response.code != 204) {
+                logger.error(
+                    "Failed to send webhook message $message (status-code=${response.code}, body=${response.body.string()})"
+                )
             }
         }
     }

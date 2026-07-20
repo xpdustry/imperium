@@ -8,10 +8,10 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.database.IdentifierCodec
-import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.time.TimeRenderer
+import com.xpdustry.imperium.common.user.PlayerIDLike
 import com.xpdustry.imperium.common.user.UserManager
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
@@ -24,17 +24,9 @@ class PlayerCommand(
 ) : ImperiumApplication.Listener {
 
     @ImperiumCommand(["player", "info"])
-    suspend fun onPlayerInfoCommand(interaction: SlashCommandInteraction, player: String) {
+    suspend fun onPlayerInfoCommand(interaction: SlashCommandInteraction, player: PlayerIDLike) {
         val reply = interaction.deferReply(true).await()
-        // TODO THIS IS GOOFY, REPLACE WITH A PROPER PARSER
-        var user = users.findByUuid(player)
-        if (user == null) {
-            user = codec.tryDecode(player)?.let { users.findById(it) }
-        }
-        if (user == null) {
-            reply.sendMessage("Player not found.").await()
-            return
-        }
+        val user = users.findById(player.id)!!
         val details = users.findNamesAndAddressesById(user.id)
         reply
             .sendMessageEmbeds(

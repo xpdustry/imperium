@@ -15,14 +15,13 @@ import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.time.TimeRenderer
-import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.common.user.PlayerIDLike
 import kotlin.time.Duration
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 
 @Inject
 class ModerationCommand(
     private val punishments: PunishmentManager,
-    private val users: UserManager,
     private val renderer: TimeRenderer,
     private val codec: IdentifierCodec,
 ) : ImperiumApplication.Listener {
@@ -30,13 +29,11 @@ class ModerationCommand(
     @ImperiumCommand(["punishment", "list"], Rank.MODERATOR)
     suspend fun onPunishmentListCommand(
         interaction: SlashCommandInteraction,
-        player: String,
+        player: PlayerIDLike,
         @Range(min = "0") page: Int = 0,
     ) {
         val reply = interaction.deferReply(true).await()
-        val result =
-            codec.tryDecode(player)?.let { punishments.findAllByUser(it).drop(page * 10).take(10).toList() }
-                ?: emptyList()
+        val result = punishments.findAllByUser(player.id).drop(page * 10).take(10).toList()
         if (result.isEmpty()) {
             reply.sendMessage("No punishments found.").await()
             return
@@ -76,7 +73,7 @@ class ModerationCommand(
     @ImperiumCommand(["ban"], Rank.MODERATOR)
     suspend fun onBanCommand(
         interaction: SlashCommandInteraction,
-        player: String,
+        player: PlayerIDLike,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_DAYS,
     ) {
@@ -86,7 +83,7 @@ class ModerationCommand(
     @ImperiumCommand(["freeze"], Rank.MODERATOR)
     suspend fun onFreezeCommand(
         interaction: SlashCommandInteraction,
-        player: String,
+        player: PlayerIDLike,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.THREE_HOURS,
     ) {
@@ -96,7 +93,7 @@ class ModerationCommand(
     @ImperiumCommand(["mute"], Rank.MODERATOR)
     suspend fun onMuteCommand(
         interaction: SlashCommandInteraction,
-        player: String,
+        player: PlayerIDLike,
         reason: String,
         duration: PunishmentDuration = PunishmentDuration.ONE_DAY,
     ) {
@@ -116,18 +113,13 @@ class ModerationCommand(
         verb: String,
         type: Punishment.Type,
         interaction: SlashCommandInteraction,
-        player: String,
+        player: PlayerIDLike,
         reason: String,
         duration: Duration,
     ) {
         val reply = interaction.deferReply(true).await()
-        val user = codec.tryDecode(player)?.let { users.findById(it) }
-        if (user == null) {
-            reply.sendMessage("Target is not a valid IP address, UUID or USER ID.").await()
-        } else {
-            punishments.punish(interaction.member!!.identity, user.id, reason, type, duration)
-            reply.sendMessage("$verb user $player.").await()
-        }
+        punishments.punish(interaction.member!!.identity, player.id, reason, type, duration)
+        reply.sendMessage("$verb user `${codec.encode(player.id)}`.").await()
     }
 
     @ImperiumCommand(["pardon"], Rank.MODERATOR)
