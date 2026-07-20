@@ -103,6 +103,15 @@ class ModerationCommand(
         onPunishCommand("Muted", Punishment.Type.MUTE, interaction, player, reason, duration.value)
     }
 
+    @ImperiumCommand(["kick"], Rank.MODERATOR)
+    suspend fun onKickCommand(
+        interaction: SlashCommandInteraction,
+        player: String,
+        reason: String,
+    ) {
+        onPunishCommand("Kicked", Punishment.Type.KICK, interaction, player, reason, PunishmentDuration.NONE.value)
+    }
+
     private suspend fun onPunishCommand(
         verb: String,
         type: Punishment.Type,

@@ -12,8 +12,10 @@ import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.dependency.Named
+import com.xpdustry.imperium.common.misc.capitalize
 import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
@@ -54,8 +56,7 @@ class FoosClientDetector(
     override fun onImperiumInit() {
         Vars.netServer.addPacketHandler("fooCheck") { player, _ -> fooClients[player] = true }
 
-        // TODO: rework to generic packet based moderation, where "type" = Punishment.Type
-        Vars.netServer.addPacketHandler("foosFreeze") { playerObject, data ->
+        Vars.netServer.addPacketHandler("foosModeration") { playerObject, data ->
             scope.launch {
                 val rank = store.selectBySessionKey(playerObject.sessionKey)?.account?.rank ?: Rank.EVERYONE
 
@@ -69,6 +70,8 @@ class FoosClientDetector(
                         val json = Jval.read(data)
                         val targetId = json.getInt("targetID", -1)
                         val target = Groups.player.find { it.id == targetId }
+                        val type = json.getString("type", "ban")
+                        val ptype = getPunishmentType(type)
 
                         if (target == null) {
                             playerObject.asAudience.sendMessage(player_action_invalid_target(targetId))
@@ -80,13 +83,13 @@ class FoosClientDetector(
 
                         scope.launch {
                             executePunishment(
-                                verb = "Froze",
-                                type = Punishment.Type.FREEZE,
+                                verb = type.capitalize(),
+                                type = ptype,
                                 senderIdentity = playerObject.identity,
                                 reply = { msg -> playerObject.sendMessage(msg) },
                                 player = target,
                                 reason = reason,
-                                duration = duration,
+                                duration = if(type == "kick") PunishmentDuration.NONE.value else duration,
                             )
                         }
                     } catch (e: Exception) {
@@ -139,6 +142,16 @@ class FoosClientDetector(
                     // using Jval.newArray()
                 }
             Call.clientPacketReliable(player.con, "playerdata", json.toString())
+        }
+    }
+
+    private fun getPunishmentType(type: String): Punishment.Type {
+        return when (type) {
+            "ban" -> Punishment.Type.BAN
+            "freeze" -> Punishment.Type.FREEZE
+            "mute" -> Punishment.Type.MUTE
+            "kick" -> Punishment.Type.KICK
+            else -> Punishment.Type.BAN
         }
     }
 

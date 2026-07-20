@@ -10,6 +10,7 @@ import com.xpdustry.imperium.common.database.IdentifierCodec
 import com.xpdustry.imperium.common.database.tryDecode
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.security.Punishment
+import com.xpdustry.imperium.common.security.PunishmentDuration
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -21,6 +22,7 @@ import kotlin.time.Duration.Companion.hours
 import mindustry.gen.Player
 import org.incendo.cloud.annotation.specifier.Greedy
 import org.incendo.cloud.annotation.specifier.Quoted
+import kotlin.time.Duration.Companion.nanoseconds
 
 @Inject
 class ModerationCommand(
@@ -64,6 +66,15 @@ class ModerationCommand(
         duration: Duration = 1.days,
     ) {
         onPunishCommand("Muted", Punishment.Type.MUTE, sender, player, reason, duration)
+    }
+
+    @ImperiumCommand(["kick"], Rank.OVERSEER)
+    suspend fun onKickCommand(
+        sender: CommandSender,
+        player: Player,
+        @Quoted reason: String = UNDEFINED_REASON,
+    ) {
+        onPunishCommand("Kicked", Punishment.Type.KICK, sender, player, reason, PunishmentDuration.NONE.value)
     }
 
     private suspend fun onPunishCommand(
