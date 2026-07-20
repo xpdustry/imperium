@@ -42,7 +42,6 @@ import mindustry.net.Administration.PlayerInfo
 import mindustry.net.NetConnection
 import mindustry.net.Packets
 import mindustry.net.Packets.KickReason
-import okhttp3.OkHttpClient
 
 private val logger = logger("ROOT")
 
@@ -50,7 +49,6 @@ private val logger = logger("ROOT")
 class GatekeeperListener(
     private val pipeline: GatekeeperPipeline,
     private val vpn: VpnDetection,
-    private val http: OkHttpClient,
     private val config: ImperiumConfig,
     private val whitelist: AddressWhitelist,
     private val badWords: BadWordDetector,
@@ -62,7 +60,6 @@ class GatekeeperListener(
             logger.warn("Gatekeeper is disabled. ONLY DO IT IN DEVELOPMENT.")
         }
 
-        pipeline.register("ddos", Priority.HIGH, DdosGatekeeper(http, config.mindustry.security, scope))
         pipeline.register("cracked-client", Priority.NORMAL, CrackedClientGatekeeper())
         pipeline.register("links", Priority.NORMAL) { context ->
             if (context.name.containsLink()) {
@@ -133,7 +130,7 @@ private fun interceptPlayerConnection(
         return
     }
 
-    // We do not want to save the data of DDOSers, so we postpone the saving of the player info
+    // Postpone saving player information until the gatekeeper accepts the connection.
     val info = Vars.netServer.admins.getInfoOptional(packet.uuid) ?: PlayerInfo().apply { id = packet.uuid }
 
     con.hasBegunConnecting = true

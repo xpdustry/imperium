@@ -18,7 +18,7 @@ class VpnApiIoDetection(private val config: NetworkConfig.VpnDetectionConfig.Vpn
     VpnDetection {
     @OptIn(ExperimentalSerializationApi::class)
     override suspend fun isVpn(address: InetAddress): VpnDetection.Result {
-        if (address.isLoopbackAddress || address.isAnyLocalAddress) {
+        if (address.isLoopbackAddress || address.isAnyLocalAddress || address.isSiteLocalAddress) {
             return VpnDetection.Result.Success(false)
         }
 
