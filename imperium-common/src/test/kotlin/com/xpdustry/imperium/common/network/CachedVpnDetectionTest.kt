@@ -7,6 +7,7 @@ import java.net.InetAddress
 import java.nio.file.Path
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import kotlin.time.Duration.Companion.milliseconds
 
 class CachedVpnDetectionTest {
     @TempDir private lateinit var tempDir: Path
