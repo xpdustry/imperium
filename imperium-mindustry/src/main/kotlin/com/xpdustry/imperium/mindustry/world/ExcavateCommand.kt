@@ -12,7 +12,6 @@ import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.content.MindustryGamemode
-import com.xpdustry.imperium.common.content.MindustryMapManager
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
@@ -63,7 +62,8 @@ class ExcavateCommand(
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) :
     AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", afk, 1.minutes, scope),
-    ImperiumApplication.Listener, ExcavateManager {
+    ImperiumApplication.Listener,
+    ExcavateManager {
 
     private val areas = PlayerMap<ExcavateArea>(plugin)
     private lateinit var item: Item

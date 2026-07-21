@@ -126,7 +126,8 @@ class FoosClientDetector(
                     val json = Jval.read(data)
                     val username = json.getString("username", "")
                     val password = json.getString("password", "")
-                    if (username.isBlank() || password.isBlank()) return@launch player.asAudience.sendMessage(gui_login_failure_invalid_credentials())
+                    if (username.isBlank() || password.isBlank())
+                        return@launch player.asAudience.sendMessage(gui_login_failure_invalid_credentials())
                     loginPlayer(player, username, password)
                 } catch (_: Exception) {
                     player.sendMessage("Login failed. Malformed Packet Data")
@@ -198,7 +199,7 @@ class FoosClientDetector(
                 Distributor.get().eventBus.post(PlayerLoginEvent(player))
             }
             AccountResult.WrongPassword,
-                AccountResult.NotFound -> {
+            AccountResult.NotFound -> {
                 audience.sendAnnouncement(gui_login_failure_invalid_credentials())
             }
             else -> handleAccountResult(result, player)
