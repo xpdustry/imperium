@@ -33,6 +33,8 @@ import com.xpdustry.imperium.mindustry.security.SimpleBadWordDetector
 import com.xpdustry.imperium.mindustry.security.SimpleGatekeeperPipeline
 import com.xpdustry.imperium.mindustry.security.SimpleMarkedPlayerManager
 import com.xpdustry.imperium.mindustry.store.DataStoreService
+import com.xpdustry.imperium.mindustry.world.ExcavateCommand
+import com.xpdustry.imperium.mindustry.world.ExcavateManager
 import java.nio.file.Path
 import java.util.concurrent.Executor
 import kotlinx.coroutines.Dispatchers
@@ -57,6 +59,7 @@ internal fun DependencyService.Binder.registerMindustryModule(plugin: MindustryP
     bindToImpl<BadWordDetector, SimpleBadWordDetector>()
     bindToImpl<MarkedPlayerManager, SimpleMarkedPlayerManager>()
     bindToImpl<AfkManager, AfkListener>()
+    bindToImpl<ExcavateManager, ExcavateCommand>()
 
     // Chat and history.
     bindToFunc<Translator>(::createTranslator)

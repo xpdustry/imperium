@@ -51,16 +51,19 @@ import mindustry.gen.Sounds
 import mindustry.type.Item
 import mindustry.world.blocks.environment.TreeBlock
 
+interface ExcavateManager {
+    fun excavateVote(player: Player, vote: Boolean, force: Boolean)
+}
+
 @Inject
 class ExcavateCommand(
-    private val maps: MindustryMapManager,
     private val config: ImperiumConfig,
     private val afk: AfkManager,
     plugin: MindustryPlugin,
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) :
     AbstractVoteCommand<ExcavateCommand.ExcavateData>(plugin, "excavate", afk, 1.minutes, scope),
-    ImperiumApplication.Listener {
+    ImperiumApplication.Listener, ExcavateManager {
 
     private val areas = PlayerMap<ExcavateArea>(plugin)
     private lateinit var item: Item
@@ -315,6 +318,12 @@ class ExcavateCommand(
         }
         // Anuke black magic
         return 1f + Mathf.clamp(sequence.get() / 30f) * 1.9f
+    }
+
+    // TODO merge the individual commands to use this?
+    override fun excavateVote(player: Player, vote: Boolean, force: Boolean) {
+        if (force) onPlayerForceSuccess(player, manager.session)
+        else onPlayerVote(player, manager.session, if (vote) Vote.YES else Vote.NO)
     }
 
     data class ExcavateData(val price: Int, val area: ExcavateArea)
