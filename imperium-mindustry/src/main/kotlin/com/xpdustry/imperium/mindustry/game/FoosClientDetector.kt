@@ -116,11 +116,13 @@ class FoosClientDetector(
                 try {
                     val json = Jval.read(data)
                     val vote = json.getBool("vote", true)
-                    val force = json.getBool("force", false) && (store.selectBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE) >= Rank.OVERSEER
+                    val force =
+                        json.getBool("force", false) &&
+                            (store.selectBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE) >=
+                                Rank.OVERSEER
 
                     excavateManager.excavateVote(player, vote, force)
-                } catch (_: Exception) {
-                }
+                } catch (_: Exception) {}
             }
         }
 
