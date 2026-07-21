@@ -112,10 +112,16 @@ class FoosClientDetector(
             }
         }
         Vars.netServer.addPacketHandler("excavateVote") { player, data ->
-            val json = Jval.read(data)
-            val vote = json.getBool("vote", true)
-            val force = json.getBool("force", false)
-            excavateManager.excavateVote(player, vote, force)
+            scope.launch {
+                try {
+                    val json = Jval.read(data)
+                    val vote = json.getBool("vote", true)
+                    val force = json.getBool("force", false) && (store.selectBySessionKey(player.sessionKey)?.account?.rank ?: Rank.EVERYONE) >= Rank.OVERSEER
+
+                    excavateManager.excavateVote(player, vote, force)
+                } catch (_: Exception) {
+                }
+            }
         }
 
         Vars.netServer.addPacketHandler("login") { player, data ->
