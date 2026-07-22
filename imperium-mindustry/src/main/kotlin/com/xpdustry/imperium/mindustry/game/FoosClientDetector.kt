@@ -40,7 +40,6 @@ import kotlin.time.Duration.Companion.minutes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
-import mindustry.game.EventType
 import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
@@ -63,8 +62,8 @@ class FoosClientDetector(
     private val fooClients = PlayerMap<Boolean>(plugin)
 
     override fun onImperiumInit() {
-        Vars.netServer.addPacketHandler("fooCheck") {
-            player, _ -> fooClients[player] = true
+        Vars.netServer.addPacketHandler("fooCheck") { player, _ ->
+            fooClients[player] = true
             sendPlayerData(player)
         }
 
@@ -150,7 +149,6 @@ class FoosClientDetector(
     fun resendPlayerData(event: PlayerLoginEvent) {
         if (isFooClient(event.player)) sendPlayerData(event.player)
     }
-
 
     private suspend fun executePunishment(
         verb: String,
