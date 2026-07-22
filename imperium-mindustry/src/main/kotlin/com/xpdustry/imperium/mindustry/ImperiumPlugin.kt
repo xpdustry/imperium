@@ -122,7 +122,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 PunishmentListener::class,
                 MapListener::class,
                 VoteKickCommand::class,
-                ExcavateCommand::class,
                 RockTheVoteCommand::class,
                 CoreBlockListener::class,
                 HelpCommand::class,
