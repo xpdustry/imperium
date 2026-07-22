@@ -39,6 +39,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.announcement_ban
+import com.xpdustry.imperium.mindustry.translation.announcement_kick
 import com.xpdustry.imperium.mindustry.translation.punishment_message
 import com.xpdustry.imperium.mindustry.translation.punishment_message_simple
 import com.xpdustry.imperium.mindustry.translation.warning
@@ -114,6 +115,22 @@ class PunishmentListener(
                                     punishment.duration,
                                 )
                             )
+                    }
+                }
+            } else if (punishment.type == Punishment.Type.KICK && message.type == PunishmentMessage.Type.CREATE) {
+                runMindustryThread {
+                    targets.forEach { target ->
+                        target.asAudience.kick(punishment_message(punishment, codec), Duration.ZERO)
+                        logger.info(
+                            "{} ({}) has been kicked for '{}'",
+                            target.plainName(),
+                            target.uuid(),
+                            punishment.reason,
+                        )
+                        Distributor.get()
+                            .audienceProvider
+                            .players
+                            .sendMessage(announcement_kick(target.name.stripMindustryColors(), punishment.reason))
                     }
                 }
             } else {
