@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.mindustry.account
 
+import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.component.TextComponent.text
@@ -91,6 +92,7 @@ class AccountListener(
         scope.launch {
             users.incrementJoins(event.player.identity)
             val account = sessions.selectAccount(accounts, event.player.sessionKey) ?: return@launch
+            Distributor.get().eventBus.post(PlayerLoginEvent(event.player))
             event.player.asAudience.sendMessage(
                 cyan_prefix(
                     translatable()

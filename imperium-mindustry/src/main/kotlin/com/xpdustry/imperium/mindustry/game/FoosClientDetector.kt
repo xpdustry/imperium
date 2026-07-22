@@ -60,11 +60,13 @@ class FoosClientDetector(
     private val sessions: MindustrySessionService,
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ClientDetector, ImperiumApplication.Listener {
-    // Don't assign new instance to save memory
     private val fooClients = PlayerMap<Boolean>(plugin)
 
     override fun onImperiumInit() {
-        Vars.netServer.addPacketHandler("fooCheck") { player, _ -> fooClients[player] = true }
+        Vars.netServer.addPacketHandler("fooCheck") {
+            player, _ -> fooClients[player] = true
+            sendPlayerData(player)
+        }
 
         Vars.netServer.addPacketHandler("foosModeration") { playerObject, data ->
             scope.launch {
@@ -146,13 +148,9 @@ class FoosClientDetector(
 
     @EventHandler
     fun resendPlayerData(event: PlayerLoginEvent) {
-        sendPlayerData(event.player, true)
-    }
-
-    @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) {
         if (isFooClient(event.player)) sendPlayerData(event.player)
     }
+
 
     private suspend fun executePunishment(
         verb: String,
@@ -167,11 +165,10 @@ class FoosClientDetector(
         reply("$verb user ${player.name} (${codec.encode(id)}).")
     }
 
-    private fun sendPlayerData(player: Player, resend: Boolean = false) {
+    private fun sendPlayerData(player: Player) {
         scope.launch {
             val json =
                 Jval.newObject().apply {
-                    put("resend", resend)
                     put("currentName", player.name)
                     put("currentID", player.id)
                     put(
