@@ -8,6 +8,7 @@ import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
+import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
@@ -25,6 +26,7 @@ import org.incendo.cloud.annotation.specifier.Greedy
 
 // This class's only purpose is for enjoyment
 
+@Inject
 class FunHandler(
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
     private val store: DataStoreService,
