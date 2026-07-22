@@ -18,6 +18,10 @@ import com.xpdustry.imperium.mindustry.translation.command_arg_unknown
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mindustry.Vars
+import mindustry.game.Team
+import mindustry.gen.BlockUnitUnit
+import mindustry.gen.BlockUnitc
+import mindustry.gen.Building
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.type.UnitType
@@ -49,7 +53,9 @@ class FunHandler(
                         if (player != null && rank >= Rank.OVERSEER) {
                             setUnitPosition(player, x, y)
                         } else if (clients.isFooClient(sender) && navTp) {
-                            if (blockIsCore(x.toInt(), y.toInt())) setUnitPosition(sender, x, y)
+                            // no deleting cores
+                            if (sender.unit() is BlockUnitUnit) return@post
+                            if (blockIsCore(x.toInt(), y.toInt(), sender.team())) setUnitPosition(sender, x, y)
                         }
                     } catch (_: Exception) {}
                 }
@@ -109,8 +115,8 @@ class FunHandler(
         player.unit().set(x, y)
     }
 
-    fun blockIsCore(x: Int, y: Int): Boolean {
+    fun blockIsCore(x: Int, y: Int, team: Team): Boolean {
         val tile = Vars.world.tile(x, y)
-        return tile.block() is CoreBlock
+        return tile.block() is CoreBlock && tile.team() == team
     }
 }
