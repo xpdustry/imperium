@@ -173,7 +173,7 @@ project(":imperium-backend") {
     dependencies {
         "implementation"(project(":imperium-common"))
         "implementation"("ch.qos.logback:logback-classic:1.5.32")
-        "implementation"("net.dv8tion:JDA:6.4.1") { exclude(module = "opus-java"); exclude(module = "tink") }
+        "implementation"("net.dv8tion:JDA:6.5.0") { exclude(module = "opus-java"); exclude(module = "tink") }
         "runtimeOnly"("com.h2database:h2:2.4.240")
         "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
         "implementation"(toxopid.dependencies.mindustryCore)
