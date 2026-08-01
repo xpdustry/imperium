@@ -118,7 +118,7 @@ subprojects {
 
         "implementation"("org.slf4j:slf4j-api:2.0.18")
         "testImplementation"("org.slf4j:slf4j-simple:2.0.18")
-        "testImplementation"("io.github.classgraph:classgraph:4.8.184")
+        "testImplementation"("io.github.classgraph:classgraph:4.8.186")
 
         "testRuntimeOnly"("com.h2database:h2:2.4.240")
         "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
