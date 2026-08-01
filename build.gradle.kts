@@ -121,7 +121,7 @@ subprojects {
         "testImplementation"("io.github.classgraph:classgraph:4.8.184")
 
         "testRuntimeOnly"("com.h2database:h2:2.4.240")
-        "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+        "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 
         "testImplementation"("org.junit.jupiter:junit-jupiter-api:6.1.1")
         "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:6.1.1")
@@ -175,7 +175,7 @@ project(":imperium-backend") {
         "implementation"("ch.qos.logback:logback-classic:1.5.32")
         "implementation"("net.dv8tion:JDA:6.4.1") { exclude(module = "opus-java"); exclude(module = "tink") }
         "runtimeOnly"("com.h2database:h2:2.4.240")
-        "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+        "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.10")
         "implementation"(toxopid.dependencies.mindustryCore)
         "implementation"(toxopid.dependencies.arcCore)
     }
