@@ -35,6 +35,7 @@ data class Punishment(
         MUTE,
         BAN,
         FREEZE,
+        KICK,
     }
 
     @Serializable

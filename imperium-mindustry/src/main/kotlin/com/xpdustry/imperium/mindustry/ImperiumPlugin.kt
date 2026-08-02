@@ -37,6 +37,7 @@ import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.AntiGriefListener
 import com.xpdustry.imperium.mindustry.game.DayNightCycleListener
+import com.xpdustry.imperium.mindustry.game.FunHandler
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener
@@ -59,7 +60,6 @@ import com.xpdustry.imperium.mindustry.security.ReportCommand
 import com.xpdustry.imperium.mindustry.security.VoteKickCommand
 import com.xpdustry.imperium.mindustry.telemetry.DumpCommand
 import com.xpdustry.imperium.mindustry.world.CoreBlockListener
-import com.xpdustry.imperium.mindustry.world.ExcavateCommand
 import com.xpdustry.imperium.mindustry.world.HubListener
 import com.xpdustry.imperium.mindustry.world.ItemCommand
 import com.xpdustry.imperium.mindustry.world.KillAllCommand
@@ -121,7 +121,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 PunishmentListener::class,
                 MapListener::class,
                 VoteKickCommand::class,
-                ExcavateCommand::class,
                 RockTheVoteCommand::class,
                 CoreBlockListener::class,
                 HelpCommand::class,
@@ -156,6 +155,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ImperiumPermissionListener::class,
                 ItemCommand::class,
                 ReviveCoreCommand::class,
+                FunHandler::class,
             )
             .forEach(application::register)
 

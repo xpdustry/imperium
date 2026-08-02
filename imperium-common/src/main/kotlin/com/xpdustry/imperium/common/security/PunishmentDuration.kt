@@ -7,6 +7,9 @@ import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 enum class PunishmentDuration(val value: Duration) {
+    // Used as a kick
+    NONE(Duration.ZERO),
+    ONE_MINUTE(1.minutes),
     THIRTY_MINUTES(30.minutes),
     ONE_HOUR(1.hours),
     THREE_HOURS(3.hours),

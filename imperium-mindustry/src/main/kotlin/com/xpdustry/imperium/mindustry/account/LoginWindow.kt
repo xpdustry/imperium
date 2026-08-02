@@ -68,10 +68,10 @@ private fun LoginResultAction() =
         }
     }
 
-private fun gui_login_success(): Component = translatable("imperium.gui.login.success", ComponentColor.GREEN)
+fun gui_login_success(): Component = translatable("imperium.gui.login.success", ComponentColor.GREEN)
 
-private fun gui_login_warning_no_remember_login(): Component =
+fun gui_login_warning_no_remember_login(): Component =
     translatable("imperium.gui.login.warning.no_remember_login", SCARLET)
 
-private fun gui_login_failure_invalid_credentials(): Component =
+fun gui_login_failure_invalid_credentials(): Component =
     translatable("imperium.gui.login.failure.invalid-credentials", SCARLET)
