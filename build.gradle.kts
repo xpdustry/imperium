@@ -155,7 +155,7 @@ project(":imperium-common") {
         "api"("org.jetbrains.exposed:exposed-jdbc:1.3.1")
         "api"("org.jetbrains.exposed:exposed-kotlin-datetime:1.3.1")
         "api"("org.jetbrains.exposed:exposed-json:1.3.1")
-        "api"("com.zaxxer:HikariCP:7.0.2")
+        "api"("com.zaxxer:HikariCP:7.1.0")
 
         "api"("org.ocpsoft.prettytime:prettytime:5.0.9.Final")
         "api"("net.time4j:time4j-core:4.38")
