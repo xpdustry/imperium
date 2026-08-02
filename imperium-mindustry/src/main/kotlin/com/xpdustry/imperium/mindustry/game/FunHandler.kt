@@ -122,7 +122,7 @@ class FunHandler(
 
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {
         val tile = Vars.world.tile(x, y)
-        return tile.block() is CoreBlock && tile.team() == team
+        return tile != null && tile.block() is CoreBlock && tile.team() == team
     }
 
     private data class TeleportPacket(val x: Float, val y: Float, val targetId: Int, val navTp: Boolean)
