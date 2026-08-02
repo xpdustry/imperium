@@ -10,6 +10,7 @@ import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.dependency.Named
+import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
 import com.xpdustry.imperium.mindustry.misc.sessionKey
@@ -40,22 +41,28 @@ class FunHandler(
             scope.launch {
                 val rank = store.selectBySessionKey(sender.sessionKey)?.account?.rank ?: Rank.EVERYONE
                 Core.app.post {
-                    try {
-                        val json = Jval.read(data)
-                        val x = json.getFloat("x", 0f)
-                        val y = json.getFloat("y", 0f)
-                        val targetID = json.getInt("target", -1)
-                        val player = Groups.player.find { it.id == targetID }
-                        val navTp = json.getBool("navTp", false)
+                    val packet =
+                        try {
+                            decodeTeleportPacket(data)
+                        } catch (e: Exception) {
+                            logger.debug("Dropped invalid teleport packet from player {}", sender.id, e)
+                            return@post
+                        }
+                    val player = Groups.player.find { it.id == packet.targetId }
 
+                    try {
                         if (player != null && rank >= Rank.OVERSEER) {
-                            setUnitPosition(player, x, y)
-                        } else if (clients.isFooClient(sender) && navTp) {
+                            setUnitPosition(player, packet.x, packet.y)
+                        } else if (clients.isFooClient(sender) && packet.navTp) {
                             // no deleting cores
                             if (sender.unit() is BlockUnitUnit) return@post
-                            if (blockIsCore(x.toInt(), y.toInt(), sender.team())) setUnitPosition(sender, x, y)
+                            if (blockIsCore(packet.x.toInt(), packet.y.toInt(), sender.team())) {
+                                setUnitPosition(sender, packet.x, packet.y)
+                            }
                         }
-                    } catch (_: Exception) {}
+                    } catch (e: Exception) {
+                        logger.debug("Dropped invalid teleport packet from player {}", sender.id, e)
+                    }
                 }
             }
         }
@@ -116,5 +123,40 @@ class FunHandler(
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {
         val tile = Vars.world.tile(x, y)
         return tile.block() is CoreBlock && tile.team() == team
+    }
+
+    private data class TeleportPacket(val x: Float, val y: Float, val targetId: Int, val navTp: Boolean)
+
+    private companion object {
+        private val logger by LoggerDelegate()
+        private val TELEPORT_PACKET_FIELDS = setOf("x", "y", "target", "navTp")
+
+        private fun decodeTeleportPacket(data: String): TeleportPacket {
+            val json = Jval.read(data)
+            require(json.isObject) { "packet must be an object" }
+            require(json.asObject().size == TELEPORT_PACKET_FIELDS.size && TELEPORT_PACKET_FIELDS.all(json::has)) {
+                "packet must contain exactly ${TELEPORT_PACKET_FIELDS.joinToString()}"
+            }
+
+            val xValue = json.get("x")
+            require(xValue.isNumber) { "x must be a number" }
+            val x = xValue.asFloat()
+            require(x.isFinite()) { "x must be finite" }
+
+            val yValue = json.get("y")
+            require(yValue.isNumber) { "y must be a number" }
+            val y = yValue.asFloat()
+            require(y.isFinite()) { "y must be finite" }
+
+            val targetValue = json.get("target")
+            require(targetValue.isNumber && targetValue.asNumber() is Long) { "target must be an integer" }
+            val target = targetValue.asLong()
+            require(target in Int.MIN_VALUE..Int.MAX_VALUE) { "target is outside the integer range" }
+
+            val navTpValue = json.get("navTp")
+            require(navTpValue.isBoolean) { "navTp must be a boolean" }
+
+            return TeleportPacket(x, y, target.toInt(), navTpValue.asBool())
+        }
     }
 }
