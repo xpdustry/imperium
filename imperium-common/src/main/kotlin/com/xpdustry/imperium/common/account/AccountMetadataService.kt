@@ -44,15 +44,14 @@ class AccountMetadataService(private val provider: SQLProvider, private val mess
 
     suspend fun updateMetadata(account: Int, key: String, value: String): Boolean {
         validateKey(key)
-        val updated =
-            provider.newSuspendTransaction {
-                AccountMetadataTable.upsert {
-                    it[AccountMetadataTable.account] = account
-                    it[AccountMetadataTable.key] = key
-                    it[AccountMetadataTable.value] = value
-                }
-                true
+        val updated = provider.newSuspendTransaction {
+            AccountMetadataTable.upsert {
+                it[AccountMetadataTable.account] = account
+                it[AccountMetadataTable.key] = key
+                it[AccountMetadataTable.value] = value
             }
+            true
+        }
         if (updated) {
             messenger.broadcast(MetadataUpdate(account, key, value))
         }
@@ -61,12 +60,11 @@ class AccountMetadataService(private val provider: SQLProvider, private val mess
 
     suspend fun deleteMetadata(account: Int, key: String): Boolean {
         validateKey(key)
-        val deleted =
-            provider.newSuspendTransaction {
-                AccountMetadataTable.deleteWhere {
-                    (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key)
-                } > 0
-            }
+        val deleted = provider.newSuspendTransaction {
+            AccountMetadataTable.deleteWhere {
+                (AccountMetadataTable.account eq account) and (AccountMetadataTable.key eq key)
+            } > 0
+        }
         if (deleted) {
             messenger.broadcast(MetadataUpdate(account, key, null))
         }

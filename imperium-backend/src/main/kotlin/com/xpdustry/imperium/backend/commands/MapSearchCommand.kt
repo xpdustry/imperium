@@ -149,11 +149,10 @@ class MapSearchCommand(
                     .setMaxValues(entries.size)
                     .setDefaultValues(state.gamemodes.map { it?.name ?: NONE_GAMEMODE })
                     .apply {
-                        val options =
-                            entries.associateWith {
-                                val name = it?.name ?: NONE_GAMEMODE
-                                SelectOption.of(name.lowercase().replace("_", " "), name)
-                            }
+                        val options = entries.associateWith {
+                            val name = it?.name ?: NONE_GAMEMODE
+                            SelectOption.of(name.lowercase().replace("_", " "), name)
+                        }
                         addOptions(options.values)
                         setDefaultOptions(state.gamemodes.map { options[it]!! })
                     }

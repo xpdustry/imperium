@@ -42,21 +42,20 @@ class SQLMetricsRegistry(
 
         runBlocking { createSchema() }
 
-        job =
-            scope.launch {
-                while (isActive) {
-                    var count = 0
-                    val elapsed = measureTime {
-                        try {
-                            count = write(shouldCleanup())
-                        } catch (error: Throwable) {
-                            logger.error("An error occurred whilst writing samples to SQL", error)
-                        }
+        job = scope.launch {
+            while (isActive) {
+                var count = 0
+                val elapsed = measureTime {
+                    try {
+                        count = write(shouldCleanup())
+                    } catch (error: Throwable) {
+                        logger.error("An error occurred whilst writing samples to SQL", error)
                     }
-                    logger.trace("Collected {} metrics, took {} milliseconds", count, elapsed)
-                    delay((config.interval - elapsed).coerceAtLeast(500.milliseconds))
                 }
+                logger.trace("Collected {} metrics, took {} milliseconds", count, elapsed)
+                delay((config.interval - elapsed).coerceAtLeast(500.milliseconds))
             }
+        }
     }
 
     override fun onImperiumExit() {
@@ -101,47 +100,46 @@ class SQLMetricsRegistry(
         }
     }
 
-    private suspend fun write(cleanup: Boolean): Int =
-        lock.withLock {
-            val samples = mutableListOf<MetricSample>()
-            collectors.forEach { collector ->
-                collector.collect().forEach { metric ->
-                    samples +=
-                        MetricSample(
-                            metric.name,
-                            metric.kind,
-                            LABELS_JSON.encodeToString(LABELS_SERIALIZER, metric.labels.toSortedMap()),
-                            metric.value,
-                        )
-                }
+    private suspend fun write(cleanup: Boolean): Int = lock.withLock {
+        val samples = mutableListOf<MetricSample>()
+        collectors.forEach { collector ->
+            collector.collect().forEach { metric ->
+                samples +=
+                    MetricSample(
+                        metric.name,
+                        metric.kind,
+                        LABELS_JSON.encodeToString(LABELS_SERIALIZER, metric.labels.toSortedMap()),
+                        metric.value,
+                    )
             }
+        }
 
-            database.transaction {
-                samples.forEach { sample ->
-                    """
+        database.transaction {
+            samples.forEach { sample ->
+                """
                     INSERT INTO `metric_sample_v2` (`server`, `name`, `kind`, `labels`, `value`)
                     VALUES (?, ?, ?, ?, ?);
                     """
-                        .asPreparedStatement()
-                        .push(server.name)
-                        .push(sample.name)
-                        .push(sample.kind)
-                        .push(sample.labels)
-                        .push(sample.value)
-                        .executeUpdate()
-                }
-
-                if (cleanup) {
-                    "DELETE FROM `metric_sample_v2` WHERE `created_at` < ?;"
-                        .asPreparedStatement()
-                        .push(Clock.System.now() - config.retention)
-                        .executeUpdate()
-                    lastCleanupAt = Clock.System.now()
-                }
+                    .asPreparedStatement()
+                    .push(server.name)
+                    .push(sample.name)
+                    .push(sample.kind)
+                    .push(sample.labels)
+                    .push(sample.value)
+                    .executeUpdate()
             }
 
-            samples.size
+            if (cleanup) {
+                "DELETE FROM `metric_sample_v2` WHERE `created_at` < ?;"
+                    .asPreparedStatement()
+                    .push(Clock.System.now() - config.retention)
+                    .executeUpdate()
+                lastCleanupAt = Clock.System.now()
+            }
         }
+
+        samples.size
+    }
 
     private fun shouldCleanup(): Boolean {
         return Clock.System.now() > lastCleanupAt + CLEANUP_INTERVAL.coerceAtMost(config.retention)

@@ -45,20 +45,19 @@ class DependencyService(configure: Binder.() -> Unit) {
     private fun <T : Any> resolve(function: KFunction<T>, context: ResolutionContext): T =
         function.callBy(function.getParametersWithKeys().mapValues { (_, key) -> this.resolve(key, context) })
 
-    private fun <T : Any> resolve(key: Key<T>, context: ResolutionContext): T =
-        lock.withLock {
-            if (this.instances.containsKey(key)) {
-                return key.type.cast(this.instances[key]!!)
-            }
-            if (!context.visiting.add(key)) {
-                error("Circular bindings detected: ${context.visiting.joinToString(" -> ")}")
-            }
-            val factory = this.factories[key] ?: error("No bindings found for $key")
-            val instance = factory(context)
-            this.instances[key] = instance
-            context.visiting.remove(key)
-            return key.type.cast(instance)
+    private fun <T : Any> resolve(key: Key<T>, context: ResolutionContext): T = lock.withLock {
+        if (this.instances.containsKey(key)) {
+            return key.type.cast(this.instances[key]!!)
         }
+        if (!context.visiting.add(key)) {
+            error("Circular bindings detected: ${context.visiting.joinToString(" -> ")}")
+        }
+        val factory = this.factories[key] ?: error("No bindings found for $key")
+        val instance = factory(context)
+        this.instances[key] = instance
+        context.visiting.remove(key)
+        return key.type.cast(instance)
+    }
 
     class Binder internal constructor(private val service: DependencyService) {
 
@@ -94,11 +93,10 @@ class DependencyService(configure: Binder.() -> Unit) {
     private data class ResolutionContext(val visiting: SequencedSet<Key<*>> = linkedSetOf())
 
     private companion object {
-        private fun KFunction<*>.getParametersWithKeys() =
-            parameters.associateWith {
-                require(it.kind == KParameter.Kind.VALUE) { "${it.name} is not a value parameter in $this" }
-                Key(it.type.jvmErasure, it.findAnnotation<Named>()?.value ?: "")
-            }
+        private fun KFunction<*>.getParametersWithKeys() = parameters.associateWith {
+            require(it.kind == KParameter.Kind.VALUE) { "${it.name} is not a value parameter in $this" }
+            Key(it.type.jvmErasure, it.findAnnotation<Named>()?.value ?: "")
+        }
 
         private fun <T : Any> KClass<T>.getInjectableConstructor(): KFunction<T> {
             if (this.hasAnnotation<Inject>()) {

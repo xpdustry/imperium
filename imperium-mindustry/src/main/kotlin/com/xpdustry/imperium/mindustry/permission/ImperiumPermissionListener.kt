@@ -70,19 +70,18 @@ class ImperiumPermissionListener(
         Entities.getPlayers().forEach(::updatePlayerRanks)
     }
 
-    private fun updatePlayerRanks(player: Player) =
-        scope.launch {
-            val stored = store.selectBySessionKey(player.sessionKey)
-            val nodes = ArrayList<RankNode>()
-            val rank = stored?.account?.rank ?: Rank.EVERYONE
-            nodes += EnumRankNode.linear(rank, "imperium", true)
-            nodes += stored?.achievements.orEmpty().map { EnumRankNode.singular(it, "imperium") }
-            val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
-            runMindustryThread {
-                ranks[player] = Collections.unmodifiableList(nodes)
-                player.admin = if (undercover) false else rank >= Rank.OVERSEER
-            }
+    private fun updatePlayerRanks(player: Player) = scope.launch {
+        val stored = store.selectBySessionKey(player.sessionKey)
+        val nodes = ArrayList<RankNode>()
+        val rank = stored?.account?.rank ?: Rank.EVERYONE
+        nodes += EnumRankNode.linear(rank, "imperium", true)
+        nodes += stored?.achievements.orEmpty().map { EnumRankNode.singular(it, "imperium") }
+        val undercover = users.getSetting(player.uuid(), User.Setting.UNDERCOVER)
+        runMindustryThread {
+            ranks[player] = Collections.unmodifiableList(nodes)
+            player.admin = if (undercover) false else rank >= Rank.OVERSEER
         }
+    }
 
     inner class ImperiumRankProvider : RankProvider {
         override fun getRanks(player: Player) = this@ImperiumPermissionListener.ranks[player].orEmpty()

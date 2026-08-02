@@ -42,15 +42,15 @@ class MindustryPlayerTracker(
     }
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        scope.launch {
-            val id = users.getByIdentity(event.player.identity).id
-            val entry = PlayerTracker.Entry(event.player.identity, id)
-            joins.add(entry)
-            online[id] = entry
-        }
+    fun onPlayerJoin(event: EventType.PlayerJoin) = scope.launch {
+        val id = users.getByIdentity(event.player.identity).id
+        val entry = PlayerTracker.Entry(event.player.identity, id)
+        joins.add(entry)
+        online[id] = entry
+    }
 
     @EventHandler
-    fun onPlayerQuit(event: EventType.PlayerLeave) =
-        scope.launch { online.remove(users.getByIdentity(event.player.identity).id)!! }
+    fun onPlayerQuit(event: EventType.PlayerLeave) = scope.launch {
+        online.remove(users.getByIdentity(event.player.identity).id)!!
+    }
 }

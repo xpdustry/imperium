@@ -58,14 +58,13 @@ class SimpleDiscovery(
             }
         }
 
-        heartbeatJob =
-            scope.launch {
-                delay(Random.nextLong(5).seconds)
-                while (isActive) {
-                    sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-                    delay(5.seconds)
-                }
+        heartbeatJob = scope.launch {
+            delay(Random.nextLong(5).seconds)
+            while (isActive) {
+                sendDiscovery(DiscoveryMessage.Type.DISCOVER)
+                delay(5.seconds)
             }
+        }
     }
 
     override fun onImperiumExit() = runBlocking {

@@ -54,22 +54,21 @@ class MetricsListener(
     }
 
     @EventHandler(priority = Priority.LOW)
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        scope.launch {
-            uniPlayersCounter += event.player.con.address.toInetAddress()
-            joinCounter.inc()
+    fun onPlayerJoin(event: EventType.PlayerJoin) = scope.launch {
+        uniPlayersCounter += event.player.con.address.toInetAddress()
+        joinCounter.inc()
 
-            val id = event.player.id()
-            if ((users.findByUuid(event.player.uuid())?.timesJoined ?: 0) == 1) {
-                newPlayersCounter.inc()
-                delay(5.minutes)
-                runMindustryThread {
-                    if (Entities.findPlayerByID(id)?.con?.isConnected == true) {
-                        retPlayersCounter.inc()
-                    }
+        val id = event.player.id()
+        if ((users.findByUuid(event.player.uuid())?.timesJoined ?: 0) == 1) {
+            newPlayersCounter.inc()
+            delay(5.minutes)
+            runMindustryThread {
+                if (Entities.findPlayerByID(id)?.con?.isConnected == true) {
+                    retPlayersCounter.inc()
                 }
             }
         }
+    }
 
     @EventHandler
     fun onPlayerLeave(event: EventType.PlayerLeave) {

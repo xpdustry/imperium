@@ -64,17 +64,16 @@ class MindustryChatListener(
         }
 
         if (config.mindustry.chat.name.enabled) {
-            nameJob =
-                scope.launch {
-                    while (isActive) {
-                        try {
-                            updatePlayerNames()
-                        } catch (e: Exception) {
-                            LOGGER.error("Failed to update player's names", e)
-                            delay(config.mindustry.chat.name.updateInterval)
-                        }
+            nameJob = scope.launch {
+                while (isActive) {
+                    try {
+                        updatePlayerNames()
+                    } catch (e: Exception) {
+                        LOGGER.error("Failed to update player's names", e)
+                        delay(config.mindustry.chat.name.updateInterval)
                     }
                 }
+            }
         }
     }
 

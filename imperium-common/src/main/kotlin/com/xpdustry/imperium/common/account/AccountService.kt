@@ -67,19 +67,18 @@ class AccountService(
         }
 
         val hash = ImperiumArgon2.create(password)
-        val identifier =
-            provider.newSuspendTransaction {
-                if (AccountTable.exists { AccountTable.username eq username }) {
-                    return@newSuspendTransaction null
-                }
-
-                AccountTable.insert {
-                        it[AccountTable.username] = username
-                        it[passwordHash] = hash.hash
-                        it[passwordSalt] = hash.salt
-                    }[AccountTable.id]
-                    .value
+        val identifier = provider.newSuspendTransaction {
+            if (AccountTable.exists { AccountTable.username eq username }) {
+                return@newSuspendTransaction null
             }
+
+            AccountTable.insert {
+                    it[AccountTable.username] = username
+                    it[passwordHash] = hash.hash
+                    it[passwordSalt] = hash.salt
+                }[AccountTable.id]
+                .value
+        }
 
         if (identifier == null) {
             return AccountResult.AlreadyRegistered
@@ -101,13 +100,12 @@ class AccountService(
         }
 
         val hash = ImperiumArgon2.create(newPassword)
-        val updated =
-            provider.newSuspendTransaction {
-                AccountTable.update({ AccountTable.id eq account }) {
-                    it[passwordHash] = hash.hash
-                    it[passwordSalt] = hash.salt
-                } > 0
-            }
+        val updated = provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq account }) {
+                it[passwordHash] = hash.hash
+                it[passwordSalt] = hash.salt
+            } > 0
+        }
         if (!updated) {
             return AccountResult.NotFound
         }
@@ -116,32 +114,30 @@ class AccountService(
         return AccountResult.Success
     }
 
-    suspend fun selectById(id: Int): Account? =
-        provider.newSuspendTransaction {
-            AccountTable.selectAll().where { AccountTable.id eq id }.firstOrNull()?.toAccount()
-        }
+    suspend fun selectById(id: Int): Account? = provider.newSuspendTransaction {
+        AccountTable.selectAll().where { AccountTable.id eq id }.firstOrNull()?.toAccount()
+    }
 
-    suspend fun existsById(id: Int): Boolean =
-        provider.newSuspendTransaction { AccountTable.exists { AccountTable.id eq id } }
+    suspend fun existsById(id: Int): Boolean = provider.newSuspendTransaction {
+        AccountTable.exists { AccountTable.id eq id }
+    }
 
-    suspend fun selectByUsername(username: String): Account? =
-        provider.newSuspendTransaction {
-            AccountTable.selectAll().where { AccountTable.username eq username }.firstOrNull()?.toAccount()
-        }
+    suspend fun selectByUsername(username: String): Account? = provider.newSuspendTransaction {
+        AccountTable.selectAll().where { AccountTable.username eq username }.firstOrNull()?.toAccount()
+    }
 
-    suspend fun existsByUsername(username: String): Boolean =
-        provider.newSuspendTransaction { AccountTable.exists { AccountTable.username eq username } }
+    suspend fun existsByUsername(username: String): Boolean = provider.newSuspendTransaction {
+        AccountTable.exists { AccountTable.username eq username }
+    }
 
-    suspend fun selectByDiscord(discord: Long): Account? =
-        provider.newSuspendTransaction {
-            AccountTable.selectAll().where { AccountTable.discord eq discord }.firstOrNull()?.toAccount()
-        }
+    suspend fun selectByDiscord(discord: Long): Account? = provider.newSuspendTransaction {
+        AccountTable.selectAll().where { AccountTable.discord eq discord }.firstOrNull()?.toAccount()
+    }
 
     suspend fun updateDiscord(account: Int, discord: Long): Boolean {
-        val updated =
-            provider.newSuspendTransaction {
-                AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.discord] = discord } > 0
-            }
+        val updated = provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.discord] = discord } > 0
+        }
         if (updated) {
             messenger.broadcast(AccountUpdate(account))
         }
@@ -149,10 +145,9 @@ class AccountService(
     }
 
     suspend fun incrementGames(account: Int): Boolean {
-        val updated =
-            provider.newSuspendTransaction {
-                AccountTable.update({ AccountTable.id eq account }) { it[games] = games.plus(1) } > 0
-            }
+        val updated = provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq account }) { it[games] = games.plus(1) } > 0
+        }
         if (updated) {
             messenger.broadcast(AccountUpdate(account))
         }
@@ -160,10 +155,9 @@ class AccountService(
     }
 
     suspend fun incrementPlaytime(account: Int, duration: Duration): Boolean {
-        val updated =
-            provider.newSuspendTransaction {
-                AccountTable.update({ AccountTable.id eq account }) { it[playtime] = playtime.plus(duration) } > 0
-            }
+        val updated = provider.newSuspendTransaction {
+            AccountTable.update({ AccountTable.id eq account }) { it[playtime] = playtime.plus(duration) } > 0
+        }
         if (updated) {
             messenger.broadcast(AccountUpdate(account))
         }
@@ -171,19 +165,18 @@ class AccountService(
     }
 
     suspend fun updateRank(account: Int, rank: Rank): Boolean {
-        val changed =
-            provider.newSuspendTransaction {
-                val current =
-                    AccountTable.select(AccountTable.rank)
-                        .where { AccountTable.id eq account }
-                        .firstOrNull()
-                        ?.get(AccountTable.rank) ?: return@newSuspendTransaction false
-                if (current == rank) {
-                    return@newSuspendTransaction false
-                }
-
-                AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.rank] = rank } > 0
+        val changed = provider.newSuspendTransaction {
+            val current =
+                AccountTable.select(AccountTable.rank)
+                    .where { AccountTable.id eq account }
+                    .firstOrNull()
+                    ?.get(AccountTable.rank) ?: return@newSuspendTransaction false
+            if (current == rank) {
+                return@newSuspendTransaction false
             }
+
+            AccountTable.update({ AccountTable.id eq account }) { it[AccountTable.rank] = rank } > 0
+        }
 
         if (changed) {
             messenger.broadcast(AccountUpdate(account))
@@ -192,13 +185,12 @@ class AccountService(
         return changed
     }
 
-    suspend fun selectPasswordById(id: Int): HashedPassword? =
-        provider.newSuspendTransaction {
-            AccountTable.select(AccountTable.passwordHash, AccountTable.passwordSalt)
-                .where { AccountTable.id eq id }
-                .firstOrNull()
-                ?.let { HashedPassword(it[AccountTable.passwordHash], it[AccountTable.passwordSalt]) }
-        }
+    suspend fun selectPasswordById(id: Int): HashedPassword? = provider.newSuspendTransaction {
+        AccountTable.select(AccountTable.passwordHash, AccountTable.passwordSalt)
+            .where { AccountTable.id eq id }
+            .firstOrNull()
+            ?.let { HashedPassword(it[AccountTable.passwordHash], it[AccountTable.passwordSalt]) }
+    }
 
     fun usernameRequirements(): List<StringRequirement> = DEFAULT_USERNAME_REQUIREMENTS
 

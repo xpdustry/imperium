@@ -73,13 +73,12 @@ class CachedVpnDetection(private val delegate: VpnDetection, private val provide
         }
     }
 
-    private suspend fun fetchFromCache(address: InetAddress): VpnDetection.Result? =
-        provider.newSuspendTransaction {
-            VpnDetectionCacheTable.select(VpnDetectionCacheTable.fields)
-                .where { VpnDetectionCacheTable.address eq address.address }
-                .firstOrNull()
-                ?.toCachedResult(Clock.System.now())
-        }
+    private suspend fun fetchFromCache(address: InetAddress): VpnDetection.Result? = provider.newSuspendTransaction {
+        VpnDetectionCacheTable.select(VpnDetectionCacheTable.fields)
+            .where { VpnDetectionCacheTable.address eq address.address }
+            .firstOrNull()
+            ?.toCachedResult(Clock.System.now())
+    }
 }
 
 private enum class CacheStatus {

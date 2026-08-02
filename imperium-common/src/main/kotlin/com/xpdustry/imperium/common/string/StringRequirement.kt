@@ -27,8 +27,9 @@ sealed interface StringRequirement {
     data class AllowedSpecialSymbol(val allowed: Set<Char>) : StringRequirement {
         constructor(vararg allowed: Char) : this(allowed.toSet())
 
-        override fun isSatisfiedBy(string: CharSequence): Boolean =
-            string.all { char -> char.isLetterOrDigit() || char in allowed }
+        override fun isSatisfiedBy(string: CharSequence): Boolean = string.all { char ->
+            char.isLetterOrDigit() || char in allowed
+        }
     }
 
     data class Length(val min: Int, val max: Int) : StringRequirement {

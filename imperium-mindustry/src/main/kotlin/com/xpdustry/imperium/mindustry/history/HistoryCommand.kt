@@ -70,24 +70,23 @@ class HistoryCommand(
     }
 
     @EventHandler
-    internal fun onPlayerTapEvent(event: EventType.TapEvent) =
-        scope.launch {
-            if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAP_TILE_LOG)) {
-                val last = taps[event.player]
-                if (
-                    last != null &&
-                        (System.currentTimeMillis() - last.timestamp).milliseconds <
-                            config.mindustry.history.doubleClickDelay &&
-                        Mathf.within(last.x, last.y, event.tile.x.toFloat(), event.tile.y.toFloat(), 2F)
-                ) {
-                    taps.remove(event.player)
-                    onTileHistoryCommand(CommandSender.player(event.player), event.tile.x, event.tile.y)
-                } else {
-                    taps[event.player] =
-                        PlayerTap(event.tile.x.toFloat(), event.tile.y.toFloat(), System.currentTimeMillis())
-                }
+    internal fun onPlayerTapEvent(event: EventType.TapEvent) = scope.launch {
+        if (users.getSetting(event.player.uuid(), User.Setting.DOUBLE_TAP_TILE_LOG)) {
+            val last = taps[event.player]
+            if (
+                last != null &&
+                    (System.currentTimeMillis() - last.timestamp).milliseconds <
+                        config.mindustry.history.doubleClickDelay &&
+                    Mathf.within(last.x, last.y, event.tile.x.toFloat(), event.tile.y.toFloat(), 2F)
+            ) {
+                taps.remove(event.player)
+                onTileHistoryCommand(CommandSender.player(event.player), event.tile.x, event.tile.y)
+            } else {
+                taps[event.player] =
+                    PlayerTap(event.tile.x.toFloat(), event.tile.y.toFloat(), System.currentTimeMillis())
             }
         }
+    }
 
     @ImperiumCommand(["history", "player"])
     @ClientSide

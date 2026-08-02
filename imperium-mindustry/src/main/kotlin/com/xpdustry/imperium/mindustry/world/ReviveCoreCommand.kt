@@ -319,14 +319,13 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
     private fun formatCost(cost: List<ItemStack>): String =
         cost.joinToString(" + ") { stack -> "${stack.amount} ${stack.item.localizedName}" }
 
-    private fun formatDuration(duration: Duration): String =
-        duration.toComponents { minutes, seconds, _ ->
-            when {
-                minutes > 0 && seconds > 0 -> "${minutes}m ${seconds}s"
-                minutes > 0 -> "${minutes}m"
-                else -> "${seconds}s"
-            }
+    private fun formatDuration(duration: Duration): String = duration.toComponents { minutes, seconds, _ ->
+        when {
+            minutes > 0 && seconds > 0 -> "${minutes}m ${seconds}s"
+            minutes > 0 -> "${minutes}m"
+            else -> "${seconds}s"
         }
+    }
 
     private data class TilePosition(val x: Int, val y: Int)
 

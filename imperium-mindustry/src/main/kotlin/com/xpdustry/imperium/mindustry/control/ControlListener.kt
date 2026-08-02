@@ -63,34 +63,30 @@ class ControlListener(
         val everyone = Distributor.get().audienceProvider.everyone
         if (immediate || Entities.getPlayers().isEmpty() || Vars.state.gameOver) {
             everyone.sendMessage(server_restart_delay(reason, 10.seconds))
-            job =
-                scope.launch {
-                    delay(10.seconds)
-                    doAction(action)
-                }
+            job = scope.launch {
+                delay(10.seconds)
+                doAction(action)
+            }
         } else if (config.mindustry.gamemode.pvp) {
             everyone.sendMessage(server_restart_game_over(reason))
             onEvent<GameOverEvent> {
-                job =
-                    scope.launch {
-                        delay(5.seconds)
-                        doAction(action)
-                    }
+                job = scope.launch {
+                    delay(5.seconds)
+                    doAction(action)
+                }
             }
         } else if (config.mindustry.gamemode == MindustryGamemode.HUB) {
             everyone.sendMessage(server_restart_delay(reason, 10.seconds))
-            job =
-                scope.launch {
-                    delay(10.seconds)
-                    doAction(action)
-                }
+            job = scope.launch {
+                delay(10.seconds)
+                doAction(action)
+            }
         } else {
             everyone.sendMessage(server_restart_delay(reason, 5.minutes))
-            job =
-                scope.launch {
-                    delay(5.minutes)
-                    doAction(action)
-                }
+            job = scope.launch {
+                delay(5.minutes)
+                doAction(action)
+            }
         }
     }
 

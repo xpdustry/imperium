@@ -76,10 +76,9 @@ class SimplePunishmentManager(
         provider.newTransaction { SchemaUtils.create(PunishmentTable) }
     }
 
-    override suspend fun findById(id: Int): Punishment? =
-        provider.newSuspendTransaction {
-            PunishmentTable.selectAll().where { PunishmentTable.id eq id }.firstOrNull()?.toPunishment()
-        }
+    override suspend fun findById(id: Int): Punishment? = provider.newSuspendTransaction {
+        PunishmentTable.selectAll().where { PunishmentTable.id eq id }.firstOrNull()?.toPunishment()
+    }
 
     override suspend fun findAllByIdentity(identity: Identity.Mindustry): List<Punishment> =
         provider.newSuspendTransaction {
@@ -96,10 +95,9 @@ class SimplePunishmentManager(
                 .map { it.toPunishment() }
         }
 
-    override suspend fun findAllByUser(id: Int): List<Punishment> =
-        provider.newSuspendTransaction {
-            (PunishmentTable leftJoin UserTable).selectAll().where { UserTable.id eq id }.map { it.toPunishment() }
-        }
+    override suspend fun findAllByUser(id: Int): List<Punishment> = provider.newSuspendTransaction {
+        (PunishmentTable leftJoin UserTable).selectAll().where { UserTable.id eq id }.map { it.toPunishment() }
+    }
 
     override suspend fun punish(
         author: Identity,
@@ -120,17 +118,16 @@ class SimplePunishmentManager(
             }
             identifier = latest.id
         } else {
-            identifier =
-                provider.newSuspendTransaction {
-                    PunishmentTable.insertAndGetId {
-                            it[target] = user
-                            it[PunishmentTable.reason] = reason
-                            it[PunishmentTable.type] = type
-                            it[PunishmentTable.duration] = if (duration.isInfinite()) null else duration
-                            it[server] = config.server.name
-                        }
-                        .value
-                }
+            identifier = provider.newSuspendTransaction {
+                PunishmentTable.insertAndGetId {
+                        it[target] = user
+                        it[PunishmentTable.reason] = reason
+                        it[PunishmentTable.type] = type
+                        it[PunishmentTable.duration] = if (duration.isInfinite()) null else duration
+                        it[server] = config.server.name
+                    }
+                    .value
+            }
         }
         messenger.broadcast(
             PunishmentMessage(

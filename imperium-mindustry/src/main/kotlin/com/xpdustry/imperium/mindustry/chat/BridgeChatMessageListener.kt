@@ -68,40 +68,37 @@ class BridgeChatMessageListener(
     }
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        scope.launch {
-            messenger.broadcast(
-                MindustryPlayerMessage(
-                    config.server.name,
-                    event.player.info.plainLastName(),
-                    MindustryPlayerMessage.Action.Join,
-                )
+    fun onPlayerJoin(event: EventType.PlayerJoin) = scope.launch {
+        messenger.broadcast(
+            MindustryPlayerMessage(
+                config.server.name,
+                event.player.info.plainLastName(),
+                MindustryPlayerMessage.Action.Join,
             )
-        }
+        )
+    }
 
     @EventHandler
-    fun onPlayerQuit(event: EventType.PlayerLeave) =
-        scope.launch {
-            messenger.broadcast(
-                MindustryPlayerMessage(
-                    config.server.name,
-                    event.player.info.plainLastName(),
-                    MindustryPlayerMessage.Action.Quit,
-                )
+    fun onPlayerQuit(event: EventType.PlayerLeave) = scope.launch {
+        messenger.broadcast(
+            MindustryPlayerMessage(
+                config.server.name,
+                event.player.info.plainLastName(),
+                MindustryPlayerMessage.Action.Quit,
             )
-        }
+        )
+    }
 
     @EventHandler
-    fun onPlayerChat(event: MindustryPlayerChatEvent) =
-        scope.launch {
-            messenger.broadcast(
-                MindustryPlayerMessage(
-                    config.server.name,
-                    event.player.player.info.plainLastName(),
-                    MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message)),
-                )
+    fun onPlayerChat(event: MindustryPlayerChatEvent) = scope.launch {
+        messenger.broadcast(
+            MindustryPlayerMessage(
+                config.server.name,
+                event.player.player.info.plainLastName(),
+                MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message)),
             )
-        }
+        )
+    }
 
     @EventHandler
     fun onGameOver(event: EventType.GameOverEvent) {

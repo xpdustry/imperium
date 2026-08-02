@@ -51,13 +51,12 @@ class MindustryAudienceFormatter(
     private var refreshJob: Job? = null
 
     override fun onImperiumInit() {
-        refreshJob =
-            scope.launch {
-                while (isActive) {
-                    refreshPlayerData()
-                    delay(2.seconds)
-                }
+        refreshJob = scope.launch {
+            while (isActive) {
+                refreshPlayerData()
+                delay(2.seconds)
             }
+        }
     }
 
     override fun onImperiumExit() {

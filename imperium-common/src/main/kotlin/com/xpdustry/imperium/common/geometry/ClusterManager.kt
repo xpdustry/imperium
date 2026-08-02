@@ -156,25 +156,24 @@ class Cluster<T : Any>(blocks: List<Block<T>> = emptyList()) {
 
     @Suppress("PropertyName") internal val _blocks: MutableList<Block<T>> = blocks.toMutableList()
 
-    fun isAdjacentOrContains(block: Block<*>): Boolean =
-        _blocks.any {
-            val r1 = it.x + it.size + 1
-            val l1 = it.x - 1
-            val b1 = it.y - 1
-            val t1 = it.y + it.size + 1
+    fun isAdjacentOrContains(block: Block<*>): Boolean = _blocks.any {
+        val r1 = it.x + it.size + 1
+        val l1 = it.x - 1
+        val b1 = it.y - 1
+        val t1 = it.y + it.size + 1
 
-            val r2 = block.x + block.size + 1
-            val l2 = block.x - 1
-            val b2 = block.y - 1
-            val t2 = block.y + block.size + 1
+        val r2 = block.x + block.size + 1
+        val l2 = block.x - 1
+        val b2 = block.y - 1
+        val t2 = block.y + block.size + 1
 
-            val x1 = maxOf(l1, l2)
-            val y1 = maxOf(b1, b2)
-            val x2 = minOf(r1, r2)
-            val y2 = minOf(t1, t2)
+        val x1 = maxOf(l1, l2)
+        val y1 = maxOf(b1, b2)
+        val x2 = minOf(r1, r2)
+        val y2 = minOf(t1, t2)
 
-            maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
-        }
+        maxOf(0, x2 - x1) * maxOf(0, y2 - y1) > 4
+    }
 
     fun isAdjacentOrContains(cluster: Cluster<*>): Boolean = cluster._blocks.any(::isAdjacentOrContains)
 
