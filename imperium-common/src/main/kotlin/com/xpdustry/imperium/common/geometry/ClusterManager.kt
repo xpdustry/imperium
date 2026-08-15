@@ -2,12 +2,13 @@
 package com.xpdustry.imperium.common.geometry
 
 import java.util.LinkedList
+import java.util.concurrent.CopyOnWriteArrayList
 
 class ClusterManager<T : Any>(private val listener: Listener<T>) {
     val clusters: List<Cluster<T>>
         get() = _clusters
 
-    private val _clusters = mutableListOf<Cluster<T>>()
+    private val _clusters: MutableList<Cluster<T>> = CopyOnWriteArrayList()
 
     fun getElement(x: Int, y: Int): Pair<Cluster<T>, Cluster.Block<T>>? {
         for (cluster in _clusters) {
