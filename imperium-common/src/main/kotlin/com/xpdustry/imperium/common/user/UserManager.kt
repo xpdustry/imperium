@@ -61,51 +61,48 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
         provider.newTransaction { SchemaUtils.create(UserTable, UserNameTable, UserAddressTable, UserSettingTable) }
     }
 
-    override suspend fun getByIdentity(identity: Identity.Mindustry): User =
-        userCreateMutex.withLock {
-            provider.newSuspendTransaction {
-                val user =
-                    UserTable.selectAll()
-                        .where { UserTable.uuid eq identity.uuid.toLongMuuid() }
-                        .firstOrNull()
-                        ?.toUser()
-                if (user != null) {
-                    return@newSuspendTransaction user
-                }
-
-                val now = Clock.System.now()
-                val identifier =
-                    UserTable.insertAndGetId {
-                            it[uuid] = identity.uuid.toLongMuuid()
-                            it[lastName] = identity.name.stripMindustryColors()
-                            it[lastAddress] = identity.address.address
-                            it[firstJoin] = now
-                        }
-                        .value
-
-                UserNameTable.insert {
-                    it[UserNameTable.user] = identifier
-                    it[name] = identity.name.stripMindustryColors()
-                }
-
-                UserAddressTable.insert {
-                    it[UserAddressTable.user] = identifier
-                    it[address] = identity.address.address
-                }
-
-                User(
-                    id = identifier,
-                    uuid = identity.uuid,
-                    lastName = identity.name.stripMindustryColors(),
-                    lastAddress = identity.address,
-                    lastJoin = Instant.fromEpochMilliseconds(0),
-                    firstJoin = now,
-                )
+    override suspend fun getByIdentity(identity: Identity.Mindustry): User = userCreateMutex.withLock {
+        provider.newSuspendTransaction {
+            val user =
+                UserTable.selectAll().where { UserTable.uuid eq identity.uuid.toLongMuuid() }.firstOrNull()?.toUser()
+            if (user != null) {
+                return@newSuspendTransaction user
             }
-        }
 
-    override suspend fun findById(id: Int): User? =
-        provider.newSuspendTransaction { UserTable.selectAll().where { UserTable.id eq id }.firstOrNull()?.toUser() }
+            val now = Clock.System.now()
+            val identifier =
+                UserTable.insertAndGetId {
+                        it[uuid] = identity.uuid.toLongMuuid()
+                        it[lastName] = identity.name.stripMindustryColors()
+                        it[lastAddress] = identity.address.address
+                        it[firstJoin] = now
+                    }
+                    .value
+
+            UserNameTable.insert {
+                it[UserNameTable.user] = identifier
+                it[name] = identity.name.stripMindustryColors()
+            }
+
+            UserAddressTable.insert {
+                it[UserAddressTable.user] = identifier
+                it[address] = identity.address.address
+            }
+
+            User(
+                id = identifier,
+                uuid = identity.uuid,
+                lastName = identity.name.stripMindustryColors(),
+                lastAddress = identity.address,
+                lastJoin = Instant.fromEpochMilliseconds(0),
+                firstJoin = now,
+            )
+        }
+    }
+
+    override suspend fun findById(id: Int): User? = provider.newSuspendTransaction {
+        UserTable.selectAll().where { UserTable.id eq id }.firstOrNull()?.toUser()
+    }
 
     override suspend fun findByUuid(uuid: MindustryUUID): User? {
         if (!uuid.isCRC32Muuid()) return null
@@ -114,67 +111,62 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
         }
     }
 
-    override suspend fun findByLastAddress(address: InetAddress): List<User> =
-        provider.newSuspendTransaction {
-            UserTable.selectAll().where { UserTable.lastAddress eq address.address }.map { it.toUser() }
+    override suspend fun findByLastAddress(address: InetAddress): List<User> = provider.newSuspendTransaction {
+        UserTable.selectAll().where { UserTable.lastAddress eq address.address }.map { it.toUser() }
+    }
+
+    override suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses = provider.newSuspendTransaction {
+        val names =
+            UserNameTable.selectAll()
+                .where { UserNameTable.user eq id }
+                .mapTo(mutableSetOf()) { it[UserNameTable.name] }
+        val addresses =
+            UserAddressTable.selectAll()
+                .where { UserAddressTable.user eq id }
+                .mapTo(mutableSetOf()) { InetAddress.getByAddress(it[UserAddressTable.address]) }
+        User.NamesAndAddresses(names, addresses)
+    }
+
+    override suspend fun searchUserByName(query: String): List<User> = provider.newSuspendTransaction {
+        (UserTable leftJoin UserNameTable)
+            .selectAll()
+            .where { UserNameTable.name like "%${query}%" }
+            .groupBy(UserTable.id)
+            .map { it.toUser() }
+    }
+
+    override suspend fun incrementJoins(identity: Identity.Mindustry): Unit = provider.newSuspendTransaction {
+        val user = getByIdentity(identity)
+
+        UserTable.update({ UserTable.id eq user.id }) {
+            it[lastName] = identity.name.stripMindustryColors()
+            it[lastAddress] = identity.address.address
+            it[timesJoined] = timesJoined.plus(1)
+            it[lastJoin] = Clock.System.now()
         }
 
-    override suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses =
-        provider.newSuspendTransaction {
-            val names =
-                UserNameTable.selectAll()
-                    .where { UserNameTable.user eq id }
-                    .mapTo(mutableSetOf()) { it[UserNameTable.name] }
-            val addresses =
-                UserAddressTable.selectAll()
-                    .where { UserAddressTable.user eq id }
-                    .mapTo(mutableSetOf()) { InetAddress.getByAddress(it[UserAddressTable.address]) }
-            User.NamesAndAddresses(names, addresses)
+        UserNameTable.insertIgnore {
+            it[UserNameTable.user] = user.id
+            it[name] = identity.name.stripMindustryColors()
         }
 
-    override suspend fun searchUserByName(query: String): List<User> =
-        provider.newSuspendTransaction {
-            (UserTable leftJoin UserNameTable)
-                .selectAll()
-                .where { UserNameTable.name like "%${query}%" }
-                .groupBy(UserTable.id)
-                .map { it.toUser() }
+        UserAddressTable.insertIgnore {
+            it[UserAddressTable.user] = user.id
+            it[address] = identity.address.address
         }
-
-    override suspend fun incrementJoins(identity: Identity.Mindustry): Unit =
-        provider.newSuspendTransaction {
-            val user = getByIdentity(identity)
-
-            UserTable.update({ UserTable.id eq user.id }) {
-                it[lastName] = identity.name.stripMindustryColors()
-                it[lastAddress] = identity.address.address
-                it[timesJoined] = timesJoined.plus(1)
-                it[lastJoin] = Clock.System.now()
-            }
-
-            UserNameTable.insertIgnore {
-                it[UserNameTable.user] = user.id
-                it[name] = identity.name.stripMindustryColors()
-            }
-
-            UserAddressTable.insertIgnore {
-                it[UserAddressTable.user] = user.id
-                it[address] = identity.address.address
-            }
-        }
+    }
 
     override suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
         getSettings0(uuid)[setting] ?: setting.default
 
     override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> = getSettings0(uuid)
 
-    private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> =
-        provider.newSuspendTransaction {
-            (UserSettingTable leftJoin UserTable)
-                .select(UserSettingTable.setting, UserSettingTable.value)
-                .where { UserTable.uuid eq uuid.toLongMuuid() }
-                .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
-        }
+    private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> = provider.newSuspendTransaction {
+        (UserSettingTable leftJoin UserTable)
+            .select(UserSettingTable.setting, UserSettingTable.value)
+            .where { UserTable.uuid eq uuid.toLongMuuid() }
+            .associate { it[UserSettingTable.setting] to it[UserSettingTable.value] }
+    }
 
     override suspend fun setSetting(uuid: MindustryUUID, setting: User.Setting, value: Boolean): Unit =
         provider.newSuspendTransaction {

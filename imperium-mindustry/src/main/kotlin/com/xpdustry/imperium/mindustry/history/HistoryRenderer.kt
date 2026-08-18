@@ -168,7 +168,10 @@ class SimpleHistoryRenderer(
                 listOf(
                     translatable(
                         "imperium.history.type.configure.light",
-                        array(translatable(entry.block, ACCENT), text("%06X".format(0xFFFFFF and config.color), ACCENT)),
+                        array(
+                            translatable(entry.block, ACCENT),
+                            text("%06X".format(0xFFFFFF and config.color), ACCENT),
+                        ),
                     )
                 )
             is BlockConfig.Reset ->

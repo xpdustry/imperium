@@ -79,17 +79,16 @@ internal class SQLMessageService(
 
             poll()
 
-            pollJob =
-                context.launch {
-                    while (isActive) {
-                        delay(600.milliseconds)
-                        try {
-                            poll()
-                        } catch (e: Exception) {
-                            LOGGER.error("An error occurred while polling messages", e)
-                        }
+            pollJob = context.launch {
+                while (isActive) {
+                    delay(600.milliseconds)
+                    try {
+                        poll()
+                    } catch (e: Exception) {
+                        LOGGER.error("An error occurred while polling messages", e)
                     }
                 }
+            }
         }
     }
 
@@ -126,16 +125,15 @@ internal class SQLMessageService(
         type: KClass<M>,
         subscriber: MessageService.Subscriber<M>,
     ): MessageService.Subscriber.Handle {
-        val job =
-            context.launch {
-                subscribers.filterIsInstance(type).collect {
-                    try {
-                        subscriber.onMessage(it)
-                    } catch (e: Exception) {
-                        LOGGER.error("An error occurred while processing message of type {}", type.simpleName, e)
-                    }
+        val job = context.launch {
+            subscribers.filterIsInstance(type).collect {
+                try {
+                    subscriber.onMessage(it)
+                } catch (e: Exception) {
+                    LOGGER.error("An error occurred while processing message of type {}", type.simpleName, e)
                 }
             }
+        }
         return MessageService.Subscriber.Handle { job.cancel() }
     }
 

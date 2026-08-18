@@ -264,11 +264,10 @@ class VoteKickCommand(
                     pane.title = text("Votekick (2/2)")
                     pane.description = text("Enter a reason for the votekick")
                     pane.maxLength = 128
-                    pane.inputAction =
-                        BiAction.delegate { window, input ->
-                            Action.hideAll()
-                                .then(Action.command("votekick", "#${window.state[VOTEKICK_TARGET]!!.id}", input))
-                        }
+                    pane.inputAction = BiAction.delegate { window, input ->
+                        Action.hideAll()
+                            .then(Action.command("votekick", "#${window.state[VOTEKICK_TARGET]!!.id}", input))
+                    }
                 }
             }
 

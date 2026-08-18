@@ -61,28 +61,27 @@ class SQLMetricsRegistryTest {
         val rows =
             withTimeout(5.seconds) {
                 while (true) {
-                    val sample =
-                        database.transaction {
-                            """
+                    val sample = database.transaction {
+                        """
                             SELECT `server`, `name`, `kind`, `labels`, `value`
                             FROM `metric_sample_v2`
                             WHERE `server` = ? AND `name` = ?
                             ORDER BY `counter` DESC
                             LIMIT 1;
                             """
-                                .asPreparedStatement()
-                                .push("metric-test")
-                                .push("mindustry_events_join_total")
-                                .executeSelect {
-                                    MetricRow(
-                                        getString("server")!!,
-                                        getString("name")!!,
-                                        getString("kind")!!,
-                                        getString("labels")!!,
-                                        getDouble("value")!!,
-                                    )
-                                }
-                        }
+                            .asPreparedStatement()
+                            .push("metric-test")
+                            .push("mindustry_events_join_total")
+                            .executeSelect {
+                                MetricRow(
+                                    getString("server")!!,
+                                    getString("name")!!,
+                                    getString("kind")!!,
+                                    getString("labels")!!,
+                                    getDouble("value")!!,
+                                )
+                            }
+                    }
                     if (sample.isNotEmpty()) {
                         return@withTimeout sample
                     }

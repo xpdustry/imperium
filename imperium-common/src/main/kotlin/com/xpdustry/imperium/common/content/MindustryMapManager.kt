@@ -92,18 +92,13 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
         }
     }
 
-    override suspend fun findMapById(id: Int): MindustryMap? =
-        provider.newSuspendTransaction {
-            MindustryMapTable.selectAllButFile().where { MindustryMapTable.id eq id }.firstOrNull()?.toMindustryMap()
-        }
+    override suspend fun findMapById(id: Int): MindustryMap? = provider.newSuspendTransaction {
+        MindustryMapTable.selectAllButFile().where { MindustryMapTable.id eq id }.firstOrNull()?.toMindustryMap()
+    }
 
-    override suspend fun findMapByName(name: String): MindustryMap? =
-        provider.newSuspendTransaction {
-            MindustryMapTable.selectAllButFile()
-                .where { MindustryMapTable.name eq name }
-                .firstOrNull()
-                ?.toMindustryMap()
-        }
+    override suspend fun findMapByName(name: String): MindustryMap? = provider.newSuspendTransaction {
+        MindustryMapTable.selectAllButFile().where { MindustryMapTable.name eq name }.firstOrNull()?.toMindustryMap()
+    }
 
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =
         provider.newSuspendTransaction {
@@ -132,11 +127,13 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
         }
     }
 
-    override suspend fun findAllMaps(): List<MindustryMap> =
-        provider.newSuspendTransaction { MindustryMapTable.selectAllButFile().map { it.toMindustryMap() } }
+    override suspend fun findAllMaps(): List<MindustryMap> = provider.newSuspendTransaction {
+        MindustryMapTable.selectAllButFile().map { it.toMindustryMap() }
+    }
 
-    override suspend fun deleteMapById(id: Int): Boolean =
-        provider.newSuspendTransaction { MindustryMapTable.deleteWhere { MindustryMapTable.id eq id } > 0 }
+    override suspend fun deleteMapById(id: Int): Boolean = provider.newSuspendTransaction {
+        MindustryMapTable.deleteWhere { MindustryMapTable.id eq id } > 0
+    }
 
     override suspend fun createMap(
         name: String,
@@ -149,15 +146,14 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
         stream.get().use { actual ->
             val file = actual.readBytes()
             provider.newSuspendTransaction {
-                val id =
-                    MindustryMapTable.insertAndGetId {
-                        it[MindustryMapTable.name] = name
-                        it[MindustryMapTable.description] = description
-                        it[MindustryMapTable.author] = author
-                        it[MindustryMapTable.width] = width
-                        it[MindustryMapTable.height] = height
-                        it[MindustryMapTable.file] = ExposedBlob(file)
-                    }
+                val id = MindustryMapTable.insertAndGetId {
+                    it[MindustryMapTable.name] = name
+                    it[MindustryMapTable.description] = description
+                    it[MindustryMapTable.author] = author
+                    it[MindustryMapTable.width] = width
+                    it[MindustryMapTable.height] = height
+                    it[MindustryMapTable.file] = ExposedBlob(file)
+                }
                 id.value
             }
         }
@@ -208,68 +204,61 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
             }
         }
 
-    override suspend fun findMapGameBySnowflake(game: Int): MindustryMap.PlayThrough? =
-        provider.newSuspendTransaction {
-            MindustryMapGameTable.selectAll()
-                .where { MindustryMapGameTable.id eq game }
+    override suspend fun findMapGameBySnowflake(game: Int): MindustryMap.PlayThrough? = provider.newSuspendTransaction {
+        MindustryMapGameTable.selectAll().where { MindustryMapGameTable.id eq game }.firstOrNull()?.toMindustryMapGame()
+    }
+
+    override suspend fun getMapStats(map: Int): MindustryMap.Stats? = provider.newSuspendTransaction {
+        if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
+            return@newSuspendTransaction null
+        }
+        val score =
+            MindustryMapRatingTable.select(MindustryMapRatingTable.score.avg())
+                .where { MindustryMapRatingTable.map eq map }
                 .firstOrNull()
-                ?.toMindustryMapGame()
-        }
+                ?.get(MindustryMapRatingTable.score.avg())
+                ?.toDouble() ?: 2.5
+        val difficulty =
+            MindustryMapRatingTable.select(MindustryMapRatingTable.difficulty.avg())
+                .where { MindustryMapRatingTable.map eq map }
+                .map { it[MindustryMapRatingTable.difficulty.avg()] }
+                .first()
+                .let {
+                    if (it == null) MindustryMap.Difficulty.NORMAL
+                    else MindustryMap.Difficulty.entries[it.toDouble().roundToInt()]
+                }
+        val games = MindustryMapGameTable.selectAll().where { MindustryMapGameTable.map eq map }.count().toInt()
+        val playtime =
+            MindustryMapGameTable.select(MindustryMapGameTable.playtime.sum())
+                .where { MindustryMapGameTable.map eq map }
+                .firstOrNull()
+                ?.get(MindustryMapGameTable.playtime.sum()) ?: Duration.ZERO
+        val record =
+            MindustryMapGameTable.select(MindustryMapGameTable.id)
+                .where { MindustryMapGameTable.map eq map }
+                .orderBy(MindustryMapGameTable.playtime, SortOrder.DESC)
+                .firstOrNull()
+                ?.get(MindustryMapGameTable.id)
+                ?.value
 
-    override suspend fun getMapStats(map: Int): MindustryMap.Stats? =
-        provider.newSuspendTransaction {
-            if (!MindustryMapTable.exists { MindustryMapTable.id eq map }) {
-                return@newSuspendTransaction null
-            }
-            val score =
-                MindustryMapRatingTable.select(MindustryMapRatingTable.score.avg())
-                    .where { MindustryMapRatingTable.map eq map }
-                    .firstOrNull()
-                    ?.get(MindustryMapRatingTable.score.avg())
-                    ?.toDouble() ?: 2.5
-            val difficulty =
-                MindustryMapRatingTable.select(MindustryMapRatingTable.difficulty.avg())
-                    .where { MindustryMapRatingTable.map eq map }
-                    .map { it[MindustryMapRatingTable.difficulty.avg()] }
-                    .first()
-                    .let {
-                        if (it == null) MindustryMap.Difficulty.NORMAL
-                        else MindustryMap.Difficulty.entries[it.toDouble().roundToInt()]
-                    }
-            val games = MindustryMapGameTable.selectAll().where { MindustryMapGameTable.map eq map }.count().toInt()
-            val playtime =
-                MindustryMapGameTable.select(MindustryMapGameTable.playtime.sum())
-                    .where { MindustryMapGameTable.map eq map }
-                    .firstOrNull()
-                    ?.get(MindustryMapGameTable.playtime.sum()) ?: Duration.ZERO
-            val record =
-                MindustryMapGameTable.select(MindustryMapGameTable.id)
-                    .where { MindustryMapGameTable.map eq map }
-                    .orderBy(MindustryMapGameTable.playtime, SortOrder.DESC)
-                    .firstOrNull()
-                    ?.get(MindustryMapGameTable.id)
-                    ?.value
-
-            MindustryMap.Stats(score, difficulty, games, playtime, record)
-        }
+        MindustryMap.Stats(score, difficulty, games, playtime, record)
+    }
 
     // TODO Implement proper streaming
-    override suspend fun getMapInputStream(map: Int): InputStream? =
-        provider.newSuspendTransaction {
-            MindustryMapTable.select(MindustryMapTable.file)
-                .where { MindustryMapTable.id eq map }
-                .firstOrNull()
-                ?.get(MindustryMapTable.file)
-                ?.bytes
-                ?.inputStream()
-        }
+    override suspend fun getMapInputStream(map: Int): InputStream? = provider.newSuspendTransaction {
+        MindustryMapTable.select(MindustryMapTable.file)
+            .where { MindustryMapTable.id eq map }
+            .firstOrNull()
+            ?.get(MindustryMapTable.file)
+            ?.bytes
+            ?.inputStream()
+    }
 
-    override suspend fun searchMapByName(query: String): List<MindustryMap> =
-        provider.newSuspendTransaction {
-            MindustryMapTable.selectAllButFile()
-                .where { MindustryMapTable.name like "%$query%" }
-                .map { it.toMindustryMap() }
-        }
+    override suspend fun searchMapByName(query: String): List<MindustryMap> = provider.newSuspendTransaction {
+        MindustryMapTable.selectAllButFile()
+            .where { MindustryMapTable.name like "%$query%" }
+            .map { it.toMindustryMap() }
+    }
 
     override suspend fun setMapGamemodes(map: Int, gamemodes: Set<MindustryGamemode>): Boolean {
         val previous = findMapById(map)?.gamemodes ?: return false
@@ -284,12 +273,11 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
         return true
     }
 
-    private suspend fun getMapGamemodes(map: Int): Set<MindustryGamemode> =
-        provider.newSuspendTransaction {
-            MindustryMapGamemodeTable.select(MindustryMapGamemodeTable.gamemode)
-                .where { MindustryMapGamemodeTable.map eq map }
-                .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
-        }
+    private suspend fun getMapGamemodes(map: Int): Set<MindustryGamemode> = provider.newSuspendTransaction {
+        MindustryMapGamemodeTable.select(MindustryMapGamemodeTable.gamemode)
+            .where { MindustryMapGamemodeTable.map eq map }
+            .mapTo(mutableSetOf()) { it[MindustryMapGamemodeTable.gamemode] }
+    }
 
     private fun ColumnSet.selectAllButFile() = select(MindustryMapTable.fields - MindustryMapTable.file)
 

@@ -44,7 +44,9 @@ class WaveCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIUM_SCOP
                     listOf(3, 5, 10, 15).map { skip ->
                         MenuOption.of(
                             number(skip, ComponentColor.ORANGE),
-                            Action.hideAll().then { window -> onVoteSessionStart(window.viewer, manager.session, skip) },
+                            Action.hideAll().then { window ->
+                                onVoteSessionStart(window.viewer, manager.session, skip)
+                            },
                         )
                     }
                 )

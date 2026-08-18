@@ -106,6 +106,7 @@ class FunHandler(
         }
 
         val cunit = unit.create(target.team())
+        val tunit = target.unit()
         cunit.x = tunit.x
         cunit.y = tunit.y
         cunit.rotation = tunit.rotation
@@ -115,6 +116,8 @@ class FunHandler(
 
         spawnedUnits.add(cunit.id)
         target.unit(cunit)
+        // just in-case
+        target.unit().add()
         sender.reply("Set ${target.plainName()}'s unit to ${unit.name}")
     }
 

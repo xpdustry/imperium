@@ -65,13 +65,12 @@ class MindustryChatListener(
         }
 
         if (config.mindustry.chat.name.enabled) {
-            nameJob =
-                scope.launch {
-                    while (isActive) {
-                        try {
-                            updatePlayerNames()
-                        } catch (e: Exception) {
-                            // The error log on every exit is annoying
+            nameJob = scope.launch {
+                while (isActive) {
+                    try {
+                        updatePlayerNames()
+                    } catch (e: Exception) {
+                        // The error log on every exit is annoying
                             if (e is CancellationException) throw e
                             LOGGER.error("Failed to update player's names", e)
                         }

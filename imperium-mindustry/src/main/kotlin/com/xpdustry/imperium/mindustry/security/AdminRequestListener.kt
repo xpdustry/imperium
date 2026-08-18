@@ -72,32 +72,31 @@ class AdminRequestListener(
             pane.description = text("Enter the reason of the ${state[PUNISHMENT_TYPE].toString().lowercase()}")
             pane.placeholder = text(state[PUNISHMENT_TYPE].toString().lowercase())
             pane.maxLength = 128
-            pane.inputAction =
-                BiAction.delegate { _, input ->
-                    Action.hideAll()
-                        .then(Action.with(PUNISHMENT_REASON, input))
-                        .then(
-                            CoroutineAction(scope) { window ->
-                                val target = users.getByIdentity(window.state[PUNISHMENT_TARGET]!!)
-                                punishments.punish(
-                                    window.viewer.identity,
-                                    target.id,
-                                    window.state[PUNISHMENT_REASON]!!,
-                                    window.state[PUNISHMENT_TYPE]!!,
-                                    window.state[PUNISHMENT_DURATION]!!,
-                                )
-                                // TODO Move to PunishmentListener ?
-                                logger.info(
-                                    "{} ({}) has {} {} ({})",
-                                    window.viewer.plainName(),
-                                    window.viewer.uuid(),
-                                    window.state[PUNISHMENT_TYPE]!!.name.lowercase(),
-                                    target.lastName,
-                                    target.uuid,
-                                )
-                            }
-                        )
-                }
+            pane.inputAction = BiAction.delegate { _, input ->
+                Action.hideAll()
+                    .then(Action.with(PUNISHMENT_REASON, input))
+                    .then(
+                        CoroutineAction(scope) { window ->
+                            val target = users.getByIdentity(window.state[PUNISHMENT_TARGET]!!)
+                            punishments.punish(
+                                window.viewer.identity,
+                                target.id,
+                                window.state[PUNISHMENT_REASON]!!,
+                                window.state[PUNISHMENT_TYPE]!!,
+                                window.state[PUNISHMENT_DURATION]!!,
+                            )
+                            // TODO Move to PunishmentListener ?
+                            logger.info(
+                                "{} ({}) has {} {} ({})",
+                                window.viewer.plainName(),
+                                window.viewer.uuid(),
+                                window.state[PUNISHMENT_TYPE]!!.name.lowercase(),
+                                target.lastName,
+                                target.uuid,
+                            )
+                        }
+                    )
+            }
         }
 
         val durationInterface =
@@ -259,43 +258,42 @@ class AdminRequestListener(
         }
     }
 
-    private fun handleTraceInfo(requester: Player, target: Player) =
-        scope.launch {
-            val user = users.findByUuid(target.uuid())
-            if (user == null) {
-                // This should never happen
-                Call.infoMessage(requester.con, "Player not found.")
-                return@launch
-            }
-            val canSeeInfo = getUserRank(requester) >= Rank.ADMIN
-            val historic = users.findNamesAndAddressesById(user.id)
-            Call.traceInfo(
-                requester.con,
-                target,
-                TraceInfo(
-                    if (canSeeInfo) target.con.address
-                    else "Don't have permission to view addresses. | ${codec.encode(user.id)}",
-                    // fix foos autotrace complaining about ips being the same
-                    // https://github.com/mindustry-antigrief/mindustry-client/blob/cd7df920b49c167674392e6837cba1812d5b19dc/core/src/mindustry/client/antigrief/Moderation.kt#L116
-                    if (canSeeInfo) target.uuid() else codec.encode(user.id),
-                    target.locale,
-                    target.con.modclient,
-                    target.con.mobile,
-                    user.timesJoined,
-                    punishments.findAllByIdentity(target.identity).count(),
-                    if (canSeeInfo) historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
-                    else arrayOf("Don't have permission to view addresses | ${codec.encode(user.id)}"),
-                    historic.names.toTypedArray(),
-                ),
-            )
-            logger.info(
-                "{} ({}) has requested trace info of {} ({})",
-                requester.plainName(),
-                requester.uuid(),
-                target.plainName(),
-                target.uuid(),
-            )
+    private fun handleTraceInfo(requester: Player, target: Player) = scope.launch {
+        val user = users.findByUuid(target.uuid())
+        if (user == null) {
+            // This should never happen
+            Call.infoMessage(requester.con, "Player not found.")
+            return@launch
         }
+        val canSeeInfo = getUserRank(requester) >= Rank.ADMIN
+        val historic = users.findNamesAndAddressesById(user.id)
+        Call.traceInfo(
+            requester.con,
+            target,
+            TraceInfo(
+                if (canSeeInfo) target.con.address
+                else "Don't have permission to view addresses. | ${codec.encode(user.id)}",
+                // fix foos autotrace complaining about ips being the same
+                // https://github.com/mindustry-antigrief/mindustry-client/blob/cd7df920b49c167674392e6837cba1812d5b19dc/core/src/mindustry/client/antigrief/Moderation.kt#L116
+                if (canSeeInfo) target.uuid() else codec.encode(user.id),
+                target.locale,
+                target.con.modclient,
+                target.con.mobile,
+                user.timesJoined,
+                punishments.findAllByIdentity(target.identity).count(),
+                if (canSeeInfo) historic.addresses.map(InetAddress::getHostAddress).toTypedArray()
+                else arrayOf("Don't have permission to view addresses | ${codec.encode(user.id)}"),
+                historic.names.toTypedArray(),
+            ),
+        )
+        logger.info(
+            "{} ({}) has requested trace info of {} ({})",
+            requester.plainName(),
+            requester.uuid(),
+            target.plainName(),
+            target.uuid(),
+        )
+    }
 
     private fun handleWaveSkip(requester: Player) {
         val rank = store.selectBySessionKey(requester.sessionKey)?.account?.rank ?: Rank.EVERYONE

@@ -21,11 +21,11 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 
 plugins {
-    id("com.diffplug.spotless") version "8.6.0" apply false
+    id("com.diffplug.spotless") version "8.9.0" apply false
     id("net.kyori.indra") version "4.0.0" apply false
     kotlin("jvm") version "2.4.10" apply false
-    kotlin("plugin.serialization") version "2.3.21" apply false
-    id("com.gradleup.shadow") version "9.4.2" apply false
+    kotlin("plugin.serialization") version "2.4.10" apply false
+    id("com.gradleup.shadow") version "9.6.1" apply false
     id("com.xpdustry.toxopid") version "4.2.0" apply false
 }
 
@@ -118,13 +118,13 @@ subprojects {
 
         "implementation"("org.slf4j:slf4j-api:2.0.18")
         "testImplementation"("org.slf4j:slf4j-simple:2.0.18")
-        "testImplementation"("io.github.classgraph:classgraph:4.8.184")
+        "testImplementation"("io.github.classgraph:classgraph:4.8.186")
 
         "testRuntimeOnly"("com.h2database:h2:2.4.240")
-        "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+        "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.10")
 
-        "testImplementation"("org.junit.jupiter:junit-jupiter-api:6.1.1")
-        "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:6.1.1")
+        "testImplementation"("org.junit.jupiter:junit-jupiter-api:6.1.2")
+        "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:6.1.2")
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
     }
 
@@ -148,14 +148,14 @@ project(":imperium-common") {
         "api"("com.google.guava:guava:33.6.0-jre")
         "api"("com.sksamuel.hoplite:hoplite-core:3.0.0.RC3")
         "api"("com.sksamuel.hoplite:hoplite-yaml:3.0.0.RC3")
-        "api"("com.squareup.okhttp3:okhttp:5.3.2")
+        "api"("com.squareup.okhttp3:okhttp:5.4.0")
         "api"("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
         "api"("org.jetbrains.exposed:exposed-core:1.3.1")
         "api"("org.jetbrains.exposed:exposed-jdbc:1.3.1")
         "api"("org.jetbrains.exposed:exposed-kotlin-datetime:1.3.1")
         "api"("org.jetbrains.exposed:exposed-json:1.3.1")
-        "api"("com.zaxxer:HikariCP:7.0.2")
+        "api"("com.zaxxer:HikariCP:7.1.0")
 
         "api"("org.ocpsoft.prettytime:prettytime:5.0.9.Final")
         "api"("net.time4j:time4j-core:4.38")
@@ -172,10 +172,10 @@ project(":imperium-backend") {
 
     dependencies {
         "implementation"(project(":imperium-common"))
-        "implementation"("ch.qos.logback:logback-classic:1.5.32")
-        "implementation"("net.dv8tion:JDA:6.4.1") { exclude(module = "opus-java"); exclude(module = "tink") }
+        "implementation"("ch.qos.logback:logback-classic:1.6.1")
+        "implementation"("net.dv8tion:JDA:6.5.0") { exclude(module = "opus-java"); exclude(module = "tink") }
         "runtimeOnly"("com.h2database:h2:2.4.240")
-        "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.8")
+        "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.10")
         "implementation"(toxopid.dependencies.mindustryCore)
         "implementation"(toxopid.dependencies.arcCore)
     }
@@ -273,8 +273,8 @@ project(":imperium-mindustry") {
         "implementation"("org.incendo:cloud-core:2.0.0")
         "compileOnly"("com.xpdustry:distributor-common:4.2.0")
         "compileOnly"("com.xpdustry:distributor-permission-rank:4.2.0")
-        "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.7")
-        "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.7")
+        "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.8")
+        "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.8")
         "implementation"("com.xpdustry:flex-translator:1.2.0")
         "implementation"("org.ahocorasick:ahocorasick:0.6.3")
     }

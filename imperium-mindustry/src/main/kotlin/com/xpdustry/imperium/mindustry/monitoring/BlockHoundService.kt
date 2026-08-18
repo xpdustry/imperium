@@ -34,48 +34,47 @@ class BlockHoundService(
     private var lastWarn: Instant? = null
 
     init {
-        job =
-            scope.launch {
-                while (isActive) {
-                    val blocked =
-                        runCatching { runMindustryThread(timeout = 10.seconds) { /* Nothin' */ } }
-                            .fold(
-                                onSuccess = { false },
-                                onFailure = { error ->
-                                    if (error is TimeoutCancellationException) true
-                                    else {
-                                        logger.error(
-                                            "An unexpected exception occurred while running the block hound",
-                                            error,
-                                        )
-                                        false
-                                    }
-                                },
-                            )
-                    val now = Clock.System.now()
-                    if (blocked && (lastWarn ?: Instant.DISTANT_PAST) + 1.hours < now) {
-                        lastWarn = now
-                        val candidates =
-                            Thread.getAllStackTraces().entries.filter { (thread, stack) ->
-                                thread.name.contains("HeadlessApplication", ignoreCase = true) ||
-                                    stack.any { it.className.startsWith("mindustry", ignoreCase = true) }
-                            }
-                        webhook.send(
-                            WebhookMessage(
-                                content =
-                                    buildString {
-                                        config.discord.alertsRole?.let { appendLine("<@&$it>") }
-                                        appendLine(
-                                            "**Warning:** The main thread is blocked. Wake up the sysadmins, manual intervention is required."
-                                        )
-                                    },
-                                attachments = listOf(createThreadDumpAttachment(candidates)),
-                            )
+        job = scope.launch {
+            while (isActive) {
+                val blocked =
+                    runCatching { runMindustryThread(timeout = 10.seconds) { /* Nothin' */ } }
+                        .fold(
+                            onSuccess = { false },
+                            onFailure = { error ->
+                                if (error is TimeoutCancellationException) true
+                                else {
+                                    logger.error(
+                                        "An unexpected exception occurred while running the block hound",
+                                        error,
+                                    )
+                                    false
+                                }
+                            },
                         )
-                    }
-                    delay(5.seconds)
+                val now = Clock.System.now()
+                if (blocked && (lastWarn ?: Instant.DISTANT_PAST) + 1.hours < now) {
+                    lastWarn = now
+                    val candidates =
+                        Thread.getAllStackTraces().entries.filter { (thread, stack) ->
+                            thread.name.contains("HeadlessApplication", ignoreCase = true) ||
+                                stack.any { it.className.startsWith("mindustry", ignoreCase = true) }
+                        }
+                    webhook.send(
+                        WebhookMessage(
+                            content =
+                                buildString {
+                                    config.discord.alertsRole?.let { appendLine("<@&$it>") }
+                                    appendLine(
+                                        "**Warning:** The main thread is blocked. Wake up the sysadmins, manual intervention is required."
+                                    )
+                                },
+                            attachments = listOf(createThreadDumpAttachment(candidates)),
+                        )
+                    )
                 }
+                delay(5.seconds)
             }
+        }
     }
 
     override fun onImperiumExit() {

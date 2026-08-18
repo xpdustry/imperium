@@ -3,6 +3,7 @@ package com.xpdustry.imperium.mindustry.game
 
 import arc.func.Cons
 import arc.math.geom.Point2
+import arc.struct.IntMap
 import arc.struct.IntSet
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
@@ -20,6 +21,7 @@ import com.xpdustry.imperium.mindustry.translation.announcement_important_block_
 import com.xpdustry.imperium.mindustry.translation.announcement_important_block_destroyed
 import mindustry.Vars
 import mindustry.game.EventType
+import mindustry.game.Team
 import mindustry.net.Administration.ActionType
 import mindustry.world.blocks.ConstructBlock
 import mindustry.world.blocks.ConstructBlock.ConstructBuild
@@ -35,6 +37,7 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
     private val explosives = MindustryCollections.immutableList(Vars.content.items()).filter { it.explosiveness > 0 }
     private val generators = IntSet()
     private val generatorsRateLimiter = SimpleRateLimiter<Int>(1, config.mindustry.world.explosiveDamageAlertDelay)
+    private val preChangeTeams = IntMap<Team>()
 
     override fun onImperiumInit() {
         Vars.netServer.admins.addActionFilter {
@@ -72,12 +75,20 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
     }
 
     @EventHandler
+    fun onSourceBlockPreChange(event: EventType.TilePreChangeEvent) {
+        if (event.tile.block().isSourceBlock) {
+            preChangeTeams.put(event.tile.pos(), event.tile.team())
+        }
+    }
+
+    @EventHandler
     fun onExplosiveGeneratorChange(event: EventType.TileChangeEvent) {
         if (event.tile.block() is ConsumeGenerator) generators.add(event.tile.pos())
     }
 
     @TriggerHandler(EventType.Trigger.update)
     fun onExplosiveGeneratorCheck() {
+        preChangeTeams.clear() // just using the update trigger
         if (
             (!Vars.state.rules.reactorExplosions ||
                 (Vars.state.rules.infiniteResources && !Vars.state.rules.damageExplosions))
@@ -129,9 +140,10 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
         if (Vars.state.rules.infiniteResources) return
         val building = event.tile.build
         if (event.breaking && building is ConstructBuild && building.current.isSourceBlock) {
+            val originalTeam = preChangeTeams.get(event.tile.pos()) ?: building.team()
             Distributor.get()
                 .audienceProvider
-                .getTeam(building.team())
+                .getTeam(originalTeam)
                 .sendMessage(
                     announcement_important_block_destroyed(building.current, event.tile.x.toInt(), event.tile.y.toInt())
                 )

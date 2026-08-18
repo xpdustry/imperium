@@ -44,11 +44,10 @@ class AntiGriefListener(
     private val deaths = PlayerMap<RateLimiter<Unit>>(plugin)
 
     @EventHandler
-    fun onPlayerJoin(event: EventType.PlayerJoin) =
-        scope.launch {
-            val info = users.getByIdentity(event.player.identity)
-            runMindustryThread { isNew[event.player] = info.timesJoined < 10 }
-        }
+    fun onPlayerJoin(event: EventType.PlayerJoin) = scope.launch {
+        val info = users.getByIdentity(event.player.identity)
+        runMindustryThread { isNew[event.player] = info.timesJoined < 10 }
+    }
 
     @EventHandler
     fun onSuspiciousUnitControl(event: EventType.UnitControlEvent) {

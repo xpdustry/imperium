@@ -76,15 +76,14 @@ class AccountListener(
     }
 
     @TaskHandler(delay = 1L, interval = 1L, unit = MindustryTimeUnit.MINUTES)
-    internal fun onPlaytimeAchievementCheck() =
-        scope.launch {
-            for (player in Entities.getPlayersAsync()) {
-                val account = store.selectBySessionKey(player.sessionKey)?.account ?: continue
-                val now = System.currentTimeMillis()
-                val playtime = (now - (playtime[player] ?: now)).milliseconds
-                checkPlaytimeAchievements(account, playtime)
-            }
+    internal fun onPlaytimeAchievementCheck() = scope.launch {
+        for (player in Entities.getPlayersAsync()) {
+            val account = store.selectBySessionKey(player.sessionKey)?.account ?: continue
+            val now = System.currentTimeMillis()
+            val playtime = (now - (playtime[player] ?: now)).milliseconds
+            checkPlaytimeAchievements(account, playtime)
         }
+    }
 
     @EventHandler
     internal fun onPlayerJoin(event: EventType.PlayerJoin) {

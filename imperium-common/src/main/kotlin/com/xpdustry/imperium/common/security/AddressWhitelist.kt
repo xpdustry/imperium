@@ -31,28 +31,24 @@ class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhiteli
         provider.newTransaction { SchemaUtils.create(AddressWhitelistTable) }
     }
 
-    override suspend fun addAddress(address: InetAddress, reason: String): Unit =
-        provider.newSuspendTransaction {
-            AddressWhitelistTable.upsert {
-                it[AddressWhitelistTable.address] = address.address
-                it[AddressWhitelistTable.reason] = reason
-            }
+    override suspend fun addAddress(address: InetAddress, reason: String): Unit = provider.newSuspendTransaction {
+        AddressWhitelistTable.upsert {
+            it[AddressWhitelistTable.address] = address.address
+            it[AddressWhitelistTable.reason] = reason
         }
+    }
 
-    override suspend fun containsAddress(address: InetAddress) =
-        provider.newSuspendTransaction {
-            AddressWhitelistTable.exists { AddressWhitelistTable.address eq address.address }
-        }
+    override suspend fun containsAddress(address: InetAddress) = provider.newSuspendTransaction {
+        AddressWhitelistTable.exists { AddressWhitelistTable.address eq address.address }
+    }
 
-    override suspend fun removeAddress(address: InetAddress): Unit =
-        provider.newSuspendTransaction {
-            AddressWhitelistTable.deleteWhere { AddressWhitelistTable.address eq address.address }
-        }
+    override suspend fun removeAddress(address: InetAddress): Unit = provider.newSuspendTransaction {
+        AddressWhitelistTable.deleteWhere { AddressWhitelistTable.address eq address.address }
+    }
 
-    override suspend fun listAdresses() =
-        provider.newSuspendTransaction {
-            AddressWhitelistTable.select(AddressWhitelistTable.address, AddressWhitelistTable.reason).map {
-                InetAddress.getByAddress(it[AddressWhitelistTable.address]) to it[AddressWhitelistTable.reason]
-            }
+    override suspend fun listAdresses() = provider.newSuspendTransaction {
+        AddressWhitelistTable.select(AddressWhitelistTable.address, AddressWhitelistTable.reason).map {
+            InetAddress.getByAddress(it[AddressWhitelistTable.address]) to it[AddressWhitelistTable.reason]
         }
+    }
 }

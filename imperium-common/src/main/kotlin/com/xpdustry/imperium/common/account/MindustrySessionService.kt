@@ -35,33 +35,29 @@ class MindustrySessionService(
         }
     }
 
-    suspend fun selectByKey(key: SessionKey): MindustrySession? =
-        provider.newSuspendTransaction {
-            AccountSessionTable.selectAll()
-                .where {
-                    (AccountSessionTable.uuid eq key.uuid) and
-                        (AccountSessionTable.usid eq key.usid) and
-                        (AccountSessionTable.address eq key.address.address) and
-                        (AccountSessionTable.expiration greaterEq Clock.System.now())
-                }
-                .firstOrNull()
-                ?.toMindustrySession(key)
-        }
+    suspend fun selectByKey(key: SessionKey): MindustrySession? = provider.newSuspendTransaction {
+        AccountSessionTable.selectAll()
+            .where {
+                (AccountSessionTable.uuid eq key.uuid) and
+                    (AccountSessionTable.usid eq key.usid) and
+                    (AccountSessionTable.address eq key.address.address) and
+                    (AccountSessionTable.expiration greaterEq Clock.System.now())
+            }
+            .firstOrNull()
+            ?.toMindustrySession(key)
+    }
 
-    suspend fun selectAllByAccount(account: Int): List<MindustrySession> =
-        provider.newSuspendTransaction {
-            AccountSessionTable.selectAll()
-                .where {
-                    (AccountSessionTable.account eq account) and
-                        (AccountSessionTable.expiration greaterEq Clock.System.now())
-                }
-                .map {
-                    val address = java.net.InetAddress.getByAddress(it[AccountSessionTable.address])
-                    it.toMindustrySession(
-                        SessionKey(it[AccountSessionTable.uuid], it[AccountSessionTable.usid], address)
-                    )
-                }
-        }
+    suspend fun selectAllByAccount(account: Int): List<MindustrySession> = provider.newSuspendTransaction {
+        AccountSessionTable.selectAll()
+            .where {
+                (AccountSessionTable.account eq account) and
+                    (AccountSessionTable.expiration greaterEq Clock.System.now())
+            }
+            .map {
+                val address = java.net.InetAddress.getByAddress(it[AccountSessionTable.address])
+                it.toMindustrySession(SessionKey(it[AccountSessionTable.uuid], it[AccountSessionTable.usid], address))
+            }
+    }
 
     suspend fun login(key: SessionKey, username: String, password: Password): AccountResult {
         if (selectByKey(key) != null) {
@@ -91,24 +87,23 @@ class MindustrySessionService(
         return AccountResult.Success
     }
 
-    suspend fun logout(key: SessionKey, all: Boolean = false): Boolean =
-        provider.newSuspendTransaction {
-            if (!all) {
-                AccountSessionTable.deleteWhere {
-                    (uuid eq key.uuid) and (usid eq key.usid) and (address eq key.address.address)
-                } > 0
+    suspend fun logout(key: SessionKey, all: Boolean = false): Boolean = provider.newSuspendTransaction {
+        if (!all) {
+            AccountSessionTable.deleteWhere {
+                (uuid eq key.uuid) and (usid eq key.usid) and (address eq key.address.address)
+            } > 0
+        } else {
+            val accounts =
+                AccountSessionTable.select(AccountSessionTable.account)
+                    .where { AccountSessionTable.uuid eq key.uuid }
+                    .map { it[AccountSessionTable.account].value }
+            if (accounts.isEmpty()) {
+                false
             } else {
-                val accounts =
-                    AccountSessionTable.select(AccountSessionTable.account)
-                        .where { AccountSessionTable.uuid eq key.uuid }
-                        .map { it[AccountSessionTable.account].value }
-                if (accounts.isEmpty()) {
-                    false
-                } else {
-                    AccountSessionTable.deleteWhere { account inList accounts } > 0
-                }
+                AccountSessionTable.deleteWhere { account inList accounts } > 0
             }
         }
+    }
 
     private fun ResultRow.toMindustrySession(key: SessionKey) =
         MindustrySession(

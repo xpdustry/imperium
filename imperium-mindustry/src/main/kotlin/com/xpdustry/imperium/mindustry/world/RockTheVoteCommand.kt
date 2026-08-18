@@ -125,10 +125,9 @@ class RockTheVoteCommand(
         val window = menu.create(sender.player)
         val list = Vars.maps.customMaps().asList()
         scope.launch {
-            val with =
-                list.map { map ->
-                    MapWithDifficulty(map, maps.getMapStats(map.id ?: -1)?.difficulty ?: MindustryMap.Difficulty.NORMAL)
-                }
+            val with = list.map { map ->
+                MapWithDifficulty(map, maps.getMapStats(map.id ?: -1)?.difficulty ?: MindustryMap.Difficulty.NORMAL)
+            }
             runMindustryThread {
                 window.state[MAPS] = with
                 window.show()

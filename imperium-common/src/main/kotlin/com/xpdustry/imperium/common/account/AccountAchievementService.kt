@@ -25,41 +25,38 @@ class AccountAchievementService(
         provider.newTransaction { SchemaUtils.createMissingTablesAndColumns(AccountTable, AccountAchievementTable) }
     }
 
-    suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean =
-        provider.newSuspendTransaction {
-            AccountAchievementTable.exists {
-                (AccountAchievementTable.account eq account) and (AccountAchievementTable.achievement eq achievement)
-            }
+    suspend fun selectAchievement(account: Int, achievement: Achievement): Boolean = provider.newSuspendTransaction {
+        AccountAchievementTable.exists {
+            (AccountAchievementTable.account eq account) and (AccountAchievementTable.achievement eq achievement)
         }
+    }
 
-    suspend fun selectAchievements(account: Int): Set<Achievement> =
-        provider.newSuspendTransaction {
-            AccountAchievementTable.select(AccountAchievementTable.achievement)
-                .where { AccountAchievementTable.account eq account }
-                .mapTo(EnumSet.noneOf(Achievement::class.java)) { it[AccountAchievementTable.achievement] }
-        }
+    suspend fun selectAchievements(account: Int): Set<Achievement> = provider.newSuspendTransaction {
+        AccountAchievementTable.select(AccountAchievementTable.achievement)
+            .where { AccountAchievementTable.account eq account }
+            .mapTo(EnumSet.noneOf(Achievement::class.java)) { it[AccountAchievementTable.achievement] }
+    }
 
     suspend fun updateAchievement(account: Int, achievement: Achievement, completed: Boolean): Boolean {
         if (!accounts.existsById(account)) {
             return false
         }
 
-        val updated =
-            provider.newSuspendTransaction {
-                if (completed) {
-                    AccountAchievementTable.upsert {
-                        it[AccountAchievementTable.account] = account
-                        it[AccountAchievementTable.achievement] = achievement
-                        it[AccountAchievementTable.completed] = true
-                    }
-                    true
-                } else {
-                    AccountAchievementTable.deleteWhere {
-                        (AccountAchievementTable.account eq account) and
-                            (AccountAchievementTable.achievement eq achievement)
-                    } > 0
+        val updated = provider.newSuspendTransaction {
+            if (completed) {
+                AccountAchievementTable.upsert {
+                    it[AccountAchievementTable.account] = account
+                    it[AccountAchievementTable.achievement] = achievement
+                    it[AccountAchievementTable.completed] = true
                 }
+                true
+            } else {
+                AccountAchievementTable.deleteWhere {
+                    (AccountAchievementTable.account eq account) and
+                        (AccountAchievementTable.achievement eq achievement)
+                } > 0
             }
+        }
 
         if (!updated) {
             return false
