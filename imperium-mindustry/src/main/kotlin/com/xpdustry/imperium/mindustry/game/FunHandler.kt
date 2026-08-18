@@ -106,7 +106,6 @@ class FunHandler(
         }
 
         val cunit = unit.create(target.team())
-        val tunit = target.unit()
         cunit.x = tunit.x
         cunit.y = tunit.y
         cunit.rotation = tunit.rotation
