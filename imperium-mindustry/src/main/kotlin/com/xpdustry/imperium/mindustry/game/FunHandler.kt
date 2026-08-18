@@ -2,8 +2,10 @@
 package com.xpdustry.imperium.mindustry.game
 
 import arc.Core
+import arc.struct.IntSet
 import arc.util.serialization.Jval
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
@@ -13,6 +15,7 @@ import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
+import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.command_arg_unknown
@@ -21,6 +24,7 @@ import kotlinx.coroutines.launch
 import mindustry.Vars
 import mindustry.game.Team
 import mindustry.gen.BlockUnitUnit
+import mindustry.gen.Call
 import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.type.UnitType
@@ -35,6 +39,8 @@ class FunHandler(
     private val store: DataStoreService,
     private val clients: ClientDetector,
 ) : ImperiumApplication.Listener {
+
+    private val spawnedUnits: IntSet = IntSet()
 
     override fun onImperiumInit() {
         Vars.netServer.addPacketHandler("teleport") { sender, data ->
@@ -92,24 +98,37 @@ class FunHandler(
     @ImperiumCommand(["changeunit|cu"], Rank.MODERATOR)
     @ClientSide
     fun onChangeUnitCommand(sender: CommandSender, unit: UnitType, target: Player = sender.player) {
-        // Is all this necessary? Is there a better way
-        val cunit = unit.create(target.team())
         val tunit = target.unit()
+
+        if (tunit != null && (spawnedUnits.contains(tunit.id) || tunit.spawnedByCore)) {
+            spawnedUnits.remove(tunit.id)
+            Call.unitDespawn(tunit)
+        }
+
+        val cunit = unit.create(target.team())
         cunit.x = tunit.x
         cunit.y = tunit.y
         cunit.rotation = tunit.rotation
         cunit.isShooting(tunit.isShooting)
         cunit.elevation(tunit.elevation)
+        cunit.add()
+
+        spawnedUnits.add(cunit.id)
         target.unit(cunit)
-        // just in-case
-        target.unit().add()
         sender.reply("Set ${target.plainName()}'s unit to ${unit.name}")
     }
 
+    // @Suppress("unchecked_cast")
     @ImperiumCommand(["changename"], Rank.MODERATOR)
     @ClientSide
     @ServerSide
     fun onNameChangeCommand(sender: CommandSender, target: Player, @Greedy name: String) {
+        // This is definitely the incorrect way to change these values
+        val metadata = target.asAudience.metadata as? MutableMap<Any, Any>
+        if (metadata != null) {
+            metadata[StandardKeys.NAME] = name
+            metadata.remove(StandardKeys.DECORATED_NAME)
+        }
         // How does this work with rainbow name enabled?
         target.name(name)
         sender.reply("Open tab list hehe")
@@ -117,7 +136,7 @@ class FunHandler(
 
     fun setUnitPosition(player: Player, x: Float, y: Float) {
         // Will kill ground units if they cant walk on the tile
-        player.unit().set(x, y)
+        Call.setPosition(player.con, x, y)
     }
 
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {
