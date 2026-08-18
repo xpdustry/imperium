@@ -27,9 +27,9 @@ import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.SCARLET
-import kotlinx.coroutines.CancellationException
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -71,12 +71,12 @@ class MindustryChatListener(
                         updatePlayerNames()
                     } catch (e: Exception) {
                         // The error log on every exit is annoying
-                            if (e is CancellationException) throw e
-                            LOGGER.error("Failed to update player's names", e)
-                        }
-                        delay(config.mindustry.chat.name.updateInterval)
+                        if (e is CancellationException) throw e
+                        LOGGER.error("Failed to update player's names", e)
                     }
+                    delay(config.mindustry.chat.name.updateInterval)
                 }
+            }
         }
     }
 

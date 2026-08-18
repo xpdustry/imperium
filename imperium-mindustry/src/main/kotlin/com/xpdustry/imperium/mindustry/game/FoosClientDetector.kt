@@ -185,14 +185,16 @@ class FoosClientDetector(
     private fun sendPlayerData(player: Player) {
         scope.launch {
             // TODO: optimise? 3 checks is basically nothing to miriadb
-            // gets checked 3 times (PlayerJoin in AccountListener, 1 for resendPlayerData, and this check on fooCheck packet)
+            // gets checked 3 times (PlayerJoin in AccountListener, 1 for resendPlayerData, and this check on fooCheck
+            // packet)
             val account = sessions.selectAccount(accountService, player.sessionKey)
             val json =
                 Jval.newObject().apply {
                     put("currentName", player.name)
                     put("currentID", player.id)
                     put(
-                        "rank", account?.rank?.ordinal ?: Rank.EVERYONE.ordinal
+                        "rank",
+                        account?.rank?.ordinal ?: Rank.EVERYONE.ordinal,
                     )
                     // TODO: Add more senders, specifically for tile history
                     // and other player's information to admins
