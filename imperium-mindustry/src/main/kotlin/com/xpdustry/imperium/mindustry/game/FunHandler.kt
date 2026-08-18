@@ -2,10 +2,8 @@
 package com.xpdustry.imperium.mindustry.game
 
 import arc.Core
-import arc.struct.IntSet
 import arc.util.serialization.Jval
 import com.xpdustry.distributor.api.command.CommandSender
-import com.xpdustry.distributor.api.key.StandardKeys
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
@@ -15,7 +13,6 @@ import com.xpdustry.imperium.common.dependency.Named
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
-import com.xpdustry.imperium.mindustry.misc.asAudience
 import com.xpdustry.imperium.mindustry.misc.sessionKey
 import com.xpdustry.imperium.mindustry.store.DataStoreService
 import com.xpdustry.imperium.mindustry.translation.command_arg_unknown
@@ -29,7 +26,6 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.type.UnitType
 import mindustry.world.blocks.storage.CoreBlock
-import org.incendo.cloud.annotation.specifier.Greedy
 
 // This class's only purpose is for enjoyment
 
@@ -138,11 +134,13 @@ class FunHandler(
     }
      */
 
+    // i dont know why this isnt working, the player just goes back on the next frame
     fun setUnitPosition(player: Player, x: Float, y: Float) {
         // Will kill ground units if they cant walk on the tile
         player.unit().set(x, y)
         player.set(x, y)
         Call.setPosition(player.con, x, y)
+        Call.setCameraPosition(player.con, x, y)
     }
 
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {

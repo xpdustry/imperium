@@ -63,7 +63,8 @@ class BlockHoundService(
                         WebhookMessage(
                             content =
                                 buildString {
-                                    if(config.mindustry.alertBlockedThread) config.discord.alertsRole?.let { appendLine("<@&$it>") }
+                                    if (config.mindustry.alertBlockedThread)
+                                        config.discord.alertsRole?.let { appendLine("<@&$it>") }
                                     appendLine(
                                         "**Warning:** The main thread is blocked. Wake up the sysadmins, manual intervention is required."
                                     )
