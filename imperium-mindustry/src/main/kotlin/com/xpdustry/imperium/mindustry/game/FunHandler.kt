@@ -40,7 +40,7 @@ class FunHandler(
     private val clients: ClientDetector,
 ) : ImperiumApplication.Listener {
 
-    private val spawnedUnits: IntSet = IntSet()
+    private val spawnedUnits: MutableSet<Int> = mutableSetOf()
 
     override fun onImperiumInit() {
         Vars.netServer.addPacketHandler("teleport") { sender, data ->
@@ -58,12 +58,12 @@ class FunHandler(
 
                     try {
                         if (player != null && rank >= Rank.OVERSEER) {
-                            setUnitPosition(player, packet.x, packet.y)
+                            setUnitPosition(player, packet.x * 8, packet.y * 8)
                         } else if (clients.isFooClient(sender) && packet.navTp) {
                             // no deleting cores
                             if (sender.unit() is BlockUnitUnit) return@post
                             if (blockIsCore(packet.x.toInt(), packet.y.toInt(), sender.team())) {
-                                setUnitPosition(sender, packet.x, packet.y)
+                                setUnitPosition(sender, packet.x * 8, packet.y * 8)
                             }
                         }
                     } catch (e: Exception) {
@@ -80,7 +80,7 @@ class FunHandler(
     fun onTeleportCommand(sender: CommandSender, x: Float, y: Float, player: Player? = null) {
         if (player == null && sender.isServer) return sender.reply("Console must provide a player")
         val target = player ?: sender.player
-        setUnitPosition(target, x, y)
+        setUnitPosition(target, x * 8, y * 8)
     }
 
     @ImperiumCommand(["statuseffect|status"], Rank.MODERATOR)
@@ -91,7 +91,7 @@ class FunHandler(
         val time =
             if (length == "infinite") Float.POSITIVE_INFINITY
             else length.toFloatOrNull() ?: return sender.reply(command_arg_unknown(length))
-        target.unit().apply(statusEffect, time)
+        target.unit().apply(statusEffect, time * 60)
         sender.reply("Added ${statusEffect.name} to ${target.plainName()}")
     }
 
@@ -120,6 +120,7 @@ class FunHandler(
         sender.reply("Set ${target.plainName()}'s unit to ${unit.name}")
     }
 
+    /* TODO fix this eventually
     // @Suppress("unchecked_cast")
     @ImperiumCommand(["changename"], Rank.MODERATOR)
     @ClientSide
@@ -135,9 +136,12 @@ class FunHandler(
         target.name(name)
         sender.reply("Open tab list hehe")
     }
+     */
 
     fun setUnitPosition(player: Player, x: Float, y: Float) {
         // Will kill ground units if they cant walk on the tile
+        player.unit().set(x, y)
+        player.set(x, y)
         Call.setPosition(player.con, x, y)
     }
 
