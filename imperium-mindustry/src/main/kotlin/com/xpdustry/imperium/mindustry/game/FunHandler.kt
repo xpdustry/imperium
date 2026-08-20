@@ -78,7 +78,7 @@ class FunHandler(
         }
     }
 
-    @ImperiumCommand(["teleport"], Rank.OVERSEER)
+    @ImperiumCommand(["teleport|tp"], Rank.OVERSEER)
     @ClientSide
     @ServerSide
     fun onTeleportCommand(sender: CommandSender, x: Float, y: Float, player: Player? = null) {
@@ -104,11 +104,6 @@ class FunHandler(
     fun onChangeUnitCommand(sender: CommandSender, unit: UnitType, target: Player = sender.player) {
         val tunit = target.unit()
 
-        if (tunit != null && (spawnedUnits.contains(tunit.id) || tunit.spawnedByCore)) {
-            spawnedUnits.remove(tunit.id)
-            Call.unitDespawn(tunit)
-        }
-
         val cunit = unit.create(target.team())
         cunit.x = tunit.x
         cunit.y = tunit.y
@@ -122,6 +117,11 @@ class FunHandler(
         // just in-case
         target.unit().add()
         sender.reply("Set ${target.plainName()}'s unit to ${unit.name}")
+
+        if (tunit != null && (spawnedUnits.contains(tunit.id) || tunit.spawnedByCore)) {
+            spawnedUnits.remove(tunit.id)
+            Call.unitDespawn(tunit)
+        }
     }
 
     @ImperiumCommand(["rename"], Rank.MODERATOR)
