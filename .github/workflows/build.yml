@@ -49,12 +49,27 @@ jobs:
           timestamp="$(date +%s)"
           echo "ORG_GRADLE_PROJECT_build_timestamp=$timestamp" >> "$GITHUB_ENV"
           export ORG_GRADLE_PROJECT_build_timestamp="$timestamp"
-          # Actual build
+          
           ./gradlew build -x spotlessCheck
-          ./gradlew spotlessCheck
+          
           # Export the version
           version="$(./gradlew properties -q | grep '^version:' | cut -d ':' -f 2 | xargs)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+
+      - name: "Format Code"
+        if: ${{ github.event_name != 'pull_request' }}
+        run: ./gradlew spotlessApply
+
+      - name: "Commit Formatted Code"
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "style: Format Code"
+          repo: ${{ github.repository }}
+          branch: ${{ github.head_ref || github.ref_name }}
 
       - name: "Upload Test Results"
         if: ${{ always() }}
