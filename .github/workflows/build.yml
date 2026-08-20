@@ -42,19 +42,35 @@ jobs:
       - name: "Setup Gradle"
         uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
 
-      - name: "Build Artifact"
+      - name: "Build & Test"
         id: build
         run: |
           # Pin the time for CalVer
           timestamp="$(date +%s)"
           echo "ORG_GRADLE_PROJECT_build_timestamp=$timestamp" >> "$GITHUB_ENV"
           export ORG_GRADLE_PROJECT_build_timestamp="$timestamp"
-          # Actual build
+          
+          # We run tests and compile but bypass static analysis/checks like Spotless
           ./gradlew build -x spotlessCheck
-          ./gradlew spotlessCheck
+          
           # Export the version
           version="$(./gradlew properties -q | grep '^version:' | cut -d ':' -f 2 | xargs)"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+
+
+      - name: "Format Code"
+        if: ${{ github.event_name != 'pull_request' }}
+        run: ./gradlew spotlessApply
+
+      - name: "Commit Formatted Code"
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commit_message: "style: Format Code"
+          repo: ${{ github.repository }}
+          branch: ${{ github.head_ref || github.ref_name }}
 
       - name: "Upload Test Results"
         if: ${{ always() }}
@@ -94,15 +110,15 @@ jobs:
         run: echo "${{ steps.build.outputs.version }}" > VERSION.txt
 
       - name: "Post Build Changes"
-        if: ${{ env.ORG_GRADLE_PROJECT_is_release == 'true' }}
+        if: ${{ github.event_name != 'pull_request' }}
         uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          commit_message: "chore: Post v${{ steps.build.outputs.version }} changes"
+          # Conditionally formats the commit message depending on whether a release occurred
+          commit_message: "${{ env.ORG_GRADLE_PROJECT_is_release == 'true' && format('chore: Post v{0} changes and format', steps.build.outputs.version) || 'style: Format code' }}"
           repo: ${{ github.repository }}
           branch: ${{ github.head_ref || github.ref_name }}
-          file_pattern: "VERSION.txt"
 
   event-file:
     if: ${{ github.event_name != 'pull_request' || github.repository != github.event.pull_request.head.repo.full_name }}
