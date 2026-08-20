@@ -34,10 +34,16 @@ class BlockHoundService(
     private var lastWarn: Instant? = null
 
     init {
+        val startTime = Clock.System.now()
+        val startup = startTime + 1.minutes
         job = scope.launch {
             while (isActive) {
+                val timeoutTime =
+                    if (Clock.System.now() < startup) {
+                        30.seconds
+                    } else 10.seconds
                 val blocked =
-                    runCatching { runMindustryThread(timeout = 10.seconds) { /* Nothin' */ } }
+                    runCatching { runMindustryThread(timeoutTime) { /* Nothin' */ } }
                         .fold(
                             onSuccess = { false },
                             onFailure = { error ->
