@@ -13,7 +13,6 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.io.ByteArrayInputStream
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +40,7 @@ class BlockHoundService(
             while (isActive) {
                 val timeoutTime =
                     if (Clock.System.now() < startup) {
-                        1.minutes
+                        30.seconds
                     } else 10.seconds
                 val blocked =
                     runCatching { runMindustryThread(timeoutTime) { /* Nothin' */ } }
