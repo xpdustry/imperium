@@ -167,34 +167,29 @@ class FunHandler(
 
     private companion object {
         private val logger by LoggerDelegate()
-        private val TELEPORT_PACKET_FIELDS = setOf("x", "y", "target", "navTp")
+        private val TELEPORT_PACKET_FIELDS = setOf("x", "y", "targetId")
 
         private fun decodeTeleportPacket(data: String): TeleportPacket {
             val json = Jval.read(data)
             require(json.isObject) { "packet must be an object" }
-            require(json.asObject().size == TELEPORT_PACKET_FIELDS.size && TELEPORT_PACKET_FIELDS.all(json::has)) {
+            require(json.asObject().size <= TELEPORT_PACKET_FIELDS.size && TELEPORT_PACKET_FIELDS.all(json::has)) {
                 "packet must contain exactly ${TELEPORT_PACKET_FIELDS.joinToString()}"
             }
 
-            val xValue = json.get("x")
-            require(xValue.isNumber) { "x must be a number" }
-            val x = xValue.asFloat()
-            require(x.isFinite()) { "x must be finite" }
+            val xValue = json.getFloat("x", Float.NaN)
+            require(!xValue.isNaN()) { "x must be a number" }
+            require(xValue.toInt() in 0..<Vars.world.width()) { "x must be within world borders" }
 
-            val yValue = json.get("y")
-            require(yValue.isNumber) { "y must be a number" }
-            val y = yValue.asFloat()
-            require(y.isFinite()) { "y must be finite" }
+            val yValue = json.getFloat("y", Float.NaN)
+            require(!yValue.isNaN()) { "y must be a number" }
+            require(yValue.toInt() in 0..<Vars.world.height()) { "y must be within world borders" }
 
-            val targetValue = json.get("target")
-            require(targetValue.isNumber && targetValue.asNumber() is Long) { "target must be an integer" }
-            val target = targetValue.asLong()
-            require(target in Int.MIN_VALUE..Int.MAX_VALUE) { "target is outside the integer range" }
+            val navTpValue = json.getBool("navTp", false)
 
-            val navTpValue = json.get("navTp")
-            require(navTpValue.isBoolean) { "navTp must be a boolean" }
+            val target = json.getInt("targetId", Integer.MIN_VALUE)
+            require(target > -1) { "target must be a valid number" }
 
-            return TeleportPacket(x, y, target.toInt(), navTpValue.asBool())
+            return TeleportPacket(xValue, yValue, target, navTpValue)
         }
     }
 }
