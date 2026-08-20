@@ -3,7 +3,9 @@ package com.xpdustry.imperium.mindustry.game
 
 import arc.Core
 import arc.util.serialization.Jval
+import com.xpdustry.distributor.api.annotation.TaskHandler
 import com.xpdustry.distributor.api.command.CommandSender
+import com.xpdustry.distributor.api.scheduler.MindustryTimeUnit
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
@@ -26,17 +28,23 @@ import mindustry.gen.Groups
 import mindustry.gen.Player
 import mindustry.type.UnitType
 import mindustry.world.blocks.storage.CoreBlock
+import org.incendo.cloud.annotation.specifier.Greedy
 
 // This class's only purpose is for enjoyment
+
+interface FunManager {
+    fun changedName(player: Player): String?
+}
 
 @Inject
 class FunHandler(
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
     private val store: DataStoreService,
     private val clients: ClientDetector,
-) : ImperiumApplication.Listener {
+) : ImperiumApplication.Listener, FunManager {
 
     private val spawnedUnits: MutableSet<Int> = mutableSetOf()
+    private val changedNames = mutableMapOf<Player, String>()
 
     override fun onImperiumInit() {
         Vars.netServer.addPacketHandler("teleport") { sender, data ->
@@ -116,31 +124,39 @@ class FunHandler(
         sender.reply("Set ${target.plainName()}'s unit to ${unit.name}")
     }
 
-    /* TODO fix this eventually
-    // @Suppress("unchecked_cast")
-    @ImperiumCommand(["changename"], Rank.MODERATOR)
+    @ImperiumCommand(["rename"], Rank.MODERATOR)
     @ClientSide
     @ServerSide
     fun onNameChangeCommand(sender: CommandSender, target: Player, @Greedy name: String) {
-        // This is definitely the incorrect way to change these values
-        val metadata = target.asAudience.metadata as? MutableMap<Any, Any>
-        if (metadata != null) {
-            metadata[StandardKeys.NAME] = name
-            metadata.remove(StandardKeys.DECORATED_NAME)
-        }
-        // How does this work with rainbow name enabled?
-        target.name(name)
-        sender.reply("Open tab list hehe")
+        changedNames[target] = name
+        sender.reply("${target.name}'s name changed to $name")
     }
-     */
 
-    // i dont know why this isnt working, the player just goes back on the next frame
+    override fun changedName(player: Player): String? {
+        return changedNames[player]
+    }
+
+    // Cleans up changeunit spawned units
+    @TaskHandler(delay = 1, interval = 1, unit = MindustryTimeUnit.SECONDS)
+    fun onChangeUnitCheck() {
+        val toRemove = mutableSetOf<Int>()
+        for (unit in spawnedUnits) {
+            val spawnedUnit = Groups.unit.find({ u -> u.id == unit }) ?: break
+            if (!spawnedUnit.isPlayer) {
+                Call.unitDespawn(spawnedUnit)
+                toRemove.add(unit)
+            }
+        }
+        if (!toRemove.isEmpty()) spawnedUnits.removeAll(toRemove)
+    }
+
     fun setUnitPosition(player: Player, x: Float, y: Float) {
         // Will kill ground units if they cant walk on the tile
         player.unit().set(x, y)
         player.set(x, y)
         Call.setPosition(player.con, x, y)
-        Call.setCameraPosition(player.con, x, y)
+        player.unit().snapInterpolation()
+
     }
 
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {

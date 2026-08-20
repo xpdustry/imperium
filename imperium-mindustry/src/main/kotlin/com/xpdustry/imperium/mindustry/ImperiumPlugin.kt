@@ -155,7 +155,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
                 ImperiumPermissionListener::class,
                 ItemCommand::class,
                 ReviveCoreCommand::class,
-                FunHandler::class,
             )
             .forEach(application::register)
 

@@ -20,6 +20,7 @@ import com.xpdustry.imperium.common.misc.toHexString
 import com.xpdustry.imperium.common.user.User
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.bridge.DiscordAudience
+import com.xpdustry.imperium.mindustry.game.FunManager
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.PlayerMap
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
@@ -42,6 +43,7 @@ class MindustryAudienceFormatter(
     private val config: ImperiumConfig,
     private val store: DataStoreService,
     private val users: UserManager,
+    private val funManager: FunManager,
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
     private val ranks = PlayerMap<Rank>(plugin)
@@ -153,11 +155,15 @@ class MindustryAudienceFormatter(
 
     private fun formatPlayerName(audience: PlayerAudience): String {
         val component = audience.metadata[StandardKeys.DECORATED_NAME]
+        val plain =
+            funManager.changedName(audience.player)
+                ?: if (component == null) {
+                    audience.metadata[StandardKeys.NAME] ?: ""
+                } else {
+                    ComponentStringBuilder.plain(audience.metadata).append(component).toString()
+                }
         val name =
-            if (component == null) {
-                audience.metadata[StandardKeys.NAME] ?: ""
-            } else if (rainbow[audience.player] == true && hidden[audience.player] != true) {
-                val plain = ComponentStringBuilder.plain(audience.metadata).append(component).toString()
+            if (rainbow[audience.player] == true && hidden[audience.player] != true) {
                 val initial = (((System.currentTimeMillis() / 1000L) % 60) / 60F) * 360F
                 val color = Color().a(1F)
                 buildString {
@@ -170,7 +176,11 @@ class MindustryAudienceFormatter(
                     }
                 }
             } else {
-                ComponentStringBuilder.mindustry(audience.metadata).append(component).toString()
+                val plainName =
+                    if (component != null) {
+                        ComponentStringBuilder.mindustry(audience.metadata).append(component).toString()
+                    } else ""
+                funManager.changedName(audience.player) ?: plainName
             }
         return formatNameTag(name, formatHours(audience), rankColor(audience), audienceColor(audience))
     }
