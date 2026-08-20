@@ -37,7 +37,6 @@ import com.xpdustry.imperium.mindustry.formation.FormationListener
 import com.xpdustry.imperium.mindustry.game.AlertListener
 import com.xpdustry.imperium.mindustry.game.AntiGriefListener
 import com.xpdustry.imperium.mindustry.game.DayNightCycleListener
-import com.xpdustry.imperium.mindustry.game.FunHandler
 import com.xpdustry.imperium.mindustry.game.GameListener
 import com.xpdustry.imperium.mindustry.game.ImperiumLogicListener
 import com.xpdustry.imperium.mindustry.game.LogicListener

@@ -156,7 +156,6 @@ class FunHandler(
         player.set(x, y)
         Call.setPosition(player.con, x, y)
         player.unit().snapInterpolation()
-
     }
 
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {
