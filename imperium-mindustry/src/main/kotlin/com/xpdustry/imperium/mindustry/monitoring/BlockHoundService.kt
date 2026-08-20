@@ -22,6 +22,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
+import kotlin.time.Duration.Companion.minutes
 
 @Inject
 class BlockHoundService(
@@ -34,10 +35,13 @@ class BlockHoundService(
     private var lastWarn: Instant? = null
 
     init {
+        val startTime = Clock.System.now()
+        val startup = startTime + 1.minutes
         job = scope.launch {
             while (isActive) {
+                val timeoutTime = if(Clock.System.now() < startup) { 1.minutes } else 10.seconds
                 val blocked =
-                    runCatching { runMindustryThread(timeout = 10.seconds) { /* Nothin' */ } }
+                    runCatching { runMindustryThread(timeoutTime) { /* Nothin' */ } }
                         .fold(
                             onSuccess = { false },
                             onFailure = { error ->
