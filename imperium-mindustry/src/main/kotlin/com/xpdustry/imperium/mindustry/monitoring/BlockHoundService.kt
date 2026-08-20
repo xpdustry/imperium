@@ -13,6 +13,7 @@ import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import java.io.ByteArrayInputStream
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import kotlinx.coroutines.CoroutineScope
@@ -22,7 +23,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
-import kotlin.time.Duration.Companion.minutes
 
 @Inject
 class BlockHoundService(
@@ -39,7 +39,10 @@ class BlockHoundService(
         val startup = startTime + 1.minutes
         job = scope.launch {
             while (isActive) {
-                val timeoutTime = if(Clock.System.now() < startup) { 1.minutes } else 10.seconds
+                val timeoutTime =
+                    if (Clock.System.now() < startup) {
+                        1.minutes
+                    } else 10.seconds
                 val blocked =
                     runCatching { runMindustryThread(timeoutTime) { /* Nothin' */ } }
                         .fold(
