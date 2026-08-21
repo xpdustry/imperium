@@ -19,6 +19,8 @@ import com.xpdustry.imperium.mindustry.command.CommandAnnotationScanner
 import com.xpdustry.imperium.mindustry.component.ImperiumComponentRendererProvider
 import com.xpdustry.imperium.mindustry.game.ClientDetector
 import com.xpdustry.imperium.mindustry.game.FoosClientDetector
+import com.xpdustry.imperium.mindustry.game.FunHandler
+import com.xpdustry.imperium.mindustry.game.FunManager
 import com.xpdustry.imperium.mindustry.history.Historian
 import com.xpdustry.imperium.mindustry.history.HistoryRenderer
 import com.xpdustry.imperium.mindustry.history.SimpleHistorian
@@ -66,6 +68,7 @@ internal fun DependencyService.Binder.registerMindustryModule(plugin: MindustryP
     bindToImpl<HistoryRenderer, SimpleHistoryRenderer>()
     bindToImpl<MindustryAudienceFormatter, MindustryAudienceFormatter>()
     bindToImpl<MindustryMessagePipeline, SimpleMindustryMessagePipeline>()
+    bindToImpl<FunManager, FunHandler>() // interface only, for renaming
 
     // UI integration.
     bindToImpl<ComponentRendererProvider, ImperiumComponentRendererProvider>()

@@ -7,8 +7,10 @@ import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.imperium.common.account.AccountResult
+import com.xpdustry.imperium.common.account.AccountService
 import com.xpdustry.imperium.common.account.MindustrySessionService
 import com.xpdustry.imperium.common.account.Rank
+import com.xpdustry.imperium.common.account.selectAccount
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.async.IMPERIUM_SCOPE
 import com.xpdustry.imperium.common.database.IdentifierCodec
@@ -25,6 +27,7 @@ import com.xpdustry.imperium.common.security.SimpleRateLimiter
 import com.xpdustry.imperium.common.string.Password
 import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.account.PlayerLoginEvent
+import com.xpdustry.imperium.mindustry.account.PlayerLogoutEvent
 import com.xpdustry.imperium.mindustry.account.gui_login_failure_invalid_credentials
 import com.xpdustry.imperium.mindustry.account.gui_login_success
 import com.xpdustry.imperium.mindustry.account.handleAccountResult
@@ -51,6 +54,7 @@ interface ClientDetector {
 
 @Inject
 class FoosClientDetector(
+    private val accountService: AccountService,
     private val plugin: MindustryPlugin,
     private val store: DataStoreService,
     private val punishments: PunishmentManager,
@@ -152,8 +156,17 @@ class FoosClientDetector(
     }
 
     @EventHandler
-    fun resendPlayerData(event: PlayerLoginEvent) {
-        if (isFooClient(event.player)) sendPlayerData(event.player)
+    fun onPlayerLoginEvent(event: PlayerLoginEvent) {
+        resendPlayerData(event.player)
+    }
+
+    @EventHandler
+    fun onPlayerLogoutEvent(event: PlayerLogoutEvent) {
+        resendPlayerData(event.player)
+    }
+
+    fun resendPlayerData(player: Player) {
+        if (isFooClient(player)) sendPlayerData(player)
     }
 
     private suspend fun executePunishment(
@@ -171,13 +184,17 @@ class FoosClientDetector(
 
     private fun sendPlayerData(player: Player) {
         scope.launch {
+            // TODO: optimise? 3 checks is basically nothing to miriadb
+            // gets checked 3 times (PlayerJoin in AccountListener, 1 for resendPlayerData, and this check on fooCheck
+            // packet)
+            val account = sessions.selectAccount(accountService, player.sessionKey)
             val json =
                 Jval.newObject().apply {
                     put("currentName", player.name)
                     put("currentID", player.id)
                     put(
                         "rank",
-                        store.selectBySessionKey(player.sessionKey)?.account?.rank?.ordinal ?: Rank.EVERYONE.ordinal,
+                        account?.rank?.ordinal ?: Rank.EVERYONE.ordinal,
                     )
                     // TODO: Add more senders, specifically for tile history
                     // and other player's information to admins

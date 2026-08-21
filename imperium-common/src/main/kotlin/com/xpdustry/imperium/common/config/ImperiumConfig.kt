@@ -126,6 +126,7 @@ data class MindustryConfig(
     val afkDelay: Duration = 10.minutes,
     val afkKickDelay: Duration = 15.minutes,
     val noHornyAutoBan: Boolean = false,
+    val alertBlockedThread: Boolean = true,
 ) {
     init {
         if (afkDelay >= afkKickDelay) {
