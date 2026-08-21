@@ -62,12 +62,14 @@ class FunHandler(
 
                     try {
                         if (player != null && rank >= Rank.OVERSEER) {
-                            setUnitPosition(player, packet.x * 8, packet.y * 8)
+                            // packet coordinates must be in world units
+                            setUnitPosition(player, packet.x, packet.y)
                         } else if (clients.isFooClient(sender) && packet.navTp) {
                             // no deleting cores
                             if (sender.unit() is BlockUnitUnit) return@post
                             if (blockIsCore(packet.x.toInt(), packet.y.toInt(), sender.team())) {
-                                setUnitPosition(sender, packet.x * 8, packet.y * 8)
+                                // packet coordinates must be in world units
+                                setUnitPosition(sender, packet.x, packet.y)
                             }
                         }
                     } catch (e: Exception) {
@@ -159,7 +161,7 @@ class FunHandler(
     }
 
     fun blockIsCore(x: Int, y: Int, team: Team): Boolean {
-        val tile = Vars.world.tile(x, y)
+        val tile = Vars.world.tile(x / Vars.tilesize, y / Vars.tilesize)
         return tile != null && tile.block() is CoreBlock && tile.team() == team
     }
 
@@ -178,11 +180,11 @@ class FunHandler(
 
             val xValue = json.getFloat("x", Float.NaN)
             require(!xValue.isNaN()) { "x must be a number" }
-            require(xValue.toInt() in 0..<Vars.world.width()) { "x must be within world borders" }
+            require((xValue/ Vars.tilesize).toInt() in 0..<Vars.world.width()) { "x must be within world borders" }
 
             val yValue = json.getFloat("y", Float.NaN)
             require(!yValue.isNaN()) { "y must be a number" }
-            require(yValue.toInt() in 0..<Vars.world.height()) { "y must be within world borders" }
+            require((yValue/ Vars.tilesize).toInt() in 0..<Vars.world.height()) { "y must be within world borders" }
 
             val navTpValue = json.getBool("navTp", false)
 
