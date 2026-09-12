@@ -244,8 +244,8 @@ class FoosClientDetector(
             }
 
             val targetValue = json.get("targetID")
-            require(targetValue.isNumber && targetValue.asNumber() is Long) { "targetID must be an integer" }
-            val targetId = targetValue.asLong()
+            val targetId = targetValue.takeIf(Jval::isNumber)?.toString()?.toLongOrNull()
+            requireNotNull(targetId) { "targetID must be an integer" }
             require(targetId in Int.MIN_VALUE..Int.MAX_VALUE) { "targetID is outside the integer range" }
 
             val typeValue = json.get("type")
@@ -267,8 +267,8 @@ class FoosClientDetector(
             require(reason.length <= MAX_REASON_LENGTH) { "reason exceeds $MAX_REASON_LENGTH characters" }
 
             val durationValue = json.get("duration")
-            require(durationValue.isNumber && durationValue.asNumber() is Long) { "duration must be an integer" }
-            val duration = durationValue.asLong()
+            val duration = durationValue.takeIf(Jval::isNumber)?.toString()?.toLongOrNull()
+            requireNotNull(duration) { "duration must be an integer" }
             require(duration >= 0L) { "duration must not be negative" }
 
             return ModerationPacket(targetId.toInt(), typeName, type, reason, duration.milliseconds)

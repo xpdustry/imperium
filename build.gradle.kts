@@ -32,7 +32,7 @@ plugins {
 group = "com.xpdustry"
 description = "The core of the chaotic neutral network."
 version = computeNextVersion()
-val mindustryVersion = "159"
+val mindustryVersion = "160.2"
 
 fun computeNextVersion(): String {
     val parts = rootProject.file("VERSION.txt")

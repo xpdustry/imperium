@@ -32,11 +32,11 @@ class BlockHoundService(
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
 
-    private var job: Job? = null
+    private lateinit var job: Job
     private var lastWarn: Instant? = null
     private var timeout = 20.seconds
 
-    init {
+    override fun onImperiumInit() {
         job = scope.launch {
             while (isActive) {
                 val blocked =
@@ -87,7 +87,7 @@ class BlockHoundService(
     }
 
     override fun onImperiumExit() {
-        job?.cancel()
+        job.cancel()
     }
 
     private fun createThreadDumpAttachment(entries: List<Map.Entry<Thread, Array<StackTraceElement>>>) =

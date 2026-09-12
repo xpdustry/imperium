@@ -52,6 +52,7 @@ import mindustry.core.World
 import mindustry.game.Team
 import mindustry.io.MapIO
 import mindustry.io.SaveIO
+import mindustry.io.SaveReadState
 import mindustry.world.Block
 import mindustry.world.CachedTile
 import mindustry.world.Tile
@@ -269,59 +270,62 @@ class AnukenMindustryContentHandler(@Named("directory") directory: Path) :
             reader.readRegion("preview_map", stream, counter) {
                 reader.readMap(
                     it,
-                    object : WorldContext {
-                        override fun resize(width: Int, height: Int) = Unit
+                    SaveReadState(
+                            object : WorldContext {
+                                override fun resize(width: Int, height: Int) = Unit
 
-                        override fun isGenerating(): Boolean = false
+                                override fun isGenerating(): Boolean = false
 
-                        override fun begin() {
-                            Vars.world.isGenerating = true
-                        }
+                                override fun begin() {
+                                    Vars.world.isGenerating = true
+                                }
 
-                        override fun end() {
-                            Vars.world.isGenerating = false
-                        }
+                                override fun end() {
+                                    Vars.world.isGenerating = false
+                                }
 
-                        override fun onReadBuilding() {
-                            if (tile.build == null) {
-                                return
-                            }
+                                override fun onReadBuilding() {
+                                    if (tile.build == null) {
+                                        return
+                                    }
 
-                            val color = tile.build.team.color.argb8888()
-                            val size = tile.block().size
-                            val offsetX = -(size - 1) / 2
-                            val offsetY = -(size - 1) / 2
-                            for (dx in 0 until size) {
-                                for (dy in 0 until size) {
-                                    val drawX = tile.x + dx + offsetX
-                                    val drawY = tile.y + dy + offsetY
-                                    walls.setRGB(drawX, floors.height - 1 - drawY, color)
+                                    val color = tile.build.team.color.argb8888()
+                                    val size = tile.block().size
+                                    val offsetX = -(size - 1) / 2
+                                    val offsetY = -(size - 1) / 2
+                                    for (dx in 0 until size) {
+                                        for (dy in 0 until size) {
+                                            val drawX = tile.x + dx + offsetX
+                                            val drawY = tile.y + dy + offsetY
+                                            walls.setRGB(drawX, floors.height - 1 - drawY, color)
+                                        }
+                                    }
+                                }
+
+                                override fun tile(index: Int): Tile {
+                                    tile.x = (index % parsed.width).toShort()
+                                    tile.y = (index / parsed.width).toShort()
+                                    return tile
+                                }
+
+                                override fun create(x: Int, y: Int, floorID: Int, overlayID: Int, wallID: Int): Tile {
+                                    floors.setRGB(
+                                        x,
+                                        floors.height - 1 - y,
+                                        convertColor(
+                                            MapIO.colorFor(
+                                                Blocks.air,
+                                                if (overlayID != 0) Blocks.air else Vars.content.block(floorID),
+                                                if (overlayID != 0) Vars.content.block(overlayID) else Blocks.air,
+                                                Team.derelict,
+                                            )
+                                        ),
+                                    )
+                                    return tile
                                 }
                             }
-                        }
-
-                        override fun tile(index: Int): Tile {
-                            tile.x = (index % parsed.width).toShort()
-                            tile.y = (index / parsed.width).toShort()
-                            return tile
-                        }
-
-                        override fun create(x: Int, y: Int, floorID: Int, overlayID: Int, wallID: Int): Tile {
-                            floors.setRGB(
-                                x,
-                                floors.height - 1 - y,
-                                convertColor(
-                                    MapIO.colorFor(
-                                        Blocks.air,
-                                        if (overlayID != 0) Blocks.air else Vars.content.block(floorID),
-                                        if (overlayID != 0) Vars.content.block(overlayID) else Blocks.air,
-                                        Team.derelict,
-                                    )
-                                ),
-                            )
-                            return tile
-                        }
-                    },
+                        )
+                        .apply { this.preview = true },
                 )
             }
         } finally {
