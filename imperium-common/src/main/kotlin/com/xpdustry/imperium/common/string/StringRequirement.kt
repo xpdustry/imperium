@@ -41,6 +41,19 @@ sealed interface StringRequirement {
     }
 }
 
+fun StringRequirement.toErrorMessage(): String =
+    when (this) {
+        StringRequirement.Letter.HAS_LOWERCASE -> "It needs at least a lowercase letter."
+        StringRequirement.Letter.HAS_UPPERCASE -> "It needs at least a uppercase letter."
+        StringRequirement.Letter.HAS_DIGIT -> "It needs at least a number."
+        StringRequirement.Letter.HAS_SPACIAL_SYMBOL -> "It needs at least a symbol."
+        StringRequirement.Letter.ALL_LOWERCASE -> "Uppercase letters aren't allowed in the username."
+        is StringRequirement.AllowedSpecialSymbol ->
+            "It can only contain letters, numbers and ${allowed.joinToString()}."
+        is StringRequirement.Length -> "It needs to be between $min and $max characters long."
+        is StringRequirement.Reserved -> "This username is reserved or already taken."
+    }
+
 fun List<StringRequirement>.findMissingRequirements(string: CharSequence): List<StringRequirement> = filterNot {
     it.isSatisfiedBy(string)
 }

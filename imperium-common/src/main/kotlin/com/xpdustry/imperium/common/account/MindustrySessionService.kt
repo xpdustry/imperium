@@ -105,6 +105,11 @@ class MindustrySessionService(
         }
     }
 
+    /** Revokes all the sessions of an account, forcing it to log in again. */
+    suspend fun logoutAll(account: Int): Int = provider.newSuspendTransaction {
+        AccountSessionTable.deleteWhere { AccountSessionTable.account eq account }
+    }
+
     private fun ResultRow.toMindustrySession(key: SessionKey) =
         MindustrySession(
             key = key,
