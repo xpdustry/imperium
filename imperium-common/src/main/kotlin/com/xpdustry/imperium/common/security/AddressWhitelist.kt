@@ -12,6 +12,7 @@ import org.jetbrains.exposed.v1.jdbc.deleteWhere
 import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.upsert
 
+@Deprecated("Gatekeeper whitelist uses uuid now")
 interface AddressWhitelist {
     suspend fun addAddress(address: InetAddress, reason: String)
 
@@ -25,6 +26,7 @@ interface AddressWhitelist {
 typealias AddressWithReason = Pair<InetAddress, String>
 
 @Inject
+@Deprecated("Gatekeeper whitelist uses uuid now")
 class SimpleAddressWhitelist(private val provider: SQLProvider) : AddressWhitelist, ImperiumApplication.Listener {
 
     override fun onImperiumInit() {

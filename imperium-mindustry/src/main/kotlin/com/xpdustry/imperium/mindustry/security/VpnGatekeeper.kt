@@ -5,12 +5,15 @@ import com.xpdustry.imperium.common.misc.DISCORD_INVITATION_LINK
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.AddressWhitelist
+import com.xpdustry.imperium.common.security.PlayerWhitelist
+import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.processing.Processor
 
-class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: AddressWhitelist) :
+class VpnGatekeeper(private val provider: VpnDetection, private val addressWhitelist: AddressWhitelist, private val whitelist: PlayerWhitelist) :
     Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
-        if (whitelist.containsAddress(context.address)) {
+        // TODO: addressWhitelist is deprecated
+        if (whitelist.containsPlayer(context.uuid) || addressWhitelist.containsAddress(context.address)) {
             return GatekeeperResult.Success
         }
         val result = provider.isVpn(context.address)
@@ -21,8 +24,9 @@ class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: A
                     [red]VPN detected.[]
                     [lightgray]If you think this is a false positive or using a VPN is necessary to you,
                     join our discord server at [accent]${DISCORD_INVITATION_LINK}[].
-                    Then ask for an IP unblock in the [accent]#appeals[] channel.
-                    [red]Warning: During the process, only share you IP address to an admin [orange](${context.address.hostAddress})[].[]
+                    Then ask for a VPN unblock in the [accent]#appeals[] channel.
+                    [red]Warning: During the process, only share your UUID with an admin [orange](${context.uuid})[].[]
+                    [grey]It is recommended to take a screenshot of this page.[]
                     """
                         .trimIndent()
                 )
