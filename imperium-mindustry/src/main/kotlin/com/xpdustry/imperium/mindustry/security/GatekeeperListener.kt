@@ -22,7 +22,7 @@ import com.xpdustry.imperium.common.misc.containsLink
 import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
-import com.xpdustry.imperium.common.security.AddressWhitelist
+import com.xpdustry.imperium.common.security.Whitelist
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gatekeeper_failure
@@ -50,7 +50,7 @@ class GatekeeperListener(
     private val pipeline: GatekeeperPipeline,
     private val vpn: VpnDetection,
     private val config: ImperiumConfig,
-    private val whitelist: AddressWhitelist,
+    private val whitelist: Whitelist,
     private val badWords: BadWordDetector,
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
