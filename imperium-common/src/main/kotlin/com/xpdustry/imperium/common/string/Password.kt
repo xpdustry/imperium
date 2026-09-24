@@ -10,6 +10,26 @@ import org.bouncycastle.crypto.params.Argon2Parameters
 @JvmInline
 value class Password(val value: String) {
     override fun toString() = "Password(***)"
+
+    companion object {
+        // Ambiguous characters such as 0/O and 1/l/I are excluded since generated passwords are read by humans
+        private const val LOWERCASE = "abcdefghijkmnopqrstuvwxyz"
+        private const val UPPERCASE = "ABCDEFGHJKLMNPQRSTUVWXYZ"
+        private const val DIGITS = "23456789"
+        private const val SYMBOLS = "!#%&*+-=?@_"
+        private val random = SecureRandom()
+
+        /** Generates a random password satisfying [DEFAULT_PASSWORD_REQUIREMENTS]. */
+        fun random(length: Int = 16): Password {
+            require(length >= 8) { "length must be at least 8" }
+            val pools = listOf(LOWERCASE, UPPERCASE, DIGITS, SYMBOLS)
+            val all = pools.joinToString("")
+            val chars = pools.map { it[random.nextInt(it.length)] }.toMutableList()
+            repeat(length - chars.size) { chars += all[random.nextInt(all.length)] }
+            chars.shuffle(random)
+            return Password(chars.joinToString(""))
+        }
+    }
 }
 
 class HashedPassword(val hash: ByteArray, val salt: ByteArray) {}

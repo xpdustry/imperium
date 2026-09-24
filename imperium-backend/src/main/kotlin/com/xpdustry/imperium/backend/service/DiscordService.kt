@@ -37,7 +37,10 @@ interface DiscordService {
 
     fun getMainServer(): Guild
 
-    suspend fun isAllowed(user: User, rank: Rank): Boolean
+    /** Returns the highest rank of the user, either from its linked account or its discord roles. */
+    suspend fun getRank(user: User): Rank
+
+    suspend fun isAllowed(user: User, rank: Rank): Boolean = rank == Rank.EVERYONE || getRank(user) >= rank
 
     suspend fun isAllowed(user: User, permission: Permission): Boolean
 
@@ -90,19 +93,12 @@ class SimpleDiscordService(
 
     override fun getMainServer(): Guild = jda.guildCache.first()
 
-    override suspend fun isAllowed(user: User, rank: Rank): Boolean {
-        if (rank == Rank.EVERYONE) {
-            return true
-        }
-        if ((accounts.selectByDiscord(user.idLong)?.rank ?: Rank.EVERYONE) >= rank) {
-            return true
-        }
-
-        var max = Rank.EVERYONE
+    override suspend fun getRank(user: User): Rank {
+        var max = accounts.selectByDiscord(user.idLong)?.rank ?: Rank.EVERYONE
         for (role in (getMainServer().getMemberById(user.idLong)?.roles ?: emptyList())) {
             max = maxOf(max, config.discord.roles2ranks[role.idLong] ?: Rank.EVERYONE)
         }
-        return max >= rank
+        return max
     }
 
     override suspend fun isAllowed(user: User, permission: Permission): Boolean =
