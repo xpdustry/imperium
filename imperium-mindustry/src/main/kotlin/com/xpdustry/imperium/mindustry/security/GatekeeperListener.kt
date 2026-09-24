@@ -23,6 +23,7 @@ import com.xpdustry.imperium.common.misc.logger
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.AddressWhitelist
+import com.xpdustry.imperium.common.security.PlayerWhitelist
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.gatekeeper_failure
@@ -50,7 +51,8 @@ class GatekeeperListener(
     private val pipeline: GatekeeperPipeline,
     private val vpn: VpnDetection,
     private val config: ImperiumConfig,
-    private val whitelist: AddressWhitelist,
+    private val addressWhitelist: AddressWhitelist,
+    private val whitelist: PlayerWhitelist,
     private val badWords: BadWordDetector,
     @Named(IMPERIUM_SCOPE) private val scope: CoroutineScope,
 ) : ImperiumApplication.Listener {
@@ -69,7 +71,7 @@ class GatekeeperListener(
             }
         }
 
-        pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, whitelist))
+        pipeline.register("vpn", Priority.LOW, VpnGatekeeper(vpn, addressWhitelist, whitelist))
         pipeline.register("bad-name", Priority.HIGH) { ctx ->
             val words = badWords.findBadWords(ctx.name, enumSetAllOf())
             if (words.isNotEmpty()) {
