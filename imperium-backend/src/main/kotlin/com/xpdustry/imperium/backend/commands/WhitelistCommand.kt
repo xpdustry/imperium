@@ -3,6 +3,7 @@ package com.xpdustry.imperium.backend.commands
 
 import com.github.benmanes.caffeine.cache.Scheduler
 import com.xpdustry.imperium.backend.command.MenuCommand
+import com.xpdustry.imperium.backend.command.annotation.Range
 import com.xpdustry.imperium.backend.misc.Embed
 import com.xpdustry.imperium.backend.misc.MessageCreate
 import com.xpdustry.imperium.backend.misc.await
@@ -11,9 +12,10 @@ import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.dependency.Inject
 import com.xpdustry.imperium.common.misc.buildCache
-import com.xpdustry.imperium.common.misc.isCRC32Muuid
-import com.xpdustry.imperium.common.security.PlayerWhitelist
-import com.xpdustry.imperium.common.security.WhitelistWithReason
+import com.xpdustry.imperium.common.security.MAX_WHITELIST_REASON_LENGTH
+import com.xpdustry.imperium.common.security.Whitelist
+import com.xpdustry.imperium.common.security.WhitelistEntry
+import com.xpdustry.imperium.common.security.WhitelistTarget
 import kotlin.math.ceil
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.toJavaDuration
@@ -25,7 +27,7 @@ import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.messages.MessageEditData
 
 @Inject
-class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplication.Listener {
+class WhitelistCommand(private val whitelist: Whitelist) : ImperiumApplication.Listener {
 
     private val states =
         buildCache<Long, WhitelistState> {
@@ -39,35 +41,40 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
     }
 
     @ImperiumCommand(["whitelist", "add"], Rank.ADMIN)
-    suspend fun onWhitelistAddCommand(interaction: SlashCommandInteraction, uuid: String, reason: String) {
+    suspend fun onWhitelistAddCommand(
+        interaction: SlashCommandInteraction,
+        target: String,
+        @Range(min = "1", max = "$MAX_WHITELIST_REASON_LENGTH") reason: String,
+    ) {
         val reply = interaction.deferReply(true).await()
-        val id = uuid.isCRC32Muuid()
-        if (!id) {
-            reply.sendMessage("The uuid is not valid.").await()
-        } else {
-            whitelist.addPlayer(uuid, reason)
-            reply.sendMessage("Added uuid to whitelist.").await()
+        val parsed = WhitelistTarget.parse(target)
+        if (parsed == null) {
+            reply.sendMessage(INVALID_TARGET_MESSAGE).await()
+            return
         }
+        whitelist.add(parsed, reason)
+        reply.sendMessage("Added `$parsed` to the whitelist.").await()
     }
 
     @ImperiumCommand(["whitelist", "remove"], Rank.ADMIN)
-    suspend fun onWhitelistRemoveCommand(interaction: SlashCommandInteraction, uuid: String) {
+    suspend fun onWhitelistRemoveCommand(interaction: SlashCommandInteraction, target: String) {
         val reply = interaction.deferReply(true).await()
-        val id = uuid.isCRC32Muuid()
-        if (!id) {
-            reply.sendMessage("The uuid is not valid.").await()
-        } else if (whitelist.containsPlayer(uuid)) {
-            whitelist.removePlayer(uuid)
-            reply.sendMessage("Removed uuid from whitelist.").await()
+        val parsed = WhitelistTarget.parse(target)
+        if (parsed == null) {
+            reply.sendMessage(INVALID_TARGET_MESSAGE).await()
+            return
+        }
+        if (whitelist.remove(parsed)) {
+            reply.sendMessage("Removed `$parsed` from the whitelist.").await()
         } else {
-            reply.sendMessage("The whitelist does not contain this uuid.").await()
+            reply.sendMessage("The whitelist does not contain `$parsed`.").await()
         }
     }
 
     @ImperiumCommand(["whitelist", "list"], Rank.ADMIN)
     suspend fun onWhitelistListCommand(interaction: SlashCommandInteraction) {
         val state = WhitelistState(0, interaction.user.idLong)
-        val result = getResult()
+        val result = whitelist.list()
         val message = interaction.deferReply(true).await().sendMessage(createMessage(result, state)).await()
 
         states.put(message.idLong, state)
@@ -111,7 +118,7 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
         val edit = interaction.deferEdit().await()
         state = update(state)
 
-        val result = getResult()
+        val result = whitelist.list()
         state = state.copy(page = state.page.coerceAtMost(result.pages))
 
         states.put(interaction.message.idLong, state)
@@ -119,10 +126,8 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
         edit.editOriginal(MessageEditData.fromCreateData(createMessage(result, state))).await()
     }
 
-    private suspend fun getResult() = whitelist.listWhitelist()
-
     private fun createMessage(
-        result: List<WhitelistWithReason>,
+        result: List<WhitelistEntry>,
         state: WhitelistState,
     ) = MessageCreate {
         val pages = result.pages
@@ -133,8 +138,8 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
                 if (listing.isEmpty()) {
                     "The whitelist is empty."
                 } else {
-                    listing.joinToString("\n") { (uuid, reason) ->
-                        "- `$uuid` / $reason"
+                    listing.joinToString("\n") { (target, reason) ->
+                        "- `$target` / $reason"
                     }
                 }
 
@@ -149,7 +154,7 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
         }
     }
 
-    private val List<WhitelistWithReason>.pages: Int
+    private val List<WhitelistEntry>.pages: Int
         get() = (ceil(size.toFloat() / PAGE_SIZE).toInt() - 1).coerceAtLeast(0)
 
     data class WhitelistState(
@@ -163,6 +168,9 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
         private const val WHITELIST_FIRST_BUTTON = "whitelist-first:1"
         private const val WHITELIST_LAST_BUTTON = "whitelist-last:1"
 
-        private const val PAGE_SIZE = 15
+        // Keeps the worst case page (uuid + max length reason per entry) below the 4096 characters embed limit
+        private const val PAGE_SIZE = 10
+
+        private const val INVALID_TARGET_MESSAGE = "The target is neither a valid uuid nor a valid ip address."
     }
 }

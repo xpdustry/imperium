@@ -35,12 +35,10 @@ import com.xpdustry.imperium.common.network.DiscoveryDataSupplier
 import com.xpdustry.imperium.common.network.SimpleDiscovery
 import com.xpdustry.imperium.common.network.VpnApiIoDetection
 import com.xpdustry.imperium.common.network.VpnDetection
-import com.xpdustry.imperium.common.security.AddressWhitelist
-import com.xpdustry.imperium.common.security.PlayerWhitelist
 import com.xpdustry.imperium.common.security.PunishmentManager
-import com.xpdustry.imperium.common.security.SimpleAddressWhitelist
-import com.xpdustry.imperium.common.security.SimplePlayerWhitelist
 import com.xpdustry.imperium.common.security.SimplePunishmentManager
+import com.xpdustry.imperium.common.security.SimpleWhitelist
+import com.xpdustry.imperium.common.security.Whitelist
 import com.xpdustry.imperium.common.time.SimpleTimeRenderer
 import com.xpdustry.imperium.common.time.TimeRenderer
 import com.xpdustry.imperium.common.user.SimpleUserManager
@@ -78,8 +76,7 @@ fun DependencyService.Binder.registerCommonModule() {
     bindToImpl<MindustryMapManager, SimpleMindustryMapManager>()
     bindToImpl<PunishmentManager, SimplePunishmentManager>()
     bindToImpl<UserManager, SimpleUserManager>()
-    bindToImpl<AddressWhitelist, SimpleAddressWhitelist>()
-    bindToImpl<PlayerWhitelist, SimplePlayerWhitelist>()
+    bindToImpl<Whitelist, SimpleWhitelist>()
 
     // Shared services.
     bindToProv<IdentifierCodec> { ImperiumC6B36Codec }
