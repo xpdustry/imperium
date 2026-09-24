@@ -6,11 +6,13 @@ import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.network.VpnDetection
 import com.xpdustry.imperium.common.security.AddressWhitelist
 import com.xpdustry.imperium.common.security.PlayerWhitelist
-import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.processing.Processor
 
-class VpnGatekeeper(private val provider: VpnDetection, private val addressWhitelist: AddressWhitelist, private val whitelist: PlayerWhitelist) :
-    Processor<GatekeeperContext, GatekeeperResult> {
+class VpnGatekeeper(
+    private val provider: VpnDetection,
+    private val addressWhitelist: AddressWhitelist,
+    private val whitelist: PlayerWhitelist,
+) : Processor<GatekeeperContext, GatekeeperResult> {
     override suspend fun process(context: GatekeeperContext): GatekeeperResult {
         // TODO: addressWhitelist is deprecated
         if (whitelist.containsPlayer(context.uuid) || addressWhitelist.containsAddress(context.address)) {

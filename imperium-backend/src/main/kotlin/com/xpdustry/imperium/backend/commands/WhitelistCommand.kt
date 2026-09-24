@@ -14,16 +14,15 @@ import com.xpdustry.imperium.common.misc.buildCache
 import com.xpdustry.imperium.common.misc.isCRC32Muuid
 import com.xpdustry.imperium.common.security.PlayerWhitelist
 import com.xpdustry.imperium.common.security.WhitelistWithReason
+import kotlin.math.ceil
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.toJavaDuration
 import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.buttons.Button
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.ComponentInteraction
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
-import net.dv8tion.jda.api.utils.messages.MessageCreateData
 import net.dv8tion.jda.api.utils.messages.MessageEditData
-import kotlin.math.ceil
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.toJavaDuration
 
 @Inject
 class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplication.Listener {
@@ -117,9 +116,7 @@ class WhitelistCommand(private val whitelist: PlayerWhitelist) : ImperiumApplica
 
         states.put(interaction.message.idLong, state)
 
-        edit
-            .editOriginal(MessageEditData.fromCreateData(createMessage(result, state)))
-            .await()
+        edit.editOriginal(MessageEditData.fromCreateData(createMessage(result, state))).await()
     }
 
     private suspend fun getResult() = whitelist.listWhitelist()
