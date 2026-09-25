@@ -84,6 +84,9 @@ class GameListener(
         val stats = Vars.state.stats
         val waves = Vars.state.wave
         val start = Vars.state.map.start ?: Clock.System.now()
+        // The map object is reused by the next game on this map, so the tags must be reset even if nothing is saved
+        Vars.state.map.playtime = ZERO
+        Vars.state.map.start = null
         val mapId = Vars.state.map.id ?: return
         if (playtime < 1.minutes) return
         scope.launch {
@@ -103,7 +106,5 @@ class GameListener(
                 ),
             )
         }
-        Vars.state.map.playtime = ZERO
-        Vars.state.map.start = null
     }
 }

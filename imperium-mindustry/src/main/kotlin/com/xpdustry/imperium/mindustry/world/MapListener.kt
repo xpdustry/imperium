@@ -2,6 +2,7 @@
 package com.xpdustry.imperium.mindustry.world
 
 import arc.files.Fi
+import com.xpdustry.distributor.api.annotation.EventHandler
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -15,6 +16,7 @@ import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.common.misc.LoggerDelegate
 import com.xpdustry.imperium.common.misc.stripMindustryColors
 import com.xpdustry.imperium.mindustry.command.annotation.ServerSide
+import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.id
 import java.nio.file.Path
 import kotlin.io.path.createDirectory
@@ -23,6 +25,7 @@ import kotlin.io.path.outputStream
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import mindustry.Vars
+import mindustry.game.Gamemode
 import mindustry.io.MapIO
 import mindustry.maps.Map
 
@@ -35,8 +38,14 @@ class MapListener(
 ) : ImperiumApplication.Listener {
     private val cache = directory.resolve("map-pool")
 
+    // Maps of the latest games played on this server, most recent first
+    @Volatile private var recent = emptyList<Int>()
+    @Volatile private var recentLimit = 0
+
     override fun onImperiumInit() {
         if (cache.notExists()) cache.createDirectory()
+
+        Vars.maps.setMapProvider(::getNextMap)
 
         messenger.subscribe<MapReloadMessage> {
             if (config.mindustry.gamemode in it.gamemodes || it.gamemodes.isEmpty()) reloadMaps()
@@ -49,6 +58,24 @@ class MapListener(
     @ServerSide
     fun onMapReloadCommand() {
         reloadMaps()
+    }
+
+    @EventHandler
+    internal fun onMenuToPlayEvent(event: MenuToPlayEvent) {
+        Vars.state.map.id?.let(::pushRecent)
+    }
+
+    private fun getNextMap(mode: Gamemode, previous: Map?): Map? {
+        val pool = Vars.maps.all().filter { it.id != null }.associateBy { it.id!! }
+        if (pool.isEmpty()) return Vars.maps.shuffleMode.next(mode, previous)
+        // In case the previous map somehow missed the play event
+        val id = previous?.id
+        val history = if (id != null && recent.firstOrNull() != id) listOf(id) + recent else recent
+        return pickNextMap(pool.keys.toList(), history)?.let(pool::get)
+    }
+
+    private fun pushRecent(map: Int) {
+        recent = (listOf(map) + recent).take(recentLimit)
     }
 
     private fun reloadMaps() {
@@ -70,6 +97,17 @@ class MapListener(
         if (pool.isEmpty()) {
             logger.warn("No maps found in server pool, falling back to local maps.")
         }
+
+        recentLimit = pool.size * 2
+        recent =
+            try {
+                runBlocking(Dispatchers.IO) { maps.findRecentlyPlayedMaps(config.server.name, recentLimit) }
+            } catch (e: Exception) {
+                logger.error("Failed to fetch the recently played maps, the map rotation will start fresh.", e)
+                emptyList()
+            }
+        // The ongoing game is only saved in the database once it ends
+        if (Vars.state.isGame) Vars.state.map.id?.let(::pushRecent)
 
         Vars.maps.all().addAll(pool)
         val now = Vars.maps.all().map { it.name().stripMindustryColors() }.toMutableSet()

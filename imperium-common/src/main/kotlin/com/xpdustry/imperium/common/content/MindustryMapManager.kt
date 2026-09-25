@@ -66,6 +66,9 @@ interface MindustryMapManager {
 
     suspend fun findMapGameBySnowflake(game: Int): MindustryMap.PlayThrough?
 
+    /** Returns the maps of the latest games played on [server], most recently ended first. */
+    suspend fun findRecentlyPlayedMaps(server: String, limit: Int): List<Int>
+
     suspend fun getMapStats(map: Int): MindustryMap.Stats?
 
     suspend fun getMapInputStream(map: Int): InputStream?
@@ -196,6 +199,16 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
                 it[buildingsDestroyed] = data.buildingsDestroyed
                 it[winner] = data.winner
             }
+        }
+
+    override suspend fun findRecentlyPlayedMaps(server: String, limit: Int): List<Int> =
+        provider.newSuspendTransaction {
+            MindustryMapGameTable.select(MindustryMapGameTable.map)
+                .where { MindustryMapGameTable.server eq server }
+                // Rows are inserted when games end, so the id follows the play order
+                .orderBy(MindustryMapGameTable.id, SortOrder.DESC)
+                .limit(limit)
+                .map { it[MindustryMapGameTable.map].value }
         }
 
     override suspend fun findMapGameBySnowflake(game: Int): MindustryMap.PlayThrough? = provider.newSuspendTransaction {
