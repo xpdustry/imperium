@@ -3,6 +3,7 @@ package com.xpdustry.imperium.mindustry.security
 
 import arc.Core
 import arc.Events
+import com.xpdustry.distributor.api.component.Component
 import com.xpdustry.distributor.api.component.TextComponent.text
 import com.xpdustry.distributor.api.component.style.ComponentColor
 import com.xpdustry.distributor.api.gui.Action
@@ -23,6 +24,7 @@ import com.xpdustry.imperium.common.security.Identity
 import com.xpdustry.imperium.common.security.Punishment
 import com.xpdustry.imperium.common.security.PunishmentManager
 import com.xpdustry.imperium.common.user.UserManager
+import com.xpdustry.imperium.mindustry.component.duration
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
@@ -53,6 +55,7 @@ private val PUNISHMENT_DURATION = key<Duration>("punishment_duration")
 private val PUNISHMENT_REASON = key<String>("punishment_reason")
 private val PUNISHMENT_TARGET = key<Identity.Mindustry>("punishment_target")
 private val PUNISHMENT_TYPE = key<Punishment.Type>("punishment_type")
+private val PUNISHMENT_DURATIONS = listOf(15.minutes, 1.hours, 3.hours, 6.hours, 1.days, 3.days, 7.days, 30.days)
 
 @Inject
 class AdminRequestListener(
@@ -108,11 +111,10 @@ class AdminRequestListener(
                             "Select duration of the ${state[PUNISHMENT_TYPE].toString().lowercase()} of ${state[PUNISHMENT_TARGET]!!.name}"
                         )
 
-                    // TODO Goofy aah function, use proper library to display durations
-                    fun addDuration(display: String, duration: Duration, color: ComponentColor = ComponentColor.GREEN) =
+                    fun addDuration(display: Component, duration: Duration) =
                         pane.grid.addRow(
                             MenuOption.of(
-                                text(display, color),
+                                display,
                                 Action.hide()
                                     .then(
                                         Action.with(PUNISHMENT_DURATION, duration).then(Action.show(detailsInterface))
@@ -120,15 +122,10 @@ class AdminRequestListener(
                             )
                         )
 
-                    addDuration("15 minutes", 15.minutes)
-                    addDuration("1 hour", 1.hours)
-                    addDuration("3 hour", 3.hours)
-                    addDuration("6 hours", 6.hours)
-                    addDuration("1 day", 1.days)
-                    addDuration("3 days", 3.days)
-                    addDuration("1 week", 7.days)
-                    addDuration("1 month", 30.days)
-                    addDuration("Permanent", Duration.INFINITE, ComponentColor.RED)
+                    for (duration in PUNISHMENT_DURATIONS) {
+                        addDuration(duration(duration, ComponentColor.GREEN), duration)
+                    }
+                    addDuration(text("Permanent", ComponentColor.RED), Duration.INFINITE)
                     pane.grid.addRow(MenuOption.of(text("Cancel", ComponentColor.RED), Action.back()))
                 }
             }

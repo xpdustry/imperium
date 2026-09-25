@@ -103,7 +103,6 @@ private fun createVpnDetection(config: ImperiumConfig, http: OkHttpClient, provi
 private fun createOkHttpClient(): OkHttpClient =
     OkHttpClient.Builder()
         .connectTimeout(20.seconds)
-        .connectTimeout(20.seconds)
         .readTimeout(20.seconds)
         .writeTimeout(20.seconds)
         .dispatcher(

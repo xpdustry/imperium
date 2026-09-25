@@ -208,8 +208,6 @@ class SimpleHistorian(
                 HistoryEntry(
                     it.x.toInt(),
                     it.y.toInt(),
-                    building.tileX(),
-                    building.tileY(),
                     author,
                     block,
                     type,

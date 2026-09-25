@@ -2,12 +2,10 @@
 package com.xpdustry.imperium.mindustry.misc
 
 import arc.struct.ObjectMap
-import arc.struct.ObjectSet
 import arc.struct.Seq
 import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.collection.MindustryCollections
 import com.xpdustry.distributor.api.component.Component
-import com.xpdustry.distributor.api.event.EventSubscription
 import com.xpdustry.distributor.api.gui.Action
 import com.xpdustry.distributor.api.gui.BiAction
 import com.xpdustry.distributor.api.gui.Pane
@@ -22,7 +20,6 @@ import com.xpdustry.imperium.mindustry.ImperiumPlugin
 import com.xpdustry.imperium.mindustry.translation.gui_error
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.reflect.KClass
 import kotlin.reflect.jvm.javaType
 import kotlin.reflect.typeOf
 import kotlin.time.Duration
@@ -45,8 +42,6 @@ fun <T : Entityc> EntityGroup<T>.asList(): List<T> = MindustryCollections.immuta
 @Suppress("UNCHECKED_CAST")
 fun <K : Any, V> ObjectMap<K, V>.asMap(): Map<K, V> =
     MindustryCollections.immutableMap(this as ObjectMap<K, V & Any>) as Map<K, V>
-
-fun <T : Any> ObjectSet<T>.asSet(): Set<T> = MindustryCollections.immutableSet(this)
 
 // https://stackoverflow.com/a/73494554
 suspend fun <T> runMindustryThread(timeout: Duration = 5.seconds, task: () -> T): T =
@@ -73,37 +68,10 @@ inline fun <reified T : Any> key(name: String): Key<T> =
 
 fun <T : Any> key(name: String, clazz: Class<T>): Key<T> = Key.of("imperium", name, TypeToken.of(clazz))
 
-fun <T : Any> key(name: String, clazz: KClass<T>): Key<T> = Key.of("imperium", name, TypeToken.of(clazz.java))
-
 fun <P : Pane> Transformer<P>.then(transformer: Transformer<P>) = Transformer {
     this@then.transform(it)
     transformer.transform(it)
 }
-
-inline fun <reified E : Any> onEvent(
-    priority: Priority = Priority.NORMAL,
-    crossinline listener: (E) -> Unit,
-): EventSubscription =
-    Distributor.get().eventBus.subscribe(
-        E::class.java,
-        priority,
-        Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin,
-    ) {
-        listener(it)
-    }
-
-inline fun <E : Enum<E>> onEvent(
-    enum: E,
-    priority: Priority = Priority.NORMAL,
-    crossinline listener: () -> Unit,
-): EventSubscription =
-    Distributor.get().eventBus.subscribe(
-        enum,
-        priority,
-        Vars.mods.getMod(ImperiumPlugin::class.java).main as MindustryPlugin,
-    ) {
-        listener()
-    }
 
 @Suppress("FunctionName")
 fun <E : Enum<E>> NavigateAction(key: Key<E>, target: E): Action = Action.with(key, target).then(Window::show)
@@ -119,11 +87,14 @@ fun <E : Enum<E>, P : Pane> NavigationTransformer(key: Key<E>, page: E, transfor
 fun HideAllAndAnnounceAction(message: Component): Action =
     Action.hideAll().then(Action.audience { it.sendAnnouncement(message) })
 
-private val DEFAULT_FAILURE_ACTION =
-    BiAction.from<Throwable>(HideAllAndAnnounceAction(gui_error())).then { _, error ->
+@Suppress("FunctionName")
+fun LoggingFailureAction(message: Component = gui_error()): BiAction<Throwable> =
+    BiAction.from<Throwable>(HideAllAndAnnounceAction(message)).then { _, error ->
         LoggerFactory.getLogger(ImperiumPlugin::class.java)
             .error("An unexpected error occurred in a coroutine action", error)
     }
+
+private val DEFAULT_FAILURE_ACTION = LoggingFailureAction()
 
 @Suppress("FunctionName")
 fun <T : Any> CoroutineAction(

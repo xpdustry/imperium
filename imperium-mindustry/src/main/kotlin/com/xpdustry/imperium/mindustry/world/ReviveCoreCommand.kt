@@ -26,6 +26,7 @@ import com.xpdustry.imperium.mindustry.command.vote.Vote
 import com.xpdustry.imperium.mindustry.command.vote.VoteManager
 import com.xpdustry.imperium.mindustry.game.MenuToPlayEvent
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.ImmutablePoint
 import com.xpdustry.imperium.mindustry.misc.component1
 import com.xpdustry.imperium.mindustry.misc.component2
 import com.xpdustry.imperium.mindustry.misc.component3
@@ -34,6 +35,7 @@ import com.xpdustry.imperium.mindustry.security.AfkManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import mindustry.Vars
 import mindustry.content.Blocks
@@ -53,7 +55,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
     AbstractVoteCommand<ReviveCoreCommand.ReviveData>(plugin, "revive", afk, 1.minutes, scope),
     ImperiumApplication.Listener {
 
-    private val destroyedCores = linkedMapOf<TilePosition, DestroyedCore>()
+    private val destroyedCores = linkedMapOf<ImmutablePoint, DestroyedCore>()
     private val reviveCooldowns = mutableMapOf<Team, Long>()
 
     private val menu =
@@ -80,7 +82,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
     internal fun onBlockDestroyEvent(event: EventType.BlockDestroyEvent) {
         if (Vars.state.rules.coreCapture) return
         val building = event.tile.build as? CoreBlock.CoreBuild ?: return
-        val position = TilePosition(building.tileX(), building.tileY())
+        val position = ImmutablePoint(building.tileX(), building.tileY())
         destroyedCores[position] = DestroyedCore(position.x, position.y, building.block as CoreBlock)
     }
 
@@ -187,7 +189,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
             return
         }
         if (!isTileAvailable(core)) {
-            destroyedCores.remove(TilePosition(core.x, core.y))
+            destroyedCores.remove(ImmutablePoint(core.x, core.y))
             player.sendMessage("[scarlet]That core can no longer be revived.")
             return
         }
@@ -237,7 +239,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
             val (core, team, cost) = session.objective
             if (!isTileAvailable(core)) {
                 refundItems(team, cost)
-                destroyedCores.remove(TilePosition(core.x, core.y))
+                destroyedCores.remove(ImmutablePoint(core.x, core.y))
                 Call.sendMessage(
                     "[scarlet]The location of ${core.block.localizedName} is blocked, the items have been refunded."
                 )
@@ -256,7 +258,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
 
     private fun reviveCore(team: Team, core: DestroyedCore) {
         Call.constructFinish(Vars.world.tile(core.x, core.y), core.block, null, 0, team, false)
-        destroyedCores.remove(TilePosition(core.x, core.y))
+        destroyedCores.remove(ImmutablePoint(core.x, core.y))
         reviveCooldowns[team] = System.currentTimeMillis() + COOLDOWN.inWholeMilliseconds
     }
 
@@ -319,15 +321,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
     private fun formatCost(cost: List<ItemStack>): String =
         cost.joinToString(" + ") { stack -> "${stack.amount} ${stack.item.localizedName}" }
 
-    private fun formatDuration(duration: Duration): String = duration.toComponents { minutes, seconds, _ ->
-        when {
-            minutes > 0 && seconds > 0 -> "${minutes}m ${seconds}s"
-            minutes > 0 -> "${minutes}m"
-            else -> "${seconds}s"
-        }
-    }
-
-    private data class TilePosition(val x: Int, val y: Int)
+    private fun formatDuration(duration: Duration): String = duration.inWholeSeconds.seconds.toString()
 
     data class DestroyedCore(val x: Int, val y: Int, val block: CoreBlock)
 

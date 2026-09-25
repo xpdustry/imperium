@@ -17,11 +17,8 @@ import mindustry.net.Administration
 import mindustry.type.Item
 import mindustry.world.Block
 import mindustry.world.blocks.sandbox.ItemSource
-import mindustry.world.blocks.sandbox.ItemVoid
 import mindustry.world.blocks.sandbox.LiquidSource
-import mindustry.world.blocks.sandbox.LiquidVoid
 import mindustry.world.blocks.sandbox.PowerSource
-import mindustry.world.blocks.sandbox.PowerVoid
 import mindustry.world.blocks.storage.CoreBlock
 import mindustry.world.blocks.storage.StorageBlock
 
@@ -79,9 +76,6 @@ val Building.isCoreBuilding: Boolean
 
 val Block.isSourceBlock: Boolean
     get() = this is ItemSource || this is LiquidSource || this is PowerSource
-
-val Block.isVoidBlock: Boolean
-    get() = this is ItemVoid || this is LiquidVoid || this is PowerVoid
 
 fun Color.toHexString(): String = String.format("#%06x", rgb888())
 

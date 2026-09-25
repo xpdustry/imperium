@@ -4,7 +4,6 @@ package com.xpdustry.imperium.mindustry
 import arc.Application
 import arc.ApplicationListener
 import arc.Core
-import com.xpdustry.distributor.api.Distributor
 import com.xpdustry.distributor.api.annotation.PluginAnnotationProcessor
 import com.xpdustry.distributor.api.component.render.ComponentRendererProvider
 import com.xpdustry.distributor.api.plugin.AbstractMindustryPlugin
@@ -12,7 +11,6 @@ import com.xpdustry.distributor.api.plugin.MindustryPlugin
 import com.xpdustry.distributor.api.translation.BundleTranslationSource
 import com.xpdustry.distributor.api.translation.ResourceBundles
 import com.xpdustry.distributor.api.translation.TranslationSource
-import com.xpdustry.distributor.api.util.Priority
 import com.xpdustry.imperium.common.application.BaseImperiumApplication
 import com.xpdustry.imperium.common.application.ExitStatus
 import com.xpdustry.imperium.common.config.ImperiumConfig
@@ -47,6 +45,7 @@ import com.xpdustry.imperium.mindustry.game.TipListener
 import com.xpdustry.imperium.mindustry.history.HistoryCommand
 import com.xpdustry.imperium.mindustry.metrics.MetricsListener
 import com.xpdustry.imperium.mindustry.misc.ImperiumMetadataChunkReader
+import com.xpdustry.imperium.mindustry.misc.registerDistributorService
 import com.xpdustry.imperium.mindustry.monitoring.BlockHoundService
 import com.xpdustry.imperium.mindustry.permission.ImperiumPermissionListener
 import com.xpdustry.imperium.mindustry.security.AdminRequestListener
@@ -72,7 +71,6 @@ import com.xpdustry.imperium.mindustry.world.SwitchCommand
 import com.xpdustry.imperium.mindustry.world.WaveCommand
 import com.xpdustry.imperium.mindustry.world.WelcomeListener
 import com.xpdustry.imperium.mindustry.world.WorldEditCommand
-import kotlin.reflect.KClass
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mindustry.io.SaveVersion
@@ -89,8 +87,8 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
         application.createAll()
 
-        registerService(
-            TranslationSource::class,
+        registerDistributorService<TranslationSource>(
+            this,
             BundleTranslationSource.create(application.instances.get<ImperiumConfig>().language).apply {
                 registerAll(
                     ResourceBundles.fromClasspathDirectory(
@@ -103,7 +101,7 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
             },
         )
 
-        registerService(ComponentRendererProvider::class, application.instances.get<ComponentRendererProvider>())
+        registerDistributorService<ComponentRendererProvider>(this, application.instances.get())
 
         sequenceOf(
                 ConventionListener::class,
@@ -185,10 +183,6 @@ class ImperiumPlugin : AbstractMindustryPlugin() {
 
     override fun onExit() {
         application.exit(ExitStatus.EXIT)
-    }
-
-    private fun <T : Any> registerService(klass: KClass<T>, instance: T) {
-        Distributor.get().serviceManager.register(this@ImperiumPlugin, klass.java, instance, Priority.NORMAL)
     }
 
     private inner class MindustryImperiumApplication(plugin: MindustryPlugin) :

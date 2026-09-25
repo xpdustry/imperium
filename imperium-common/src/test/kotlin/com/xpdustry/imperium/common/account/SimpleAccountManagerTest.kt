@@ -8,7 +8,6 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.database.SQLProvider
 import com.xpdustry.imperium.common.dependency.DependencyService
 import com.xpdustry.imperium.common.message.MessageService
-import com.xpdustry.imperium.common.message.TestMessenger
 import com.xpdustry.imperium.common.registerCommonModule
 import com.xpdustry.imperium.common.string.Password
 import com.xpdustry.imperium.common.string.findMissingRequirements
@@ -294,7 +293,7 @@ class SimpleAccountManagerTest {
         bindToProv<ImperiumConfig> {
             ImperiumConfig(database = DatabaseConfig.H2(memory = true, database = UUID.randomUUID().toString()))
         }
-        bindToProv<MessageService> { TestMessenger() }
+        bindToProv<MessageService> { MessageService.Noop }
         bindToProv<Path>("directory") { tempDir }
     }
 

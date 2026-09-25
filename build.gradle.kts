@@ -204,9 +204,7 @@ project(":imperium-backend") {
             exclude(dependency("org.jetbrains.kotlin:kotlin-.*:.*"))
             exclude(dependency("org.slf4j:slf4j-.*:.*"))
             exclude(dependency("ch.qos.logback:logback-.*:.*"))
-            exclude(dependency("org.apache.logging.log4j:log4j-to-slf4j:.*"))
             exclude(dependency("com.sksamuel.hoplite:hoplite-.*:.*"))
-            exclude(dependency("org.javacord:javacord-core:.*"))
             exclude(dependency("org.jetbrains.exposed:exposed-jdbc:.*"))
             exclude(dependency("org.mariadb.jdbc:mariadb-java-client:.*"))
             exclude(dependency("com.github.ben-manes.caffeine:caffeine:.*"))
@@ -358,7 +356,7 @@ project(":imperium-mindustry") {
         owner = "xpdustry"
         repo = "nohorny"
         asset = "nohorny-client.jar"
-        version = "v4.0.0-beta.7"
+        version = "v4.0.0-beta.10"
     }
 
     tasks.register<MindustryExec>("runMindustryDesktop2") {

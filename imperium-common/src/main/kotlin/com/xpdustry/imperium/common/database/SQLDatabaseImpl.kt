@@ -60,7 +60,7 @@ internal class SQLDatabaseImpl(private val config: ImperiumConfig, @Named("direc
     override suspend fun <R> transaction(block: suspend SQLDatabase.Handle.() -> R): R =
         withContext(Dispatchers.IO) {
             val element = currentCoroutineContext()[CoroutineHandleElement]
-            if (element != null && element.config == config) {
+            if (element != null && element.owner === this@SQLDatabaseImpl) {
                 return@withContext block(element.handle)
             }
             return@withContext this@SQLDatabaseImpl.source.connection.use { connection ->
@@ -68,10 +68,10 @@ internal class SQLDatabaseImpl(private val config: ImperiumConfig, @Named("direc
                 try {
                     handle.connection.autoCommit = false
                     handle.connection.transactionIsolation = Connection.TRANSACTION_READ_COMMITTED
-                    val result = withContext(CoroutineHandleElement(handle, config.database)) { block(handle) }
+                    val result = withContext(CoroutineHandleElement(handle, this@SQLDatabaseImpl)) { block(handle) }
                     handle.connection.commit()
                     return@use result
-                } catch (e: SQLException) {
+                } catch (e: Throwable) {
                     handle.connection.rollback()
                     throw e
                 }
@@ -203,7 +203,7 @@ private class RowImpl(private val set: ResultSet) : SQLDatabase.Row {
     override fun getInstant(name: String): Instant? = set.getTimestamp(name)?.toInstant()?.toKotlinInstant()
 }
 
-private class CoroutineHandleElement(val handle: HandleImpl, val config: DatabaseConfig) :
+private class CoroutineHandleElement(val handle: HandleImpl, val owner: SQLDatabase) :
     AbstractCoroutineContextElement(CoroutineHandleElement) {
     companion object Key : CoroutineContext.Key<CoroutineHandleElement>
 }

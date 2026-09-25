@@ -8,6 +8,7 @@ import com.xpdustry.imperium.backend.misc.Embed
 import com.xpdustry.imperium.backend.misc.ImperiumEmojis
 import com.xpdustry.imperium.backend.misc.MessageCreate
 import com.xpdustry.imperium.backend.misc.await
+import com.xpdustry.imperium.backend.misc.getFieldValue
 import com.xpdustry.imperium.backend.service.DiscordService
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
@@ -35,7 +36,6 @@ import kotlinx.coroutines.future.await
 import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.buttons.Button
 import net.dv8tion.jda.api.entities.Message
-import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
@@ -273,8 +273,6 @@ class MapSubmitCommand(
                 }
             )
     }
-
-    private fun MessageEmbed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
 
     companion object {
         private val MENTION_TAG_REGEX = Regex("<@!?(\\d+)>")

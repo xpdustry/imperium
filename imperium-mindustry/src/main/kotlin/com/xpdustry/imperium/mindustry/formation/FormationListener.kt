@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 package com.xpdustry.imperium.mindustry.formation
 
-import arc.math.Mathf
 import arc.util.Interval
 import arc.util.Time
 import com.xpdustry.distributor.api.annotation.TriggerHandler
@@ -218,8 +217,7 @@ class FormationListener(private val store: DataStoreService) : ImperiumApplicati
 
     private fun calculateScore(leader: MindustryUnit, unit: MindustryUnit): Float {
         var score = 0F
-        // TODO replace with JDK 21 Math#clamp when possible
-        score += Mathf.clamp(unit.healthf() / 2F, 0F, 0.5F)
+        score += Math.clamp(unit.healthf() / 2F, 0F, 0.5F)
         score += if (leader.type() == unit.type()) 0.5F else 0F
         return score
     }

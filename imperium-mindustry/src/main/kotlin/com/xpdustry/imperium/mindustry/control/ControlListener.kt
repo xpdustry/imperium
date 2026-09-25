@@ -15,9 +15,12 @@ import com.xpdustry.imperium.common.message.MessageService
 import com.xpdustry.imperium.common.message.subscribe
 import com.xpdustry.imperium.mindustry.misc.Entities
 import com.xpdustry.imperium.mindustry.misc.asAudience
-import com.xpdustry.imperium.mindustry.misc.onEvent
+import com.xpdustry.imperium.mindustry.misc.runMindustryThread
 import com.xpdustry.imperium.mindustry.translation.server_restart_delay
+import com.xpdustry.imperium.mindustry.translation.server_restart_empty
 import com.xpdustry.imperium.mindustry.translation.server_restart_game_over
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -42,51 +45,79 @@ class ControlListener(
             field = value
         }
 
+    private var pending: PendingAction? = null
+
     override fun onImperiumInit() {
         messenger.subscribe<RemoteActionMessage> {
             if (it.target == null || it.target == config.server.name) {
-                prepareAction(it.action, it.immediate)
+                runMindustryThread { prepareAction(it.action, it.immediate, it.waitForEmpty) }
             }
         }
     }
 
     @EventHandler
     fun onPlayerJoinNotify(event: EventType.PlayerJoin) {
-        if (job != null) {
+        if (pending?.trigger == Trigger.EMPTY) {
+            event.player.asAudience.sendMessage(server_restart_empty("admin"))
+        } else if (job != null || pending != null) {
             event.player.asAudience.sendMessage(server_restart_game_over("admin"))
         }
     }
 
+    @EventHandler
+    fun onGameOver(event: GameOverEvent) {
+        val pending = pending?.takeIf { it.trigger == Trigger.GAME_OVER } ?: return
+        this.pending = null
+        scheduleAction(pending.action, 5.seconds)
+    }
+
+    @EventHandler
+    fun onPlayerLeave(event: EventType.PlayerLeave) {
+        val pending = pending?.takeIf { it.trigger == Trigger.EMPTY } ?: return
+        // The leaving player is still in the player group when this event is fired
+        if (Entities.getPlayers().any { it != event.player }) return
+        this.pending = null
+        scheduleAction(pending.action, 10.seconds)
+    }
+
     // TODO Allow custom reasons
-    private fun prepareAction(action: RemoteActionMessage.Action, immediate: Boolean, reason: String = "admin") {
+    private fun prepareAction(
+        action: RemoteActionMessage.Action,
+        immediate: Boolean,
+        waitForEmpty: Boolean,
+        reason: String = "admin",
+    ) {
         job = null
+        pending = null
         val everyone = Distributor.get().audienceProvider.everyone
-        if (immediate || Entities.getPlayers().isEmpty() || Vars.state.gameOver) {
-            everyone.sendMessage(server_restart_delay(reason, 10.seconds))
-            job = scope.launch {
-                delay(10.seconds)
-                doAction(action)
+        when {
+            immediate ||
+                Entities.getPlayers().isEmpty() ||
+                Vars.state.gameOver ||
+                config.mindustry.gamemode == MindustryGamemode.HUB -> {
+                everyone.sendMessage(server_restart_delay(reason, 10.seconds))
+                scheduleAction(action, 10.seconds)
             }
-        } else if (config.mindustry.gamemode.pvp) {
-            everyone.sendMessage(server_restart_game_over(reason))
-            onEvent<GameOverEvent> {
-                job = scope.launch {
-                    delay(5.seconds)
-                    doAction(action)
-                }
+            waitForEmpty -> {
+                everyone.sendMessage(server_restart_empty(reason))
+                pending = PendingAction(action, Trigger.EMPTY)
+                scheduleAction(action, WAIT_FOR_EMPTY_TIMEOUT)
             }
-        } else if (config.mindustry.gamemode == MindustryGamemode.HUB) {
-            everyone.sendMessage(server_restart_delay(reason, 10.seconds))
-            job = scope.launch {
-                delay(10.seconds)
-                doAction(action)
+            config.mindustry.gamemode.pvp -> {
+                everyone.sendMessage(server_restart_game_over(reason))
+                pending = PendingAction(action, Trigger.GAME_OVER)
             }
-        } else {
-            everyone.sendMessage(server_restart_delay(reason, 5.minutes))
-            job = scope.launch {
-                delay(5.minutes)
-                doAction(action)
+            else -> {
+                everyone.sendMessage(server_restart_delay(reason, 5.minutes))
+                scheduleAction(action, 5.minutes)
             }
+        }
+    }
+
+    private fun scheduleAction(action: RemoteActionMessage.Action, delay: Duration) {
+        job = scope.launch {
+            delay(delay)
+            doAction(action)
         }
     }
 
@@ -96,5 +127,16 @@ class ControlListener(
                 ServerControl.instance.handleCommandString("stop") // TODO Find a cleaner way
             else -> application.exit(action.toExitStatus())
         }
+    }
+
+    private data class PendingAction(val action: RemoteActionMessage.Action, val trigger: Trigger)
+
+    private enum class Trigger {
+        GAME_OVER,
+        EMPTY,
+    }
+
+    companion object {
+        private val WAIT_FOR_EMPTY_TIMEOUT = 1.hours
     }
 }

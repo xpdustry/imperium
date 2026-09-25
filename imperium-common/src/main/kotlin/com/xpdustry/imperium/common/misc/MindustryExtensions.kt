@@ -14,8 +14,6 @@ typealias MindustryUSID = String
 
 val MINDUSTRY_ACCENT_COLOR = Color(0xffd37f)
 
-val MINDUSTRY_ORANGE_COLOR = Color(0xffa108)
-
 private val NAMED_COLORS =
     setOf(
         "CLEAR",

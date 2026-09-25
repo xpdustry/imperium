@@ -62,7 +62,7 @@ class SimpleDiscovery(
             delay(Random.nextLong(5).seconds)
             while (isActive) {
                 sendDiscovery(DiscoveryMessage.Type.DISCOVER)
-                delay(5.seconds)
+                delay(config.network.discoveryInterval)
             }
         }
     }
@@ -71,8 +71,6 @@ class SimpleDiscovery(
         heartbeatJob.cancelAndJoin()
         sendDiscovery(DiscoveryMessage.Type.UN_DISCOVER)
     }
-
-    override fun heartbeat() = runBlocking { sendDiscovery(DiscoveryMessage.Type.DISCOVER) }
 
     private suspend fun sendDiscovery(type: DiscoveryMessage.Type) {
         logger.trace("Sending {} discovery message", type.name)

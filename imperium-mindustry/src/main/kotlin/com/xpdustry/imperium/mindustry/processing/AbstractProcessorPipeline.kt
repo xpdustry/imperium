@@ -11,8 +11,6 @@ abstract class AbstractProcessorPipeline<I : Any, O : Any>(name: String) : Proce
     protected val processors: List<Processor<I, O>>
         get() = _processors.map { it.processor }
 
-    protected fun processor(name: String): Processor<I, O>? = _processors.firstOrNull { it.name == name }?.processor
-
     private val _processors = mutableListOf<ProcessorWithData>()
 
     override fun register(name: String, priority: Priority, processor: Processor<I, O>) {

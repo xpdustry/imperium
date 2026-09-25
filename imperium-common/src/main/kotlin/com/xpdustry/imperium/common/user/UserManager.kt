@@ -37,8 +37,6 @@ interface UserManager {
 
     suspend fun findByUuid(uuid: MindustryUUID): User?
 
-    suspend fun findByLastAddress(address: InetAddress): List<User>
-
     suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses
 
     suspend fun searchUserByName(query: String): List<User>
@@ -111,10 +109,6 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
         }
     }
 
-    override suspend fun findByLastAddress(address: InetAddress): List<User> = provider.newSuspendTransaction {
-        UserTable.selectAll().where { UserTable.lastAddress eq address.address }.map { it.toUser() }
-    }
-
     override suspend fun findNamesAndAddressesById(id: Int): User.NamesAndAddresses = provider.newSuspendTransaction {
         val names =
             UserNameTable.selectAll()
@@ -157,11 +151,9 @@ class SimpleUserManager(private val provider: SQLProvider, private val messenger
     }
 
     override suspend fun getSetting(uuid: MindustryUUID, setting: User.Setting): Boolean =
-        getSettings0(uuid)[setting] ?: setting.default
+        getSettings(uuid)[setting] ?: setting.default
 
-    override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> = getSettings0(uuid)
-
-    private suspend fun getSettings0(uuid: MindustryUUID): Map<User.Setting, Boolean> = provider.newSuspendTransaction {
+    override suspend fun getSettings(uuid: MindustryUUID): Map<User.Setting, Boolean> = provider.newSuspendTransaction {
         (UserSettingTable leftJoin UserTable)
             .select(UserSettingTable.setting, UserSettingTable.value)
             .where { UserTable.uuid eq uuid.toLongMuuid() }

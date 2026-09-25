@@ -34,8 +34,6 @@ interface MindustryMapManager {
 
     suspend fun findMapById(id: Int): MindustryMap?
 
-    suspend fun findMapByName(name: String): MindustryMap?
-
     suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap>
 
     suspend fun findRatingByMapAndUser(map: Int, user: Int): MindustryMap.Rating?
@@ -94,10 +92,6 @@ class SimpleMindustryMapManager(private val provider: SQLProvider, private val m
 
     override suspend fun findMapById(id: Int): MindustryMap? = provider.newSuspendTransaction {
         MindustryMapTable.selectAllButFile().where { MindustryMapTable.id eq id }.firstOrNull()?.toMindustryMap()
-    }
-
-    override suspend fun findMapByName(name: String): MindustryMap? = provider.newSuspendTransaction {
-        MindustryMapTable.selectAllButFile().where { MindustryMapTable.name eq name }.firstOrNull()?.toMindustryMap()
     }
 
     override suspend fun findAllMapsByGamemode(gamemode: MindustryGamemode): List<MindustryMap> =

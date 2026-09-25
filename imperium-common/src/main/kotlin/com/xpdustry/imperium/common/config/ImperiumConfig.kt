@@ -48,7 +48,7 @@ data class ImperiumConfig(
 
 data class NetworkConfig(
     val vpnDetection: VpnDetectionConfig = VpnDetectionConfig.None,
-    val discoveryInterval: Duration = 10.seconds,
+    val discoveryInterval: Duration = 5.seconds,
 ) {
     sealed interface VpnDetectionConfig {
         data object None : VpnDetectionConfig

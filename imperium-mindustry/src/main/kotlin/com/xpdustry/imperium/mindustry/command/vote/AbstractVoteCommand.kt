@@ -38,7 +38,7 @@ abstract class AbstractVoteCommand<O>(
                 return
             }
             val message =
-                "[orange]A vote for [yellow]'$name'[] has been started by ${player.name}[orange]. [yellow]${newSession.required}[] vote(s) are required. [lightgray]${getVoteSessionDetails(newSession)}"
+                "[orange]A vote for [yellow]'$name'[] has been started by ${player.name}[orange]. [yellow]${newSession.required}[] vote(s) are required.\n[white]${getVoteSessionDetails(newSession)}"
             getParticipants(newSession).forEach { it.sendMessage(message) }
         }
     }

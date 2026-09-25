@@ -7,7 +7,6 @@ import com.xpdustry.imperium.common.config.DatabaseConfig
 import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.dependency.DependencyService
 import com.xpdustry.imperium.common.message.MessageService
-import com.xpdustry.imperium.common.message.TestMessenger
 import com.xpdustry.imperium.common.misc.toCRC32Muuid
 import com.xpdustry.imperium.common.misc.toInetAddress
 import com.xpdustry.imperium.common.registerCommonModule
@@ -92,7 +91,7 @@ class SimpleWhitelistTest {
 
     private fun DependencyService.Binder.registerTestModule() {
         bindToProv<ImperiumConfig> { ImperiumConfig(database = DatabaseConfig.H2(memory = true, database = database)) }
-        bindToProv<MessageService> { TestMessenger() }
+        bindToProv<MessageService> { MessageService.Noop }
         bindToProv<Path>("directory") { tempDir }
     }
 }

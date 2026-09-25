@@ -161,13 +161,11 @@ class VoteKickCommand(
     override suspend fun onVoteSessionSuccess(session: VoteManager.Session<Context>) {
         val wasAfk = runMindustryThread {
             Distributor.get().eventBus.post(VotekickEvent(session.objective.target, VotekickEvent.Type.CLOSE))
-            afk.isPlayerAfk(session.objective.target)
+            afk.isPlayerAfk(session.objective.target).also { afk ->
+                if (afk) session.objective.target.asAudience.kick(player_afk_kick(), Duration.ZERO.toJavaDuration())
+            }
         }
-        if (wasAfk) {
-            // TODO Polish this shi
-            session.objective.target.asAudience.kick(player_afk_kick(), Duration.ZERO.toJavaDuration())
-            return
-        }
+        if (wasAfk) return
         val yes = mutableSetOf<MindustryUUIDAsLong>()
         val nay = mutableSetOf<MindustryUUIDAsLong>()
         for ((voter, vote) in session.voters) {

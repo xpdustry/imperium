@@ -334,6 +334,14 @@ fun server_restart_game_over(reason: String): Component =
         translatable("imperium.restart.trigger.game-over"),
     )
 
+fun server_restart_empty(reason: String): Component =
+    components(
+        SCARLET,
+        translatable("imperium.restart.reason.$reason"),
+        space(),
+        translatable("imperium.restart.trigger.empty"),
+    )
+
 fun report_reason(reason: ReportMessage.Reason): Component =
     translatable("imperium.report.reason.${reason.name.lowercase()}", ACCENT)
 
@@ -472,13 +480,6 @@ fun player_afk_announcement(boolean: Boolean, player: String): Component =
     )
 
 fun player_action_disallowed(): Component = components(SCARLET, translatable("imperium.player.action.disallowed"))
-
-// Up to the function caller to make sure target is able to be .toString and be readable
-fun player_action_invalid_target(target: Any): Component =
-    components(
-        SCARLET,
-        translatable("imperium.player.invalid.target", TranslationArguments.array(text(target.toString()))),
-    )
 
 fun command_arg_unknown(arg: String): Component =
     components(SCARLET, translatable("imperium.command.arg.unknown", TranslationArguments.array(text(arg, ORANGE))))

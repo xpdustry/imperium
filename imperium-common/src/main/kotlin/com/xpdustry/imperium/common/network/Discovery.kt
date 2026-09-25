@@ -8,8 +8,6 @@ import kotlinx.serialization.Serializable
 interface Discovery {
     val servers: Map<String, Server>
 
-    fun heartbeat()
-
     @Serializable data class Server(val name: String, val data: Data)
 
     @Serializable

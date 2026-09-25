@@ -24,6 +24,7 @@ import com.xpdustry.imperium.common.user.UserManager
 import com.xpdustry.imperium.mindustry.command.annotation.ClientSide
 import com.xpdustry.imperium.mindustry.misc.CoroutineAction
 import com.xpdustry.imperium.mindustry.misc.Entities
+import com.xpdustry.imperium.mindustry.misc.LoggingFailureAction
 import com.xpdustry.imperium.mindustry.misc.NavigateAction
 import com.xpdustry.imperium.mindustry.misc.NavigationTransformer
 import com.xpdustry.imperium.mindustry.misc.asAudience
@@ -35,6 +36,7 @@ import com.xpdustry.imperium.mindustry.translation.gui_back
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_confirm
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_player
 import com.xpdustry.imperium.mindustry.translation.gui_report_content_reason
+import com.xpdustry.imperium.mindustry.translation.gui_report_failure
 import com.xpdustry.imperium.mindustry.translation.gui_report_no_players
 import com.xpdustry.imperium.mindustry.translation.gui_report_rate_limit
 import com.xpdustry.imperium.mindustry.translation.gui_report_success
@@ -124,6 +126,7 @@ class ReportCommand(
                                         limiter.increment(window.viewer.ip().toInetAddress())
                                         window.viewer.asAudience.sendAnnouncement(gui_report_success())
                                     },
+                                    failure = LoggingFailureAction(gui_report_failure()),
                                 ) {
                                     val sender = runMindustryThread { it.viewer.info }
                                     val target = runMindustryThread { it.state[REPORT_PLAYER]!!.info }

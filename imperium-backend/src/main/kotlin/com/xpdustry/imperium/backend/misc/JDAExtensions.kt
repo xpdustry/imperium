@@ -4,7 +4,6 @@ package com.xpdustry.imperium.backend.misc
 import com.xpdustry.imperium.common.security.Identity
 import java.time.temporal.TemporalAccessor
 import java.util.EnumSet
-import kotlin.reflect.KProperty
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -12,16 +11,11 @@ import net.dv8tion.jda.api.EmbedBuilder
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.components.MessageTopLevelComponent
 import net.dv8tion.jda.api.components.actionrow.ActionRow
-import net.dv8tion.jda.api.components.actionrow.ActionRowChildComponent
-import net.dv8tion.jda.api.entities.Guild
 import net.dv8tion.jda.api.entities.Member
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.entities.Role
-import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.entities.UserSnowflake
-import net.dv8tion.jda.api.entities.channel.concrete.PrivateChannel
-import net.dv8tion.jda.api.entities.channel.middleman.GuildChannel
 import net.dv8tion.jda.api.events.GenericEvent
 import net.dv8tion.jda.api.hooks.EventListener
 import net.dv8tion.jda.api.requests.RestAction
@@ -135,60 +129,7 @@ class InlineMessage<T>(val builder: AbstractMessageBuilder<T, *>) {
 
     val embeds = EmbedAccumulator(this)
 
-    inline fun embed(builder: InlineEmbed.() -> Unit) {
-        embeds += EmbedBuilder(description = null).apply(builder).build()
-    }
-
     val components = ComponentAccumulator(this.configuredComponents, this)
-
-    fun actionRow(vararg components: ActionRowChildComponent) {
-        this.components += ActionRow.of(components.toList())
-    }
-
-    fun actionRow(components: Collection<ActionRowChildComponent>) {
-        this.components += ActionRow.of(components)
-    }
-
-    var allowedMentionTypes = MessageRequest.getDefaultMentions()
-        set(value) {
-            builder.setAllowedMentions(value)
-            field = value
-        }
-
-    inline fun mentions(build: InlineMentions.() -> Unit) {
-        val mentions = InlineMentions().also(build)
-        mentions.users.forEach { builder.mentionUsers(it) }
-        mentions.roles.forEach { builder.mentionRoles(it) }
-    }
-
-    class InlineMentions {
-        val users = mutableListOf<Long>()
-        val roles = mutableListOf<Long>()
-
-        fun user(user: UserSnowflake) {
-            users.add(user.idLong)
-        }
-
-        fun user(id: String) {
-            users.add(id.toLong())
-        }
-
-        fun user(id: Long) {
-            users.add(id)
-        }
-
-        fun role(role: Role) {
-            roles.add(role.idLong)
-        }
-
-        fun role(id: String) {
-            roles.add(id.toLong())
-        }
-
-        fun role(id: Long) {
-            roles.add(id)
-        }
-    }
 }
 
 internal object SetFlags {
@@ -400,8 +341,6 @@ class InlineEmbed(val builder: EmbedBuilder) {
         builder.setAuthor(author.name, author.url, author.iconUrl)
     }
 
-    fun author(member: Member) = author(name = member.effectiveName, iconUrl = member.avatarUrl)
-
     inline fun field(
         name: String = EmbedBuilder.ZERO_WIDTH_SPACE,
         value: String = EmbedBuilder.ZERO_WIDTH_SPACE,
@@ -424,18 +363,7 @@ class InlineEmbed(val builder: EmbedBuilder) {
     )
 }
 
-class MentionConfig internal constructor(val any: Boolean, val list: List<Long>, val type: Message.MentionType) {
-    companion object {
-        val USERS = MentionConfig(true, emptyList(), Message.MentionType.USER)
-        val ROLES = MentionConfig(true, emptyList(), Message.MentionType.ROLE)
-        val EVERYONE = MentionConfig(true, emptyList(), Message.MentionType.EVERYONE)
-        val HERE = MentionConfig(true, emptyList(), Message.MentionType.HERE)
-
-        fun users(list: Collection<Long>) = MentionConfig(false, list.toList(), Message.MentionType.USER)
-
-        fun roles(list: Collection<Long>) = MentionConfig(false, list.toList(), Message.MentionType.ROLE)
-    }
-}
+class MentionConfig internal constructor(val any: Boolean, val list: List<Long>, val type: Message.MentionType)
 
 data class Mentions(var users: MentionConfig, var roles: MentionConfig, var everyone: Boolean, var here: Boolean) {
     fun apply(request: MessageRequest<*>) {
@@ -450,16 +378,6 @@ data class Mentions(var users: MentionConfig, var roles: MentionConfig, var ever
         if (!roles.any) roles.list.forEach(request::mentionRoles)
     }
 
-    operator fun plusAssign(config: MentionConfig) {
-        when (config.type) {
-            Message.MentionType.EVERYONE -> everyone = config.any
-            Message.MentionType.HERE -> here = config.any
-            Message.MentionType.USER -> users = config
-            Message.MentionType.ROLE -> roles = config
-            else -> Unit
-        }
-    }
-
     companion object {
         fun default(): Mentions {
             val defaultTypes = MessageRequest.getDefaultMentions()
@@ -471,35 +389,7 @@ data class Mentions(var users: MentionConfig, var roles: MentionConfig, var ever
                 Message.MentionType.HERE in defaultTypes,
             )
         }
-
-        fun of(vararg configs: MentionConfig): Mentions {
-            val allowedMentions = default()
-
-            for (config in configs) allowedMentions += config
-
-            return allowedMentions
-        }
     }
 }
 
-// https://github.com/MinnDevelopment/jda-ktx/blob/master/src/main/kotlin/dev/minn/jda/ktx/util/proxies.kt
-
-open class BackedReference<T>(private var entity: T, private val update: (T) -> T?) {
-    operator fun getValue(thisRef: Any?, prop: KProperty<*>): T {
-        entity = update(entity) ?: entity
-        return entity
-    }
-}
-
-fun User.ref() = BackedReference(this) { this.jda.getUserById(this.idLong) }
-
-fun Member.ref() = BackedReference(this) { guild.getMemberById(idLong) }
-
-fun Guild.ref() = BackedReference(this) { jda.getGuildById(idLong) }
-
-fun Role.ref() = BackedReference(this) { guild.getRoleById(idLong) }
-
-fun PrivateChannel.ref() = BackedReference(this) { jda.getPrivateChannelById(idLong) }
-
-@Suppress("UNCHECKED_CAST")
-fun <T : GuildChannel> T.ref() = BackedReference(this) { jda.getGuildChannelById(type, idLong) as T }
+internal fun MessageEmbed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value

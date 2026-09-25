@@ -89,6 +89,7 @@ class ServerCommand(
         action: RemoteActionMessage.Action,
         @Lowercase server: String? = null,
         immediate: Boolean = false,
+        wait: Boolean = false,
     ) {
         val reply = interaction.deferReply(false).await()
         if (server == "discord") {
@@ -100,7 +101,7 @@ class ServerCommand(
             reply.sendMessage("Server not found.").await()
             return
         }
-        messenger.broadcast(RemoteActionMessage(server, action, immediate))
+        messenger.broadcast(RemoteActionMessage(server, action, immediate, wait))
         reply
             .sendMessage(
                 "Sent ${action.name.lowercase()} request to " +

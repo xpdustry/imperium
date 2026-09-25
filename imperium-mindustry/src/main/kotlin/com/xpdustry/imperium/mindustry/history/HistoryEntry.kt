@@ -9,8 +9,6 @@ import mindustry.world.Block
 data class HistoryEntry(
     val x: Int,
     val y: Int,
-    val buildX: Int,
-    val buildY: Int,
     val actor: HistoryActor,
     val block: Block,
     val type: Type,

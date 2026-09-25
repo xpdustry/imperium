@@ -8,6 +8,7 @@ import com.xpdustry.imperium.backend.misc.Embed
 import com.xpdustry.imperium.backend.misc.ImperiumEmojis
 import com.xpdustry.imperium.backend.misc.MessageCreate
 import com.xpdustry.imperium.backend.misc.await
+import com.xpdustry.imperium.backend.misc.getFieldValue
 import com.xpdustry.imperium.common.account.Rank
 import com.xpdustry.imperium.common.application.ImperiumApplication
 import com.xpdustry.imperium.common.command.ImperiumCommand
@@ -27,7 +28,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.buttons.Button
-import net.dv8tion.jda.api.entities.MessageEmbed
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
 import net.dv8tion.jda.api.utils.FileUpload
@@ -202,8 +202,6 @@ internal class MapCommand(
             reply.sendMessage("Unknown map id").await()
         }
     }
-
-    private fun MessageEmbed.getFieldValue(name: String): String? = fields.find { it.name == name }?.value
 
     companion object {
         private const val MAP_DOWNLOAD_BUTTON = "map-download:2"
