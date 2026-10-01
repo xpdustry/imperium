@@ -147,7 +147,7 @@ project(":imperium-common") {
 
         "api"("com.google.guava:guava:33.7.1-jre")
         "api"("com.sksamuel.hoplite:hoplite-core:3.0.0.RC3")
-        "api"("com.sksamuel.hoplite:hoplite-yaml:3.0.0.RC3")
+        "api"("com.sksamuel.hoplite:hoplite-yaml:3.0.0")
         "api"("com.squareup.okhttp3:okhttp:5.5.0")
         "api"("com.github.ben-manes.caffeine:caffeine:3.2.4")
 
