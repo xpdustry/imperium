@@ -167,7 +167,9 @@ class CommandAnnotationScanner(
         parameter: KParameter,
         path: List<String>,
     ): TypedCommandComponent<CommandSender, T> {
-        val token = TypeToken.get(parameter.type.javaType) as TypeToken<T>
+        val classifier = parameter.type.classifier as? KClass<*>
+        val token =
+            TypeToken.get(if (classifier?.isValue == true) classifier.java else parameter.type.javaType) as TypeToken<T>
         val parameters = manager.parserRegistry().parseAnnotations(token, parameter.annotations)
         return TypedCommandComponent.builder<CommandSender, T>()
             .name(parameter.name!!)
