@@ -272,7 +272,7 @@ project(":imperium-mindustry") {
         "compileOnly"("com.xpdustry:distributor-common:4.2.0")
         "compileOnly"("com.xpdustry:distributor-permission-rank:4.2.0")
         "compileOnly"("com.xpdustry:nohorny-client:4.0.0-beta.10")
-        "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.10")
+        "compileOnly"("com.xpdustry:nohorny-common:4.0.0-beta.11")
         "implementation"("com.xpdustry:flex-translator:1.2.0")
         "implementation"("org.ahocorasick:ahocorasick:0.6.3")
     }
