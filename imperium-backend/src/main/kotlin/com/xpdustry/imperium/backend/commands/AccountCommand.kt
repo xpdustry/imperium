@@ -53,7 +53,7 @@ class AccountCommand(
                         "Achievements",
                         achievements.selectAchievements(account.id).joinToString { it.name }.ifEmpty { "none" },
                     )
-                }
+                },
             )
             .await()
     }
@@ -121,7 +121,7 @@ class AccountCommand(
         sessions.logoutAll(account.id)
         reply
             .sendMessage(
-                "Changed the password of ${account.display()}, its sessions have been revoked.\n${secret.display()}"
+                "Changed the password of ${account.display()}, its sessions have been revoked.\n${secret.display()}",
             )
             .await()
     }
@@ -169,7 +169,7 @@ class AccountCommand(
                     field("Games", legacy.games.toString())
                     field("Playtime", renderer.renderDuration(legacy.playtime))
                     field("Achievements", legacy.achievements.joinToString { it.name }.ifEmpty { "none" })
-                }
+                },
             )
             .await()
     }
@@ -200,7 +200,7 @@ class AccountCommand(
         if (user != null) link(account, user)
         reply
             .sendMessage(
-                "Migrated the legacy account `$legacy` to ${account.display()}${user.suffix()}.\n${secret.display()}"
+                "Migrated the legacy account `$legacy` to ${account.display()}${user.suffix()}.\n${secret.display()}",
             )
             .await()
     }

@@ -39,7 +39,7 @@ class ServerCommand(
                 Embed {
                     title = "Server List"
                     description = discovery.servers.values.joinToString(separator = "\n") { "- ${it.name}" }
-                }
+                },
             )
             .await()
 
@@ -105,7 +105,7 @@ class ServerCommand(
         reply
             .sendMessage(
                 "Sent ${action.name.lowercase()} request to " +
-                    if (server == null) "**all servers**" else "server **$server**."
+                    if (server == null) "**all servers**" else "server **$server**.",
             )
             .await()
     }

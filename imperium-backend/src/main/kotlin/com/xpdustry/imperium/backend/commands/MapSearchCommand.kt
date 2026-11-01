@@ -156,7 +156,7 @@ class MapSearchCommand(
                         addOptions(options.values)
                         setDefaultOptions(state.gamemodes.map { options[it]!! })
                     }
-                    .build()
+                    .build(),
             )
     }
 

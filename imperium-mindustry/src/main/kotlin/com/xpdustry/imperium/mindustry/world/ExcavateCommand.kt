@@ -178,7 +178,7 @@ class ExcavateCommand(
                 [scarlet]You do not have enough ${item.name} to do that.
                 You currently have [orange]${items.get(item)}[] ${item.name} but [orange]${price - items.get(item)}[] more is needed.
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
             return
         }

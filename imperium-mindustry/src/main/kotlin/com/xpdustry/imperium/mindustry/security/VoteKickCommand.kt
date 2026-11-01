@@ -145,13 +145,13 @@ class VoteKickCommand(
                 [scarlet]At least 3 players are needed to start a votekick.
                 Use the [orange]/report[] command instead.
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
             return
         }
         if (reason == null) {
             sender.player.sendMessage(
-                "[orange]You need a valid reason to kick the player. Add a reason after the player name."
+                "[orange]You need a valid reason to kick the player. Add a reason after the player name.",
             )
             return
         }
@@ -286,7 +286,7 @@ class VoteKickCommand(
                         }
                         .setRenderer { text(it.name().stripMindustryColors()) }
                         .setHeight(8)
-                        .setChoiceAction(BiAction.with(VOTEKICK_TARGET).then(Action.show(reasonInterface)))
+                        .setChoiceAction(BiAction.with(VOTEKICK_TARGET).then(Action.show(reasonInterface))),
                 )
             }
 

@@ -97,7 +97,7 @@ class AdminRequestListener(
                                 target.lastName,
                                 target.uuid,
                             )
-                        }
+                        },
                     )
             }
         }
@@ -108,7 +108,7 @@ class AdminRequestListener(
                     pane.title = text("Ban (2/3)")
                     pane.content =
                         text(
-                            "Select duration of the ${state[PUNISHMENT_TYPE].toString().lowercase()} of ${state[PUNISHMENT_TARGET]!!.name}"
+                            "Select duration of the ${state[PUNISHMENT_TYPE].toString().lowercase()} of ${state[PUNISHMENT_TARGET]!!.name}",
                         )
 
                     fun addDuration(display: Component, duration: Duration) =
@@ -117,9 +117,9 @@ class AdminRequestListener(
                                 display,
                                 Action.hide()
                                     .then(
-                                        Action.with(PUNISHMENT_DURATION, duration).then(Action.show(detailsInterface))
+                                        Action.with(PUNISHMENT_DURATION, duration).then(Action.show(detailsInterface)),
                                     ),
-                            )
+                            ),
                         )
 
                     for (duration in PUNISHMENT_DURATIONS) {
@@ -143,7 +143,7 @@ class AdminRequestListener(
                                 Action.hide()
                                     .then(Action.with(PUNISHMENT_TYPE, type))
                                     .then(Action.show(durationInterface)),
-                            )
+                            ),
                         )
                     }
 

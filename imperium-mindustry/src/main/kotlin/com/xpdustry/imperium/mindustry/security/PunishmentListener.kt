@@ -113,7 +113,7 @@ class PunishmentListener(
                                     target.name.stripMindustryColors(),
                                     punishment.reason,
                                     punishment.duration,
-                                )
+                                ),
                             )
                     }
                 }

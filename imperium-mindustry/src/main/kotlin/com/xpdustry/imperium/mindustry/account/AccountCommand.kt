@@ -106,7 +106,7 @@ class AccountCommand(
                 Join our discord server with the [cyan]/discord[] command.
                 And run the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
             return
         }
@@ -121,7 +121,7 @@ class AccountCommand(
             Then use the [cyan]/verify[] command in the [accent]#bot[] channel with the code [accent]$code[].
             The code will expire in 10 minutes.
             """
-                .trimIndent()
+                .trimIndent(),
         )
     }
 

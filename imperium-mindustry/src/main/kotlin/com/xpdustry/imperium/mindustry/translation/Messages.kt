@@ -82,7 +82,7 @@ fun punishment_message(punishment: Punishment, codec: IdentifierCodec): Componen
                 if (remaining != null) {
                     setKey("imperium.messages.punishment.expiration")
                     setParameters(
-                        TranslationArguments.array(duration(remaining.truncatedTo(ChronoUnit.MINUTES), ACCENT))
+                        TranslationArguments.array(duration(remaining.truncatedTo(ChronoUnit.MINUTES), ACCENT)),
                     )
                 } else {
                     setKey("imperium.messages.punishment.expiration.permanent")
@@ -106,7 +106,7 @@ fun warning(kind: String, vararg arguments: String): Component =
         translatable(
             "imperium.messages.warning.$kind",
             TranslationArguments.array(
-                listOf(punishment_type_verb(Punishment.Type.MUTE)) + arguments.map { text(it, ORANGE) }
+                listOf(punishment_type_verb(Punishment.Type.MUTE)) + arguments.map { text(it, ORANGE) },
             ),
             WHITE,
         ),
@@ -134,9 +134,9 @@ fun gui_welcome_content(): Component =
             translatable(
                 "imperium.gui.welcome.content.header",
                 TranslationArguments.array(
-                    Distributor.get().mindustryComponentDecoder.decode(Config.serverName.string())
+                    Distributor.get().mindustryComponentDecoder.decode(Config.serverName.string()),
                 ),
-            )
+            ),
         )
         .append(newline())
         .append(translatable("imperium.gui.welcome.content.body"))
@@ -163,7 +163,7 @@ fun gui_rules_content(): Component =
                 text(Iconc.warning.toString()),
                 space(),
                 translatable("imperium.gui.rules.content.header"),
-            )
+            ),
         )
         .apply {
             for (rule in MindustryRules.entries) {

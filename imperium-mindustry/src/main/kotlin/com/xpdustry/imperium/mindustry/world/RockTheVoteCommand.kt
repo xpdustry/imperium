@@ -76,7 +76,7 @@ class RockTheVoteCommand(
                             window.state[DIFFICULTY] = difficulty
                         }
                         window.show()
-                    }
+                    },
             )
 
             addTransformer { (pane) -> pane.grid.addRow(MenuOption.of("Select a map", Action.none())) }
@@ -94,7 +94,7 @@ class RockTheVoteCommand(
                         MenuOption.of(
                             text("Random", ComponentColor.YELLOW),
                             Action.hideAll().then { onVoteSessionStart(it.viewer, manager.session, selector) },
-                        )
+                        ),
                     )
                 } else {
                     pane.grid.addRow(MenuOption.of(text("Random", LIGHT_GRAY), Action.none()))
@@ -112,8 +112,8 @@ class RockTheVoteCommand(
                     .setChoiceAction(
                         BiAction.from<MapWithDifficulty>(Action.hideAll()).then { window, map ->
                             onVoteSessionStart(window.viewer, manager.session, MapSelector.Specific(map.map))
-                        }
-                    )
+                        },
+                    ),
             )
 
             addTransformer { (pane) -> pane.grid.addRow(MenuOption.of(gui_back(), Action.hideAll())) }

@@ -22,7 +22,7 @@ suspend fun Call.await() = suspendCancellableCoroutine { continuation ->
                     continuation.resumeWithException(e)
                 }
             }
-        }
+        },
     )
     continuation.invokeOnCancellation {
         try {

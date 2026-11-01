@@ -36,7 +36,7 @@ class AntiEvadeListener(private val users: UserManager, @Named(IMPERIUM_SCOPE) p
                 scope.launch {
                     if (users.getSetting(player.uuid(), User.Setting.ANTI_BAN_EVADE)) {
                         player.sendMessage(
-                            "[orange]Warning, the player [accent]${event.player.info.plainLastName()}[] has changed his name. He was [accent]$previous[]."
+                            "[orange]Warning, the player [accent]${event.player.info.plainLastName()}[] has changed his name. He was [accent]$previous[].",
                         )
                     }
                 }

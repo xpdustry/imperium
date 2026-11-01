@@ -106,7 +106,7 @@ private fun ResultRow.toCachedResult(now: Instant): VpnDetection.Result? {
         CacheStatus.SUCCESS -> VpnDetection.Result.Success(this[VpnDetectionCacheTable.vpn])
         CacheStatus.FAILURE ->
             VpnDetection.Result.Failure(
-                CachedVpnDetectionException(this[VpnDetectionCacheTable.failure] ?: "Unknown provider failure")
+                CachedVpnDetectionException(this[VpnDetectionCacheTable.failure] ?: "Unknown provider failure"),
             )
         CacheStatus.RATE_LIMITED -> VpnDetection.Result.RateLimited
     }

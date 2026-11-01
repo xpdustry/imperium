@@ -222,6 +222,6 @@ private fun Application.restart() {
                 Core.settings.autosave()
                 exitProcess(2)
             }
-        }
+        },
     )
 }

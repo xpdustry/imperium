@@ -14,7 +14,7 @@ class ConventionListener constructor(private val config: ImperiumConfig) : Imper
 
     override fun onImperiumInit() {
         Administration.Config.serverName.set(
-            "[accent]<[white]CN[]> [${config.mindustry.color.toHexString()}]${config.server.displayName}"
+            "[accent]<[white]CN[]> [${config.mindustry.color.toHexString()}]${config.server.displayName}",
         )
     }
 

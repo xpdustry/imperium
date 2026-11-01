@@ -76,7 +76,7 @@ constructor(private val config: ImperiumConfig, @Named(IMPERIUM_SCOPE) private v
                 for ((index, cluster) in clusters.withIndex()) {
                     appendLine("- #${index + 1} ${cluster.x}, ${cluster.y} (${cluster.w}x${cluster.h})")
                 }
-            }
+            },
         )
     }
 
@@ -111,7 +111,7 @@ constructor(private val config: ImperiumConfig, @Named(IMPERIUM_SCOPE) private v
         for (player in Entities.getPlayers()) {
             if (player.team() == building.team) {
                 player.sendMessage(
-                    "[scarlet]The core cluster [orange]#${index + 1}[] at ([orange]${cluster.x}[], [orange]${cluster.y}[]) is under attack!"
+                    "[scarlet]The core cluster [orange]#${index + 1}[] at ([orange]${cluster.x}[], [orange]${cluster.y}[]) is under attack!",
                 )
             }
         }
