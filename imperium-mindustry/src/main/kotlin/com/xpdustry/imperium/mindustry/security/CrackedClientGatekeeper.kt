@@ -16,7 +16,7 @@ class CrackedClientGatekeeper : Processor<GatekeeperContext, GatekeeperResult> {
                 [white]It is available on [royal]https://anuke.itch.io/mindustry[].
                 [red]Please, get a legit copy of the game.
                 """
-                    .trimIndent()
+                    .trimIndent(),
             )
         }
         return GatekeeperResult.Success

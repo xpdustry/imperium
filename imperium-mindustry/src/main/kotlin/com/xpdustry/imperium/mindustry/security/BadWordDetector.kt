@@ -36,7 +36,7 @@ class SimpleBadWordDetector(private val http: OkHttpClient) : BadWordDetector, I
     override fun onImperiumInit() {
         http
             .newCall(
-                Request.Builder().url("https://github.com/xpdustry/bad-words/archive/refs/heads/master.zip").build()
+                Request.Builder().url("https://github.com/xpdustry/bad-words/archive/refs/heads/master.zip").build(),
             )
             .execute()
             .use { response ->

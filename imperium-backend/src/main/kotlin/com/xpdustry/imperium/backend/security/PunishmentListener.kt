@@ -97,7 +97,7 @@ class PunishmentListener(
                         }
 
                         footer(codec.encode(punishment.id))
-                    }
+                    },
                 )
                 .await()
         }

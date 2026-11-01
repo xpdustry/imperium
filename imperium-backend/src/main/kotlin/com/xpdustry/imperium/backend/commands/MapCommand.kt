@@ -87,9 +87,9 @@ internal class MapCommand(
 
                     components +=
                         ActionRow.of(
-                            Button.primary(MAP_DOWNLOAD_BUTTON, "Download").withEmoji(ImperiumEmojis.DOWN_ARROW)
+                            Button.primary(MAP_DOWNLOAD_BUTTON, "Download").withEmoji(ImperiumEmojis.DOWN_ARROW),
                         )
-                }
+                },
             )
             .await()
 
@@ -120,7 +120,7 @@ internal class MapCommand(
                     field("Buildings Deconstructed", game.data.buildingsDeconstructed.toString())
                     field("Buildings Destroyed", game.data.buildingsDestroyed.toString())
                     field("Winner", getWinnerName(game.data.winner))
-                }
+                },
             )
             .await()
     }
@@ -152,7 +152,7 @@ internal class MapCommand(
                 MessageCreate {
                     content = "Here you go:"
                     files += FileUpload.fromData(bytes, "${codec.encode(id)}.msav")
-                }
+                },
             )
             .await()
     }

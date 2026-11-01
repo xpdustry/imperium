@@ -56,7 +56,7 @@ class FormationAI(val context: FormationContext) : AIController(), FormationMemb
         val speed = unit.speed() * Time.delta
         unit.approach(
             Mathf.arrive(unit.x, unit.y, realTarget.x, realTarget.y, unit.vel, speed, 0f, speed, Float.MAX_VALUE)
-                .scl(1f / Time.delta)
+                .scl(1f / Time.delta),
         )
 
         if (unit.canMine() && context.leader.canMine()) {

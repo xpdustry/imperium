@@ -39,21 +39,22 @@ class BlockHoundService(
     override fun onImperiumInit() {
         job = scope.launch {
             while (isActive) {
-                val blocked =
-                    runCatching { runMindustryThread(timeout = this@BlockHoundService.timeout) { /* Nothin' */ } }
-                        .fold(
-                            onSuccess = { false },
-                            onFailure = { error ->
-                                if (error is TimeoutCancellationException) true
-                                else {
-                                    logger.error(
-                                        "An unexpected exception occurred while running the block hound",
-                                        error,
-                                    )
-                                    false
-                                }
-                            },
-                        )
+                val blocked = runCatching {
+                    runMindustryThread(timeout = this@BlockHoundService.timeout) { /* Nothin' */ }
+                }
+                    .fold(
+                        onSuccess = { false },
+                        onFailure = { error ->
+                            if (error is TimeoutCancellationException) true
+                            else {
+                                logger.error(
+                                    "An unexpected exception occurred while running the block hound",
+                                    error,
+                                )
+                                false
+                            }
+                        },
+                    )
                 val now = Clock.System.now()
                 if (blocked && (lastWarn ?: Instant.DISTANT_PAST) + 1.hours < now) {
                     lastWarn = now
@@ -69,11 +70,11 @@ class BlockHoundService(
                                     if (config.mindustry.alertBlockedThread)
                                         config.discord.alertsRole?.let { appendLine("<@&$it>") }
                                     appendLine(
-                                        "**Warning:** The main thread is blocked. Wake up the sysadmins, manual intervention is required."
+                                        "**Warning:** The main thread is blocked. Wake up the sysadmins, manual intervention is required.",
                                     )
                                 },
                             attachments = listOf(createThreadDumpAttachment(candidates)),
-                        )
+                        ),
                     )
                 }
                 delay(5.seconds)
@@ -98,20 +99,20 @@ class BlockHoundService(
         ) {
             ByteArrayInputStream(
                 buildString {
-                        if (entries.isEmpty()) {
-                            append("Unable to identify blocked threads.")
-                        } else {
-                            entries.forEach { (thread, stack) ->
-                                appendLine("Thread: ${thread.name}")
-                                appendLine("State: ${thread.state}")
-                                appendLine("Daemon: ${thread.isDaemon}")
-                                appendLine()
-                                stack.forEach { appendLine("\tat $it") }
-                                appendLine()
-                            }
+                    if (entries.isEmpty()) {
+                        append("Unable to identify blocked threads.")
+                    } else {
+                        entries.forEach { (thread, stack) ->
+                            appendLine("Thread: ${thread.name}")
+                            appendLine("State: ${thread.state}")
+                            appendLine("Daemon: ${thread.isDaemon}")
+                            appendLine()
+                            stack.forEach { appendLine("\tat $it") }
+                            appendLine()
                         }
                     }
-                    .toByteArray()
+                }
+                    .toByteArray(),
             )
         }
 

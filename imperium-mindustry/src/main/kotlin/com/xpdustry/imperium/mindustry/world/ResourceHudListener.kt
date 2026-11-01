@@ -79,7 +79,7 @@ class ResourceHudListener(
                         append("%")
                     }
                     append("\nEvery minute")
-                }
+                },
             )
         }
     }

@@ -72,8 +72,8 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
                     .setChoiceAction(
                         BiAction.from<DestroyedCore>(Action.hideAll()).then { window, core ->
                             onReviveVoteStart(window.viewer, core)
-                        }
-                    )
+                        },
+                    ),
             )
             addTransformer { (pane) -> pane.grid.addRow(MenuOption.of("[lightgray]Close", Action.hideAll())) }
         }
@@ -175,7 +175,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
                 appendLine("------------------------------")
                 pageEntries.forEachIndexed { index, core -> appendLine("#${firstId + index} ${renderCore(core)}") }
                 append("Page $page of ${pages.size}")
-            }
+            },
         )
     }
 
@@ -207,7 +207,7 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
                     "[orange]${stack.amount - items.get(stack.item)}[] ${stack.item.localizedName}"
                 }
             player.sendMessage(
-                "[scarlet]Not enough items to revive ${core.block.localizedName}. You still need $missing."
+                "[scarlet]Not enough items to revive ${core.block.localizedName}. You still need $missing.",
             )
             return
         }
@@ -241,13 +241,13 @@ class ReviveCoreCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIU
                 refundItems(team, cost)
                 destroyedCores.remove(ImmutablePoint(core.x, core.y))
                 Call.sendMessage(
-                    "[scarlet]The location of ${core.block.localizedName} is blocked, the items have been refunded."
+                    "[scarlet]The location of ${core.block.localizedName} is blocked, the items have been refunded.",
                 )
                 return@runMindustryThread
             }
             reviveCore(team, core)
             Call.sendMessage(
-                "[accent]${core.block.localizedName}[] has been revived at (${core.x}, ${core.y}) for ${formatCost(cost)}."
+                "[accent]${core.block.localizedName}[] has been revived at (${core.x}, ${core.y}) for ${formatCost(cost)}.",
             )
         }
     }

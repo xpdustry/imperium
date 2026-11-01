@@ -61,7 +61,7 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
                             block,
                             it.tile.x.toInt(),
                             it.tile.y.toInt(),
-                        )
+                        ),
                     )
                 return@addActionFilter false
             }
@@ -130,7 +130,7 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
                         event.tile.block(),
                         event.tile.x.toInt(),
                         event.tile.y.toInt(),
-                    )
+                    ),
                 )
         }
     }
@@ -145,7 +145,11 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
                 .audienceProvider
                 .getTeam(originalTeam)
                 .sendMessage(
-                    announcement_important_block_destroyed(building.current, event.tile.x.toInt(), event.tile.y.toInt())
+                    announcement_important_block_destroyed(
+                        building.current,
+                        event.tile.x.toInt(),
+                        event.tile.y.toInt(),
+                    ),
                 )
         }
     }
@@ -197,7 +201,7 @@ class AlertListener constructor(private val config: ImperiumConfig) : ImperiumAp
                         block,
                         event.tile.x.toInt(),
                         event.tile.y.toInt(),
-                    )
+                    ),
                 )
         }
     }

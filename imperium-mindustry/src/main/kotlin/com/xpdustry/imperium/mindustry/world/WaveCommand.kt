@@ -48,7 +48,7 @@ class WaveCommand(afk: AfkManager, plugin: MindustryPlugin, @Named(IMPERIUM_SCOP
                                 onVoteSessionStart(window.viewer, manager.session, skip)
                             },
                         )
-                    }
+                    },
                 )
                 pane.grid.addRow(MenuOption.of(text("Cancel", ComponentColor.LIGHT_GRAY), Action.hideAll()))
             }

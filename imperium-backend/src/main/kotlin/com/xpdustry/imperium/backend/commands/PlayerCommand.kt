@@ -43,7 +43,7 @@ class PlayerCommand(
                         field("Last Address", "`${user.lastAddress.hostAddress}`")
                         field("Addresses", details.addresses.joinToString(transform = { "`${it.hostAddress}`" }))
                     }
-                }
+                },
             )
             .await()
     }
@@ -79,7 +79,7 @@ class PlayerCommand(
                 Embed {
                     title = "Player Search"
                     description = text
-                }
+                },
             )
             .await()
     }

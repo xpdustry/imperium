@@ -126,7 +126,7 @@ class CommandAnnotationScanner(
             builder.handler(
                 CommandExecutionHandler.FutureCommandExecutionHandler { ctx ->
                     scope.future { callCommandFunction(container, function, ctx) }
-                }
+                },
             )
 
         manager.command(builder)
@@ -173,7 +173,7 @@ class CommandAnnotationScanner(
             .name(parameter.name!!)
             .parser(
                 manager.parserRegistry().createParser(token, parameters).getOrNull()
-                    ?: error("No parser found for type: ${parameter.type.javaType}")
+                    ?: error("No parser found for type: ${parameter.type.javaType}"),
             )
             .valueType(token)
             .required(!parameter.isOptional)

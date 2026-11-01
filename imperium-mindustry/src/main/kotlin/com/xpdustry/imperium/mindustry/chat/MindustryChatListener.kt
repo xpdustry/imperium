@@ -190,7 +190,7 @@ class MindustryChatListener(
                         filter = true,
                         kind =
                             if (isCommand) MindustryMessageContext.Kind.COMMAND else MindustryMessageContext.Kind.CHAT,
-                    )
+                    ),
                 )
 
             if (forServer.isBlank()) {

@@ -79,8 +79,8 @@ private fun SwitchWindowManager(plugin: MindustryPlugin, discovery: Discovery): 
                 BiAction.compose(
                     BiAction.from(Window::hide),
                     BiAction { window, server -> switch(window.viewer, server) },
-                )
-            )
+                ),
+            ),
     )
     return manager
 }

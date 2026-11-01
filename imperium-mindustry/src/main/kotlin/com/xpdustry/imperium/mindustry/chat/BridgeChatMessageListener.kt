@@ -46,7 +46,7 @@ class BridgeChatMessageListener(
                         Distributor.get().audienceProvider.server,
                         it.message,
                         filter = true,
-                    )
+                    ),
                 )
 
             if (forServer.isNotBlank()) {
@@ -74,7 +74,7 @@ class BridgeChatMessageListener(
                 config.server.name,
                 event.player.info.plainLastName(),
                 MindustryPlayerMessage.Action.Join,
-            )
+            ),
         )
     }
 
@@ -85,7 +85,7 @@ class BridgeChatMessageListener(
                 config.server.name,
                 event.player.info.plainLastName(),
                 MindustryPlayerMessage.Action.Quit,
-            )
+            ),
         )
     }
 
@@ -96,7 +96,7 @@ class BridgeChatMessageListener(
                 config.server.name,
                 event.player.player.info.plainLastName(),
                 MindustryPlayerMessage.Action.Chat(Strings.stripColors(event.message)),
-            )
+            ),
         )
     }
 

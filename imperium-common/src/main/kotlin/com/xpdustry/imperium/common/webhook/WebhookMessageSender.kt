@@ -100,7 +100,7 @@ class WebhookMessageSenderImpl(
         http.newCall(request).await().use { response ->
             if (response.code != 204) {
                 logger.error(
-                    "Failed to send webhook message $message (status-code=${response.code}, body=${response.body.string()})"
+                    "Failed to send webhook message $message (status-code=${response.code}, body=${response.body.string()})",
                 )
             }
         }
