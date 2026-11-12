@@ -3,7 +3,7 @@ services:
   # The Mariadb database
   # login with root:root
   mariadb:
-    image: mariadb:latest@sha256:dd9b303aed4f4890ed09f766d8ca9ddfd176c0c6f6267feff53b3192ec65a979
+    image: mariadb:latest@sha256:54f493ea0d60b621a5bff84e5b20100f8b86b6efa6b79158e04756c5194a5e4d
     ports:
       - "3306:3306"
     environment:
