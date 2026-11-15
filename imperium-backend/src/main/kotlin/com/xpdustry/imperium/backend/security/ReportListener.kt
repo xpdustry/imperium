@@ -22,6 +22,7 @@ import com.xpdustry.imperium.common.security.ReportMessage
 import java.awt.Color
 import net.dv8tion.jda.api.components.actionrow.ActionRow
 import net.dv8tion.jda.api.components.buttons.Button
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel
 import net.dv8tion.jda.api.entities.channel.concrete.ThreadChannel
 import net.dv8tion.jda.api.interactions.components.buttons.ButtonInteraction
@@ -98,10 +99,34 @@ class ReportListener(
                     .createThreadChannel("Report on ${report.targetName}")
                     .setAutoArchiveDuration(ThreadChannel.AutoArchiveDuration.TIME_3_DAYS)
                     .await()
-            getPlayerHistory(messenger, report.serverName, report.targetId)?.lineSequence()?.chunked(10)?.forEach {
-                thread.sendMessage("```\n${it.joinToString("\n")}\n```").await()
+            val history = getPlayerHistory(messenger, report.serverName, report.targetId)
+            if (history == null) {
+                thread
+                    .sendMessage("Failed to retrieve the history of ${report.targetName}.")
+                    .setAllowedMentions(emptySet())
+                    .await()
+            } else {
+                for (chunk in history.toCodeBlocks()) thread.sendMessage(chunk).await()
             }
         }
+    }
+
+    // Splits text in code blocks fitting in a discord message
+    private fun String.toCodeBlocks(): List<String> {
+        val blocks = mutableListOf<String>()
+        val current = StringBuilder()
+        for (line in
+            lineSequence().flatMap {
+                if (it.isEmpty()) sequenceOf(it) else it.chunkedSequence(MAX_CODE_BLOCK_CONTENT - 1)
+            }) {
+            if (current.isNotEmpty() && current.length + line.length + 1 > MAX_CODE_BLOCK_CONTENT) {
+                blocks += "```\n$current```"
+                current.clear()
+            }
+            current.append(line).append('\n')
+        }
+        if (current.isNotEmpty()) blocks += "```\n$current```"
+        return blocks
     }
 
     private fun getReportChannel(): TextChannel? {
@@ -151,6 +176,8 @@ class ReportListener(
     companion object {
         private const val REPORT_REVIEW_BUTTON = "report-review:1"
         private const val REPORT_IGNORE_BUTTON = "report-ignore:1"
+        // Discord message limit minus the code block fences
+        private const val MAX_CODE_BLOCK_CONTENT = Message.MAX_CONTENT_LENGTH - 8
         private val LOGGER = logger<ReportListener>()
     }
 }
