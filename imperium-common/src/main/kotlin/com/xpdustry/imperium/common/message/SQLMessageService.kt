@@ -11,12 +11,18 @@ import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.jvm.jvmName
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.DeserializationStrategy
@@ -28,11 +34,13 @@ import kotlinx.serialization.serializerOrNull
 internal class SQLMessageService(
     private val database: SQLDatabase,
     private val config: ImperiumConfig,
-    private val context: CoroutineScope,
+    context: CoroutineScope,
+    private val subscriberBufferCapacity: Int = 256,
 ) : MessageService, ImperiumApplication.Listener {
     internal val subscribers = MutableSharedFlow<Message>()
+    // Owned child scope, so exiting the service also stops its subscribers
+    private val scope = CoroutineScope(context.coroutineContext + SupervisorJob(context.coroutineContext[Job]))
     private var cursor: Long = 0
-    private lateinit var pollJob: Job
 
     override fun onImperiumInit() {
         runBlocking {
@@ -79,7 +87,7 @@ internal class SQLMessageService(
 
             poll()
 
-            pollJob = context.launch {
+            scope.launch {
                 while (isActive) {
                     delay(600.milliseconds)
                     try {
@@ -93,7 +101,7 @@ internal class SQLMessageService(
     }
 
     override fun onImperiumExit() {
-        runBlocking { pollJob.cancelAndJoin() }
+        runBlocking { scope.coroutineContext.job.cancelAndJoin() }
     }
 
     @OptIn(InternalSerializationApi::class)
@@ -115,7 +123,7 @@ internal class SQLMessageService(
                 .executeSingleUpdate()
         }
         if (local) {
-            context.launch { subscribers.emit(message) }
+            scope.launch { subscribers.emit(message) }
         }
         LOGGER.trace("Broadcasted message (topic={}, payload={})", topic, payload)
     }
@@ -125,15 +133,28 @@ internal class SQLMessageService(
         type: KClass<M>,
         subscriber: MessageService.Subscriber<M>,
     ): MessageService.Subscriber.Handle {
-        val job = context.launch {
-            subscribers.filterIsInstance(type).collect {
-                try {
-                    subscriber.onMessage(it)
-                } catch (e: Exception) {
-                    LOGGER.error("An error occurred while processing message of type {}", type.simpleName, e)
+        // Each subscriber gets its own bounded buffer, so a slow or blocked subscriber (e.g. one awaiting a response
+        // message) does not stall the shared flow for every other subscriber. Overflow drops the oldest messages.
+        val buffer =
+            Channel<M>(subscriberBufferCapacity, BufferOverflow.DROP_OLDEST) {
+                LOGGER.warn("Subscriber of {} dropped undelivered message {}", type.simpleName, it)
+            }
+        // Started undispatched so the subscription is registered on the shared flow before this function returns
+        val job =
+            scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                launch(start = CoroutineStart.UNDISPATCHED) {
+                    subscribers.filterIsInstance(type).collect { buffer.send(it) }
+                }
+                for (message in buffer) {
+                    ensureActive()
+                    try {
+                        subscriber.onMessage(message)
+                    } catch (e: Exception) {
+                        ensureActive() // Propagate cancellation of this subscription
+                        LOGGER.error("An error occurred while processing message of type {}", type.simpleName, e)
+                    }
                 }
             }
-        }
         return MessageService.Subscriber.Handle { job.cancel() }
     }
 
@@ -164,14 +185,12 @@ internal class SQLMessageService(
                 return
             }
 
-        queue.forEach { message ->
-            context.launch {
-                val result = deserialize(message.topic, message.payload) ?: return@launch
-                subscribers.emit(result)
-            }
-        }
-
         cursor = queue.lastOrNull()?.counter ?: cursor
+
+        // Emitted inline to preserve ordering across polls, subscribers buffer messages so this never blocks for long
+        for (message in queue) {
+            subscribers.emit(deserialize(message.topic, message.payload) ?: continue)
+        }
         LOGGER.trace("Polled {} messages, advancing cursor to {}: {}", queue.size, cursor, queue)
     }
 

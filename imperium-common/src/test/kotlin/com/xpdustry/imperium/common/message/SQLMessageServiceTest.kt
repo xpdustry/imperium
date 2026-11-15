@@ -6,14 +6,19 @@ import com.xpdustry.imperium.common.config.ImperiumConfig
 import com.xpdustry.imperium.common.config.ServerConfig
 import com.xpdustry.imperium.common.database.SQLDatabaseImpl
 import java.nio.file.Path
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CopyOnWriteArraySet
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
@@ -46,6 +51,7 @@ class SQLMessageServiceTest {
         service1.onImperiumExit()
         service2.onImperiumExit()
         database.onImperiumExit()
+        scope.cancel()
     }
 
     @Test
@@ -111,5 +117,98 @@ class SQLMessageServiceTest {
         Assertions.assertEquals(0, service1.subscribers.subscriptionCount.value)
     }
 
+    @Test
+    fun `test slow subscriber does not block other subscribers`() = runBlocking {
+        val response = CompletableDeferred<OtherTestMessage>()
+        val result = CompletableDeferred<OtherTestMessage?>()
+
+        // A subscriber that waits for another message while handling one, like a request/response flow
+        service1.subscribe<TestMessage> { result.complete(withTimeoutOrNull(3.seconds) { response.await() }) }
+        service1.subscribe<OtherTestMessage> { response.complete(it) }
+
+        service2.broadcast(TestMessage("request"))
+        delay(1.seconds)
+        // Unrelated traffic emitted while the subscriber is busy
+        service2.broadcast(TestMessage("noise"))
+        delay(1.seconds)
+        service2.broadcast(OtherTestMessage("response"))
+
+        Assertions.assertEquals(OtherTestMessage("response"), withTimeout(5.seconds) { result.await() })
+    }
+
+    @Test
+    fun `test blocked subscriber drops oldest messages on overflow`() = runBlocking {
+        val bounded = SQLMessageService(database, ImperiumConfig(server = ServerConfig("test3")), scope, 2)
+        bounded.onImperiumInit()
+        try {
+            val gate = CompletableDeferred<Unit>()
+            val received = CopyOnWriteArrayList<String>()
+            bounded.subscribe<TestMessage> {
+                gate.await()
+                received += it.content
+            }
+
+            service2.broadcast(TestMessage("first"))
+            delay(1.seconds)
+            // "first" is being processed, the buffer of 2 only keeps the latest 2 of these
+            for (i in 1..5) service2.broadcast(TestMessage("$i"))
+            delay(1.seconds)
+            gate.complete(Unit)
+            delay(500.milliseconds)
+
+            Assertions.assertEquals(listOf("first", "4", "5"), received)
+        } finally {
+            bounded.onImperiumExit()
+        }
+    }
+
+    @Test
+    fun `test cancel skips buffered messages`() = runBlocking {
+        val received = CopyOnWriteArrayList<String>()
+        val handle =
+            service1.subscribe<TestMessage> {
+                received += it.content
+                awaitCancellation()
+            }
+
+        service2.broadcast(TestMessage("first"))
+        delay(1.seconds)
+        service2.broadcast(TestMessage("second"))
+        service2.broadcast(TestMessage("third"))
+        delay(1.seconds)
+        handle.cancel()
+        delay(500.milliseconds)
+
+        Assertions.assertEquals(listOf("first"), received)
+    }
+
+    @Test
+    fun `test ordering across polls`() = runBlocking {
+        val received = CopyOnWriteArrayList<String>()
+        service1.subscribe<TestMessage> {
+            delay(50.milliseconds)
+            received += it.content
+        }
+
+        val expected = (1..20).map(Int::toString)
+        for (content in expected) {
+            service2.broadcast(TestMessage(content))
+            delay(100.milliseconds)
+        }
+        delay(2.seconds)
+
+        Assertions.assertEquals(expected, received)
+    }
+
+    @Test
+    fun `test exit stops subscribers`() = runBlocking {
+        service1.subscribe<TestMessage> {}
+        Assertions.assertEquals(1, service1.subscribers.subscriptionCount.value)
+        service1.onImperiumExit()
+        Assertions.assertEquals(0, service1.subscribers.subscriptionCount.value)
+    }
+
     @Serializable data class TestMessage(val content: String) : Message
+
+    @Serializable data class OtherTestMessage(val content: String) : Message
 }

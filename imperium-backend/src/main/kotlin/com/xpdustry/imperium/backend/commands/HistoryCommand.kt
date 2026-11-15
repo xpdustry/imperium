@@ -24,7 +24,7 @@ suspend fun getPlayerHistory(messenger: MessageService, server: String, player: 
     val subscription = messenger.subscribe<HistoryResponseMessage> { if (it.id == id) deferred.complete(it.history) }
     try {
         messenger.broadcast(HistoryRequestMessage(server, player, id))
-        return withTimeoutOrNull(2.seconds) { deferred.await() }
+        return withTimeoutOrNull(5.seconds) { deferred.await() }
     } finally {
         subscription.cancel()
     }
