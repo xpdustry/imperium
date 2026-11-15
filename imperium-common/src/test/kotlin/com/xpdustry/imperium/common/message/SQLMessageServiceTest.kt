@@ -141,20 +141,26 @@ class SQLMessageServiceTest {
         val bounded = SQLMessageService(database, ImperiumConfig(server = ServerConfig("test3")), scope, 2)
         bounded.onImperiumInit()
         try {
+            val started = CompletableDeferred<Unit>()
             val gate = CompletableDeferred<Unit>()
+            val done = CompletableDeferred<Unit>()
             val received = CopyOnWriteArrayList<String>()
             bounded.subscribe<TestMessage> {
+                started.complete(Unit)
                 gate.await()
                 received += it.content
+                if (it.content == "5") done.complete(Unit)
             }
 
-            service2.broadcast(TestMessage("first"))
-            delay(1.seconds)
+            // Emitting directly on the shared flow, emit returns once every collector took the value
+            bounded.subscribers.emit(TestMessage("first"))
+            withTimeout(3.seconds) { started.await() }
             // "first" is being processed, the buffer of 2 only keeps the latest 2 of these
-            for (i in 1..5) service2.broadcast(TestMessage("$i"))
-            delay(1.seconds)
+            for (i in 1..5) bounded.subscribers.emit(TestMessage("$i"))
+            // The forwarder only takes this once it finished buffering "5"
+            bounded.subscribers.emit(OtherTestMessage("sync"))
             gate.complete(Unit)
-            delay(500.milliseconds)
+            withTimeout(3.seconds) { done.await() }
 
             Assertions.assertEquals(listOf("first", "4", "5"), received)
         } finally {
