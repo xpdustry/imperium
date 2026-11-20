@@ -35,7 +35,7 @@ data class ImperiumConfig(
     val network: NetworkConfig = NetworkConfig(),
     val testing: Boolean = false,
     val database: DatabaseConfig = DatabaseConfig.H2(),
-    val messenger: MessengerConfig = MessengerConfig.Noop,
+    val messenger: MessengerConfig = MessengerConfig.SQL,
     val server: ServerConfig = ServerConfig("unknown"),
     val language: Locale = Locale.ENGLISH,
     val supportedLanguages: Set<Locale> = SUPPORTED_LANGUAGE,

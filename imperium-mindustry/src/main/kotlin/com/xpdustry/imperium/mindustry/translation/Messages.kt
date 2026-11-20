@@ -64,39 +64,57 @@ fun punishment_message_simple(type: Punishment.Type, reason: String): Component 
         translatable("imperium.messages.punishment.type.${type.name.lowercase()}.details", WHITE),
     )
 
-fun punishment_message(punishment: Punishment, codec: IdentifierCodec): Component =
-    components(
+fun punishment_message(punishment: Punishment, codec: IdentifierCodec): Component {
+    val kick = punishment.type == Punishment.Type.KICK
+    val remaining = punishment.remaining
+    return components(
         SCARLET,
         punishment_message_simple(punishment.type, punishment.reason),
         newline(),
         newline(),
-        translatable(
-            "imperium.messages.punishment.message.appeal",
-            TranslationArguments.array(text(DISCORD_INVITATION_LINK.toString(), CYAN)),
-            ACCENT,
-        ),
-        translatable()
-            .apply {
-                setTextStyle(TextStyle.of(WHITE))
-                val remaining = punishment.remaining
-                if (remaining != null) {
-                    setKey("imperium.messages.punishment.expiration")
-                    setParameters(
-                        TranslationArguments.array(duration(remaining.truncatedTo(ChronoUnit.MINUTES), ACCENT))
-                    )
-                } else {
-                    setKey("imperium.messages.punishment.expiration.permanent")
-                }
-            }
-            .build(),
+        if (kick) {
+            text("")
+        } else {
+            translatable(
+                "imperium.messages.punishment.message.appeal",
+                TranslationArguments.array(text(DISCORD_INVITATION_LINK.toString(), CYAN)),
+                ACCENT,
+            )
+        },
+        when {
+            kick -> text("")
+            remaining == null ->
+                translatable()
+                    .apply {
+                        setTextStyle(TextStyle.of(WHITE))
+                        setKey("imperium.messages.punishment.expiration.permanent")
+                    }
+                    .build()
+            remaining.isPositive() ->
+                translatable()
+                    .apply {
+                        setTextStyle(TextStyle.of(WHITE))
+                        setKey("imperium.messages.punishment.expiration")
+                        setParameters(
+                            TranslationArguments.array(duration(remaining.truncatedTo(ChronoUnit.MINUTES), ACCENT))
+                        )
+                    }
+                    .build()
+            else -> text("")
+        },
         newline(),
         newline(),
-        translatable(
-            "imperium.messages.punishment.message.footer",
-            TranslationArguments.array(text(codec.encode(punishment.id), LIGHT_GRAY)),
-            GRAY,
-        ),
+        if (kick) {
+            text("")
+        } else {
+            translatable(
+                "imperium.messages.punishment.message.footer",
+                TranslationArguments.array(text(codec.encode(punishment.id), LIGHT_GRAY)),
+                GRAY,
+            )
+        },
     )
+}
 
 fun warning(kind: String, vararg arguments: String): Component =
     components(

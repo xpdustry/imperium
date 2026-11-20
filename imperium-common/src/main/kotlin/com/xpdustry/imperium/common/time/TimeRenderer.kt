@@ -29,6 +29,7 @@ class SimpleTimeRenderer(private val config: ImperiumConfig) : TimeRenderer {
 
     override fun renderDuration(duration: Duration, locale: Locale?): String =
         if (duration.isInfinite()) "∞"
+        else if (duration == Duration.ZERO) "None"
         else getTime4JavaPrettyTime(locale ?: config.language).print(duration.toJavaDuration())
 
     override fun renderInstant(instant: KotlinInstant): String =
