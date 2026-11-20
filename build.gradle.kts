@@ -120,8 +120,8 @@ subprojects {
         "testImplementation"("org.slf4j:slf4j-simple:2.0.18")
         "testImplementation"("io.github.classgraph:classgraph:4.8.194")
 
-        "testRuntimeOnly"("com.h2database:h2:2.4.240")
-        "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.10")
+        "testRuntimeOnly"("com.h2database:h2:2.5.252")
+        "testRuntimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.11")
 
         "testImplementation"("org.junit.jupiter:junit-jupiter-api:6.1.3")
         "testRuntimeOnly"("org.junit.jupiter:junit-jupiter-engine:6.1.3")
@@ -174,8 +174,8 @@ project(":imperium-backend") {
         "implementation"(project(":imperium-common"))
         "implementation"("ch.qos.logback:logback-classic:1.6.3")
         "implementation"("net.dv8tion:JDA:6.5.0") { exclude(module = "opus-java"); exclude(module = "tink") }
-        "runtimeOnly"("com.h2database:h2:2.4.240")
-        "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.10")
+        "runtimeOnly"("com.h2database:h2:2.5.252")
+        "runtimeOnly"("org.mariadb.jdbc:mariadb-java-client:3.5.11")
         "implementation"(toxopid.dependencies.mindustryCore)
         "implementation"(toxopid.dependencies.arcCore)
     }
