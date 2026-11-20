@@ -94,7 +94,7 @@ class MapSubmitCommand(
         if (meta.width > MindustryMap.MAX_MAP_SIDE_SIZE || meta.height > MindustryMap.MAX_MAP_SIDE_SIZE) {
             reply
                 .sendMessage(
-                    "The map is bigger than ${MindustryMap.MAX_MAP_SIDE_SIZE} blocks, please submit reasonably sized maps."
+                    "The map is bigger than ${MindustryMap.MAX_MAP_SIDE_SIZE} blocks, please submit reasonably sized maps.",
                 )
                 .await()
             return
@@ -137,7 +137,7 @@ class MapSubmitCommand(
                                 Button.primary(MAP_ACCEPT_BUTTON, "Accept").withEmoji(ImperiumEmojis.CHECK_MARK),
                                 Button.danger(MAP_REJECT_BUTTON, "Reject").withEmoji(ImperiumEmojis.WASTE_BASKET),
                             )
-                    }
+                    },
                 )
                 .await()
 
@@ -151,7 +151,7 @@ class MapSubmitCommand(
                 Embed {
                     color = MINDUSTRY_ACCENT_COLOR.rgb
                     description = "Your map has been submitted for review. Check the status [here](${message.jumpUrl})."
-                }
+                },
             )
             .await()
 
@@ -231,7 +231,7 @@ class MapSubmitCommand(
                         field("Identifier", "`${codec.encode(id)}`", false)
                     }
                     image = "attachment://preview2.png"
-                }
+                },
             )
             .setComponents()
             .setFiles(
@@ -254,7 +254,7 @@ class MapSubmitCommand(
                     MENTION_TAG_REGEX.find(interaction.message.embeds.first().getFieldValue("Submitter")!!)!!
                         .groups[1]!!
                         .value
-                        .toLong()
+                        .toLong(),
                 ) ?: return
 
         // TODO Band-aid fix for contributor, cleanup this damn role system
@@ -270,7 +270,7 @@ class MapSubmitCommand(
                     this@Embed.color = color.rgb
                     description =
                         "Your [map submission](${interaction.message.jumpUrl}) has been $verb by ${interaction.member!!.asMention}."
-                }
+                },
             )
     }
 

@@ -112,7 +112,7 @@ class WorldEditCommand : ImperiumApplication.Listener {
                 if (floor != null) append("floor $floor, ")
                 if (overlay != null) append("overlay $overlay, ")
                 append("for team ${team.coloredName()}.")
-            }
+            },
         )
     }
 

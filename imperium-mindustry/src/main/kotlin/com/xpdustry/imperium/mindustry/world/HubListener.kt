@@ -209,10 +209,10 @@ class HubListener(
                 append("-- [accent]Portals: --")
                 for (portal in portals.values) {
                     append(
-                        "\n[cyan]- [white]${portal.name} [lightgray](${portal.x}, ${portal.y}, ${portal.w}, ${portal.h})"
+                        "\n[cyan]- [white]${portal.name} [lightgray](${portal.x}, ${portal.y}, ${portal.w}, ${portal.h})",
                     )
                 }
-            }
+            },
         )
     }
 

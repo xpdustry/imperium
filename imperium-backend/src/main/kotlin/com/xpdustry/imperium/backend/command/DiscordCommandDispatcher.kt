@@ -158,7 +158,7 @@ class DiscordCommandDispatcher(
                 val optional = parameter.isOptional || parameter.type.isMarkedNullable
                 if (wasOptional && !optional) {
                     throw IllegalArgumentException(
-                        "$function optional parameters must be at the end of the parameter list."
+                        "$function optional parameters must be at the end of the parameter list.",
                     )
                 }
                 wasOptional = optional

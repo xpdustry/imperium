@@ -97,8 +97,8 @@ class AccountListener(
                     translatable()
                         .setKey("imperium.notification.login")
                         .setParameters(TranslationArguments.array(text(account.username, ComponentColor.ACCENT)))
-                        .build()
-                )
+                        .build(),
+                ),
             )
         }
     }

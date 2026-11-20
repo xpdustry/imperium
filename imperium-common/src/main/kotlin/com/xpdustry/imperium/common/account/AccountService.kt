@@ -278,7 +278,7 @@ class AccountService(
                     ?: return@newSuspendTransaction AccountResult.NotFound
             if (username != legacyUsername && legacyUsernameExists(username)) {
                 return@newSuspendTransaction AccountResult.InvalidUsername(
-                    listOf(usernameRequirements().reservedRequirement())
+                    listOf(usernameRequirements().reservedRequirement()),
                 )
             }
             if (AccountTable.exists { AccountTable.username eq username }) {

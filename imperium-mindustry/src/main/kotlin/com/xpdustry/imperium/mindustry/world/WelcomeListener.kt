@@ -59,7 +59,7 @@ class WelcomeListener(
                 MenuOption.of(
                     gui_welcome_button_discord(),
                     Action.audience { it.openURI(DISCORD_INVITATION_LINK.toURI()) },
-                )
+                ),
             )
             pane.grid.addRow(MenuOption.of(gui_welcome_button_changelog(), Action.command("changelog")))
             pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))

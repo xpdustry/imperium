@@ -76,7 +76,7 @@ class SimpleDiscovery(
         logger.trace("Sending {} discovery message", type.name)
         try {
             messenger.broadcast(
-                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataSupplier.get()), type)
+                DiscoveryMessage(Discovery.Server(config.server.name, discoveryDataSupplier.get()), type),
             )
         } catch (e: Exception) {
             logger.error("Failed to send discovery message", e)

@@ -53,9 +53,9 @@ class HelpCommand(plugin: MindustryPlugin) : ImperiumApplication.Listener {
                     .setFillEmptyHeight(true)
                     .setPageKey(HELP_LIST_PAGE)
                     .setChoiceAction(
-                        BiAction.with(HELP_ENTRY).then(BiAction.from(NavigateAction(HELP_PAGE, HelpPage.DETAIL)))
+                        BiAction.with(HELP_ENTRY).then(BiAction.from(NavigateAction(HELP_PAGE, HelpPage.DETAIL))),
                     ),
-            )
+            ),
         )
         menu.addTransformer(
             NavigationTransformer(HELP_PAGE, HelpPage.LIST) { (pane, state) ->
@@ -67,10 +67,10 @@ class HelpCommand(plugin: MindustryPlugin) : ImperiumApplication.Listener {
                 pane.content =
                     components(newline(), text("Select a command to view its details.", LIGHT_GRAY), newline())
                 pane.grid.addRow(
-                    MenuOption.of(components(text(Iconc.left, ACCENT), space(), gui_back()), Action.back())
+                    MenuOption.of(components(text(Iconc.left, ACCENT), space(), gui_back()), Action.back()),
                 )
                 pane.exitAction = Action.back()
-            }
+            },
         )
         menu.addTransformer(
             NavigationTransformer(HELP_PAGE, HelpPage.DETAIL) { (pane, state, viewer) ->
@@ -85,26 +85,26 @@ class HelpCommand(plugin: MindustryPlugin) : ImperiumApplication.Listener {
                             MenuOption.of(
                                 components(text(Iconc.left), space(), gui_back()),
                                 NavigateAction(HELP_PAGE, HelpPage.LIST),
-                            )
+                            ),
                         )
                         add(
                             MenuOption.of(
                                 components(text(Iconc.copy), space(), text("Copy")),
                                 Action.show().then { Call.copyToClipboard(it.viewer.con, entry.path) },
-                            )
+                            ),
                         )
                         if (!entry.help.acceptsParameters()) {
                             add(
                                 MenuOption.of(
                                     components(ComponentColor.GREEN, text(Iconc.play), space(), text("Run")),
                                     Action.hideAll().then(commandAction(entry.path)),
-                                )
+                                ),
                             )
                         }
-                    }
+                    },
                 )
                 pane.exitAction = NavigateAction(HELP_PAGE, HelpPage.LIST)
-            }
+            },
         )
     }
 

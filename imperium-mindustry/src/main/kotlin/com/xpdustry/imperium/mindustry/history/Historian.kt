@@ -101,11 +101,11 @@ class SimpleHistorian(
                 HistoryResponseMessage(
                     ComponentStringBuilder.plain(KeyContainer.empty())
                         .append(
-                            renderer.render(getHistory(user.uuid).normalize(30), HistoryActor(user.uuid, team, unit))
+                            renderer.render(getHistory(user.uuid).normalize(30), HistoryActor(user.uuid, team, unit)),
                         )
                         .toString(),
                     request.id,
-                )
+                ),
             )
         }
     }
@@ -214,7 +214,7 @@ class SimpleHistorian(
                     building.rotation,
                     configuration,
                     it.pos() != building.tile.pos(),
-                )
+                ),
             )
         }
     }

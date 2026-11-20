@@ -102,7 +102,7 @@ class SimpleHistoryRenderer(
                         translatable(
                             "imperium.history.type.rotate",
                             array(translatable(entry.block, ACCENT), getDisplayOrientation(entry.rotation)),
-                        )
+                        ),
                     )
                 HistoryEntry.Type.CONFIGURE -> render0(entry, entry.config)
             }
@@ -134,15 +134,15 @@ class SimpleHistoryRenderer(
                                     .apply {
                                         for ((i, point) in config.positions.withIndex()) {
                                             append(
-                                                point.copy(x = point.x + entry.x, y = point.y + entry.y).toComponent()
+                                                point.copy(x = point.x + entry.x, y = point.y + entry.y).toComponent(),
                                             )
                                             if (i < config.positions.size - 1) append(text(", "))
                                         }
                                     }
                                     .build(),
-                            )
+                            ),
                         )
-                        .build()
+                        .build(),
                 )
             is BlockConfig.Canvas ->
                 listOf(translatable("imperium.history.type.configure.canvas", array(translatable(entry.block, ACCENT))))
@@ -151,7 +151,7 @@ class SimpleHistoryRenderer(
                     translatable(
                         "imperium.history.type.configure.content",
                         array(translatable(entry.block, ACCENT), translatable(config.value, ACCENT)),
-                    )
+                    ),
                 )
             is BlockConfig.Enable ->
                 listOf(
@@ -162,7 +162,7 @@ class SimpleHistoryRenderer(
                             "imperium.history.type.configure.disabled"
                         },
                         array(translatable(entry.block, ACCENT)),
-                    )
+                    ),
                 )
             is BlockConfig.Light ->
                 listOf(
@@ -172,7 +172,7 @@ class SimpleHistoryRenderer(
                             translatable(entry.block, ACCENT),
                             text("%06X".format(0xFFFFFF and config.color), ACCENT),
                         ),
-                    )
+                    ),
                 )
             is BlockConfig.Reset ->
                 listOf(translatable("imperium.history.type.configure.reset", array(translatable(entry.block, ACCENT))))

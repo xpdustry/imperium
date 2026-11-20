@@ -42,7 +42,7 @@ class MindustryBridgeListener(
                         event.message.member?.nickname ?: event.message.author.name,
                         event.author.idLong,
                         event.message.contentStripped,
-                    )
+                    ),
                 )
             }
         }

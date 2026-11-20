@@ -25,7 +25,7 @@ class ImperiumComponentRendererProvider(renderer: TimeRenderer) : ComponentRende
     class DurationComponentRenderer(private val renderer: TimeRenderer) : ComponentRenderer<DurationComponent> {
         override fun render(component: DurationComponent, builder: ComponentStringBuilder) {
             builder.append(
-                renderer.renderDuration(component.duration, builder.context.get(StandardKeys.LOCALE) ?: Locale.ENGLISH)
+                renderer.renderDuration(component.duration, builder.context.get(StandardKeys.LOCALE) ?: Locale.ENGLISH),
             )
         }
     }

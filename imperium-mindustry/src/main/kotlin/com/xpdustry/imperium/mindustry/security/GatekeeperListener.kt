@@ -255,7 +255,7 @@ private fun interceptPlayerConnection(
         val result =
             if (config.security.gatekeeper) {
                 pipeline.pump(
-                    GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address))
+                    GatekeeperContext(packet.name, packet.uuid, packet.usid, InetAddresses.forString(con.address)),
                 )
             } else {
                 GatekeeperResult.Success

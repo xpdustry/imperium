@@ -102,7 +102,7 @@ class KillAllCommand(
 
         val components = components()
         components.append(
-            translatable("imperium.killall.force.success.base", array(number(killed, ComponentColor.ACCENT)))
+            translatable("imperium.killall.force.success.base", array(number(killed, ComponentColor.ACCENT))),
         )
         if (type != null) {
             components.append(

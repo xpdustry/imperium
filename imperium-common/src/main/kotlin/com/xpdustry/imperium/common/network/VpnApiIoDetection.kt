@@ -35,7 +35,7 @@ class VpnApiIoDetection(private val config: NetworkConfig.VpnDetectionConfig.Vpn
             }
             if (response.code != 200) {
                 return@use VpnDetection.Result.Failure(
-                    IllegalStateException("Unexpected status code: ${response.code}")
+                    IllegalStateException("Unexpected status code: ${response.code}"),
                 )
             }
             val json = Json.decodeFromStream<JsonObject>(response.body!!.byteStream())

@@ -25,7 +25,7 @@ class VpnGatekeeper(private val provider: VpnDetection, private val whitelist: W
                     [red]Warning: During the process, only share your UUID with an admin [orange](${context.uuid})[].[]
                     [grey]It is recommended to take a screenshot of this page.[]
                     """
-                        .trimIndent()
+                        .trimIndent(),
                 )
             else GatekeeperResult.Success
         }

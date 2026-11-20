@@ -57,7 +57,7 @@ class DataStoreService(
                         noneOf(Achievement::class.java).apply {
                             addAll(it.achievements)
                             if (message.completed) add(message.achievement) else remove(message.achievement)
-                        }
+                        },
                 )
             }
         }
@@ -68,7 +68,7 @@ class DataStoreService(
                     metadata =
                         it.metadata.toMutableMap().apply {
                             if (message.value == null) remove(message.key) else this[message.key] = message.value!!
-                        }
+                        },
                 )
             }
         }

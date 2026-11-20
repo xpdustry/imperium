@@ -68,7 +68,7 @@ class RatingListener(
                         MenuOption.of(
                             selected(number(score), state[SCORE] == score),
                             Action.with(SCORE, score).then(Window::show),
-                        )
+                        ),
                     )
                 }
 
@@ -78,7 +78,7 @@ class RatingListener(
                         MenuOption.of(
                             selected(difficulty_name(difficulty), state[DIFFICULTY] == difficulty),
                             Action.with(DIFFICULTY, difficulty).then(Window::show),
-                        )
+                        ),
                     )
                 }
 

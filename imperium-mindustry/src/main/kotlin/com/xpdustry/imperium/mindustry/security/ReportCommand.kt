@@ -74,9 +74,10 @@ class ReportCommand(
                     .setRenderer { player -> text(player.info.plainLastName()) }
                     .setHeight(10)
                     .setChoiceAction(
-                        BiAction.with(REPORT_PLAYER).then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.REASON)))
+                        BiAction.with(REPORT_PLAYER)
+                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.REASON))),
                     ),
-            )
+            ),
         )
 
         reportInterface.addTransformer(
@@ -90,9 +91,9 @@ class ReportCommand(
                     .setRenderNavigation(false)
                     .setChoiceAction(
                         BiAction.with(REPORT_REASON)
-                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.CONFIRM)))
+                            .then(BiAction.from(NavigateAction(REPORT_PAGE, ReportPage.CONFIRM))),
                     ),
-            )
+            ),
         )
 
         reportInterface.addTransformer { (pane, state) ->
@@ -138,13 +139,13 @@ class ReportCommand(
                                             target.plainLastName(),
                                             users.findByUuid(target.id)!!.id,
                                             it.state[REPORT_REASON]!!,
-                                        )
+                                        ),
                                     )
-                                }
+                                },
                             ),
-                    )
+                    ),
                 )
-            }
+            },
         )
     }
 

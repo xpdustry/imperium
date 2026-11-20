@@ -64,7 +64,7 @@ object ImperiumArgon2 {
                     .withMemoryAsKB(64 * 1024)
                     .withParallelism(2)
                     .withSalt(salt)
-                    .build()
+                    .build(),
             )
         }
 

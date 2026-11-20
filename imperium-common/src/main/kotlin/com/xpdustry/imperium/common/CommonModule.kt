@@ -106,7 +106,7 @@ private fun createOkHttpClient(): OkHttpClient =
         .readTimeout(20.seconds)
         .writeTimeout(20.seconds)
         .dispatcher(
-            Dispatcher(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("imperium-okttp-", 0).factory()))
+            Dispatcher(Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("imperium-okttp-", 0).factory())),
         )
         .build()
 

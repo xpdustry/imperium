@@ -17,5 +17,5 @@ fun createImperiumScope(): CoroutineScope =
             CoroutineName(IMPERIUM_SCOPE) +
             CoroutineExceptionHandler { context, error ->
                 logger("ImperiumCoroutineScope").error("Unhandled exception in coroutine context {}", context, error)
-            }
+            },
     )

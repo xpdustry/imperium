@@ -225,7 +225,7 @@ class AnukenMindustryContentHandler(@Named("directory") directory: Path) :
         val reader =
             SaveIO.getSaveWriter(version)
                 ?: throw IOException(
-                    "Unknown save version: $version. Are you trying to load a save from a newer version?"
+                    "Unknown save version: $version. Are you trying to load a save from a newer version?",
                 )
         val metadataHolder = arrayOf<StringMap?>(null)
 
@@ -318,12 +318,12 @@ class AnukenMindustryContentHandler(@Named("directory") directory: Path) :
                                                 if (overlayID != 0) Blocks.air else Vars.content.block(floorID),
                                                 if (overlayID != 0) Vars.content.block(overlayID) else Blocks.air,
                                                 Team.derelict,
-                                            )
+                                            ),
                                         ),
                                     )
                                     return tile
                                 }
-                            }
+                            },
                         )
                         .apply { this.preview = true },
                 )

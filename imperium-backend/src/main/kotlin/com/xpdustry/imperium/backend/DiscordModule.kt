@@ -39,5 +39,5 @@ private fun createDiscordImperiumVersion(): ImperiumVersion =
     ImperiumVersion.parse(
         ImperiumBackend::class.java.classLoader.getResourceAsStream("META-INF/MANIFEST.MF")!!.use { stream ->
             Manifest(stream).mainAttributes.getValue("Implementation-Version")
-        }
+        },
     )

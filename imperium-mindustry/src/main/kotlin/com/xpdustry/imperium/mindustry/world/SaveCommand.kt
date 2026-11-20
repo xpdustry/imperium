@@ -83,7 +83,7 @@ class SaveCommand(
                         BiAction.compose(
                             BiAction.with(SAVE_FILE),
                             BiAction.from(Action.with(SAVE_PAGE, SavePage.VIEW).then(Window::show)),
-                        )
+                        ),
                     )
                     .then { (pane, _) ->
                         pane.title = text("Save Manager")
@@ -97,7 +97,7 @@ class SaveCommand(
                         )
                         pane.grid.addRow(MenuOption.of(gui_close(), Window::hide))
                     },
-            )
+            ),
         )
 
         menu.addTransformer(
@@ -113,7 +113,7 @@ class SaveCommand(
                     MenuOption.of(Iconc.cancel, Action.with(SAVE_PAGE, SavePage.LIST).then(Window::show)),
                 )
                 pane.exitAction = Action.with(SAVE_PAGE, SavePage.LIST).then(Window::show)
-            }
+            },
         )
 
         text.addTransformer { (pane) ->
@@ -126,7 +126,7 @@ class SaveCommand(
                 pane.title = text("Create a new save file")
                 pane.description = text("Only alphanumeric characters are allowed.")
                 pane.inputAction = BiAction.delegate(this::onCreateSaveAction)
-            }
+            },
         )
 
         text.addTransformer(
@@ -134,7 +134,7 @@ class SaveCommand(
                 pane.title = text("Rename the save file")
                 pane.description = text("Only alphanumeric characters are allowed.")
                 pane.inputAction = BiAction.delegate(this::onRenameSaveAction)
-            }
+            },
         )
     }
 
@@ -191,7 +191,7 @@ class SaveCommand(
                 Action.back(),
                 Action.audience {
                     it.sendAnnouncement(
-                        text("An error occurred while deleting the save: ${Strings.neatError(exception)}", SCARLET)
+                        text("An error occurred while deleting the save: ${Strings.neatError(exception)}", SCARLET),
                     )
                 },
             )
@@ -219,7 +219,7 @@ class SaveCommand(
                                 text(
                                     "An error occurred while renaming the save: ${Strings.neatError(exception)}",
                                     SCARLET,
-                                )
+                                ),
                             )
                         },
                     )
@@ -240,7 +240,7 @@ class SaveCommand(
                         Action.back(),
                         Action.audience {
                             it.sendAnnouncement(
-                                text("Current game saved to ${result.value.fileName}.", ComponentColor.ACCENT)
+                                text("Current game saved to ${result.value.fileName}.", ComponentColor.ACCENT),
                             )
                         },
                     )
@@ -253,7 +253,7 @@ class SaveCommand(
                                 text(
                                     "An error occurred while creating the save: ${Strings.neatError(exception)}",
                                     SCARLET,
-                                )
+                                ),
                             )
                         },
                     )

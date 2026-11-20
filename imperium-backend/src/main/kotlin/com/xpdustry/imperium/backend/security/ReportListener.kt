@@ -93,7 +93,7 @@ class ReportListener(
                                     Button.secondary(REPORT_IGNORE_BUTTON, "Ignore")
                                         .withEmoji(ImperiumEmojis.CROSS_MARK),
                                 )
-                        }
+                        },
                     )
                     .await()
                     .createThreadChannel("Report on ${report.targetName}")
@@ -148,7 +148,7 @@ class ReportListener(
                         value = interaction.member!!.asMention
                         inline = false
                     }
-                }
+                },
             )
             .await()
         interaction.message.disableComponents()
@@ -166,7 +166,7 @@ class ReportListener(
                         value = interaction.member!!.asMention
                         inline = false
                     }
-                }
+                },
             )
             .await()
         interaction.message.disableComponents()

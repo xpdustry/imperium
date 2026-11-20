@@ -100,7 +100,7 @@ class HistoryCommand(
             historyRenderer.render(
                 runMindustryThread { historian.getHistory(player.uuid()).normalize(limit) },
                 HistoryActor(player),
-            )
+            ),
         )
 
     @ImperiumCommand(["history", "tile"])
@@ -117,7 +117,7 @@ class HistoryCommand(
                 runMindustryThread { historian.getHistory(x.toInt(), y.toInt()).normalize(limit) },
                 x.toInt(),
                 y.toInt(),
-            )
+            ),
         )
 
     @ImperiumCommand(["inspector"])
